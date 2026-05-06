@@ -4,7 +4,7 @@ title: 'Rolling cleanup: downsize oversized source files past the 300-line ratch
 status: To Do
 assignee: []
 created_date: '2026-05-05 16:48'
-updated_date: '2026-05-06 20:44'
+updated_date: '2026-05-06 19:05'
 labels:
   - tech-debt
   - tooling
@@ -766,6 +766,49 @@ Verdict: PASS
 
 No findings.
 
+## CL: DX12Helper_Pipeline.cpp split (2026-05-06)
+
+Split `Source/Engine/Services/DX12/DX12Helper_Pipeline.cpp` (570 lines) into 7 sibling TUs by domain. Pure mechanical split per `disciplines/on-implement/file-splitting.md` — free-function-header pattern, mirroring the prior `DX12Helper_Texture.cpp` split (commit `b7aafa6c`). Umbrella `DX12Helper_Pipeline.h` keeps all 16 declarations untouched; original umbrella `.cpp` is removed. No engine behavior change.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `DX12Helper_Pipeline.h` (header — unchanged) | 38 | Umbrella declarations (16 active functions in `namespace Inno::DX12Helper`; `LoadShaderFile` has DXIL + HLSL `#ifdef`-mutually-exclusive signatures) |
+| `DX12Helper_Pipeline_Shader.cpp` | 224 | `LoadGraphicsShaders`, `LoadComputeShaders`, `LoadRaytracingShaders`, `LoadShaderFile` (+ TU-local `m_shaderRelativePath`) |
+| `DX12Helper_Pipeline_DepthStencil.cpp` | 95 | `GetComparisionFunction`, `GetStencilOperation`, `GenerateDepthStencilStateDesc` |
+| `DX12Helper_Pipeline_Rasterizer.cpp` | 92 | `GetPrimitiveTopology`, `GetPrimitiveTopologyType`, `GetRasterizerFillMode`, `GenerateRasterizerStateDesc` |
+| `DX12Helper_Pipeline_Blend.cpp` | 79 | `GetBlendFactor`, `GetBlendOperation`, `GenerateBlendStateDesc` |
+| `DX12Helper_Pipeline_InputLayout.cpp` | 59 | `CreateInputLayout` |
+| `DX12Helper_Pipeline_Viewport.cpp` | 21 | `GenerateViewportStateDesc` |
+| `DX12Helper_Pipeline_DescriptorHeap.cpp` | 13 | `GetDescriptorHeapDesc` |
+
+Total new TU lines: 583 (+13 vs. original 570, accounted for by 7× `#include "DX12Helper_Pipeline.h"` + `using namespace Inno;` + blank-line preambles instead of one). Largest TU: 224 (Shader). All under the 300-line ratchet.
+
+### Constraints that bit
+
+- **Cross-TU calls all stay within their own domain.** `GenerateDepthStencilStateDesc` calls `GetComparisionFunction`/`GetStencilOperation` (same TU — DepthStencil); `GenerateBlendStateDesc` calls `GetBlendFactor`/`GetBlendOperation` (same TU — Blend); `GenerateRasterizerStateDesc` calls `GetRasterizerFillMode`/`GetPrimitiveTopology`/`GetPrimitiveTopologyType` (same TU — Rasterizer). Zero cross-TU dispatch through the umbrella header — domain seams are clean.
+- **`m_shaderRelativePath` promoted from `namespace DX12Helper` scope to anonymous-namespace TU-local in `_Shader.cpp`.** The original placed the `#ifdef USE_DXIL` `const char*` / `#else` `const wchar_t*` constant inside `namespace Inno::DX12Helper { ... }` at file scope (external linkage, undeclared in any header). It was referenced only by `LoadShaderFile`. Moving it into an anonymous namespace inside `_Shader.cpp` gives it internal linkage exactly where it belongs (sole consumer same TU) — strictly better than the original. Matches the `_DescriptorAndShader.cpp` pattern called out in the prior `VKGraphicsService_VulkanObject` review.
+- **Engine.h kept only in `_Shader.cpp`.** Six of seven sibling TUs are pure DX12 enum/struct mappings — no `Log()`, no `g_Engine`. They include only `DX12Helper_Pipeline.h` (which transitively brings `LogService.h`, `RenderPassComponent.h`, `DX12Headers.h`). Shader TU additionally needs `Engine.h` (for `g_Engine` to satisfy the `Log` macro expansion + the `g_Engine->Get<IOService>()` direct call), `LogServiceSpecialization.h` (for the `Log` formatter overloads), and `IOService.h` (for the `loadFile` API in the DXIL `LoadShaderFile`). Same chain as the `DX12Helper_Texture` split's Desc/View TUs.
+- **Two dead includes dropped from sibling TUs.** Original `.cpp` included `DX12Helper_Common.h` (centralised typed access to DX12 command lists — zero references in any function body in this file; `GetDX12CommandList` not called) and `IOService.h` (only needed inside the DXIL `LoadShaderFile`, kept in `_Shader.cpp`). The other six TUs include only what they use. Editorial cleanup beyond pure mechanical split — flagged here per the AssetService-split reviewer's earlier ask. Verified by qualifying-test pass: no transitive dependency through these headers was load-bearing.
+- **HLSL `#else` branch of `LoadShaderFile` carried over verbatim — preserves a pre-existing bug.** Line 563 of original (line 211 of `_Shader.cpp`) reads `Log(Error, "Can't find ", shaderFilePath.c_str(), " ", name);` where `name` is undefined. This branch is dead code under the engine's hard-defined `USE_DXIL` (set in `DX12Headers.h:16`). "No behavior change" honoured: bug preserved. Out of scope for this split.
+- **Original umbrella `.cpp` deleted, not retained empty.** Same justification as `DX12Helper_Texture` split: free-function-header pattern with no shared state and no dispatcher logic — retaining a stub would be redundant. CMake auto-glob doesn't require it.
+- **CMake auto-glob picked up the 7 new files** — `Source/Engine/Services/DX12/CMakeLists.txt` uses `file(GLOB *.cpp)` + `file(GLOB *.h)`. Ran `cmake .` from `Build/` to refresh the `.vcxproj` entries before build.
+
+### Build + test
+
+- `cmake .` (from `Build/`) — green. Configuration completed in 3.3s.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green. All 7 new TUs (`_DescriptorHeap.cpp`, `_InputLayout.cpp`, `_Shader.cpp`, `_DepthStencil.cpp`, `_Blend.cpp`, `_Rasterizer.cpp`, `_Viewport.cpp`) compile cleanly. `DX12GraphicsService.lib`, `Services.lib`, `Engine.lib`, `Main.exe`, `RenderTest.exe` all linked.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` — exit 0. Engine completed full init → 1 frame → graceful Terminate. The init path exercises the Pipeline helpers across every render-pass setup: `GetDescriptorHeapDesc` (every descriptor-heap creation in DX12GraphicsHardwareService), `CreateInputLayout` (every graphics PSO), `LoadGraphicsShaders`/`LoadComputeShaders`/`LoadRaytracingShaders` (per-pass shader bytecode binding), `GenerateDepthStencilStateDesc`/`GenerateBlendStateDesc`/`GenerateRasterizerStateDesc`/`GenerateViewportStateDesc` (per-pass PSO state desc), and the GetXxx enum-mapping helpers transitively via the Generate* functions. All consumers behave identically to HEAD (`SamplerResourceService`/`ShaderProgramResourceService`/`TextureResourceService`/etc. all `Setup finished` → all `Terminate`d).
+
+### Function bijection check
+
+`grep 'DX12Helper::' Source/Engine/Services/DX12/DX12Helper_Pipeline_*.cpp` returns 17 definitions; `DX12Helper_Pipeline.h` declares 16 active functions (the 17th is the HLSL-path `LoadShaderFile(ID3D10Blob**, ShaderStage, const ShaderFilePath&)` overload, which mirrors a `#ifdef USE_DXIL`/`#else` pair declared in the header — only one is active per build, mirroring the original verbatim). Sorted-name set identical: `CreateInputLayout`, `GenerateBlendStateDesc`, `GenerateDepthStencilStateDesc`, `GenerateRasterizerStateDesc`, `GenerateViewportStateDesc`, `GetBlendFactor`, `GetBlendOperation`, `GetComparisionFunction`, `GetDescriptorHeapDesc`, `GetPrimitiveTopology`, `GetPrimitiveTopologyType`, `GetRasterizerFillMode`, `GetStencilOperation`, `LoadComputeShaders`, `LoadGraphicsShaders`, `LoadRaytracingShaders`, `LoadShaderFile`. Distribution: Shader 4 + DepthStencil 3 + Rasterizer 4 + Blend 3 + InputLayout 1 + Viewport 1 + DescriptorHeap 1 = 17. No method dropped, none duplicated, none renamed.
+
+### Out of scope (not done)
+
+- Other oversized files in the inventory still pending. Task stays open per AC#4.
+
 ## CL: FrameManagementServiceImpl.cpp split (2026-05-06)
 
 Split `Source/Engine/Services/Common/FrameManagementServiceImpl.cpp` (660 lines) into 4 sibling TUs by responsibility cluster, per `disciplines/on-implement/file-splitting.md` same-class partial-TU pattern. Header `Source/Engine/Services/FrameManagementService.h` unchanged. No engine behavior change.
@@ -1097,6 +1140,19 @@ Bijection holds. HEAD `Source/Engine/Services/VK/VKGraphicsService_GraphicsDevic
 Findings (advisory, non-blocking):
 - Closure note line 1085 and the "Function distribution" table list 16 functions and "5+6+5"; the actual count is 17 (`GetRequiredExtensions` is the additional umbrella function, correctly placed adjacent to its sole caller `CreateVkInstance`). Recommend amending the count framing in this CL's commit body / closure note for accuracy. Bodies and placement are correct; this is a counting/reporting discrepancy, not a code defect.
 
+## Review (code-impl, 2026-05-06) — DX12Helper_Pipeline split
+
+Verdict: PASS
+
+Verification:
+- Bijection: 18 function definitions across 7 new TUs (Shader 5, Rasterizer 4, DepthStencil 3, Blend 3, InputLayout 1, Viewport 1, DescriptorHeap 1) match HEAD's `DX12Helper_Pipeline.cpp` 18 definitions. Header `DX12Helper_Pipeline.h` declares 17 entries plus the `LoadShaderFile` overload guarded by `#ifdef USE_DXIL` (DXIL/HLSL variants).
+- `m_shaderRelativePath` linkage promotion: grep across `Source/` confirms zero references outside `_Shader.cpp`. The VK match (`VKGraphicsService_VulkanObject_DescriptorAndShader.cpp`) is an unrelated identically-named symbol in a different TU/namespace. Anonymous-namespace internalization is safe.
+- Byte-equivalence spot check: `GenerateBlendStateDesc` body identical between HEAD lines 438-454 and `_Blend.cpp` lines 63-79.
+- Pre-existing `name` undefined-identifier bug preserved at `_Shader.cpp:216` (HEAD line 563). Out of scope per brief.
+- No CMake edit needed: `Source/Engine/Services/DX12/CMakeLists.txt` uses `file(GLOB SOURCES "*.cpp")` — new TUs auto-picked up.
+- Dropped includes safe: 6 slim TUs (DepthStencil, Rasterizer, Blend, Viewport, InputLayout, DescriptorHeap) contain zero `Log(`/`IOService`/`Engine.`/`LogServiceSpecialization` references; types in use (`D3D12_*`, `DX12PipelineStateObject*`) reach via `DX12Helper_Pipeline.h` → `LogService.h`/`RenderPassComponent.h`/`DX12Headers.h`. `_Shader.cpp` retains the headers it actually consumes.
+
+No findings.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
