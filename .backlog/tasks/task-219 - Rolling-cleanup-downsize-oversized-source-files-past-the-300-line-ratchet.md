@@ -4,7 +4,7 @@ title: 'Rolling cleanup: downsize oversized source files past the 300-line ratch
 status: To Do
 assignee: []
 created_date: '2026-05-05 16:48'
-updated_date: '2026-05-06 16:34'
+updated_date: '2026-05-06 17:00'
 labels:
   - tech-debt
   - tooling
@@ -817,6 +817,70 @@ Verdict: PASS
 - **No CMake edit.** `git diff HEAD` clean for `*.cmake` and `CMakeLists.txt`. Auto-glob in `Source/Engine/Services/Common/CMakeLists.txt` (`file(GLOB SOURCES "*.cpp")`) picks up the 3 new TUs without manifest churn — consistent with prior splits in this task.
 
 No findings.
+
+## CL: VKHelper_Texture.cpp split (2026-05-06)
+
+Split `Source/Engine/Services/VK/VKHelper_Texture.cpp` (678 lines) into 5 sibling free-function TUs by domain. Mirrors prior `DX12Helper_Texture.cpp` split (commit `b7aafa6c`). Pure mechanical split per `disciplines/on-implement/file-splitting.md`. Original `.cpp` deleted (no file-static state to retain). Header `VKHelper_Texture.h` unchanged.
+
+### File inventory
+
+| File | Lines | Functions |
+|---|---:|---|
+| `VKHelper_Texture_Desc.cpp` | 248 | `GetVKTextureDesc`, `GetImageType`, `GetImageUsageFlags`, `GetImageSize`, `GetImageAspectFlags`, `GetImageCreateInfo` |
+| `VKHelper_Texture_Format.cpp` | 278 | `GetTextureFormat` |
+| `VKHelper_Texture_Sampler.cpp` | 63 | `GetSamplerAddressMode`, `GetFilter`, `GetSamplerMipmapMode` |
+| `VKHelper_Texture_State.cpp` | 68 | `GetTextureWriteImageLayout`, `GetTextureReadImageLayout`, `GetAccessMask` |
+| `VKHelper_Texture_View.cpp` | 34 | `GetImageViewType` |
+
+Total 691 lines (vs 678 original). Largest TU 278 — under the 300-line ratchet. Extra 13 lines = duplicated `#include "VKHelper_Texture.h"` + `using namespace Inno;` across 4 of 5 split TUs (one TU keeps `#include "../../Engine.h"` since `GetVKTextureDesc` is the composite entry).
+
+### Bijection
+
+14 free functions in HEAD `VKHelper_Texture.cpp` (matched by header decl in `VKHelper_Texture.h` lines 13-27). 14 free functions across 5 split TUs: 6 (Desc) + 1 (Format) + 3 (Sampler) + 3 (State) + 1 (View) = 14. Bijection 14→14 confirmed. Function bodies copied byte-equivalent — diff against HEAD on `GetTextureFormat` (Format.cpp 5-273 ↔ orig 171-444) and `GetImageSize` (Desc.cpp 80-180 ↔ orig 446-544) shows identical content modulo header-relative offsets.
+
+### Allocation rationale
+
+- **Desc**: composite + sampler→VkImageType (drives image creation) + usage flags + size + aspect + create info — the cluster that builds `VkImage`.
+- **View**: sampler→VkImageViewType — drives `VkImageView` creation, distinct concern from image creation.
+- **Format**: `GetTextureFormat` — 274-line switch ladder isolated as its own TU (largest single function, mirrors DX12 split).
+- **Sampler**: address mode + filter + mipmap mode — sampler-object concern.
+- **State**: layout + access mask — pipeline-barrier / synchronization concern.
+
+### Include graph
+
+Every split TU includes only `VKHelper_Texture.h`. The Desc TU additionally includes `../../Engine.h` (only `GetVKTextureDesc` originally needed it — kept in that TU). Strict subset of original.
+
+### CMake
+
+`Source/Engine/Services/VK/CMakeLists.txt` uses `file(GLOB SOURCES "*.cpp")` — no manifest edit needed. Ran `cmake .` from `Build/` to refresh glob.
+
+### Validation
+
+- `Scripts/BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh`: green (Main.exe + RenderTest.exe linked).
+- `Bin/RelWithDebInfo/Main.exe -total_frames 1`: exit 0. (Pre-existing shader-load warning for `mipmapGenerator3D.comp.dxil` is unrelated to this CL — `-SkipShaderCompile` was used; engine still exits cleanly.)
+- VK target is gated off (`INNO_RENDERER_VULKAN:BOOL=OFF` confirmed in `Build/CMakeCache.txt`); the new VK TUs are not compiled by this build. Build green is the load-bearing check per the dispatch directive.
+
+### File-size gate
+
+All 5 split TUs ≤ 300. No `FILE_SIZE_EXCLUDE_RE` addition. The original `VKHelper_Texture.cpp` is removed via `git rm` — gate sees only the new TUs at commit time.
+
+## Review (code-impl, 2026-05-06) — VKHelper_Texture split
+
+Verdict: PASS
+
+Bijection: 14 free functions in `git show HEAD:Source/Engine/Services/VK/VKHelper_Texture.cpp` → 14 in the 5 new TUs (Desc 6, Format 1, Sampler 3, State 3, View 1). Cluster mapping is sensible; `GetImageType` landing in `_Desc.cpp` rather than `_View.cpp` is an organizational choice, not a correctness concern.
+
+Byte-equivalence (5 cluster representatives, `diff` empty in all cases): `GetVKTextureDesc` (orig L7-20 vs Desc.cpp L7-20), `GetTextureFormat` (orig L171-444 vs Format.cpp L5-278), `GetFilter` (orig L133-150 vs Sampler.cpp L27-44), `GetTextureWriteImageLayout` (orig L616-633 vs State.cpp L5-22), `GetImageViewType` (orig L52-81 vs View.cpp L5-34).
+
+Umbrella deletion correct: `grep -nE "^(static|namespace[[:space:]]*\{)"` on the original returns 0 matches → no file-static, no anon-namespace state to retain.
+
+Includes: `_Desc.cpp` mirrors original (`VKHelper_Texture.h` + `../../Engine.h`); the other four include only `VKHelper_Texture.h`. The original referenced no `Engine.h` symbol (`g_Engine` / `Log(` / `Logger`: 0 hits) — the four narrower includes are strict subsets and correct; `_Desc.cpp` faithfully preserves the (already-unused) Engine.h include, no regression. VK headers reach all five TUs transitively via the unchanged `VKHelper_Texture.h`.
+
+Line accounting: 248+278+63+68+34 = 691 vs 678 original; +13 matches 5× (`#include` + blank + `using namespace Inno;` + blank) split-file scaffolding. All 5 TUs ≤ 300; file-size gate satisfied without exclusion.
+
+CMake: `git diff HEAD -- '**/CMakeLists.txt'` empty — confirmed no build-system edit (relies on existing `file(GLOB)` discipline).
+
+VK target disabled (`INNO_RENDERER_VULKAN:BOOL=OFF`) noted; clangd `vulkan/vulkan.h not found` is a compile_commands.json artefact, not a real diagnostic. No findings.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
