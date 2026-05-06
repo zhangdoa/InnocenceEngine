@@ -45,6 +45,8 @@ Session start: producer reads in-progress tasks + Implementation Notes — that'
 
 Docs-only path bypass (`DOCS_ONLY_PATH`) handles backlog/harness commits automatically. Bypass not firing for a legitimately exempt path → extend the regex.
 
+Exemption for closure-only docs CLs: a `Closure-Reason: <value>` commit-message footer re-applies the docs-only bypass when a task is flipping to Done. Use only for genuinely-obsolete / non-reproducible / superseded closures where running an integration test would add no signal — not for "the test was a pain to set up". Code-bearing CLs still require a qualifying test run; the exemption only suspends the closure-as-evidence override on the docs-only path.
+
 ## Don't pile on backlog tasks
 
 Before filing, ask: blocking the user's terminal goal? Would I do this work today if dispatched? Both no → don't file. Note inline (closure note, commit-message footer, or just move on).

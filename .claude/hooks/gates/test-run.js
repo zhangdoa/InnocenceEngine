@@ -2,10 +2,21 @@
 // have run since the last real user prompt. Docs-only CLs (matching
 // DOCS_ONLY_PATH) skip the gate UNLESS a closing task is also staged
 // (which is the closure-evidence rule — the test must back the claim).
+//
+// Closure-evidence exemption: a `Closure-Reason: <value>` commit-message
+// footer suspends the closure-as-evidence-override on the docs-only path.
+// Use for genuinely-obsolete / non-reproducible / superseded closures
+// where running an integration test purely to satisfy the gate adds no
+// signal. Code-bearing CLs still need a qualifying test — the exemption
+// only re-applies the docs-only bypass.
 
 const {
   QUALIFYING_TEST, DOCS_ONLY_PATH, firstArray,
 } = require('../lib/common')
+
+// Same-line value required ([ \t]* not \s*, because \s includes \n and
+// would let `Closure-Reason:\n\nReviewed-By: …` satisfy the regex).
+const CLOSURE_REASON_RE = /^Closure-Reason:[ \t]*\S/m
 
 function didQualifyingTestRun(transcript, lastUserIdx) {
   for (let i = lastUserIdx + 1; i < transcript.length; i++) {
@@ -22,10 +33,13 @@ function didQualifyingTestRun(transcript, lastUserIdx) {
 }
 
 function run(ctx) {
-  // Docs-only bypass. Doesn't apply if a task is flipping to Done (see
-  // closure-evidence gate — closure claim must be test-backed).
+  // Docs-only bypass. Normally doesn't apply if a task is flipping to
+  // Done (closure claim must be test-backed). The Closure-Reason: footer
+  // re-applies the bypass for genuinely-obsolete / non-reproducible /
+  // superseded closures.
   const allDocs = ctx.staged.length > 0 && ctx.staged.every(f => DOCS_ONLY_PATH.test(f))
-  if (allDocs && ctx.closingTasks.length === 0) return { ok: true }
+  const closureExempt = ctx.closingTasks.length > 0 && CLOSURE_REASON_RE.test(ctx.messageText || '')
+  if (allDocs && (ctx.closingTasks.length === 0 || closureExempt)) return { ok: true }
 
   if (didQualifyingTestRun(ctx.transcript, ctx.lastUserIdx)) return { ok: true }
 
@@ -46,6 +60,11 @@ function emit(staged, closing) {
         'Closing a task asserts the work is validated. The docs-only bypass does',
         'NOT apply to a completion claim — a closing CL must be backed by a test',
         'run in the current turn, same as a code CL.',
+        '',
+        'Exemption: add a `Closure-Reason: <value>` commit-message footer for',
+        'genuinely-obsolete / non-reproducible / superseded closures where a test',
+        'run adds no signal. With the footer present, the docs-only bypass applies',
+        'again. Use sparingly — not for "the test was a pain to set up".',
         '',
       ]
     : []

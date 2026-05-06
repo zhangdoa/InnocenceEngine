@@ -21,6 +21,7 @@ Code-AI-Generated-By: <model>            # or Message-AI-Generated-By: <model>
 |---|---|---|---|
 | Peer-review | `Reviewed-By:` / `Review-Skipped:` | `on-commit/peer-review-required.md` | `gates/peer-review.js` |
 | Attribution | `Code-AI-Generated-By:` / `Message-AI-Generated-By:` / `Code-Human-Written:` / `Message-Human-Written:` | this file | `gates/attribution.js` |
+| Closure-reason | `Closure-Reason:` | `always/backlog-workflow.md` | `gates/test-run.js` |
 
 Multiple `Reviewed-By:` lines valid. Skip categories live in `on-commit/peer-review-required.md`. Gate enforces *presence*, not truthfulness.
 
