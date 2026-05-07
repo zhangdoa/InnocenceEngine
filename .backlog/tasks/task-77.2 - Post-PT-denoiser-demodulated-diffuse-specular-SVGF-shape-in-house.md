@@ -1,9 +1,11 @@
 ---
 id: TASK-77.2
 title: 'Post-PT denoiser: demodulated diffuse/specular SVGF-shape (in-house, no NRD)'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-05-07'
+updated_date: '2026-05-07'
 labels:
   - R&D
   - path-tracer
@@ -81,3 +83,50 @@ This builds atop the loop-per-bounce raygen already in place; no hash-grid coupl
 - SVGF (Schied 2017): `https://cg.ivd.kit.edu/publications/2017/svgf/svgf_preprint.pdf`
 - EA SEED Surfel-GI: `https://advances.realtimerendering.com/s2021/SIGGRAPH%20Advances%202021%20-%20Surfel%20GI.pdf`
 - NRD-Sample (architectural reference only): `https://github.com/NVIDIA-RTX/NRD-Sample`
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## CL-1 design plan (2026-05-07)
+
+### Architectural fork — Path A locked
+
+Path B (reuse rasterized GBuffer) and Hybrid (reuse rasterized for "where am I", PT-write for denoiser-specific channels) are **broken-by-construction in the PT-primary path**: `OpaquePass` is gated under `if (!m_GPUPathTracerActive)` (`ExampleRenderingClient_PrepareCommands.cpp:82`, `_ExecuteCommands.cpp:144`), so `in_opaquePassRT0..3` carry stale or zero contents in PT mode. Reusing them would re-elevate the demoted rasterizer subsystem to load-bearing — exactly the failure mode `state/project-direction.md` warns against.
+
+**Path A locked**: PT raygen writes per-primary-hit channels itself. Channel layout mirrors `OpaquePass.frag:124-129` so existing `DecodeGBuffer` / `lightPass.comp:161` decoders are reusable on the denoiser side without forking.
+
+- RT0: positionWS (rgb) + mesh-id-or-skyflag (a)
+- RT1: normalWS (rgb) + roughness (a)
+- RT2: albedo (rgb) + metalness (a)
+- RT3: motionVec.xy + hitDist (z) + reserved (w)
+
+Motion vector at primary hit = project hit position with current `g_Frame.v_inv * g_Frame.p_original` and stored `prev_v * prev_p` (already maintained as `m_PrevViewMatrix` in `GPUPathTracerPass.h:91`); subtract in screen space.
+
+### Per-pass design
+
+**Signal split** (`GPUPathTracerRayGen.hlsl`, modified): at `bounce == 0` capture GBuffer-equivalent channels and split radiance into `radianceDiffuse` + `radianceSpecular`. Lobe assignment fires at the **primary-hit BSDF importance sample only** (existing `lobeSample < pDiffuse` branch ~line 629); the sampled lobe tags the path immutably for the rest of the path. NEE-at-primary-hit goes to diffuse (specular-NEE refinement is CL-5).
+
+**Temporal accumulator** (CL-2 — `PTDenoiseTemporalPass`): compute shader, motion-vector reprojection, per-lobe history rejection (depth Δ + normal dot + mesh-id), variance estimate (Welford). Pattern ports from `GIDenoise.comp:184-260` swapping the rasterized motion-vector source for the PT-written one.
+
+**Spatial à-trous** (CL-3 — `PTDenoiseAtrousPass`): single compute shader dispatched 5× with stride 1/2/4/8/16, ping-pong textures. SVGF edge-stopping weights (depth, normal, luminance vs √variance). Hit-distance modulates specular blur radius.
+
+**Composition** (CL-4 — folded into `FinalBlendPass` or new `PTComposePass`): re-modulate diffuse by primary-hit albedo, sum diffuse + specular, write to a "denoised display radiance" texture replacing PT's accumulation as tonemap input. **PT accumulation buffer stays untouched** — toggle-OFF bit-identity holds.
+
+### CL split
+
+| CL | Scope | AC | Visible-progress shape |
+|----|-------|----|------|
+| **CL-1** | Raygen splits radiance into diffuse/specular + writes 4 GBuffer-equivalent UAVs at `bounce == 0`. New toggle `Inno::PTDenoise::ENABLED` defaults OFF. AccumBuffer composition unchanged. | AC-5 bypass (bit-identical), AC-6 builds clean. | RenderDoc-visible new UAV outputs at `bounce == 0`; no on-screen change. |
+| **CL-2** | `PTDenoiseTemporalPass` — temporal accumulation + variance estimate, per-lobe history rejection. Composition still uses pre-temporal output when toggle ON. | Per-lobe history textures populated; bypass-OFF baseline matches HEAD. | 60-frame capture: history-on path shows reduced temporal noise on settled frames. |
+| **CL-3** | `PTDenoiseAtrousPass` 5-iteration à-trous spatial filter, variance-guided. | AC-1 partial — visible noise-floor reduction in motion. | Side-by-side capture (toggle on vs off) on UnitTest. |
+| **CL-4** | Composition pass — re-modulate albedo, sum lobes, swap into tonemap input. | All visual ACs land. | Three-scene moving-camera captures. |
+| **CL-5 (optional)** | Specular-NEE-at-primary lobe assignment refinement. | AC-1 polish. | Glossy-floor test capture. |
+
+### CL-1 risks / open questions (resolve in implementation)
+
+- `m_PrevViewMatrix` is declared but design pass did not verify it's updated every frame. CL-1 implementer must check and wire if needed.
+- PathTracerPayload may not carry instanceID; needs adding for the mesh-id history-rejection channel in CL-2. Cheapest: pack into RT0's `.w` channel.
+- `tonemap` reads `GPUPathTracerPass::GetResult()` directly — CL-4 needs to substitute this; not a CL-1 concern but flagged for CL-4 entry.
+- Two compile-time toggles co-exist post-CL-1: `PT_HASH_GRID_CACHE_ENABLED` (TASK-77.1, OFF) and `PT_DENOISE_ENABLED` (this task, OFF). Confirm `#if` nesting is orthogonal — denoiser writes happen at `bounce == 0`, never inside cache-write `bounce >= 1` block.
+
+<!-- SECTION:NOTES:END -->
