@@ -1,27 +1,25 @@
 // shadertype=hlsl
-// PT hash-grid radiance cache — running-mean resolve. Reads the per-cell
-// scratch sums atomically accumulated by GPUPathTracerRayGen during the
-// previous frame's bounce loop, merges them into the persistent
-// ValueBuffer with a sample-count-capped running mean, and clears the
-// scratch entries it consumed so next frame's writes accumulate fresh.
+// PT hash-grid radiance cache — running-mean resolve. For each claimed
+// tile, reads the per-cell atomic-sum scratch deltas accumulated by
+// GPUPathTracerRayGen during the previous frame's bounce loop and merges
+// them into the persistent estimator with a sample-count-capped running
+// mean, then clears the scratch so next frame's writes accumulate fresh.
 //
-// Reference: Capsaicin GI-1.0 gi1.comp UpdateTiles, the MIP-0 block
-// (gi1.comp:2160-2225 — direct lobe; gi1.comp:2183-2223 — the indirect
-// lobe twin under `if (USE_MULTI_BOUNCE)`). The mip-1/mip-2/mip-3
-// box-filter cascade lives in PTHashGridCacheMipCascadeBuild.comp.
-// PurgeTiles (50-frame decay) runs before this pass on the same Compute
-// queue.
+// Resolves both lobe pairs in lockstep:
+//   * Direct: UpdateCellValueBuffer → ValueBuffer,
+//             cap = g_HashGridCacheConstants.max_sample_count
+//             (Capsaicin gi1.h:63, default 16).
+//   * Indirect: UpdateCellValueIndirectBuffer → ValueIndirectBuffer,
+//             cap = PT_HASHGRIDCACHE_MAX_MULTIBOUNCE_SAMPLE_COUNT
+//             (Capsaicin gi1.h:65, default 16).
 //
-// D1-reversal CL B: this kernel now resolves both the direct pair
-// (UpdateCellValueBuffer → ValueBuffer, capped at MAX_SAMPLE_COUNT) and
-// the indirect pair (UpdateCellValueIndirectBuffer → ValueIndirectBuffer,
-// capped at MAX_MULTIBOUNCE_SAMPLE_COUNT). The two pairs are independent
-// running means — Capsaicin keeps separate caps for the two lobes
-// (gi1.h:63 / gi1.h:65) because direct and indirect contributions arrive
-// at different cadences. Indirect scratch is still zeroed each frame
-// (no integrator writer until CL C) so the indirect resolve is a no-op
-// at runtime — the binding/LDS/write paths exist this CL, the data
-// flowing through them lights up in CL C.
+// Reference: Capsaicin GI-1.0 gi1.comp UpdateTiles MIP-0 block
+// (gi1.comp:2160-2180 direct; gi1.comp:2183-2223 indirect twin under
+// `if (USE_MULTI_BOUNCE)`). The two caps are independent knobs because
+// direct and indirect contributions arrive at different cadences. The
+// mip-1/mip-2/mip-3 box-filter cascade lives in
+// PTHashGridCacheMipCascadeBuild.comp. PurgeTiles (50-frame decay) runs
+// before this pass on the same Compute queue.
 //
 // The write site in GPUPathTracerRayGen multiplies radiance by 1e3 and
 // rounds to uint before InterlockedAdd; this kernel divides by the same
@@ -45,25 +43,22 @@ RWStructuredBuffer<uint>  g_HashGridCache_UpdateCellValueBuffer       : register
 [[vk::binding(2, 1)]]
 RWStructuredBuffer<uint2> g_HashGridCache_ValueBuffer                 : register(u2);
 
-// D1-reversal CL B: indirect-lobe scratch + persistent buffers. Same
-// shape as the direct pair — the running-mean block below mirrors the
-// direct-pair block one-for-one against `g_HashGridCache_ValueIndirectBuffer`.
+// Indirect-lobe scratch + persistent buffers. Same shape as the direct
+// pair (Capsaicin gi1.cpp:497-553 multibounce branch); the running-mean
+// block below mirrors the direct-pair block one-for-one against
+// `g_HashGridCache_ValueIndirectBuffer`.
 [[vk::binding(3, 1)]]
 RWStructuredBuffer<uint>  g_HashGridCache_UpdateCellValueIndirectBuffer : register(u3);
 
 [[vk::binding(4, 1)]]
 RWStructuredBuffer<uint2> g_HashGridCache_ValueIndirectBuffer         : register(u4);
 
-// Indirect-lobe sample-count cap mirroring HashGridCacheConstants.h::
-// MAX_MULTIBOUNCE_SAMPLE_COUNT (CL A added this constant; Capsaicin
-// gi1.h:65 default 16). Inlined as a local constant rather than added
-// to the CB struct to keep this CL's blast radius to the two compute
-// kernels and their two pass C++ files; the CB layout, the upload
-// code, and the C++ constants header are not touched. The direct pair
-// uses `g_HashGridCacheConstants.max_sample_count` (Capsaicin gi1.h:63
-// default 16) — the two caps happen to match at the engine defaults
-// but Capsaicin holds them as independent knobs and we honour that
-// separation here.
+// Indirect-lobe sample-count cap. Mirrors HashGridCacheConstants.h::
+// MAX_MULTIBOUNCE_SAMPLE_COUNT (Capsaicin gi1.h:65 default 16). The
+// direct pair uses `g_HashGridCacheConstants.max_sample_count` from the
+// CB (Capsaicin gi1.h:63 default 16). Held as a kernel-local constant
+// rather than promoted to the CB so the two caps stay independent
+// without growing the upload struct.
 static const float PT_HASHGRIDCACHE_MAX_MULTIBOUNCE_SAMPLE_COUNT = 16.0f;
 
 // 64 threads per group → one mip-0 cell per thread, one tile per group at
@@ -145,14 +140,7 @@ void main(uint3 group_id : SV_GroupID, uint group_thread_index : SV_GroupIndex)
     // Indirect lobe — Capsaicin gi1.comp:2183-2223 (the
     // `if (USE_MULTI_BOUNCE)` MIP-0 running-mean block). Same arithmetic
     // as the direct lobe but reads/writes the indirect-pair UAVs and
-    // caps at MAX_MULTIBOUNCE_SAMPLE_COUNT. Capsaicin keeps the two
-    // caps as separate knobs (gi1.h:63 vs gi1.h:65) because direct and
-    // indirect contributions arrive at different cadences; we follow
-    // that separation. CL B note: integrator writers for the indirect
-    // scratch don't land until CL C, so this block reads zero scratch
-    // and writes zero into ValueIndirectBuffer every frame — runtime
-    // no-op, structural delta only (binding count grows, LDS layout
-    // unchanged, kernel emits writes to the new UAV).
+    // caps at MAX_MULTIBOUNCE_SAMPLE_COUNT.
     // -----------------------------------------------------------------
     {
         float4 prev_radiance = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueIndirectBuffer[cell_index]);

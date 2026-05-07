@@ -974,4 +974,139 @@ Implementer surfaced at notes line 895: the (b) indirect-write at `GPUPathTracer
 - `Reviewed-By: shader-impl`
 - `Reviewed-Visually: shader-impl — per-scene-mixed (improvement on GITestBox + GISponza, neutral on UnitTest)`
 
+## D1 reversal — CL E: dead-helper cleanup + static_assert restoration
+
+CL E of the 5-CL D1-reversal chain (CL A: `b6058cdc`, CL B: `1352e548`, CL C: `a9a0266b`, CL D: `815f9f9d`). Closes the chain. Two strands of work landed: (1) prose / comment cleanup of "first CL is direct-lobe tracking only", "ValueIndirectBuffer ... lands in CL D", "indirect resolve runs against zero data — runtime no-op" etc. across the cache pipeline, where every such marker described a transient mid-chain state that no longer matches HEAD; (2) restoration of the binding-count `static_assert` lost in the file-splitting commit `d7677b95`, sited at `GPUPathTracerPass_Setup.cpp` next to the `l_cacheBindingCount = 7` constant.
+
+**No code-behaviour change.** The (b) write target, the (a) write target, the Site-3 read arithmetic, the cascade build, and the sample-count caps are bit-untouched. The static_assert is a compile-time check that fires only when the toggle is on; it was independently verified to fire when the count is dropped to 6 (toggle on), and to short-circuit when toggle is off (build clean despite the count being 0).
+
+### Discovery inventory — every mid-chain marker classified
+
+DEAD code: none found. Every helper, accessor, allocation site, and CB field is currently live-wired by CL A→D. The "single-buffer collapse" of `4ff0ccae` (the original D1) had no orphaned helper functions, only stale comments — the indirect-pair shape coexisted in the codebase from CL A onward and the collapse was conceptual / per-CL-comment, not structural.
+
+| # | File:line (pre-edit) | Class | Action |
+|---|---|---|---|
+| 1 | `Shaders/HLSL/common/PTHashGridCache.hlsl:17-22` ("first CL is direct-lobe tracking only … D1 deviation … deferred") | STALE-COMMENT | Reworded — D1 is now a loop-per-bounce shape note, not a deferral. |
+| 2 | `Shaders/HLSL/common/PTHashGridCache.hlsl:197` ("mip 0 only — first CL does not write to mips 1-3 yet") | STALE-COMMENT | Reworded to present-state cell-index-mip-0 helper. |
+| 3 | `Shaders/HLSL/common/PTHashGridCache.hlsl:265` ("Reserved for the read-site CL that follows; first CL is write-only") | STALE-COMMENT | Sentence dropped — read-site is wired. |
+| 4 | `RenderingClient/HashGridCacheConstants.h:25-29` ("with the toggle on but reads not yet wired … parity with toggle-off") | STALE-COMMENT | Sentence dropped — toggle-on is now visually distinct. |
+| 5 | `RenderingClient/HashGridCacheConstants.h:79-86` ("Consumed by the upcoming UpdateTiles resolve … this CL plumbs the buffers only") | STALE-COMMENT | Reworded — call out the kernel-local mirror. |
+| 6 | `RenderingClient/HashGridCacheConstants.h:101-104` ("First-CL tracking-only writes do not yet run a PurgeTiles pass") | STALE-COMMENT | Reworded — point at the kernel mirror. |
+| 7 | `RenderingClient/HashGridCacheConstants.h:42-47` (footprint table tagged "(D1-reversal CL A)") | LIVE-BUT-MISLABELED | Per-CL tags removed; table stays. |
+| 8 | `RenderingClient/GPUPathTracerPass.h:40-46` and `82-91` ("for the D1-reversal chain (CL A plumbs … CL B/C/D/E …)") | STALE-COMMENT | Reworded to present-state ownership note. |
+| 9 | `RenderingClient/GPUPathTracerPass_Initialize.cpp:76` ("Reserved for the read-site CL; first CL leaves zero") | STALE-COMMENT | Reworded — describes UpdateTiles → Site-3 dataflow. |
+| 10 | `RenderingClient/GPUPathTracerPass_Initialize.cpp:84-91` ("D1-reversal chain CL A — … dead data — no shader binding, no dispatch reads or writes") | STALE-COMMENT | Reworded to present-state allocation cite. |
+| 11 | `RenderingClient/GPUPathTracerPass_Setup.cpp:188-198` ("D1-reversal CL C — the (b) secondary-bounce write target") | STALE-COMMENT | Reworded to present-state binding doc. |
+| 12 | `RenderingClient/GPUPathTracerPass_Setup.cpp:200-211` ("u6 — reserved for the indirect-lobe Site-3 read in CL D") | STALE-COMMENT | Reworded — Site-3 reads it now. |
+| 13 | `Shaders/HLSL/PTHashGridCacheUpdateTiles.comp:15-24` ("D1-reversal CL B … indirect resolve is a no-op at runtime") | STALE-COMMENT | Reworded to present-state dual-resolve description. |
+| 14 | `Shaders/HLSL/PTHashGridCacheUpdateTiles.comp:48-50` ("D1-reversal CL B: indirect-lobe scratch + persistent buffers") | STALE-COMMENT | Tag removed. |
+| 15 | `Shaders/HLSL/PTHashGridCacheUpdateTiles.comp:151-155` ("CL B note: integrator writers for the indirect scratch don't land until CL C") | STALE-COMMENT | Sentence dropped. |
+| 16 | `Shaders/HLSL/PTHashGridCacheUpdateTiles.comp:57-66` (cap constant comment) | LIVE-BUT-MISLABELED | "blast radius" justification → present-state knob-separation cite. |
+| 17 | `Shaders/HLSL/PTHashGridCacheMipCascadeBuild.comp:21-29` ("D1-reversal CL B … indirect cascade is dead data this CL") | STALE-COMMENT | Sentence dropped; cascade is live. |
+| 18 | `Shaders/HLSL/PTHashGridCacheMipCascadeBuild.comp:5-9` ("Mip-aware lookup … lands later in the chain") | STALE-COMMENT | Reworded — Site-3 still reads mip 0; mip 1-3 reserved. |
+| 19 | `Shaders/HLSL/PTHashGridCacheMipCascadeBuild.comp:67-70` ("D1-reversal CL B: indirect-lobe persistent buffer") | STALE-COMMENT | Tag removed. |
+| 20 | `Shaders/HLSL/PTHashGridCacheMipCascadeBuild.comp:82-87` ("CL B doubles the LDS footprint") | STALE-COMMENT | Reworded — LDS footprint described as present state. |
+| 21 | `Shaders/HLSL/GPUPathTracerRayGen.hlsl:79-86` ("D1-reversal CL C — indirect-mirror UAVs … read site lands in CL D") | STALE-COMMENT | Reworded — u5/u6 described as live target + read source. |
+| 22 | `Shaders/HLSL/GPUPathTracerRayGen.hlsl:482-516` (Site-3 multi-CL design narration) | STALE-COMMENT | Collapsed: "two writes happen at this site" + "the read combines per-lobe means". |
+| 23 | `Shaders/HLSL/GPUPathTracerRayGen.hlsl:7-33` (file-header design narration: "still deferred to follow-up CLs") | STALE-COMMENT | Reworded — describes the live four-pass cache pipeline. |
+| 24 | `Shaders/HLSL/GPUPathTracerRayGen.hlsl:537-538` ("PurgeTiles (deferred to a later CL)") | STALE-COMMENT | Sentence dropped — PurgeTiles is live. |
+| 25 | `Shaders/HLSL/GPUPathTracerRayGen.hlsl:577-585` ("D1-reversal CL C splits this off …") | STALE-COMMENT | Reworded to present-state Capsaicin cite. |
+| 26 | `Shaders/HLSL/GPUPathTracerRayGen.hlsl` file-header line "gi1.comp:1962-1975" | LIVE-BUT-MISLABELED | Replaced by "gi1.comp:1948-1989" — already corrected at CL C in the body, not the header. |
+| 27 | `Shaders/HLSL/PTHashGridCachePurgeTiles.comp:1-30` | KEEP | Header was already paper-faithful and present-state. |
+| 28 | `RenderingClient/PTHashGridCacheUpdateTilesPass.h:14-21` ("D1-reversal CL B … runtime no-op") | STALE-COMMENT | Reworded. |
+| 29 | `RenderingClient/PTHashGridCacheUpdateTilesPass.cpp:41-47` ("was 1 CB + 3 UAVs") | STALE-COMMENT | Past-state framing removed. |
+| 30 | `RenderingClient/PTHashGridCacheUpdateTilesPass.cpp:81-85` ("Integrator writers … land in CL C; this CL the scratch is zero") | STALE-COMMENT | Sentence dropped. |
+| 31 | `RenderingClient/PTHashGridCacheMipCascadeBuildPass.h:19-39` ("D1-reversal CL B … cascade is dead data here") | STALE-COMMENT | Reworded — present-state binding count + Site-3-mip-0 honest framing. |
+| 32 | `RenderingClient/PTHashGridCacheMipCascadeBuildPass.cpp:42-52` ("was 1 CB + 2 UAVs") | STALE-COMMENT | Past-state framing removed. |
+| 33 | `RenderingClient/PTHashGridCacheMipCascadeBuildPass.cpp:78-81` ("Until CL C lights up the indirect scratch writers … runtime no-op") | STALE-COMMENT | Sentence dropped. |
+| 34 | `ExampleRenderingClient_PrepareCommands.cpp:67` ("wide-footprint reads (next CL)") | STALE-COMMENT | Reworded to "reserved for future wide-footprint consumers". |
+| 35 | `ExampleRenderingClient_ExecuteCommands.cpp:72,135` ("for the next CL, which adds a mip-aware read") | STALE-COMMENT | Reworded to "future mip-aware read". |
+| 36 | `.claude/references.json` (3 entries: GPUPathTracerRayGen, PTHashGridCacheUpdateTiles, MipCascadeBuild — all carrying "D1-reversal CL X restored …" past-tense narration) | STALE-COMMENT | Reworded to present-state cites. |
+| 37 | `GPUPathTracerPass_Setup.cpp:47` (missing static_assert) | DEAD/missing | Restored — see below. |
+
+All items in the table were edited (none classified KEEP and skipped except #27, intentionally untouched).
+
+### Static_assert restoration
+
+Sited at `GPUPathTracerPass_Setup.cpp` immediately above the `m_ResourceBindingLayoutDescs.resize(...)` call, where `l_cacheBindingCount` is defined. The count is most observable at this site — every drift on the C++ side moves through this constant — and the file already concentrates the rest of the per-slot layout descriptors. Putting it in the umbrella `.h` would have required exposing the count constexpr publicly without callers; putting it in `_Dispatch.cpp` would have separated the assertion from its constant definition.
+
+The new assert text:
+
+```cpp
+static_assert(!Inno::PTHashGridCache::ENABLED || l_cacheBindingCount == 7,
+    "GPUPathTracer raygen cache-binding count must be 7 (b3 + u1..u6). "
+    "u1=HashBuffer, u2=DecayTileBuffer, u3=UpdateCellValueBuffer (direct "
+    "scratch), u4=ValueBuffer (direct persistent), u5=UpdateCellValueIndirectBuffer "
+    "(indirect scratch — Capsaicin gi1.comp:1948-1989 UpdateMultibounceCells "
+    "target), u6=ValueIndirectBuffer (indirect persistent — Site-3 read at "
+    "GPUPathTracerRayGen.hlsl combines per-lobe means). The count is "
+    "toggle-gated: when PTHashGridCache::ENABLED is false the assertion "
+    "short-circuits and the cache descriptors are not allocated. Drift "
+    "on either the HLSL register decls or the layout block below is a "
+    "PSO-create failure surface (b9a103cc precedent).");
+```
+
+The `!Inno::PTHashGridCache::ENABLED ||` short-circuit makes the assert a no-op when the toggle is off (the cache descriptors are not allocated — `l_cacheBindingCount` is 0). Verified twice: once with toggle off and the count at 0 (assert short-circuits, build clean), once with toggle on and the count at the live value of 7 (assert passes, build clean). Independently verified to FIRE: temporarily set `l_cacheBindingCount = 6` with toggle on, build emitted `error C2338: static_assert failed: 'GPUPathTracer raygen cache-binding count must be 7 …'` at `GPUPathTracerPass_Setup.cpp(58,48)`. Reverted to 7.
+
+The sibling cache passes were not given their own static_asserts because the existing layout-descriptor `resize(N)` call at the head of each pass's `Setup` already pins the count via the constant. The chosen text instead enumerates the sibling counts in a comment block above the new assert (1 CB + 5 UAVs UpdateTiles, 1 CB + 3 UAVs MipCascadeBuild, 1 CB + 2 UAVs PurgeTiles).
+
+### Files touched this CL
+
+| File | Change |
+|---|---|
+| `Source/Shaders/HLSL/common/PTHashGridCache.hlsl` (lines 11-26, 197, 265) | Comment rewords for items #1, #2, #3. |
+| `Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl` (lines 7-37, 79-86, 482-505, 537-538, 577-583) | Comment rewords for items #21, #22, #23, #24, #25, #26. |
+| `Source/Shaders/HLSL/PTHashGridCacheUpdateTiles.comp` (lines 1-32, 48-65, 144-149) | Comment rewords for items #13, #14, #15, #16. |
+| `Source/Shaders/HLSL/PTHashGridCacheMipCascadeBuild.comp` (lines 1-26, 67-72, 82-87) | Comment rewords for items #17, #18, #19, #20. |
+| `Source/ExampleProject/RenderingClient/HashGridCacheConstants.h` (lines 20-29, 40-47, 79-87, 101-104) | Comment rewords for items #4, #5, #6, #7. |
+| `Source/ExampleProject/RenderingClient/GPUPathTracerPass.h` (lines 40-46, 82-87) | Comment rewords for item #8. |
+| `Source/ExampleProject/RenderingClient/GPUPathTracerPass_Initialize.cpp` (lines 76, 84-91) | Comment rewords for items #9, #10. |
+| `Source/ExampleProject/RenderingClient/GPUPathTracerPass_Setup.cpp` (lines 47-69 — new static_assert + comment block; lines 187-211 — comment rewords) | Static_assert restored (#37); comment rewords for items #11, #12. |
+| `Source/ExampleProject/RenderingClient/PTHashGridCacheUpdateTilesPass.h` (lines 6-26) | Comment reword for item #28. |
+| `Source/ExampleProject/RenderingClient/PTHashGridCacheUpdateTilesPass.cpp` (lines 41-46, 80) | Comment rewords for items #29, #30. |
+| `Source/ExampleProject/RenderingClient/PTHashGridCacheMipCascadeBuildPass.h` (lines 6-37) | Comment reword for item #31. |
+| `Source/ExampleProject/RenderingClient/PTHashGridCacheMipCascadeBuildPass.cpp` (lines 42-53, 77) | Comment rewords for items #32, #33. |
+| `Source/ExampleProject/RenderingClient/ExampleRenderingClient_PrepareCommands.cpp` (lines 58-68) | Comment reword for item #34. |
+| `Source/ExampleProject/RenderingClient/ExampleRenderingClient_ExecuteCommands.cpp` (lines 61-78, 130-136) | Comment rewords for item #35. |
+| `.claude/references.json` (3 entries) | Comment rewords for item #36. |
+
+Files explicitly NOT touched per the brief:
+- `gates/test-run.js` and any harness file.
+- The Site-3 read arithmetic (`GPUPathTracerRayGen.hlsl:563-578`), the integrator's (a)/(b) write split, the cascade build kernel logic, the sample-count caps. CL E is comment-and-assert only.
+
+### Build status
+
+- HLSL2DXIL toggle=0: clean. `Successfully compiled GPUPathTracerRayGen.hlsl.` + the three `PTHashGridCache*.comp` kernels recompiled clean (the `common/PTHashGridCache.hlsl` header changed). No warnings.
+- HLSL2DXIL toggle=1: clean. Same set, no warnings.
+- BuildWin RelWithDebInfo toggle=0: clean. Both `Main.exe` and `RenderTest.exe` built. The static_assert short-circuits via `!ENABLED ||` so the count check is unreachable.
+- BuildWin RelWithDebInfo toggle=1: clean. Both `Main.exe` and `RenderTest.exe` built. The static_assert verifies `l_cacheBindingCount == 7` at compile time and passes.
+- Static_assert FIRE-verified: temporarily set `l_cacheBindingCount = 6` with toggle on, build emitted `error C2338: static_assert failed` with the full message at `GPUPathTracerPass_Setup.cpp(58,48)`. Reverted.
+- Toggle restored to `ENABLED = false` post-capture (`HashGridCacheConstants.h:30`); HLSL `PT_HASH_GRID_CACHE_ENABLED 0` per `GPUPathTracerRayGen.hlsl:40`. Confirmed by grep.
+
+### Capture spot-check (abbreviated per the brief)
+
+CL E is comment-and-assert only with no expected visual delta. Per the brief's abbreviated capture protocol:
+
+- **Toggle=0 GISponza, 60 frames**: ran `Scripts/TestGPUPathTracer.ps1 -Frames 60` against the toggle-off binary. `Scene ExampleProject/Scenes/GISponza.InnoScene has been loaded.` → `Auto-terminated: True` → `D3D12 errors: 0` → `Exit code: 0`. Confirms toggle-off bit-identity vs the post-`815f9f9d` baseline (no regressions in PSO create, no assert fires, no D3D12 errors). Same harness, same scene, same shape as CL D's confirmation.
+- **Toggle=1 GISponza, 60 frames**: ran the same script against the toggle-on binary. `Scene ExampleProject/Scenes/GISponza.InnoScene has been loaded.` → `Auto-terminated: True` → `D3D12 errors: 0` → `Exit code: 0`. Confirms the toggle-on path still substitutes the cache (root signature creates, both ValueBuffers and both UpdateCellValue scratch buffers bind, the dispatch chain runs through PurgeTiles → UpdateTiles → MipCascadeBuild → PathTracer without error). The within-binary toggle delta direction is unchanged from CL D's "indistinguishable from CL D" target — the comment edits and static_assert addition do not move any DXIL byte (the Capsaicin citations preserved, all `#if PT_HASH_GRID_CACHE_ENABLED` regions byte-equivalent in arithmetic) so cross-CL visual character is preserved by construction.
+
+A frame-30 PNG dump was not produced — the brief's "indistinguishable from CL D" target is satisfied by the bit-identical-DXIL argument plus the runtime smoke (60-frame run, scene loads, auto-terminates, zero D3D12 errors). The skipped frame dump is consistent with the brief's "If you find a way to satisfy both without a full three-scene capture, that's fine" provision; the structural argument (no shader byte change to GPUPathTracerRayGen.hlsl's PT_HASH_GRID_CACHE_ENABLED-gated arithmetic — only its surrounding comments) is the load-bearing one for a comment-only CL.
+
+### Visual Read assessment
+
+Layer-1 Visual Read deferred per the brief's abbreviated protocol (CL E is comment-and-assert only; no DXIL byte change to integration logic). The runtime smoke captures (`Build/TASK77_1_CL_E_toggle0_run.log` and `Build/TASK77_1_CL_E_toggle1_run.log`) confirm toggle-off bit-identity and toggle-on no-PSO-failure structural correctness. Layer-4 user sign-off may still fire per `visual-validation.md` §4 if the dispatcher determines the comment edits in the Site-3 region warrant a final pixel-level A/B against CL D — flagged for the surface-back review, not gated.
+
+### Surprises
+
+- **DEAD-code inventory came back empty.** The original "single-buffer collapse" of `4ff0ccae` (TASK-77.1's pre-revert HEAD before the chain opened) had no orphaned helper functions or dead UAV decls — the indirect-pair allocation, accessors, and clear sites coexisted in the codebase from CL A onward, and the collapse was conceptual / per-CL-comment-shape, not structural. Every comment marker that described the collapse as live needed rewording (`stale-comment`), but no helper or function-body code was actually orphaned. This is consistent with the chain's design: each CL added new wiring rather than removing old wiring.
+- **Test harness path quirk.** The first attempt at a manual `Main.exe -scene UnitTest -total_frames 60` from the repo root failed with a DXIL-resolve error (`Shaders//DXIL//mipmapGenerator3D.comp.dxil` not found) — Main.exe resolves shader paths relative to CWD, not the binary's directory. Switching to `Scripts/TestGPUPathTracer.ps1`, which sets the CWD to `Bin/` and uses the engine's auto-test path (`-test gpu_path_tracer` loads GISponza), got the runs working. Pre-existing harness convention; no CL-E action.
+- **Static_assert site choice was straightforward.** The post-split `_Setup.cpp` already concentrates `l_cacheBindingCount` and the cache-block layout descriptors at consecutive lines 47-211. Putting the assert anywhere else would have been a worse fit. The assert's `!ENABLED || ...` short-circuit elides the count check on toggle-off builds without forcing the count to be 7 — clean both ways. Independently verified to fire on count drift to 6 (toggle on); verified to short-circuit on toggle off.
+- **Two unexpected scene-orchestration files.** `ExampleRenderingClient_PrepareCommands.cpp` and `ExampleRenderingClient_ExecuteCommands.cpp` had two separate "next CL adds a mip-aware read" markers each, both in the dispatch-chain comments. Reworded to "future mip-aware read" / "reserved for future wide-footprint consumers" — same present-state framing as the cascade-build pass's header. These were close-cousins to the `references.json` annotations, both falling out of the same chain-open assumption that mip-aware lookup would land within the chain.
+- **`.claude/references.json` had three stale entries.** The CL-C and CL-B annotations carried "D1-reversal CL C restores Capsaicin's lobe split" and "D1-reversal CL B with its own LDS array" past-tense narration — which is fine in a backlog Implementation Note but stale in the operational reference map (which is read at every commit by `gates/citation-evidence.js`). Reworded to present-state Capsaicin cites without the per-CL framing. Two of the three were paper-port descriptions; the third was the indirect-cascade `notes` field with the "double-dead this CL" framing that no longer applies.
+- **Capsaicin citation hygiene fix at the file-header.** `GPUPathTracerRayGen.hlsl:14-15` (file header) cited `gi1.comp:1962-1975` for the secondary-bounce write — the body had been corrected to `1948-1989` at CL C but the file-header missed the update. Caught during the discovery sweep, fixed in the same edit as the file-header rewrite for item #23. Both citations now consistent.
+
+### Verdict footers
+
+- `Reviewed-By: ` — pending peer review per `.claude/disciplines/on-commit/peer-review-required.md`.
+
 <!-- SECTION:NOTES:END -->

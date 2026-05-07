@@ -44,8 +44,28 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	// is scrapped.
 	m_RayTracingRenderPassComp->m_OnResize = [this]() { OnResize(); };
 
+	// Raygen binding-count invariant. The HLSL register declarations in
+	// GPUPathTracerRayGen.hlsl (b3 + u1..u6 inside the
+	// PT_HASH_GRID_CACHE_ENABLED branch) and the cache-block descriptor
+	// entries below must move in lockstep — a count drift on either side
+	// produces a silent root-signature / DXIL mismatch (b9a103cc PSO-failure
+	// precedent). The sibling cache passes hold their own counts:
+	// PTHashGridCacheUpdateTilesPass = 1 CB + 5 UAVs,
+	// PTHashGridCacheMipCascadeBuildPass = 1 CB + 3 UAVs,
+	// PTHashGridCachePurgeTilesPass = 1 CB + 2 UAVs.
 	constexpr size_t l_baseBindingCount  = 12;
 	constexpr size_t l_cacheBindingCount = Inno::PTHashGridCache::ENABLED ? 7 : 0;
+	static_assert(!Inno::PTHashGridCache::ENABLED || l_cacheBindingCount == 7,
+		"GPUPathTracer raygen cache-binding count must be 7 (b3 + u1..u6). "
+		"u1=HashBuffer, u2=DecayTileBuffer, u3=UpdateCellValueBuffer (direct "
+		"scratch), u4=ValueBuffer (direct persistent), u5=UpdateCellValueIndirectBuffer "
+		"(indirect scratch — Capsaicin gi1.comp:1948-1989 UpdateMultibounceCells "
+		"target), u6=ValueIndirectBuffer (indirect persistent — Site-3 read at "
+		"GPUPathTracerRayGen.hlsl combines per-lobe means). The count is "
+		"toggle-gated: when PTHashGridCache::ENABLED is false the assertion "
+		"short-circuits and the cache descriptors are not allocated. Drift "
+		"on either the HLSL register decls or the layout block below is a "
+		"PSO-create failure surface (b9a103cc precedent).");
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(l_baseBindingCount + l_cacheBindingCount);
 
 	// b0 - PerFrameCB (set 0, binding 0)
@@ -184,12 +204,10 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_ResourceAccessibility  = Accessibility::ReadWrite;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_ShaderStage            = m_ShaderStage;
 
-		// u5 - UpdateCellValueIndirectBuffer (set 2, binding 5, ReadWrite UAV).
-		// D1-reversal CL C — the (b) secondary-bounce write target. Capsaicin
-		// gi1.comp:1948-1989 UpdateMultibounceCells writes the BRDF/pdf-
-		// modulated tertiary-cell mean into the previous vertex's *indirect*
-		// scratch; the integrator's (b) write redirects here from
-		// UpdateCellValueBuffer this CL.
+		// u5 - UpdateCellValueIndirectBuffer (set 2, binding 5, ReadWrite UAV) —
+		// indirect-scratch target for the integrator's (b) secondary-bounce
+		// write. Capsaicin gi1.comp:1948-1989 (UpdateMultibounceCells) is the
+		// canonical paper-port site.
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_GPUResourceType        = GPUResourceType::Buffer;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_DescriptorSetIndex      = 2;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_DescriptorIndex        = 5;
@@ -198,11 +216,9 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_ShaderStage            = m_ShaderStage;
 
 		// u6 - ValueIndirectBuffer (set 2, binding 6, ReadWrite UAV) —
-		// reserved for the indirect-lobe Site-3 read in CL D. Slot is bound
-		// this CL so the root signature width is stable across CL C and CL D
-		// (the b9a103cc PSO-failure precedent — descriptor-table growth is
-		// the load-bearing failure surface). No HLSL read references this
-		// CL; only the binding declaration in GPUPathTracerRayGen.hlsl.
+		// indirect-lobe persistent estimator. Site-3 read at
+		// GPUPathTracerRayGen.hlsl reads this alongside u4 (ValueBuffer) and
+		// sums the per-lobe means before the cache substitution.
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_GPUResourceType        = GPUResourceType::Buffer;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_DescriptorSetIndex      = 2;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_DescriptorIndex        = 6;

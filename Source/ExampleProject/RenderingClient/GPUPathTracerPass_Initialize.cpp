@@ -73,7 +73,8 @@ bool GPUPathTracerPass::Initialize()
 		l_bufService->Initialize(m_HashGridCache_UpdateCellValueBuffer);
 
 		// uint2 per cell: packHalf4 of (radiance_total.rgb, sample_count).
-		// Reserved for the read-site CL; first CL leaves zero.
+		// Resolved each frame by PTHashGridCacheUpdateTilesPass; read at
+		// Site-3 in GPUPathTracerRayGen.hlsl as the direct-lobe estimator.
 		m_HashGridCache_ValueBuffer = l_bufService->Add("PTHashGridCache_ValueBuffer");
 		m_HashGridCache_ValueBuffer->m_ElementCount     = NUM_CELLS;
 		m_HashGridCache_ValueBuffer->m_ElementSize      = sizeof(uint32_t) * 2u;
@@ -81,14 +82,14 @@ bool GPUPathTracerPass::Initialize()
 		m_HashGridCache_ValueBuffer->m_GPUAccessibility = Accessibility::ReadWrite;
 		l_bufService->Initialize(m_HashGridCache_ValueBuffer);
 
-		// D1-reversal chain CL A — indirect-mirror pair. Allocation shape
-		// mirrors the direct pair above (Capsaicin gi1.cpp:497-553 — the
-		// `gi1_use_multibounce` branch creates ValueIndirectBuffer as
-		// uint2[num_cells] and UpdateCellValueIndirectBuffer as uint[num_cells*4]
-		// alongside the unconditional direct pair). This CL allocates and
-		// clears the buffers; they are dead data — no shader binding, no
-		// dispatch reads or writes. The integrator + UpdateTiles wiring
-		// lands in subsequent CLs of the chain.
+		// Indirect-mirror pair. Allocation shape mirrors the direct pair
+		// above (Capsaicin gi1.cpp:497-553 — the `gi1_use_multibounce`
+		// branch creates ValueIndirectBuffer as uint2[num_cells] and
+		// UpdateCellValueIndirectBuffer as uint[num_cells*4] alongside the
+		// unconditional direct pair). The integrator's (b) secondary-bounce
+		// write targets the indirect scratch; UpdateTilesPass resolves it
+		// into the indirect estimator with its own running-mean cap; Site-3
+		// read combines the two lobes' per-sample means.
 		m_HashGridCache_UpdateCellValueIndirectBuffer = l_bufService->Add("PTHashGridCache_UpdateCellValueIndirectBuffer");
 		m_HashGridCache_UpdateCellValueIndirectBuffer->m_ElementCount     = NUM_CELLS * 4u;
 		m_HashGridCache_UpdateCellValueIndirectBuffer->m_ElementSize      = sizeof(uint32_t);

@@ -65,17 +65,16 @@ namespace Inno
 		// tracer (so InsertCell can claim freed slots). UpdateTiles must
 		// complete before MipCascadeBuild (the cascade reads the mip-0
 		// values UpdateTiles just resolved). MipCascadeBuild is a UAV
-		// writer of ValueBuffer at mips 1-3; the path tracer does not
-		// read those mip-N cells this CL (Site-3 read still uses mip 0)
-		// so the Wait on UpdateTiles before the path tracer is sufficient
-		// for correctness — but we still serialise MipCascadeBuild against
-		// the path tracer to keep the chain order intact for the next CL,
-		// which adds a mip-aware read at the same site. All four run on
-		// the Compute queue, so same-queue Signal/Wait pairs are
-		// sufficient — no graphics-side fence. Toggle-off keeps the entire
-		// block elided at compile time (each pass stays Terminated, the
-		// inner gates short-circuit regardless), preserving the bit-
-		// identical bypass.
+		// writer of both ValueBuffers at mips 1-3; the path tracer's
+		// Site-3 read consumes mip 0 only, so the Wait on UpdateTiles
+		// before the path tracer is sufficient for correctness — but we
+		// still serialise MipCascadeBuild against the path tracer to keep
+		// the chain order intact for any future mip-aware read at the
+		// same site. All four run on the Compute queue, so same-queue
+		// Signal/Wait pairs are sufficient — no graphics-side fence.
+		// Toggle-off keeps the entire block elided at compile time (each
+		// pass stays Terminated, the inner gates short-circuit
+		// regardless), preserving the bit-identical bypass.
 		if constexpr (Inno::PTHashGridCache::ENABLED)
 		{
 			if (m_GPUPathTracerActive
@@ -131,10 +130,10 @@ namespace Inno
 			// Compute CL: ray tracing dispatch (also transitions AccumBuffer to ReadOnly at end).
 			// Wait on MipCascadeBuild — last link in the cache chain — so this
 			// frame's reads see both the resolved running mean (mip 0) and
-			// the freshly-aggregated coarser cells (mips 1-3, written but
-			// unread this CL; the next CL adds mip-aware Site-3 lookup).
-			// The same-queue Signal/Wait chain transitively covers the
-			// upstream PurgeTiles + UpdateTiles waits.
+			// the freshly-aggregated coarser cells (mips 1-3, currently
+			// unread; reserved for a future mip-aware Site-3 lookup). The
+			// same-queue Signal/Wait chain transitively covers the upstream
+			// PurgeTiles + UpdateTiles waits.
 			if constexpr (Inno::PTHashGridCache::ENABLED)
 				WaitIfActive(PTHashGridCacheMipCascadeBuildPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
 			auto l_computeCL = GPUPathTracerPass::Get().GetCommandListComp(GPUEngineType::Compute);

@@ -19,14 +19,11 @@ namespace PTHashGridCache
 {
     // Master compile-time toggle. When false, GPUPathTracerPass does not
     // allocate or bind cache buffers, and the corresponding #if-gated cache
-    // code in GPUPathTracerRayGen.hlsl strips out at compile time. Output is
-    // bit-identical to the cache-off baseline at HEAD 10d7b158.
+    // code in GPUPathTracerRayGen.hlsl strips out at compile time. Output
+    // matches the cache-off path tracer bit-identically.
     //
-    // The HLSL side owns the #define PT_HASH_GRID_CACHE_ENABLED in
-    // GPUPathTracerRayGen.hlsl; both must hold the same value. With the
-    // toggle on but reads not yet wired, the cache is written-only — visual
-    // output remains parity with toggle-off, validating the plumbing before
-    // read sites land in subsequent CLs.
+    // The HLSL side mirrors this in GPUPathTracerRayGen.hlsl
+    // (`#define PT_HASH_GRID_CACHE_ENABLED`); both must hold the same value.
     static constexpr bool ENABLED = false;
 
     // 2^13 buckets × 2^4 tiles/bucket × 8×8 cells/tile (mip0) ≈ 8.4M cells at
@@ -38,14 +35,13 @@ namespace PTHashGridCache
     // hash modulo cheap.
     //
     // Buffer footprint at this sizing (mip0 cells = num_buckets * num_tiles_per_bucket * size_tile_mip0^2):
-    //   ValueBuffer                  (uint2  =  8B/cell) ≈  88 MB
-    //   ValueIndirectBuffer          (uint2  =  8B/cell) ≈  88 MB  (D1-reversal CL A — multibounce indirect mirror)
-    //   UpdateCellValueBuffer        (4*uint = 16B/cell) ≈ 176 MB
-    //   UpdateCellValueIndirectBuffer(4*uint = 16B/cell) ≈ 176 MB  (D1-reversal CL A — multibounce indirect scratch)
-    //   HashBuffer / DecayBuf        (uint per tile, 131072 tiles each) ≈ 1 MB total
-    // Total ≈ 529 MB with the indirect mirrors (D1-reversal chain restoring Capsaicin's
-    // separate direct/indirect ValueBuffer scheme; Capsaicin gi1.cpp:497-553 conditional
-    // on options.gi1_use_multibounce).
+    //   ValueBuffer                   (uint2  =  8B/cell) ≈  88 MB
+    //   ValueIndirectBuffer           (uint2  =  8B/cell) ≈  88 MB
+    //   UpdateCellValueBuffer         (4*uint = 16B/cell) ≈ 176 MB
+    //   UpdateCellValueIndirectBuffer (4*uint = 16B/cell) ≈ 176 MB
+    //   HashBuffer / DecayBuf         (uint per tile, 131072 tiles each) ≈ 1 MB total
+    // Total ≈ 529 MB. The indirect pair mirrors Capsaicin's
+    // `gi1_use_multibounce` branch (gi1.cpp:497-553).
     static constexpr uint32_t NUM_BUCKETS_LOG2          = 13u;
     static constexpr uint32_t NUM_BUCKETS               = 1u << NUM_BUCKETS_LOG2;
     static constexpr uint32_t NUM_TILES_PER_BUCKET_LOG2 = 4u;
@@ -81,9 +77,9 @@ namespace PTHashGridCache
     // default 16). Indirect-lobe contributions arrive at a different cadence
     // from the direct-lobe writes that feed the primary ValueBuffer, so the
     // cap is held as its own knob even though Capsaicin's default value
-    // happens to match MAX_SAMPLE_COUNT. Consumed by the upcoming UpdateTiles
-    // resolve of UpdateCellValueIndirectBuffer → ValueIndirectBuffer; this
-    // CL plumbs the buffers only.
+    // happens to match MAX_SAMPLE_COUNT. Consumed by the indirect arm of
+    // PTHashGridCacheUpdateTiles.comp; mirrored there as a kernel-local
+    // constant `PT_HASHGRIDCACHE_MAX_MULTIBOUNCE_SAMPLE_COUNT`.
     static constexpr float MAX_MULTIBOUNCE_SAMPLE_COUNT = 16.0f;
 
     // Min cell size floor in metres (Capsaicin gi1.h:59 — default 0.1m).
@@ -99,9 +95,9 @@ namespace PTHashGridCache
     static constexpr float CELL_SIZE_KNOB = 32.0f;
 
     // Number of frames before an unused tile is evicted (Capsaicin
-    // hash_grid_cache.hlsl:29 — kHashGridCache_TileDecay 50). First-CL
-    // tracking-only writes do not yet run a PurgeTiles pass; the constant
-    // is mirrored here so the eventual purge pass agrees with the shader.
+    // hash_grid_cache.hlsl:29 — kHashGridCache_TileDecay 50). Mirrored
+    // in PTHashGridCachePurgeTiles.comp as `PT_HASHGRIDCACHE_TILE_DECAY`;
+    // both must agree.
     static constexpr uint32_t TILE_DECAY_FRAMES = 50u;
 
     // Constant-buffer layout shared with the shader (CPU-side struct mirrored

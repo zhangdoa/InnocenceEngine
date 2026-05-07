@@ -6,28 +6,34 @@
 
 // Master toggle for the secondary-vertex hash-grid radiance cache. When 0,
 // the cache code below strips at compile time and this shader produces the
-// same DXIL/SPIR-V as the cache-off baseline at HEAD 10d7b158 (the bypass
-// invariant — visual-validation.md §3b). The C++ side mirrors this in
+// same DXIL/SPIR-V as the cache-off path tracer (the bypass invariant —
+// visual-validation.md §3b). The C++ side mirrors this in
 // Source/ExampleProject/RenderingClient/HashGridCacheConstants.h::ENABLED;
 // both must agree.
 //
-// Toggle-on adds the Site-3 read pattern (Capsaicin's glossy-reflections
-// shape — gi1.comp:2865-2900) plus a Site-2 / UpdateMultibounceCells-style
-// secondary-bounce write (gi1.comp:1962-1975). At every secondary+ vertex
-// we (1) atomic-add this-vertex direct light into the cell's scratch slot,
-// (2) read the resolved running mean from ValueBuffer, and if it carries
-// samples (3) atomic-add the BRDF/pdf-modulated mean back into the previous
-// vertex's cell — the indirect-lobe feedback that turns the cache from a
-// direct-only sketch into a full outgoing-radiance estimator — before
-// terminating the path with throughput * (radianceSum / sampleCount).
+// Toggle-on adds the Site-3 read pattern (Capsaicin gi1.comp:2865-2900,
+// glossy-reflections shape) plus a Site-2 / UpdateMultibounceCells write
+// (gi1.comp:1948-1989). At every secondary+ vertex we
+//   (1) atomic-add this-vertex direct light into UpdateCellValueBuffer
+//       (the direct-lobe scratch),
+//   (2) read the resolved running means from ValueBuffer (direct) and
+//       ValueIndirectBuffer (indirect), and if either lobe carries
+//       samples
+//   (3) atomic-add the BRDF/pdf-modulated combined mean back into the
+//       previous vertex's UpdateCellValueIndirectBuffer slot, then
+//   (4) terminate with throughput * (directMean + indirectMean).
 //
-// The companion PTHashGridCacheUpdateTilesPass runs each frame BEFORE this
-// raygen and resolves the previous frame's atomic scratch deltas
-// (UpdateCellValueBuffer) into ValueBuffer with a 16-sample-cap running
-// mean (Capsaicin gi1.comp:2160-2225 mip-0 block). Reads here therefore
-// see a stable, capped estimator — not the unbounded scratch sum the
-// previous CL was forced to sample. The mip-cascade (mip 1-3 box filter)
-// and PurgeTiles (50-frame decay) are still deferred to follow-up CLs.
+// PTHashGridCacheUpdateTilesPass runs each frame BEFORE this raygen and
+// resolves both lobes' atomic scratch deltas into the persistent
+// estimators with sample-count-capped running means (Capsaicin
+// gi1.comp:2160-2180 direct + gi1.comp:2183-2223 indirect). Reads here
+// see stable, capped estimators. PTHashGridCacheMipCascadeBuildPass
+// follows UpdateTiles and aggregates 4-way sums into mip 1-3 of every
+// claimed tile (Capsaicin gi1.comp:2227-2347); the Site-3 read here
+// currently consumes mip 0 only, mip 1-3 are reserved for downstream
+// consumers. PTHashGridCachePurgeTilesPass runs first each frame and
+// evicts tiles whose decay marker has fallen more than 50 frames behind
+// the current frame counter.
 //
 // Reference: Capsaicin GI-1.0 hash_grid_cache.hlsl + gi1.comp secondary-
 // vertex sites. Full audit at .alignments/TASK-77.1-rework-paper-port-audit.md.
@@ -76,13 +82,10 @@ RWStructuredBuffer<uint>  g_HashGridCache_UpdateCellValueBuffer : register(u3);
 [[vk::binding(4, 2)]]
 RWStructuredBuffer<uint2> g_HashGridCache_ValueBuffer           : register(u4);
 
-// D1-reversal CL C — indirect-mirror UAVs. The (b) secondary-bounce write
-// below now targets UpdateCellValueIndirectBuffer (mirroring Capsaicin
-// gi1.comp:1948-1989 UpdateMultibounceCells, which writes the BRDF/pdf-
-// modulated tertiary-cell mean into the secondary cell's *indirect* scratch,
-// not the direct one). ValueIndirectBuffer is bound this CL so its UAV slot
-// is reserved at the root signature; the read site that actually consumes it
-// lands in CL D — no read references in this file yet.
+// Indirect-mirror UAVs (Capsaicin gi1.comp:1948-1989 UpdateMultibounceCells).
+// u5 carries the (b) secondary-bounce write target — the BRDF/pdf-modulated
+// next-vertex mean atomic-added into the previous vertex's indirect scratch.
+// u6 is the resolved indirect-lobe estimator read at Site-3 alongside u4.
 [[vk::binding(5, 2)]]
 RWStructuredBuffer<uint>  g_HashGridCache_UpdateCellValueIndirectBuffer : register(u5);
 
@@ -476,44 +479,32 @@ void RayGenShader()
         }
 
 #if PT_HASH_GRID_CACHE_ENABLED
-        // Site-3 read + secondary-vertex write at every secondary+ vertex.
-        // Bounce 0 is never cached: primary visibility is always re-traced
-        // fresh per the D1 audit note. The write populates UpdateCellValueBuffer
-        // (per-frame atomic scratch — UpdateTiles consumes and clears it
-        // each frame); the read replaces the remaining integration tail with
-        // the cell's mean radiance scaled by the current path throughput —
-        // Capsaicin's glossy-reflections pattern adapted to a loop-per-
-        // bounce raygen (gi1.comp:2865-2900).
+        // Site-3 read + secondary-vertex writes at every secondary+ vertex.
+        // Bounce 0 is never cached — primary visibility is always re-traced
+        // fresh (audit D1: cache acts as a terminator only at indirect
+        // hits). Capsaicin's glossy-reflections pattern adapted to a
+        // loop-per-bounce raygen (gi1.comp:2865-2900).
         //
         // Two writes happen at this site:
         //   (a) THIS-vertex direct light (vertexDirectLighting) into the
-        //       cell at this vertex — the analogue of Capsaicin PopulateCells
-        //       (gi1.comp:2087-2095) writing payload.lighting to the
-        //       secondary cell's UpdateCellValueBuffer.
-        //   (b) PREVIOUS-vertex secondary-bounce contribution: when the
-        //       cell at this vertex carries a usable mean, write
-        //       `bsdf_over_pdf_at_(N-1) * mean` into the cell at the
-        //       previous vertex's *indirect* scratch
-        //       (UpdateCellValueIndirectBuffer). This mirrors Capsaicin's
-        //       UpdateMultibounceCells (gi1.comp:1948-1989) which folds the
-        //       tertiary cell's filtered direct radiance into the secondary
-        //       cell's *indirect* slot weighted by the bounce-1→2 BRDF/pdf.
-        //       D1-reversal CL C restores the lobe split: the (a) direct
-        //       write and (b) indirect write target separate scratch buffers
-        //       so that UpdateTiles' direct/indirect running-mean blocks
-        //       consume independent lobes (the Site-3 read in CL D sums them).
+        //       direct-lobe scratch UpdateCellValueBuffer at this cell —
+        //       Capsaicin PopulateCells equivalent (gi1.comp:2087-2095).
+        //   (b) PREVIOUS-vertex secondary-bounce contribution: when this
+        //       cell carries a usable mean, atomic-add
+        //       `bsdf_over_pdf_at_(N-1) * (directMean + indirectMean)`
+        //       into the previous vertex's *indirect* scratch
+        //       (UpdateCellValueIndirectBuffer) — Capsaicin
+        //       UpdateMultibounceCells (gi1.comp:1948-1989).
         //
-        // D1-reversal CL D restores the lobe sum at the Site-3 read: the
-        // direct lobe (ValueBuffer) and the indirect lobe (ValueIndirectBuffer)
-        // are read independently, each normalised by its own .w running-mean
-        // sample count, then summed before the cache substitution. Mirrors
-        // Capsaicin gi1.comp:2891-2896 (TraceReflectionsHandleHit) and the
-        // identical sum-of-means form at gi1.comp:2377-2383 (ResolveCells)
-        // — both lobes carry their own sample counts via independent
-        // UpdateTiles running-mean blocks (gi1.comp:2160-2180 direct +
-        // gi1.comp:2183-2223 indirect). The substitution gate becomes
-        // "either lobe has samples"; CL C's mid-chain darkening (indirect
-        // contribution dropped on the floor) reverses here.
+        // The read combines the direct and indirect lobes independently
+        // — each normalised by its own .w running-mean sample count, then
+        // summed before the cache substitution. Mirrors Capsaicin
+        // gi1.comp:2891-2896 (TraceReflectionsHandleHit) and the identical
+        // sum-of-means form at gi1.comp:2377-2383 (ResolveCells). The two
+        // lobes carry their own sample counts via independent UpdateTiles
+        // running-mean blocks (gi1.comp:2160-2180 direct + gi1.comp:
+        // 2183-2223 indirect). Substitution gate is "either lobe has
+        // samples"; per-lobe ternaries protect against 0/0.
         bool cacheTerminated = false;
         if (bounce >= 1u)
         {
@@ -531,8 +522,8 @@ void RayGenShader()
 
             if (cell_index != kPTHashGridCache_InvalidId)
             {
-                // Bump tile-decay timestamp so PurgeTiles (deferred to a later
-                // CL) keeps the tile alive while it is being touched.
+                // Bump tile-decay timestamp so PTHashGridCachePurgeTilesPass
+                // keeps the tile alive while it is being touched.
                 uint prev_decay;
                 InterlockedExchange(g_HashGridCache_DecayTileBuffer[tile_index], g_FrameCount, prev_decay);
 
@@ -547,17 +538,16 @@ void RayGenShader()
                 // Read the resolved running means from BOTH lobes. Each is
                 // populated by its own PTHashGridCacheUpdateTiles running-mean
                 // block earlier this frame (direct: gi1.comp:2160-2180;
-                // indirect: gi1.comp:2183-2223 / D1-reversal CL B). The
-                // storage convention is identical (Capsaicin gi1.comp:2165
-                // — .rgb stores radiance × sample_count, .w stores
-                // sample_count) so each lobe's per-sample mean is recovered
-                // by dividing .rgb by .w. The two .w channels are
-                // independent (each lobe accumulates its own samples at its
-                // own cap — direct caps at g_HashGridCacheConstants.max_sample_count,
-                // indirect at MAX_MULTIBOUNCE_SAMPLE_COUNT == 16 — Capsaicin
-                // gi1.h:63 vs gi1.h:65) so they cannot share a normaliser.
-                // First frame after a cache clear sees both .w == 0 and the
-                // outer gate falls through to BRDF sampling.
+                // indirect: gi1.comp:2183-2223). Storage convention is
+                // identical (.rgb stores radiance × sample_count, .w stores
+                // sample_count — Capsaicin gi1.comp:2165) so each lobe's
+                // per-sample mean is .rgb / .w. The two .w channels are
+                // independent — direct caps at
+                // g_HashGridCacheConstants.max_sample_count, indirect at
+                // MAX_MULTIBOUNCE_SAMPLE_COUNT == 16 (Capsaicin gi1.h:63 vs
+                // gi1.h:65) — so they cannot share a normaliser. First
+                // frame after a cache clear sees both .w == 0 and the outer
+                // gate falls through to BSDF sampling.
                 float4 directRadiance   = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueBuffer[cell_index]);
                 float4 indirectRadiance = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueIndirectBuffer[cell_index]);
                 if (directRadiance.w > 0.0f || indirectRadiance.w > 0.0f)
@@ -574,15 +564,12 @@ void RayGenShader()
                     float3 indirectMean = indirectRadiance.w > 0.0f ? indirectRadiance.rgb / indirectRadiance.w : float3(0.0f, 0.0f, 0.0f);
                     float3 mean = directMean + indirectMean;
 
-                    // (b) PREVIOUS-vertex secondary-bounce contribution.
-                    // Mirrors Capsaicin UpdateMultibounceCells (gi1.comp:
-                    // 1948-1989) — the indirect write target is the indirect
-                    // scratch (UpdateCellValueIndirectBuffer), NOT the direct
-                    // scratch. D1-reversal CL C splits this off from
-                    // UpdateCellValueBuffer so that UpdateTiles' direct and
-                    // indirect running-mean blocks consume their own lobe's
-                    // scratch independently — the Site-3 read in CL D will
-                    // sum the two estimators back together.
+                    // (b) PREVIOUS-vertex secondary-bounce contribution
+                    // (Capsaicin UpdateMultibounceCells, gi1.comp:1948-1989).
+                    // Atomic-adds the BRDF/pdf-modulated combined mean into
+                    // the previous vertex's *indirect* scratch slot (the
+                    // canonical Capsaicin target — direct lobe carries
+                    // populate-cells writes only).
                     //
                     // Skipped at bounce==1 (no prior secondary vertex) and
                     // when the prior iteration could not claim a cell.

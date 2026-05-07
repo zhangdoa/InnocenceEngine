@@ -3,30 +3,24 @@
 // PTHashGridCacheUpdateTiles resolves the per-cell scratch sums into the
 // persistent ValueBuffer / ValueIndirectBuffer at mip 0, this pass walks
 // every claimed tile and aggregates 2x2 children at each level into one
-// mip-(L+1) parent: mip 0 -> mip 1, mip 1 -> mip 2, mip 2 -> mip 3.
-// Mip-aware lookup (the consumer of these coarser cells) lands later in
-// the chain — until then the cascade contents are dead data and the
-// Site-3 read still reads mip 0 directly.
+// mip-(L+1) parent for both lobes in lockstep: mip 0 -> mip 1,
+// mip 1 -> mip 2, mip 2 -> mip 3. Each mip stage runs the 4-way LDS box
+// filter twice (once per lobe), reading and writing the matching LDS
+// array and UAV.
+//
+// The Site-3 read in GPUPathTracerRayGen currently consumes mip 0 only;
+// mip 1-3 are reserved for downstream consumers (denoise-time spatial
+// filter, debug visualisation).
 //
 // Reference: Capsaicin GI-1.0 gi1.comp UpdateTiles (gi1.comp:2227-2347 —
-// the mip-1, mip-2, mip-3 blocks for the direct lobe;
-// gi1.comp:2252-2345 — the `if (USE_MULTI_BOUNCE)` indirect-lobe twin
-// running side-by-side with the direct cascade in the same pass).
-// Capsaicin fuses the cascade into UpdateTiles in a single dispatch with
-// a 2D 8x8 thread group; we run a separate pass so the previous CL's
-// UpdateTiles can stay a focused mip-0 resolve. The aggregation rule,
-// the hash-by-mip cell-index helper, and the storage convention
-// (radiance * sample_count packed in fp16) are paper-faithful.
-//
-// D1-reversal CL B: this kernel now builds the mip cascade for both the
-// direct lobe (ValueBuffer) and the indirect lobe (ValueIndirectBuffer)
-// in lockstep — each mip stage runs the 4-way LDS box filter twice (once
-// per lobe), reading and writing the matching LDS array and UAV. The
-// indirect cascade is dead data this CL because the indirect mip-0 is
-// itself zero (UpdateTiles' indirect scratch has no integrator writer
-// until CL C), so summing four zero children gives zero parents — the
-// runtime delta is zero, the structural delta is the second LDS array
-// + the second UAV bound + the kernel emitting writes to it.
+// mip-1/2/3 direct-lobe blocks; gi1.comp:2252-2345 — the
+// `if (USE_MULTI_BOUNCE)` indirect-lobe twin running side-by-side with
+// the direct cascade in the same fused pass). Capsaicin fuses the
+// cascade into UpdateTiles in a single dispatch with a 2D 8x8 thread
+// group; we run a separate pass so PTHashGridCacheUpdateTiles can stay
+// a focused mip-0 resolve. The aggregation rule, the hash-by-mip
+// cell-index helper, and the storage convention (radiance * sample_count
+// packed in fp16) are paper-faithful.
 //
 // Aggregation rule. ValueBuffer cells store `radiance * sample_count` in
 // fp16 (Capsaicin gi1.comp:2165 — the same convention UpdateTiles
@@ -64,10 +58,10 @@ RWStructuredBuffer<uint>  g_HashGridCache_HashBuffer          : register(u0);
 [[vk::binding(1, 1)]]
 RWStructuredBuffer<uint2> g_HashGridCache_ValueBuffer         : register(u1);
 
-// D1-reversal CL B: indirect-lobe persistent buffer. Read at mip 0 and
-// written at mips 1-3 of every claimed tile, in lockstep with the
-// direct ValueBuffer above. Capsaicin gi1.comp:2252-2345 — the
-// `if (USE_MULTI_BOUNCE)` cascade twin.
+// Indirect-lobe persistent buffer — read at mip 0 and written at mips
+// 1-3 of every claimed tile, in lockstep with the direct ValueBuffer
+// above. Capsaicin gi1.comp:2252-2345 (`if (USE_MULTI_BOUNCE)` cascade
+// twin).
 [[vk::binding(2, 1)]]
 RWStructuredBuffer<uint2> g_HashGridCache_ValueIndirectBuffer : register(u2);
 
@@ -79,12 +73,13 @@ RWStructuredBuffer<uint2> g_HashGridCache_ValueIndirectBuffer : register(u2);
 // the strided neighbour pattern at exactly the same coordinates Capsaicin
 // uses (offsets 1,1 / 2,2 / 4,4 from the cell-owning thread).
 //
-// CL B doubles the LDS footprint: one array per lobe. Capsaicin runs
-// the indirect cascade through the same fused thread group with its own
-// `lds_UpdateTiles_ValueIndirectBuffer` (gi1.comp:2252-2345 reads it at
-// the same offsets the direct cascade reads `lds_UpdateTiles_ValueBuffer`).
-// 8 KB per group at uint2[8][8] × 2 lobes — well under the 32 KB / 48 KB
-// LDS budgets on every shader model the engine targets.
+// One LDS array per lobe — Capsaicin runs the indirect cascade through
+// the same fused thread group with its own
+// `lds_UpdateTiles_ValueIndirectBuffer` (gi1.comp:2252-2345, read at
+// the same offsets the direct cascade reads
+// `lds_UpdateTiles_ValueBuffer`). 8 KB per group at uint2[8][8] × 2
+// lobes — well under the 32 KB / 48 KB LDS budgets on every shader
+// model the engine targets.
 #define PT_HASHGRIDCACHE_MIPBUILD_TILE_W 8u
 groupshared uint2 lds_UpdateTiles_ValueBuffer        [PT_HASHGRIDCACHE_MIPBUILD_TILE_W][PT_HASHGRIDCACHE_MIPBUILD_TILE_W];
 groupshared uint2 lds_UpdateTiles_ValueIndirectBuffer[PT_HASHGRIDCACHE_MIPBUILD_TILE_W][PT_HASHGRIDCACHE_MIPBUILD_TILE_W];

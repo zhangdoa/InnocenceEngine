@@ -39,17 +39,14 @@ bool PTHashGridCacheMipCascadeBuildPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	// 1 CB + 3 UAVs (D1-reversal CL B: was 1 CB + 2 UAVs; the indirect-lobe
-	// ValueIndirectBuffer added at u2, mirroring the direct ValueBuffer
-	// at u1 one-for-one). HashBuffer is read-only here (the early-out
-	// predicate); both ValueBuffers are read at mip 0 and written at mips
-	// 1-3. Bound writable to match the layout declaration shared with
-	// UpdateTiles / the path tracer raygen — every shader sharing the
-	// buffer must agree on the binding access, even if a given pass only
-	// reads one direction. UpdateCellValue scratch is NOT used by the
-	// cascade build (its consumer is UpdateTiles' running-mean merge,
-	// which has already run by the time MipCascadeBuild starts), so only
-	// the persistent Value buffer pair grows the binding list.
+	// 1 CB + 3 UAVs. HashBuffer is read-only here (the early-out predicate);
+	// both ValueBuffers are read at mip 0 and written at mips 1-3. Bound
+	// writable to match the layout declaration shared with UpdateTiles /
+	// the path tracer raygen — every shader sharing the buffer must agree
+	// on the binding access, even if a given pass only reads one direction.
+	// UpdateCellValue scratch is NOT used by the cascade build (its
+	// consumer is UpdateTiles' running-mean merge, which has already run
+	// by the time MipCascadeBuild starts).
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(4);
 
 	// b0 - HashGridCacheCB
@@ -75,10 +72,6 @@ bool PTHashGridCacheMipCascadeBuildPass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage            = ShaderStage::Compute;
 
 	// u2 - ValueIndirectBuffer (indirect lobe — same access shape as u1)
-	// D1-reversal CL B: cascade twin for the indirect lobe. Until CL C
-	// lights up the indirect scratch writers, mip-0 reads come back as
-	// zero so the cascade aggregation produces zero parents — runtime
-	// no-op, structural delta only.
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType        = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex      = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex        = 2;

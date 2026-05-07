@@ -38,10 +38,8 @@ bool PTHashGridCacheUpdateTilesPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	// 1 CB + 5 UAVs (D1-reversal CL B: was 1 CB + 3 UAVs; the indirect
-	// pair UpdateCellValueIndirectBuffer + ValueIndirectBuffer added at
-	// u3 and u4, mirroring the direct-pair shape one-for-one). HashBuffer
-	// is bound writable matching its layout declaration in
+	// 1 CB + 5 UAVs (HashBuffer + direct-pair + indirect-pair). HashBuffer
+	// is bound writable to match its layout declaration in
 	// PTHashGridCache.hlsl (InsertCell uses InterlockedCompareExchange on
 	// it elsewhere); this kernel only reads it, but the binding must
 	// agree across every shader sharing the UAV.
@@ -78,11 +76,6 @@ bool PTHashGridCacheUpdateTilesPass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage            = ShaderStage::Compute;
 
 	// u3 - UpdateCellValueIndirectBuffer (indirect-lobe atomic-sum scratch — read & cleared)
-	// D1-reversal CL B: indirect-pair scratch read-merge-clear mirrors
-	// the direct-pair u1 above. Integrator writers for the indirect
-	// scratch land in CL C; this CL the scratch is zero every frame so
-	// the resolve is a runtime no-op (still emits the LDS load + merge +
-	// store + clear, just on zero data — structural delta only).
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType        = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex      = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex        = 3;

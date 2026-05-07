@@ -61,10 +61,11 @@ namespace Inno
 			// PurgeTiles frees 50-frame-stale slots so UpdateTiles' HashBuffer
 			// == 0 early-out skips them and the path tracer's InsertCell can
 			// re-claim them this frame. UpdateTiles resolves last frame's
-			// scratch deltas into ValueBuffer at mip 0 so the path tracer
-			// reads the freshest running mean; MipCascadeBuild then aggregates
-			// 2x2 children at each level into mips 1-3 so wide-footprint
-			// reads (next CL) can pick a level matching their footprint. Each
+			// scratch deltas into ValueBuffer / ValueIndirectBuffer at mip 0
+			// so the path tracer reads the freshest running means;
+			// MipCascadeBuild then aggregates 2x2 children at each level into
+			// mips 1-3 of both lobes (mip 0 is what Site-3 currently reads;
+			// mip 1-3 are reserved for future wide-footprint consumers). Each
 			// pass is a no-op when the cache toggle is off.
 			if constexpr (Inno::PTHashGridCache::ENABLED)
 			{

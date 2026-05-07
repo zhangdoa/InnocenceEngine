@@ -14,12 +14,13 @@
 //   * pcgHash/xxHash bodies inlined here; Capsaicin pulls them from
 //     math/pack.hlsl (not fetched, but standard PCG / xxHash32 — chained
 //     by addition like Capsaicin).
-//   * No ValueIndirectBuffer / MultibounceInfoBuffer; first CL is direct-
-//     lobe tracking only. Multi-bounce cell feedback (Capsaicin Site 2,
-//     UpdateMultibounceCells) does not fit a loop-per-bounce raygen
-//     architecture (D1 deviation) and is deferred.
-//   * No screen-probe / VisibilityRayBuffer plumbing — read at secondary
-//     vertex inside the raygen loop directly (D1: Site-3 read pattern).
+//   * Loop-per-bounce raygen instead of Capsaicin's kernel-per-bounce
+//     decomposition (D1). Reads occur inside the raygen loop at every
+//     secondary+ vertex (Site-3 pattern); the indirect-lobe Site-2
+//     write (UpdateMultibounceCells) is folded into the same vertex
+//     using a throughput-ratio recovery of brdf/pdf.
+//   * No screen-probe / VisibilityRayBuffer plumbing — paper-faithful for
+//     the path-tracer-as-denoiser shape.
 //   * Capacity halved (D2): NUM_BUCKETS_LOG2=13 vs. Capsaicin default 14.
 //   * Cache key is direction-keyed (D3, paper-faithful) — surface normal
 //     is NOT part of the key.
@@ -194,8 +195,7 @@ PTHashGridCache_Desc PTHashGridCache_GetDesc(in PTHashGridCacheCB_t cb, in PTHas
 }
 
 // Resolve a tile-local 2D cell offset to the linear cell index inside the
-// owning tile. Capsaicin hash_grid_cache.hlsl:207-221, mip 0 only — first CL
-// does not write to mips 1-3 yet.
+// owning tile, mip 0. Capsaicin hash_grid_cache.hlsl:207-221.
 uint PTHashGridCache_CellIndexMip0(in PTHashGridCacheCB_t cb, in uint2 cell_offset_mip0, in uint tile_index)
 {
     return tile_index * cb.num_cells_per_tile + cb.first_cell_offset_tile_mip0
@@ -262,7 +262,6 @@ uint PTHashGridCache_InsertCell(in PTHashGridCacheCB_t cb,
 
 // Read-only lookup. Capsaicin hash_grid_cache.hlsl:281-298. Returns
 // kPTHashGridCache_InvalidId when the cell is not present in the bucket.
-// Reserved for the read-site CL that follows; first CL is write-only.
 uint PTHashGridCache_FindCell(in PTHashGridCacheCB_t cb,
                               in PTHashGridCache_Data data,
                               StructuredBuffer<uint> hash_buffer,
