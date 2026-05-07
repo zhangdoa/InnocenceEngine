@@ -76,4 +76,14 @@ Umbrella moves from R&D-direction-only to actively-decomposed. Phase tasks get f
 - TASK-137 (oversize GI/RadianceCache .cpp split-before-grow) — archived in the same batch (growth signal evaporates).
 - TASK-108 (unified radiance cache) — paused pending TASK-77.1 outcome (rescope-or-archive call after denoiser direction settles).
 - TASK-128 (ping-pong helper extraction) — demoted, re-linked to TASK-77.1 as the natural trigger (third concrete ping-pong site).
+
+## Phase progression update (2026-05-07)
+
+**TASK-77.1 closed** with "wrong-framing accepted" verdict. Implementation correct + paper-port faithful (Capsaicin GI-1.0 hash-grid radiance cache, 5-CL D1-reversal chain b6058cdc → 82c74743). Architectural diagnosis: hash-grid cache is a *long-tail-radiance feeder*, not a denoiser — every shipped primary-PT pipeline pairs the world cache with a screen-space stage where visible-motion sample reuse lives. TASK-77.1's brief asked the cache to be the denoiser; the chain implementation could not overcome that architectural mismatch. Toggle stays compile-time-OFF; cache reactivates as feeder once a screen-space denoiser stage exists.
+
+**TASK-77.2 filed**: in-house SVGF-shape post-PT denoiser. Demodulated diffuse + specular at primary hit, temporal accumulation + edge-aware spatial filter, no NRD library (license incompatibility — user direction 2026-05-07). Architectural reference: SVGF (Schied 2017), A-SVGF (Schied 2018), EA SEED Surfel-GI (SIGGRAPH 2021), NRD-Sample read-only (no link / vendor).
+
+**TASK-77.3 candidate, NOT filed**: cache reactivation as long-tail feeder above the new denoiser; possible ReSTIR GI integration on primary hit. Per `backlog-workflow.md` § "Don't pile on" — file when 77.2 outcome makes 77.3 the natural pick.
+
+**Other axes still scope-able**: light BVH, balance-heuristic MIS, blue-noise stratified sampling, OIDN integration. Same "don't pile on" rule.
 <!-- SECTION:NOTES:END -->
