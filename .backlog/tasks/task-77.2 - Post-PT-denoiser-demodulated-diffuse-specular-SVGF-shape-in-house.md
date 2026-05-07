@@ -455,4 +455,44 @@ CMake reconfigure called out in the implementation note (required for `file(GLOB
 
 Reviewed-By: shader-impl
 
+## Review (shader-impl, 2026-05-07) — ADVISORY
+
+CL-2 reviewed against design plan and the GIDenoise.comp:184-260 reference. Diff inspected via `git diff --cached HEAD`; no edits made. Build status taken from the implementer's note (toggle=0 + toggle=1 both clean).
+
+### PASS items
+
+1. **Bypass invariant.** Every new HLSL write is inside `#if PT_DENOISE_ENABLED` (`PTRaygenBindings.hlsl` u11/u12 decls, `PTRaygenIntegrator.hlsl` u11/u12 stores). `PTDenoiseTemporal.comp` is an entirely-new file consumed only when the toggle is ON. C++ side — `PTDenoiseTemporalPass::Setup` returns Terminated immediately under `if constexpr (!Inno::PTDenoise::ENABLED)`; all client-side hooks (`Setup` / `Initialize` / `Update` / `GetDispatchedPasses` / Prepare / Execute) are gated by `if constexpr (Inno::PTDenoise::ENABLED)`. AccumBuffer composition under `#else` in the integrator is byte-identical to HEAD. CL-1 baseline preserved.
+
+2. **Reprojection sign.** `l_prevUV = l_uv + l_velocityUV` matches `GIDenoise.comp:194` exactly (`previous_uv = uv + velocity`), with the same engine-convention rationale called out in shader comments. RT3.xy contract per CL-1 (`screen_prev - screen_curr` in pixels).
+
+3. **History rejection thresholds.** Mesh-id strict equality with the sky=0 special case (`l_isSky` early-out + `l_prevSky` test on the previous tap). Normal-dot 0.95 matches `GIDenoise.comp:245`; depth threshold goes relative (10%) where GIDenoise uses `AdaptiveCellSize` — documented difference, justified by the SVGF-faithful cap.
+
+4. **Variance accumulator shape.** `BlendLobe` updates Σluma/N and Σluma²/N with the same α as the radiance blend; reset-on-reject seeds moments from the new sample's luma; per-lobe independent gates correctly wired (`l_diffuseAccept` / `l_specularAccept`).
+
+5. **Ping-pong ownership.** GBuffer-equivalent owned by `GPUPathTracerPass`; history textures owned by `PTDenoiseTemporalPass`; per-lobe radiance UAVs owned by the temporal pass and borrowed by the path tracer at bind time — the design shape the brief asked for. `GetCurrent*` / `GetPrevious*` accessors derived from `FrameCountSinceLaunch % 2u` in both classes; same parity, same frame, no swap needed (parity itself is the swap). On frame N the path tracer writes `current`; on frame N+1 parity flips and that texture is now `previous` — correct.
+
+6. **First-frame behaviour.** Texture initial state is implementation-defined by the engine's `TextureResourceService`, but the temporal kernel's `(c.w > 0.0f)` accept gate (sampleCount==0 → reject) makes the first-frame path correct regardless of initial contents — a pixel with sampleCount-zero history reads as rejected and seeds from the current sample.
+
+7. **Pass scheduling.** `PurgeTiles → UpdateTiles → MipCascadeBuild → GPUPathTracer → PTDenoiseTemporal → tonemap` per the brief. Compute Signal/Wait shape mirrors the cache passes: Graphics-CL transitions, Compute-CL dispatch, `WaitIfActive(GPUPathTracerPass, Compute, Compute)` before the temporal compute Execute.
+
+8. **File-size compliance.** All touched files under 300 lines (largest: `GPUPathTracerPass_BindingLayout.cpp` at 289, `PTDenoiseTemporalPass.cpp` at 229).
+
+9. **Out-of-scope creep.** AccumBuffer composition unchanged (`AccumBuffer[pixel] = lerp(prev, float4(clampedRadiance, 1.0f), t)` — same as HEAD); u11/u12 buffered in addition. Tonemap input chain unchanged.
+
+10. **Diagnostic noise.** clangd "file not found" on `PTDenoiseTemporalPass.h` from `GPUPathTracerPass_Dispatch.cpp` — file exists at `Source/ExampleProject/RenderingClient/PTDenoiseTemporalPass.h` (91 lines, same directory as the includer); the include path `#include "PTDenoiseTemporalPass.h"` is correct. clangd needs a `compile_commands.json` regen after CMake reconfigure (the `_BindingLayout.cpp` precedent from CL-1 wrap-up). Environmental, not a build issue — the implementer's clean cmake build under both toggles confirms.
+
+### ADVISORY items (non-blocking, file as CL-3 entry)
+
+- **fp16 moment saturation is real, not theoretical.** Raygen clamps each lobe's radiance to `min(., 100000)` before the u11/u12 write. fp16 max is 65504 — a single-component lobe value above ~65k already saturates the RGBA16F radiance store. luma is `dot(rgb, (0.2126, 0.7152, 0.0722))` so peak luma ≈ 0.916·max(rgb), reaching ~91k for a max-clamped white lobe; squaring gives ~8.4·10⁹, completely outside fp16 range. The RG16F moment-G channel will pin to `+inf` (or saturate if non-IEEE) under any HDR firefly. This corrupts the variance estimator the moment a firefly lands. **Recommended CL-3 fix**: either (a) RG32F for moments, (b) tone-compress luma before squaring (`luma_compressed = luma / (1 + luma)` and run variance on the compressed signal), or (c) tighten the raygen clamp to ≤256 so luma² ≤ 65k stays in-range. Implementer flagged this in "Not verified" — confirming the math here so CL-3 has the threshold.
+
+- **RGBA16F current-frame radiance can also saturate.** Same root cause — the 100k clamp predates the 16F storage decision. Worth bottoming out as a CL-3 entry alongside the moment fix; both share the firefly-clamp lever.
+
+- **`GPUPathTracerPass::Update` has no Activated-status gate on the borrowed radiance UAVs.** The path tracer binds u11/u12 from `PTDenoiseTemporalPass::GetCurrentRadiance*()` inside `if constexpr (Inno::PTDenoise::ENABLED)`. If the temporal pass's `RenderTargetsCreationFunc` callback fires after the first-frame path tracer dispatch (init-order dependency), the bind would receive `nullptr`. Current Initialize order in `ExampleRenderingClient.cpp:80-86` runs PT before temporal, but both Initialize calls complete before frame 1 starts, so the textures exist by bind time. Brittle — a future re-ordering would break it silently. **Recommended CL-3 fix**: have the path tracer's `Update` activation gate also check `m_RadianceDiffuse / m_RadianceSpecular` non-null when `PTDenoise::ENABLED`, mirroring `PTDenoiseTemporalPass::Update`'s gate.
+
+### Verdict
+
+**ADVISORY**. The terminal question — does CL-2 correctly accumulate per-lobe history with proper rejection and stay bypass-invariant — is YES on both counts at the source level. CL-2 is mergeable; the fp16 moment saturation is a real correctness bug that will surface the moment a firefly hits the variance estimator under CL-3 (à-trous variance-guided blur). File as CL-3 entry constraint, not a CL-2 blocker.
+
+Reviewed-By: shader-impl
+
 <!-- SECTION:NOTES:END -->
