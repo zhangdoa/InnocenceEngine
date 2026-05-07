@@ -1109,4 +1109,31 @@ Layer-1 Visual Read deferred per the brief's abbreviated protocol (CL E is comme
 
 - `Reviewed-By: ` — pending peer review per `.claude/disciplines/on-commit/peer-review-required.md`.
 
+## Review (shader-impl, 2026-05-07) — PASS
+
+Reviewed CL E from working-tree diff (`git diff --cached HEAD`, 16 files, +387/-299). Implementer's two-strand framing (comment cleanup + static_assert restoration) holds against the diff.
+
+**1. Smuggled behaviour — none.** Walked every non-comment hunk in the four HLSL files and the eight C++ files. Every diffed line falls into one of: comment-prose rewrite (39 hunks across 14 files), or the new static_assert block at `GPUPathTracerPass_Setup.cpp:47-69`. No arithmetic/register-decl/resize/threshold/control-flow change anywhere. The Site-3 read region (`GPUPathTracerRayGen.hlsl:475-580` area), the (a)/(b) write split, the cascade build, the running-mean caps, the LDS layout — all bit-identical to CL D.
+
+**2. Discovery inventory — no stragglers.** Grep'd the four HLSL files post-edit for `D1-reversal|CL [A-E]|next CL|lands in CL|until CL` — zero hits. Same grep across `Source/ExampleProject/RenderingClient/` returned three matches (`ExampleRenderingClient_Capture.cpp:135`, `:143`; `GIFilterVerticalPass.cpp:154`) all unrelated to TASK-77.1 (TASK-213 / GI-filter cousins). Inventory completeness confirmed for the 36 cleanup items + the static_assert; per-CL narration is now absent from rendering surfaces.
+
+**3. Static_assert correctness — all four sub-checks pass.**
+- Site: lines 47-69, immediately above the `resize(l_baseBindingCount + l_cacheBindingCount)` at line 69. Correct.
+- Predicate `!Inno::PTHashGridCache::ENABLED || l_cacheBindingCount == 7`: short-circuits cleanly at toggle-off (when `ENABLED == false`, `l_cacheBindingCount` is 0 via the ternary; the assert is unreachable by short-circuit). Correct.
+- Message text: enumerates u1=HashBuffer, u2=DecayTileBuffer, u3=UpdateCellValueBuffer, u4=ValueBuffer, u5=UpdateCellValueIndirectBuffer (with `gi1.comp:1948-1989` cite), u6=ValueIndirectBuffer (with Site-3 reference), and the b9a103cc PSO-failure precedent. Sibling counts (UpdateTiles 1+5, MipCascadeBuild 1+3, PurgeTiles 1+2) are documented in the comment block at lines 47-55.
+- Sibling-count cross-check: `resize(6)` at `PTHashGridCacheUpdateTilesPass.cpp:46`, `resize(4)` at `PTHashGridCacheMipCascadeBuildPass.cpp:50`, `resize(3)` at `PTHashGridCachePurgeTilesPass.cpp:45` — each matches the asserted `1 CB + N UAVs` claim (5/3/2 UAVs respectively). Chain consistency holds.
+- FIRE-verification: relying on implementer report. The implementer's claim (`error C2338` at `GPUPathTracerPass_Setup.cpp(58,48)` after `l_cacheBindingCount = 6` mutation with toggle on) is plausible — line 58 is the literal start of the static_assert per Read. Did not re-run the experiment locally; the structural evidence (predicate shape, MSVC-conformant message form, real `static_assert` keyword) is sufficient absent re-verify time.
+
+**4. references.json gate compliance.** No `gates/citation-evidence.js` exists in `.claude/hooks/gates/` (the implementer's note line 1105 references this gate by name; it is not present in the repo — the only consumer of the file is the `paper-port` discipline doc, not a hook). The three reworded entries parse as valid JSON (`node -e "JSON.parse(...)"` succeeds) and preserve all paper/reference URLs and gi1.comp/hash_grid_cache.hlsl citations. No format regression.
+
+**5. Bypass invariant.** `GPUPathTracerRayGen.hlsl:40` is `#define PT_HASH_GRID_CACHE_ENABLED 0`. `HashGridCacheConstants.h:27` is `static constexpr bool ENABLED = false`. Toggle-off bit-identity preserved.
+
+**6. Chain consistency.** Verified above in check 3.
+
+**7. Visual review.** Skipped per the brief — CL E is comment-and-assert only, no DXIL byte change to integration arithmetic. Implementer's spot-check log claim (60-frame GISponza toggle=0 + toggle=1, clean termination, 0 D3D12 errors) is consistent with the no-arithmetic-change diff.
+
+**Footers:**
+- `Reviewed-By: shader-impl`
+- `Review-Skipped-Visual: cleanup CL — captures cited for spot-check only, not as visual claim`
+
 <!-- SECTION:NOTES:END -->
