@@ -503,12 +503,17 @@ void RayGenShader()
         //       so that UpdateTiles' direct/indirect running-mean blocks
         //       consume independent lobes (the Site-3 read in CL D sums them).
         //
-        // The Site-3 read still pulls from ValueBuffer only this CL — the
-        // ValueIndirectBuffer read lands in CL D. Mid-chain darkening is
-        // expected: the indirect contribution previously folded into the
-        // combined ValueBuffer mean now accumulates into ValueIndirectBuffer,
-        // which the read does not consume yet, so the cache substitutes only
-        // the direct lobe at the secondary hit. CL D restores correctness.
+        // D1-reversal CL D restores the lobe sum at the Site-3 read: the
+        // direct lobe (ValueBuffer) and the indirect lobe (ValueIndirectBuffer)
+        // are read independently, each normalised by its own .w running-mean
+        // sample count, then summed before the cache substitution. Mirrors
+        // Capsaicin gi1.comp:2891-2896 (TraceReflectionsHandleHit) and the
+        // identical sum-of-means form at gi1.comp:2377-2383 (ResolveCells)
+        // — both lobes carry their own sample counts via independent
+        // UpdateTiles running-mean blocks (gi1.comp:2160-2180 direct +
+        // gi1.comp:2183-2223 indirect). The substitution gate becomes
+        // "either lobe has samples"; CL C's mid-chain darkening (indirect
+        // contribution dropped on the floor) reverses here.
         bool cacheTerminated = false;
         if (bounce >= 1u)
         {
@@ -539,17 +544,35 @@ void RayGenShader()
                 InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 2u], quantizedDirect.z, prev_atomic);
                 InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 3u], quantizedDirect.w, prev_atomic);
 
-                // Read the resolved running mean from ValueBuffer, populated
-                // by PTHashGridCacheUpdateTilesPass earlier this frame from
-                // last frame's scratch deltas. The buffer convention follows
-                // Capsaicin (gi1.comp:2165) — .rgb stores radiance × .w, so
-                // the per-sample mean is .rgb / .w. The first frame after a
-                // cache clear sees .w == 0 across the board and falls
-                // through to BRDF sampling, no spurious zero-radiance hit.
-                float4 cellRadiance = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueBuffer[cell_index]);
-                if (cellRadiance.w > 0.0f)
+                // Read the resolved running means from BOTH lobes. Each is
+                // populated by its own PTHashGridCacheUpdateTiles running-mean
+                // block earlier this frame (direct: gi1.comp:2160-2180;
+                // indirect: gi1.comp:2183-2223 / D1-reversal CL B). The
+                // storage convention is identical (Capsaicin gi1.comp:2165
+                // — .rgb stores radiance × sample_count, .w stores
+                // sample_count) so each lobe's per-sample mean is recovered
+                // by dividing .rgb by .w. The two .w channels are
+                // independent (each lobe accumulates its own samples at its
+                // own cap — direct caps at g_HashGridCacheConstants.max_sample_count,
+                // indirect at MAX_MULTIBOUNCE_SAMPLE_COUNT == 16 — Capsaicin
+                // gi1.h:63 vs gi1.h:65) so they cannot share a normaliser.
+                // First frame after a cache clear sees both .w == 0 and the
+                // outer gate falls through to BRDF sampling.
+                float4 directRadiance   = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueBuffer[cell_index]);
+                float4 indirectRadiance = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueIndirectBuffer[cell_index]);
+                if (directRadiance.w > 0.0f || indirectRadiance.w > 0.0f)
                 {
-                    float3 mean = cellRadiance.rgb / cellRadiance.w;
+                    // Sum-of-means: each lobe contributes its own per-sample
+                    // mean independently; the cache substitution multiplies
+                    // the combined mean by throughput. Mirrors Capsaicin
+                    // gi1.comp:2891-2896 (TraceReflectionsHandleHit) and
+                    // gi1.comp:2377-2383 (ResolveCells) — both Capsaicin
+                    // read sites use the same lobe-additive form. A lobe
+                    // with .w == 0 contributes zero (its accumulator hasn't
+                    // received samples yet).
+                    float3 directMean   = directRadiance.w   > 0.0f ? directRadiance.rgb   / directRadiance.w   : float3(0.0f, 0.0f, 0.0f);
+                    float3 indirectMean = indirectRadiance.w > 0.0f ? indirectRadiance.rgb / indirectRadiance.w : float3(0.0f, 0.0f, 0.0f);
+                    float3 mean = directMean + indirectMean;
 
                     // (b) PREVIOUS-vertex secondary-bounce contribution.
                     // Mirrors Capsaicin UpdateMultibounceCells (gi1.comp:

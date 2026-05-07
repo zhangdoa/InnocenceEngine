@@ -1,10 +1,11 @@
 ---
 id: TASK-77.1
 title: Path-tracer world-space hash-grid radiance cache as denoiser (rework)
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-04-30 19:14'
-updated_date: '2026-05-01 21:38'
+updated_date: '2026-05-06 21:30'
 labels:
   - R&D
   - path-tracer
@@ -802,5 +803,175 @@ Captured at `Build/captures/TASK-77.1-D1-reversal/C/{toggle0,toggle1}/{unittest,
 - **UnitTest + GITestBox showed no visible darkening**: the brief permitted this ("may darken slightly"). The cache-substitution path only fires at `bounce >= 1` and only when the cell carries enough samples to clear the `cellRadiance.w > 0.0f` gate; UnitTest has very few secondary bounces (open scene, mostly direct sun + sky) and GITestBox is the documented broken scene. GISponza is the load-bearing scene for this CL because its dense atrium geometry exercises secondary bounces continuously. The asymmetric darkening across scenes is the right shape, not a flag.
 - **Static-assert message rewrite covers two new CLs**: I included CL D in the rewrite (CL D = read split, raygen count UNCHANGED at 7) so that the next CL can land with no descriptor-table growth — the b9a103cc PSO-failure precedent specifically warned against root-signature-width drift across consecutive CLs. CL D's HLSL touches stay inside the function body; the binding decls (u6) are already in place.
 - **Curtain palette stable across CL B → CL C startup races**: both CL B toggle1 and CL C toggle1 GISponza captures landed with the blue-outer + orange-inner curtain pattern (CL A's TASK-210 capture was the one with the pink-orange-only palette). Curtain colour-assignment is sticky to the binary's startup race outcome, not driven by this CL's behavioural delta. The darkening I describe is *within* the same colour-assignment, not a colour swap.
+
+## D1 reversal — CL D: Site-3 read split (restores correctness)
+
+CL D of the 5-CL D1-reversal chain (CL A: `b6058cdc`, CL B: `1352e548`, CL C: `a9a0266b`). Splits the Site-3 read at `GPUPathTracerRayGen.hlsl` line 549. Direct lobe (`g_HashGridCache_ValueBuffer`) and indirect lobe (`g_HashGridCache_ValueIndirectBuffer`) are now read independently, each normalised by its own `.w` running-mean sample count, then summed before the cache substitution. Mirrors Capsaicin's `gi1.comp:2891-2896` (TraceReflectionsHandleHit) and the identical sum-of-means form at `gi1.comp:2377-2383` (ResolveCells) — both Capsaicin read sites use the lobe-additive form because each lobe carries its own sample count via independent UpdateTiles running-mean blocks (direct cap = 16 at `gi1.h:63`; indirect cap = 16 at `gi1.h:65` — held as separate knobs). The substitution gate becomes "either lobe has samples" (`directRadiance.w > 0.0f || indirectRadiance.w > 0.0f`); CL C's mid-chain darkening reverses here.
+
+### Read-arithmetic chosen
+
+Sum-of-means form, audit-prescribed (paper-port artifact §6 Site-3 + Site-1 — Capsaicin source: `gi1.comp:2895` adds `indirect_radiance.rgb / max(indirect_radiance.w, 1.0f)` to the direct-lobe-normalised radiance unconditionally inside `#ifdef USE_MULTI_BOUNCE`):
+
+```hlsl
+float4 directRadiance   = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueBuffer[cell_index]);
+float4 indirectRadiance = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueIndirectBuffer[cell_index]);
+if (directRadiance.w > 0.0f || indirectRadiance.w > 0.0f)
+{
+    float3 directMean   = directRadiance.w   > 0.0f ? directRadiance.rgb   / directRadiance.w   : float3(0.0f, 0.0f, 0.0f);
+    float3 indirectMean = indirectRadiance.w > 0.0f ? indirectRadiance.rgb / indirectRadiance.w : float3(0.0f, 0.0f, 0.0f);
+    float3 mean = directMean + indirectMean;
+    /* (b) write of brdf_over_pdf * mean to prev_cell_index unchanged */
+    radiance += throughput * mean;
+    cacheTerminated = true;
+}
+```
+
+Per-lobe normalisation (rather than sharing a sample count) is mandatory: the two lobes' `.w` channels are independent because UpdateTiles runs separate running-mean blocks for each (CL B). Combining via `(direct.rgb + indirect.rgb) / max(direct.w + indirect.w, 1.0)` would be incorrect — it would conflate two estimators with different convergence rates and cancel direct content as indirect samples accumulate.
+
+The outer gate change (`||` instead of CL C's single `>`) is the only deviation from CL C's gate shape; the `bounce >= 1u` guard and the `prev_cell_index != kPTHashGridCache_InvalidId` (b)-write guard are unchanged. Per-lobe inner ternaries protect against `0/0`.
+
+### Files touched this CL
+
+- `Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl` — Site-3 read at lines 547-575 split into direct + indirect lobes with sum-of-means combination. Inline comment block (lines 506-516) updated to reflect that the read split has landed and the mid-chain darkening from CL C reverses here. Citations updated to `gi1.comp:2891-2896` (TraceReflectionsHandleHit) + `gi1.comp:2377-2383` (ResolveCells) — both Capsaicin sites with the identical sum-of-means form.
+- `Source/ExampleProject/RenderingClient/GPUPathTracerPass_Setup.cpp` — **deviation, surfaced**: cache-block descriptor-set slot indices repacked from `[13..19]` to `[12..18]`. This is a CL-C latent bug introduced by `52e32709` (mega-buffer retire) that dropped `l_baseBindingCount` from 13 to 12 without shifting cache slot indices down. The pre-D1 code therefore left layout-desc[12] default-constructed (mapped to set 0/binding 0 — collision with PerFrameCB sampler-table) and wrote layout-desc[19] one past `vector::resize(19)` end (UB). The bug was masked at CL C's capture run because (a) the BindGPUResource calls in `Dispatch.cpp` already used the correctly-packed [12..18] indices, so the actual root signature creation walked the wrong layout entries; and (b) MSVC release std::vector tolerated the OOB write quietly. CL D's first true `cache_enabled` build with toggle=1 reaches the root-signature creation path and DX12 reports `RootSignature serialization error: Shader register range of type SAMPLER (root parameter [12], visibility ALL, descriptor table slot [0]) overlaps with another shader register range (root parameter[11], visibility ALL, descriptor table slot [0])` — the layout-desc[12] default-zero now actually mattered because the bind-call at slot 12 walked the (correct) slot 12, while the earlier sampler binding at slot 11 saw the (incorrect) garbage at slot 12 as a sampler-overlap. Without this fix, CL D toggle-on cannot launch; the bug blocks CL D's load-bearing visual validation. Repack is bijective (every slot index in the cache block decremented by 1) and aligns Setup with the existing Dispatch shape; the descriptor-set-index/descriptor-index semantic values are unchanged. Pre-existing CL C bug surfaced — flagged for the dispatcher to consider whether CL D commit message should call this out separately.
+- No other files touched. `HashGridCacheConstants.h::ENABLED` restored to `false` post-capture per the bypass invariant; HLSL `PT_HASH_GRID_CACHE_ENABLED 0` per `GPUPathTracerRayGen.hlsl:34`.
+
+### Per-pass binding-count progression
+
+| Pass | CL C | CL D (this) | Notes |
+|------|------|-------------|-------|
+| GPUPathTracer raygen     | 7 (b3 + u1..u6) | **7 (unchanged)** | u6 (ValueIndirectBuffer) was reserved at CL C; CL D adds the read references inside the function body only. Root signature width stable. |
+| PTHashGridCacheUpdateTiles      | 6 | 6 | unchanged |
+| PTHashGridCacheMipCascadeBuild  | 4 | 4 | unchanged |
+| PTHashGridCachePurgeTiles       | 3 | 3 | unchanged |
+
+### Diff-hygiene grep results
+
+- `g_HashGridCache_ValueBuffer` in `GPUPathTracerRayGen.hlsl`: 2 hits — 1 binding decl (line 77, u4), 1 read (line 561, inside the gated Site-3 block). No write references — reads only. Verified.
+- `g_HashGridCache_ValueIndirectBuffer` in `GPUPathTracerRayGen.hlsl`: 2 hits — 1 binding decl (line 90, u6), 1 read (line 562, inside the gated Site-3 block). No write references — reads only. Verified. CL C's "5 hits, no read references" count rises to 2 hits (1 binding + 1 read) post-CL-D; the bookkeeping comment hits at CL C are gone because the comment block was rewritten.
+- `UpdateCellValueBuffer` and `UpdateCellValueIndirectBuffer` in `GPUPathTracerRayGen.hlsl`: write counts unchanged from CL C (4 (a) writes to direct scratch + 4 (b) writes to indirect scratch). Verified by `Grep`.
+- Bypass invariant: every new HLSL line is inside the `#if PT_HASH_GRID_CACHE_ENABLED` block at line 478 (the existing Site-3 region). Verified.
+
+### Build status
+
+- HLSL2DXIL toggle=0: `Successfully compiled GPUPathTracerRayGen.hlsl.` (no warnings).
+- HLSL2DXIL toggle=1: `Successfully compiled GPUPathTracerRayGen.hlsl.` (no warnings; the new u6 read references compile clean).
+- BuildWin RelWithDebInfo toggle=1: clean. Engine binary links. The slot-index repack fix removes the CL-C-latent root-signature-overlap error.
+- BuildWin RelWithDebInfo toggle=0: clean. The `if constexpr (Inno::PTHashGridCache::ENABLED)` short-circuit elides the cache slot-index changes; toggle-off binary unaffected by the repack.
+- Toggle restored to `ENABLED = false` post-capture (`HashGridCacheConstants.h:30`); HLSL `PT_HASH_GRID_CACHE_ENABLED 0` per `GPUPathTracerRayGen.hlsl:34`.
+
+### Visual Read assessment
+
+Captured at `Build/captures/TASK-77.1-D1-reversal/D/{toggle0,toggle1}/{unittest,gitestbox,gisponza}/gpu_output_0030.png`. Frame 30 only, single camera. Compared against CL C at `B/captures/TASK-77.1-D1-reversal/C/{toggle0,toggle1}/...` and CL B at `B/captures/TASK-77.1-D1-reversal/B/toggle1/gisponza/...`. All 6 CL-D captures opened via `Read`; 4 CL-C captures (toggle1 UnitTest/GITestBox/GISponza + toggle0 UnitTest) and CL-B toggle1 GISponza opened for direct A/B.
+
+**Cross-binary camera nondeterminism re-asserted strongly across all three scenes.** TASK-210/213's steady-state-gated capture only fixes within-binary determinism; the engine binary was rebuilt twice between CL C and CL D (the `52e32709` bindless retire + `d7677b95` file-split + my CL D edits). Different binary = different startup-race outcome. UnitTest, GITestBox, and GISponza all landed on different camera framings between CL C and CL D, regardless of toggle state. **This means the brief's prescribed CL D-vs-CL C visual A/B is not directly comparable across binaries.** The within-binary CL-D toggle0 ↔ CL-D toggle1 comparison still holds and is informative; cross-CL comparisons rely on absolute scene readability rather than pixel-level deltas.
+
+#### UnitTest, frame 30
+
+- What I see in CL D toggle0: close-up framing on the chrome ball-in-shell sphere (rear glossy/metal pair, gold-rimmed ball-with-glass-cover) on a flat off-white floor with a pale-grey rocky/diorite surface to the left and a small green diorite plate beneath the chrome. PT shot noise across surfaces. Different camera framing from CL C toggle0 (the CL C wide row-of-spheres shot is gone — TASK-210 cross-binary repro).
+- What I see in CL D toggle1: visually identical to CL D toggle0 — same close-up chrome-ball framing, same diorite-left positioning, same green plate, same shot-noise texture.
+- Differences within CL D: none visible. Toggle1 ↔ toggle0 indistinguishable at this scene's bounce density (chrome-ball + rocky surfaces produce few secondary bounces relative to surface-area; the cache contribution is below the visual-noise floor at frame 30 same as CL C).
+- Verdict: per-scene-mixed (no within-binary regression — toggle0 ↔ toggle1 parity holds; cross-binary CL D ↔ CL C framing differs entirely so direct A/B is not possible).
+
+#### GITestBox, frame 30
+
+- What I see in CL D toggle0: close-up framing on a corner of dark-red + dark-green + dark-brown wall panels with a tan-grey textured floor; a small white triangular shaft of light at top-left corner. Heavy PT shot noise; very dark overall (cache-off, frame 30 of a 60-frame run). Different camera framing from CL C toggle0 (the CL C teal/red wider shot is gone — cross-binary repro).
+- What I see in CL D toggle1: same close-up corner framing as CL D toggle0 but **markedly brighter and more saturated**. The dark-red wall is visibly redder; the dark-green is visibly greener; the floor is brighter olive-grey rather than dark-grey; the white light shaft is more pronounced. The cache substitution is firing at the secondary vertex and contributing the indirect lobe back into the integrator — exact CL D shape.
+- Differences within CL D: toggle0 ↔ toggle1 shows **very visible brightening + saturation gain** at toggle-on. This is the load-bearing CL D signal: the direct + indirect lobe sum at the Site-3 read is producing more outgoing radiance than CL C's direct-only read produced. The within-binary toggle-A-B is what we wanted to see.
+- Verdict: improvement (within-binary toggle-on shows correct cache-substitution brightness lift; cross-CL compare blocked by camera-framing nondeterminism).
+
+#### GISponza, frame 30
+
+- What I see in CL D toggle0: deep-interior camera framing — pillar/column geometry with a large central spherical / urn-like statue object front-and-centre, shadowed columns / arches behind, dark blue + orange tinted pillared surfaces at the edges. Heavy PT shot noise; very dark overall (cache-off baseline). Completely different camera framing from CL C toggle0 (which was fully black) — and different from CL C toggle1's atrium-curtain shot. Cross-binary nondeterminism re-asserted.
+- What I see in CL D toggle1: same deep-interior framing as CL D toggle0 but **substantially brighter and more saturated**. The blue-tinted pillared surfaces at the edges are now vividly blue (saturated, deep), the orange-tinted ones richer warmer orange, the dark interior brightens noticeably, the central statue/urn picks up colour bouncing from the surrounding curtains/walls. The cache substitution is providing a healthy multi-bounce GI lift — exactly the inverse of CL C's mid-chain darkening.
+- Differences within CL D: toggle0 ↔ toggle1 shows **strong brightening + colour saturation gain** at toggle-on. The CL D load-bearing visual: GISponza dense atrium geometry exercises secondary bounces continuously, so the cache substitution lifts the integrator output substantially. The direction-of-effect (saturation gain, brightness lift, vivid blue/orange) matches the brief's prediction for "the CL C darkening reverses."
+- Cross-CL absolute compare (CL D toggle1 deep-interior shot vs CL C toggle1 atrium-curtain shot — different framings): on a per-region brightness basis, CL D toggle1 shows the same character of brightness + saturation as the CL B toggle1 atrium shot (combined-lobe ValueBuffer), and the SAME character of saturation that CL C toggle1 atrium curtains LOST. This is consistent with CL D restoring the lobe-sum form vs CL C's direct-only read.
+- Verdict: improvement — within-binary toggle0 ↔ toggle1 shows the expected substantial brightening + saturation gain at toggle-on; absolute brightness levels at toggle1 match the CL B (combined-lobe) baseline character. The mid-chain darkening predicted by CL C reverses. Layer-4 (user sign-off) is **strongly recommended** for this CL — the load-bearing visual works, but the cross-binary camera-framing change vs CL C and CL B prevents a direct pixel-level A/B comparison; a human eye on the within-binary toggle delta + the cross-CL absolute brightness character is the appropriate check.
+
+### Resource-list confirmation (no RenderDoc; structural argument)
+
+- The new u6 read references are at `GPUPathTracerRayGen.hlsl:562` only; the binding decl at line 90 was added at CL C. Verified by `Grep`.
+- Engine `RootSignature has been created` for `GPUPathTracerPass` confirms the slot-index repack was successful (toggle=1 binary launches without the sampler-overlap error from the pre-fix run). Engine.log under `D-toggle1-fresh2/{unittest,gitestbox,gisponza}/engine.log` shows zero D3D12 errors across all three scenes.
+- The (b) write target unchanged (still `UpdateCellValueIndirectBuffer` per CL C). The `mean` variable now combines both lobes; the (b) write multiplies it by `brdf_over_pdf` and atomic-adds into the previous cell's indirect scratch — so a downstream read sees a "direct + indirect" estimator at the previous cell, not just direct. This is a small semantic shift relative to Capsaicin's `UpdateMultibounceCells` which writes `direct_radiance` only (gi1.comp:1965 — `radiance.rgb = (radiance.rgb * brdf) / pdf;` where `radiance` came from `FilteredRadianceDirect`, not `direct + indirect`). The deviation is structural to our loop-per-bounce architecture: we don't have Capsaicin's separate kernels-per-bounce; the `mean` value at our (b) write is whatever the Site-3 read produced, and CL D restores that to the lobe-sum. This is consistent with the audit's D1 "read at every secondary+ vertex, write at every secondary+ vertex" recommendation. **Flagged as an inherent CL-D shape, not a deviation that needs separate treatment** — the chain plan assumed it.
+
+### Surprises
+
+- **Pre-existing CL-C latent root-signature bug, surfaced and fixed by CL D**: the `52e32709` bindless retire dropped `l_baseBindingCount` 13→12 but left the cache-block slot indices at 13-19 instead of repacking to 12-18. Effect: layout-desc[12] default-zero (set 0 / binding 0 — collision with PerFrameCB sampler-table) and layout-desc[19] OOB write past `vector::resize(19)` end (UB). The bug was masked at CL C because: (a) BindGPUResource calls in Dispatch.cpp already used [12..18] (so the actual root signature got the right resource-set bind shapes, ignoring the broken layout); (b) MSVC release std::vector tolerates OOB writes silently; (c) the offending binary was never run with toggle=1 by the harness in CL C's window before the cross-binary capture race took over. CL D's first true cache-enabled build hit it. Fix is one-line-per-slot index decrement (13-19 → 12-18) — bijective, aligned with Dispatch.cpp's existing shape, semantic descriptor-set-index/descriptor-index unchanged. Without this fix, CL D could not validate. Per the brief, "C++ touched, surface as deviation" — done.
+- **Cross-binary camera nondeterminism re-asserted on ALL THREE scenes** (not just GISponza) between CL C and CL D. TASK-210/213's steady-state-gated capture only fixes within-binary determinism; the engine binary changed twice between CL C and CL D (mega-buffer retire + file-split). Different binary = different startup race. The brief stated "cross-binary determinism should now hold (steady-state-gated dump frame counting per CL B of TASK-213)" — this assertion holds **within a single binary's repeat captures**, not across binary recompiles. Layer-1 visual reads compensated by relying on the within-binary CL-D toggle0 ↔ CL-D toggle1 A/B (which IS deterministic and shows the expected brightening), plus absolute-brightness comparisons across cross-binary frames. The dispatcher should weigh whether the "approximately equal in brightness/saturation" test against CL B is a strict requirement (in which case the CL D capture must be re-run on a CL-B-binary-compatible build state) or whether the within-binary toggle-A-B + the absolute-character match is sufficient.
+- **Static_assert text is now stale**: CL C's static_assert message in Setup.cpp (rewritten to anticipate CL D — "raygen count UNCHANGED at 7 because CL D only adds shader read references") is gone in the post-split file (the file-splitting commit `d7677b95` dropped it). The expected CL D pre-staging from CL C is not re-emitted. Not load-bearing for CL D itself but worth noting for CL E (`l_cacheBindingCount` may need a static_assert reinstatement when the loud-fail surface returns).
+- **Chrome-ball-only UnitTest framing**: this binary's UnitTest startup race landed on a tight close-up framing rather than the wide row-of-spheres. The within-binary toggle0 ↔ toggle1 shows essentially zero visible delta; this is consistent with CL C's UnitTest finding ("indirect contribution at this scene's bounce density is below the visual floor for a single dump-frame"), and the close-up framing on chrome+rock has even fewer secondary bounces than the open-floor row.
+
+## Review (shader-impl, 2026-05-06) — PASS
+
+Reviewed CL D + bundled CL-C-latent root-signature fix against the audit prescription, the Capsaicin cited line ranges, the bypass invariant, and the within-binary capture A/B. All checks pass.
+
+### 1. Lobe-combination arithmetic vs audit § 6 / Capsaicin
+
+Audit § 6 Site-1 (`gi1.comp:2377-2383`) and Site-3 (`gi1.comp:2891-2895`) prescribe per-lobe normalisation by `max(.w, 1.0f)` then sum: `radiance = direct.rgb / max(direct.w, 1) (+ indirect.rgb / max(indirect.w, 1))`. Implementer's form at `GPUPathTracerRayGen.hlsl:573-575` uses guarded ternary (`.w > 0 ? rgb/.w : 0`) then sum. Mathematically equivalent at `.w >= 1` (since `max(.w, 1) == .w` when `.w >= 1`); equivalent at `.w == 0` (both produce 0 for that lobe). Per-lobe `.w` cap is the right normalisation — the two `.w` channels are independent (CL B installs separate UpdateTiles running-mean blocks per lobe, audit § 8). Combined-running-mean form `(d.rgb + i.rgb) / (d.w + i.w)` would be **wrong** (conflates two estimators with different convergence rates) — the implementer correctly rejected that.
+
+The outer gate `directRadiance.w > 0.0f || indirectRadiance.w > 0.0f` (any-lobe-nonzero) is *stricter* than Capsaicin's read sites, which always substitute (relying on `max(.w, 1)` to produce zero on empty cells). This is a **justified paper-port deviation** for our loop-per-bounce architecture (audit Deviation D1): in our raygen the cache acts as a **terminator** (`cacheTerminated = true; break;` at line 610 / 624), not a **contributor** like Capsaicin. Substituting zero on an empty cell would terminate the path with no radiance — that would be a correctness bug. The any-lobe-nonzero gate falls through to BSDF sampling on first frame, which is the correct PT behaviour. ACCEPT.
+
+### 2. Bypass invariant
+
+Verified: every new HLSL line (the rewritten 503-516 comment block + the 547-575 read split) sits inside the existing `#if PT_HASH_GRID_CACHE_ENABLED` region (opens at line 478, closes at line 626). Toggle source-of-truth confirmed at `GPUPathTracerRayGen.hlsl:34` (`#define PT_HASH_GRID_CACHE_ENABLED 0`) and `HashGridCacheConstants.h:30` (`static constexpr bool ENABLED = false`). Toggle-off binary is bit-untouched by this CL.
+
+### 3. Slot-index fix correctness (Setup.cpp)
+
+Verified bijective decrement of all 7 cache-block slots:
+
+| Setup slot (new / old) | Descriptor | Dispatch.cpp BindGPUResource index |
+|---|---|---|
+| 12 / 13 | b3 HashGridCacheCB | 12 (m_HashGridCacheCB) |
+| 13 / 14 | u1 HashBuffer | 13 |
+| 14 / 15 | u2 DecayTileBuffer | 14 |
+| 15 / 16 | u3 UpdateCellValueBuffer | 15 |
+| 16 / 17 | u4 ValueBuffer | 16 |
+| 17 / 18 | u5 UpdateCellValueIndirectBuffer | 17 |
+| 18 / 19 | u6 ValueIndirectBuffer | 18 |
+
+`l_baseBindingCount = 12`, `l_cacheBindingCount = 7`, vector resized to 19 (slots 0..18). Pre-fix: layout-desc[12] was default-zero (set 0 / binding 0 — collision with PerFrameCB at slot 0 / sampler-table) and layout-desc[19] was OOB write past the resized end (UB). Post-fix: contiguous occupancy 0..18, no collisions, no OOB. Spillover check: only the 7 cache-block slot indices changed; slots 0..11 (base bindings) untouched. Surgical. The bijection is **correct, not lucky** — matches Dispatch.cpp's pre-existing call-site shape that was already-correct as of `52e32709`. ACCEPT.
+
+### 4. Per-pass binding-count progression
+
+Verified by reading the resize calls directly:
+
+- GPUPathTracerPass (raygen): `l_baseBindingCount + l_cacheBindingCount = 12 + 7 = 19`; cache block = 7 slots — UNCHANGED across CL C → CL D.
+- `PTHashGridCacheUpdateTilesPass.cpp:48` — `resize(6)`. UNCHANGED.
+- `PTHashGridCacheMipCascadeBuildPass.cpp:53` — `resize(4)`. UNCHANGED.
+- `PTHashGridCachePurgeTilesPass.cpp:45` — `resize(3)`. UNCHANGED.
+
+Acknowledge the implementer's note that the static_assert from `d7677b95` is gone; structural argument now relies on root-sig serialization (which the toggle=1 build exercised this CL). Acceptable for now; a CL-E reinstatement is reasonable follow-up.
+
+### 5. Layer-1 Visual Read (independent inspection — all 6 CL D + 5 CL C/B comparison captures Read)
+
+**UnitTest (`gpu_output_0030.png`):** CL D toggle0 and toggle1 both show identical chrome-ball + rocky-diorite close-up framing. Within-binary toggle delta is near-zero — consistent with low secondary-bounce density at this framing. CL C captures show entirely different scene contents (rows of spheres) — cross-binary nondeterminism, not a regression. **Verdict: no regression; insufficient bounce density to surface the cache delta.**
+
+**GITestBox (`gpu_output_0030.png`):** CL D toggle0 is dark/underexposed close-up of a corner with faint pink/red surfaces; toggle1 same framing but markedly brighter — green/red/brown wall panels emerge clearly, floor brightens to olive-grey, white triangular light shaft is more pronounced. Strong saturation gain, no spatial artifacts (no cell grids, no rings, no banding, no runaway brightness). Cross-binary CL C frame (teal/red wider shot) is incomparable in framing but the *direction* of CL D toggle1's brightness/saturation lift relative to CL D toggle0 is correct for cache substitution restoring the indirect lobe. **Verdict: improvement.**
+
+**GISponza (`gpu_output_0030.png`):** CL D toggle0 is near-black noise on a deep-interior pillar/statue framing; toggle1 same framing but substantially brighter — blue-tinted pillar surfaces become vividly blue, orange-tinted ones richer warmer, central statue picks up bouncing colour, dark interior brightens. CL C toggle0 was fully black (uninformative baseline). CL B toggle1 (different framing, atrium curtains) shows the same character of saturation/brightness as CL D toggle1 — consistent with CL D restoring the lobe-sum estimator. No cell artifacts, no rings, no banding, no runaway brightness. Mid-chain darkening predicted for CL C reverses. **Verdict: improvement.**
+
+**Failure-mode block (visual-validation.md § Layer 1):**
+- Cell-grid artifacts: NONE observed across all three scenes.
+- Rings / banding: NONE observed.
+- Runaway brightness / NaNs / fireflies: NONE observed.
+- Net direction: brightening + saturation gain at toggle-on for GITestBox and GISponza; no visible delta for UnitTest (low-bounce framing).
+- Cross-binary nondeterminism re-asserted across all three scenes between CL C and CL D — implementer's framing logic confirmed; within-binary toggle A/B carries the gate.
+
+### 6. Cross-binary nondeterminism
+
+Confirmed by independent inspection. Within-binary CL D toggle0 ↔ toggle1 carries the gate; the signal is sufficient because the toggle delta on GITestBox and GISponza shows clear cache-on lift in the predicted direction with no spatial artifacts.
+
+### 7. Out-of-scope creep
+
+Three files: HLSL + Setup.cpp + task notes. Setup.cpp fix is bijective and surgical — only the 7 cache-block slot indices changed; slots 0..11 untouched; no semantic descriptor-set-index / descriptor-index changes. No spillover. ACCEPT.
+
+### Advisory finding (non-blocking)
+
+Implementer surfaced at notes line 895: the (b) indirect-write at `GPUPathTracerRayGen.hlsl:601-606` now multiplies `brdf_over_pdf * (directMean + indirectMean)` and atomic-adds into `UpdateCellValueIndirectBuffer[prev_cell]`, whereas Capsaicin's `UpdateMultibounceCells` (`gi1.comp:1962-1967`) writes `brdf_over_pdf * direct_only`. This is an inherent loop-per-bounce vs kernel-per-bounce shape (audit Deviation D1) and is consistent with the chain plan, but it does mean our indirect-lobe accumulator can carry a self-referential indirect signal that Capsaicin's kernel decomposition prevents. **Advisory for a future CL** if convergence runaway / energy compounding is observed empirically; not blocking for CL D.
+
+### Verdict footers
+
+- `Reviewed-By: shader-impl`
+- `Reviewed-Visually: shader-impl — per-scene-mixed (improvement on GITestBox + GISponza, neutral on UnitTest)`
 
 <!-- SECTION:NOTES:END -->
