@@ -48,6 +48,15 @@ namespace Inno
 		// frame_count - decay marker without owning a parallel CB upload.
 		GPUBufferComponent* GetFrameCountCB()                     { return m_FrameCountCB; }
 
+		// Screen-space PT denoiser GBuffer-equivalent textures (TASK-77.2
+		// CL-1). Channel layout per common/PTDenoiseShared.hlsl, mirroring
+		// opaqueGeometryProcessPass.frag so DecodeGBuffer reads them
+		// unchanged. nullptr when PTDenoise::ENABLED is false.
+		TextureComponent* GetPTGBufferPosition()        { return m_PTGBuffer_Position; }
+		TextureComponent* GetPTGBufferNormalMetalness() { return m_PTGBuffer_NormalMetalness; }
+		TextureComponent* GetPTGBufferAlbedoRoughness() { return m_PTGBuffer_AlbedoRoughness; }
+		TextureComponent* GetPTGBufferMotionHitDist()   { return m_PTGBuffer_MotionHitDist; }
+
 	private:
 		struct PathTracerLightCountData
 		{
@@ -86,6 +95,19 @@ namespace Inno
 		GPUBufferComponent* m_HashGridCache_UpdateCellValueIndirectBuffer = nullptr;
 		GPUBufferComponent* m_HashGridCache_ValueIndirectBuffer = nullptr;
 
+		// Screen-space PT denoiser GBuffer-equivalent textures (TASK-77.2
+		// CL-1, SVGF-shape demodulated diffuse/specular denoiser). Written
+		// by GPUPathTracerRayGen.hlsl at bounce == 0 under PT_DENOISE_ENABLED.
+		// Layout mirrors opaqueGeometryProcessPass.frag so DecodeGBuffer
+		// in common/lightPassCommon.hlsl reads them unchanged. All nullptr
+		// unless PTDenoise::ENABLED is true and Setup/Initialize ran. Bypass
+		// invariant: when disabled, no allocation, no binding, no shader
+		// bytes emitted, AccumBuffer write is bit-identical.
+		TextureComponent* m_PTGBuffer_Position        = nullptr; // RT0: positionWS + instanceID
+		TextureComponent* m_PTGBuffer_NormalMetalness = nullptr; // RT1: normalWS  + metalness
+		TextureComponent* m_PTGBuffer_AlbedoRoughness = nullptr; // RT2: albedo    + roughness
+		TextureComponent* m_PTGBuffer_MotionHitDist   = nullptr; // RT3: motionVec + hitDist + 0
+
 		GPUBufferComponent* m_MaterialBuffer = nullptr;
 
 		Math::Mat4 m_PrevViewMatrix = {};
@@ -106,6 +128,17 @@ namespace Inno
 		void RebuildMaterialBuffer();
 		void RefreshMaterialTextureIndices();
 		void CreateAccumulationBuffer();
+		void CreatePTGBufferTextures();
+		void DeletePTGBufferTextures();
 		void OnResize();
+
+		// Raytracing-pass binding-layout descriptor table population. Lives in
+		// GPUPathTracerPass_BindingLayout.cpp so the layout-cluster (12 base
+		// + 7 cache + 5 denoise descriptor entries with their static_assert
+		// invariants) does not push Setup.cpp past the file-size ratchet.
+		// Same TU-class as Setup; called once from Setup() after the
+		// RenderPassComponent is created and before the descriptor vector
+		// is consumed by Initialize.
+		void ConfigureRaytracingBindings();
 	};
 }

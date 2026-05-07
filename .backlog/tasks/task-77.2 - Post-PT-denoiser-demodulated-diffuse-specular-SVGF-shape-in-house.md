@@ -96,9 +96,11 @@ Path B (reuse rasterized GBuffer) and Hybrid (reuse rasterized for "where am I",
 **Path A locked**: PT raygen writes per-primary-hit channels itself. Channel layout mirrors `OpaquePass.frag:124-129` so existing `DecodeGBuffer` / `lightPass.comp:161` decoders are reusable on the denoiser side without forking.
 
 - RT0: positionWS (rgb) + mesh-id-or-skyflag (a)
-- RT1: normalWS (rgb) + roughness (a)
-- RT2: albedo (rgb) + metalness (a)
+- RT1: normalWS (rgb) + metalness (a)
+- RT2: albedo (rgb) + roughness (a)
 - RT3: motionVec.xy + hitDist (z) + reserved (w)
+
+**Note (CL-1 correction)**: design-pass draft swapped RT1/RT2 alpha channels (claimed normal+roughness / albedo+metalness). Actual `DecodeGBuffer` (`lightPass.comp:161`) and `OpaquePass.frag` decoder contract is normal+metalness / albedo+roughness — CL-1 follows the decoder, layout above is corrected.
 
 Motion vector at primary hit = project hit position with current `g_Frame.v_inv * g_Frame.p_original` and stored `prev_v * prev_p` (already maintained as `m_PrevViewMatrix` in `GPUPathTracerPass.h:91`); subtract in screen space.
 
@@ -128,5 +130,190 @@ Motion vector at primary hit = project hit position with current `g_Frame.v_inv 
 - PathTracerPayload may not carry instanceID; needs adding for the mesh-id history-rejection channel in CL-2. Cheapest: pack into RT0's `.w` channel.
 - `tonemap` reads `GPUPathTracerPass::GetResult()` directly — CL-4 needs to substitute this; not a CL-1 concern but flagged for CL-4 entry.
 - Two compile-time toggles co-exist post-CL-1: `PT_HASH_GRID_CACHE_ENABLED` (TASK-77.1, OFF) and `PT_DENOISE_ENABLED` (this task, OFF). Confirm `#if` nesting is orthogonal — denoiser writes happen at `bounce == 0`, never inside cache-write `bounce >= 1` block.
+
+## CL-1: signal split + GBuffer-equivalent UAV writes (2026-05-07)
+
+### Files touched
+
+| Path | Role | Notable |
+|---|---|---|
+| `Source/ExampleProject/RenderingClient/PTDenoiseConstants.h` | NEW. C++ toggle. | Mirrors `HashGridCacheConstants.h` shape; CL-1 keeps it minimal — only the `ENABLED = false` flag. |
+| `Source/Shaders/HLSL/common/PTDenoiseShared.hlsl` | NEW. Channel-name + motion-vec convention header. | Documents the layout-mirror invariant against `opaqueGeometryProcessPass.frag` and `lightPassCommon.hlsl::DecodeGBuffer`. |
+| `Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl` | Add `#define PT_DENOISE_ENABLED 0`, b4 + u7..u10 binding decls, `radianceDiffuse`/`radianceSpecular`/`isSpecularPath` accumulators, lobe tag at the primary-hit BSDF importance sample, NEE-site lobe routing, bounce==0 GBuffer-equivalent UAV writes, sky-miss UAV zero, AccumBuffer dual-form write. | Every new line under `#if PT_DENOISE_ENABLED` (12 named UAV refs, 17 lobe-bucket refs, 16 toggle-name refs in this file). |
+| `Source/Shaders/HLSL/common/pathTracerPayload.hlsli` | Add `uint instanceID;` to `PathTracerPayload`. | 56B → 60B, still under MaxPayloadSizeInBytes=64. |
+| `Source/Shaders/HLSL/GPUPathTracerClosestHit.hlsl` | Set `payload.instanceID = InstanceID();` once. | One line, no other behavioural change. |
+| `Source/Engine/Services/DX12/DX12RenderPassResourceService_Pipeline.cpp` | Update payload-size comment. | Comment-only; the 64B value is unchanged. |
+| `Source/ExampleProject/RenderingClient/GPUPathTracerPass.h` | 4 `TextureComponent*` members + 4 accessors + 2 helper-method decls. | All gated `if constexpr (Inno::PTDenoise::ENABLED)` at use sites. |
+| `Source/ExampleProject/RenderingClient/GPUPathTracerPass.cpp` | Terminate / OnResize toggle blocks; `CreatePTGBufferTextures()` / `DeletePTGBufferTextures()` impls. | RGBA16F across all four (mirrors `RenderingConfigurationService::m_DefaultRenderPassDesc` Float16). |
+| `Source/ExampleProject/RenderingClient/GPUPathTracerPass_Initialize.cpp` | `if constexpr` block calling `CreatePTGBufferTextures()`. | |
+| `Source/ExampleProject/RenderingClient/GPUPathTracerPass_Setup.cpp` | New `l_denoiseBindingCount`, new static_assert, 5 layout-block entries. | `static_assert` short-circuits on toggle-OFF (mirrors cache-block pattern). |
+| `Source/ExampleProject/RenderingClient/GPUPathTracerPass_Dispatch.cpp` | 4 transition pairs (Graphics CL pre, Compute CL post) + 5 BindGPUResource calls. | Slot-index arithmetic mirrored from Setup. |
+| `.claude/references.json` | Update `GPUPathTracerRayGen.hlsl` entry with SVGF lineage; add `common/PTDenoiseShared.hlsl` entry. | NRD-Sample annotated as architectural reference only — no library / source vendored. |
+
+### HLSL `#if PT_DENOISE_ENABLED` block locations + line counts
+
+| Lines | Role |
+|---|---|
+| 78-80 | include of `common/PTDenoiseShared.hlsl` |
+| 96-103 | previous-frame CB binding declaration (b4) |
+| 141-157 | 4 GBuffer-equivalent UAV declarations (u7..u10) |
+| 336-352 | sky-miss UAV-zero + sky-radiance routed to diffuse |
+| 388-402 | bounce==0 split + lobe accumulators + `isSpecularPath` decl |
+| 425-474 | bounce==0 GBuffer-equivalent UAV writes + motion-vec math |
+| 496-504 | sun-NEE lobe-routing |
+| 541-547 | sky-NEE lobe-routing |
+| 587-593 | point-NEE lobe-routing |
+| 650-656 | sphere-NEE lobe-routing |
+| 776-785 | cache-substitution path lobe-routing (only active when both toggles on) |
+| 820-831 | lobe tag set false at diffuse-branch entry |
+| 849-852 | lobe tag set true at specular-branch entry |
+| 895-908 | AccumBuffer dual-form write switch (`radianceDiffuse + radianceSpecular` when on) |
+
+14 separate `#if PT_DENOISE_ENABLED` blocks; ~170 HLSL lines under the toggle. Toggle-OFF, all strip out.
+
+### Static_assert FIRE-verification
+
+- Pre-revert: temporarily set `Inno::PTDenoise::ENABLED = true` in `PTDenoiseConstants.h` AND `l_denoiseBindingCount = 4` in `GPUPathTracerPass_Setup.cpp`.
+- Build output: `error C2338: static_assert failed: 'GPUPathTracer raygen denoiser-binding count must be 5 (b4 + u7..u10). ...'` at `GPUPathTracerPass_Setup.cpp(72,42)` — the new denoiser assert fired at the expected line with the expected message.
+- Post-revert: count restored to 5; build clean.
+
+### Per-pass binding-count progression
+
+| Toggle combo | Cache count | Denoise count | Vector size | Slot range |
+|---|---|---|---|---|
+| Cache OFF + Denoise OFF (CL-1 default) | 0 | 0 | 12 | 0..11 |
+| Cache ON  + Denoise OFF | 7 | 0 | 19 | 0..11, 12..18 |
+| Cache OFF + Denoise ON  | 0 | 5 | 17 | 0..11, 12..16 |
+| Cache ON  + Denoise ON  | 7 | 5 | 24 | 0..11, 12..18, 19..23 |
+
+CL-1 verified on diagonal (off+off, on+on) — `static_assert` short-circuits when toggle off; `error C2338` fires when denoise-on with a wrong count; corrected denoise-on count produces a clean build.
+
+### Diff-hygiene grep results
+
+- `radianceDiffuse|radianceSpecular`: 17 occurrences in 1 file (`GPUPathTracerRayGen.hlsl`).
+- `m_PTGBuffer_*`: 28 occurrences across 3 files (header, .cpp impl, dispatch).
+- `PT_DENOISE_ENABLED|PTDenoise::ENABLED`: 33 occurrences across 7 files.
+- `u_PTDenoise_*`: 12 occurrences in 1 file (raygen).
+- License audit: `nrd|nvidia.*nrd` returns project-internal hits in `.claude/references.json` (architectural-reference annotation), `.backlog/tasks/*.md` (task descriptions), `.alignments/*` — no code, no library link, no vendored source.
+
+### Build output (toggle=0 + toggle=1)
+
+- HLSL2DXIL toggle=0: clean. Pre-existing-file recompiles only because `pathTracerPayload.hlsli` changed (the `instanceID` field add). No errors.
+- HLSL2DXIL toggle=1: clean. `GPUPathTracerRayGen.hlsl` recompiled; all DXIL emitted.
+- BuildWin RelWithDebInfo toggle=0: `Main.exe` + `RenderTest.exe` linked. Pre-existing C4003 `max` macro warnings in `MathHelper.h` (unrelated). No new warnings, no errors.
+- BuildWin RelWithDebInfo toggle=1: `Main.exe` + `RenderTest.exe` linked. No errors.
+
+### Capture spot-check
+
+- Toggle OFF: `Bin/RelWithDebInfo/Main.exe -total_frames 30` ran to clean termination. Log line: `[Inno::WorldSystem::Update] Auto-test: 30 frames rendered, terminating.` No D3D12 errors, no GBV warnings (GBV disabled by default per the engine's startup-message). Logs at `Build/captures/pt-denoise-cl1-toggle-off.{log,err}`.
+- Toggle ON (optional encouraged): same scene + flags, also clean. 30-frame auto-terminate. Logs at `Build/captures/pt-denoise-cl1-toggle-on.{log,err}`. Demonstrates the toggle path is well-formed end-to-end (UAV alloc + bind + dispatch + transition + Terminate without leaks).
+
+### Risk-question resolutions
+
+- **`m_PrevViewMatrix` per-frame update?** Not used. Verified `m_PrevViewMatrix` in `GPUPathTracerPass.h` is updated inside `_Update.cpp:51-55` ONLY when the camera view changes (it's a tripwire for accumulation reset, not a per-frame snapshot). The motion-vec math in CL-1 instead binds the engine's existing `PerFrameDataService::GetPreviousFrameBuffer()` — the same ping-pong CB the rasterizer's `OpaquePass.frag` consumes at b2. Engine-native; no parallel CB upload added.
+- **Payload `instanceID`?** Added. `PathTracerPayload` grew from 56B to 60B (`uint instanceID;` field); `MaxPayloadSizeInBytes` cap (64B) unchanged. `GPUPathTracerClosestHit.hlsl` writes `payload.instanceID = InstanceID();` once. Sky / miss path leaves the field at the zero-init value (the raygen `(PathTracerPayload)0` initialiser fills the whole struct, so `instanceID == 0` on miss). RT0.w stores `instanceID + 1` so instance 0 does not collide with the sky flag at the `DecodeGBuffer::l_RT0.a == 0` decoder gate.
+- **OpaquePass channel-format precision?** RGBA Float16 across all four RTs (per `RenderingConfigurationService.cpp:32-36` default render-pass desc). All four PT-GBuffer textures match: `TexturePixelDataFormat::RGBA + TexturePixelDataType::Float16`. Position carries 16F precision floor — same as the rasterizer ships, so denoiser passes (CL-2/3/4) read contract-equivalent data whether the source is rasterized or raytraced.
+- **Nested toggle orthogonality?** Verified. Cache writes happen at `bounce >= 1u` (`PT_HASH_GRID_CACHE_ENABLED` block bounded by `if (bounce >= 1u)` at the InsertCell site); denoiser writes happen at `bounce == 0u`. The two `#if`-blocks share no code, no resources, no slots. Confirmed by the four-cell binding-count table above and by all four toggle combinations producing the expected count formula.
+
+### Surprises
+
+- **Channel layout mismatch with the design plan**: design-plan `bullet` list claimed `RT1 = normal+roughness, RT2 = albedo+metalness`. The actual rasterizer `OpaquePass.frag:127-128` and `DecodeGBuffer` (lightPassCommon.hlsl:62-65) carry `RT1 = normal+metallic, RT2 = albedo+roughness`. CL-1 follows the actual decoder contract because the goal is forward-compatibility with `DecodeGBuffer`. Documented in `common/PTDenoiseShared.hlsl`.
+- **`m_PrevViewMatrix` mis-framing**: the design risk note suggested wiring up a per-frame update if the field is a no-op holdover. It isn't a holdover, but it isn't a per-frame view either — it's an accumulation-reset tripwire. Resolved by skipping `m_PrevViewMatrix` entirely and using `PerFrameDataService::GetPreviousFrameBuffer()` (the engine's ping-pong CB), which is the rasterizer's source of truth for the same data.
+- **DXC SROA collapse**: when extracting `radiance += ...` sites into named lobe-bucket additions, I initially refactored `radiance += X` to `float3 X = ...; radiance += X;` form unconditionally, which would technically depend on DXC's SROA optimizer to collapse the temporary back to identical DXIL on toggle-OFF. To eliminate the dependency, I restructured all NEE sites so toggle-OFF code paths are byte-identical to HEAD (the `radiance += throughput * CookTorranceGGX(...)` lines are unchanged when the toggle is off). The lobe-bucket `float3` temporaries now live entirely inside `#if PT_DENOISE_ENABLED` blocks. Bypass invariant strictly held at the source level, not the DXIL level.
+
+### File-split bundle (TASK-219 [task-stays-open])
+
+The CL-1 additions pushed two files past the file-size ratchet:
+
+| File | Pre-CL-1 | After CL-1 | Action |
+|---|---:|---:|---|
+| `Source/ExampleProject/RenderingClient/GPUPathTracerPass_Setup.cpp` | 269 | 343 | split |
+| `Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl` | 692 | 910 | split |
+
+The split is structural-only. CL-1 logic (lobe split, GBuffer-equivalent writes, motion-vector math, payload `instanceID`, channel layout, all 14 `#if PT_DENOISE_ENABLED` blocks) is preserved verbatim across the new files.
+
+#### C++ split — `GPUPathTracerPass_Setup.cpp`
+
+- New file: `Source/ExampleProject/RenderingClient/GPUPathTracerPass_BindingLayout.cpp` (264 lines).
+- Same TU class (`GPUPathTracerPass`); houses the `m_ResourceBindingLayoutDescs` configuration block (12 base + 7 cache + 5 denoise descriptors) **and** both toggle-gated `static_assert` invariants. Per `disciplines/on-implement/file-splitting.md` § "Same class, different responsibility cluster".
+- New private method `GPUPathTracerPass::ConfigureRaytracingBindings()` declared in `GPUPathTracerPass.h`; called once from `Setup()` after the `RenderPassComponent` is created.
+- The `static_assert` block moved into the new TU. FIRE-verification re-run below confirms the assert still triggers at the new file/line.
+
+| File | Pre-split | Post-split |
+|---|---:|---:|
+| `GPUPathTracerPass_Setup.cpp` | 343 | 91 |
+| `GPUPathTracerPass_BindingLayout.cpp` | — | 264 |
+
+#### HLSL split — `GPUPathTracerRayGen.hlsl`
+
+The 910-line raygen needed a deeper split than a single sub-section extraction; a 4-way split landed it at 57 lines (top-level entry-point + toggle docs + 3 includes):
+
+| New file | Lines | Role |
+|---|---:|---|
+| `common/PTRaygenBindings.hlsl` | 96 | b0/b1/b2/b3/b4 cbuffers + TLAS + light SRVs + UAVs (toggle-gated cache + denoise blocks). |
+| `common/PTRaygenHelpers.hlsl` | 180 | PCG/Halton, Disney/GGX BSDF math, hemisphere/GGX sampling, `SkyColor`, `GenerateCameraRay`. |
+| `common/PTRaygenIntegrator.hlsl` | 247 | Free-function `RunPathIntegrator(uint2 pixel, uint2 resolution)` — the bounce loop, BSDF importance sample, RR, AccumBuffer composition. Calls helpers + reads bindings via global symbols (HLSL has no module system). |
+| `common/PTRaygenIntegrator_GBufferWrite.hlsli` | 58 | Inline-snippet (`#include`-d inside `RunPathIntegrator`). Bounce==0 GBuffer-equivalent UAV write block. Per `disciplines/on-implement/file-splitting.md` § free-function header umbrella — splits a long body's domain-cohesive sub-block into a sibling include rather than inflating an inout-parameter signature. |
+| `common/PTRaygenIntegrator_NEE.hlsli` | 195 | Inline-snippet. Sun + Sky + Point + Sphere NEE blocks. |
+| `common/PTRaygenIntegrator_Cache.hlsli` | 161 | Inline-snippet. `#if PT_HASH_GRID_CACHE_ENABLED` Site-3 read + Site-2 multibounce write block. |
+| `GPUPathTracerRayGen.hlsl` | **57** (was 910) | Toggle docs + `#define`s + 3 `#include`s + 4-line `[shader("raygeneration")]` entry point delegating to `RunPathIntegrator`. |
+
+The `.hlsli` snippets are recognized HLSL-preprocessor-spliced source, used elsewhere in the tree (`pathTracerPayload.hlsli`). They share scope with the surrounding `RunPathIntegrator` body — no inout-parameter scaffolding, no DXIL drift surface from name-mangling. Each snippet's header documents in-scope dependencies.
+
+#### DXIL byte-identity gate
+
+Toggle=0 + toggle=1 both build clean before and after the split. The DXC-emitted `.dxil` files differ at SHA-256 hash level (DXC bakes source bytes into the embedded debug info via `/Zi -Qembed_debug`), so a raw file hash is not a reliable equivalence test. Comparison via `dxc -dumpbin` disassembly:
+
+| Verification axis | Toggle=0 | Toggle=1 |
+|---|---|---|
+| Disassembled instruction count (lines starting with `%`) | 1730 (baseline) = 1730 (post-split) | 1971 (baseline) = 1971 (post-split) |
+| `dx.op.*` intrinsic call counts (sorted-uniqued) | identical | identical |
+| Diff post-normalization (strip `!dbg`, line/col, SSA names, block labels) | only block-label suffix differences from one extra inline frame (`RunPathIntegrator`) | same: only block-label suffix differences |
+| Trailing-comma artifacts on cbuffer load lines | 3 (debug-meta vestigial) | 3 (debug-meta vestigial) |
+
+Sample of the only structural delta — block-label suffix differences caused by an additional inlining level when `RayGenShader` calls `RunPathIntegrator`:
+
+```text
+< br i1 %, label %"Z.exit", label %.lr.ph219.preheader      (baseline: single-inline of Halton)
+> br i1 %, label %"Z.exit.i", label %.lr.ph36.preheader     (post-split: double-inline through RunPathIntegrator)
+```
+
+Same opcode, same operands, same control-flow edges — only the auto-generated SSA suffixes shift because the extra inline frame mints fresh names. Disassembly artifacts confirmed at `/tmp/raygen_*_t{0,1}.disasm` (kept ephemeral; reproduce via `dxc -dumpbin` on `Bin/Shaders/DXIL/GPUPathTracerRayGen.hlsl.dxil`).
+
+DXC's container hash (visible in `; shader hash: ... (includes source)` of the disassembly) is by definition source-byte-dependent and so **cannot** prove byte-identity through a structural split — it would change even on a comment edit or whitespace normalization. The instruction-count + intrinsic-call-frequency + post-normalization diff is the operative gate.
+
+#### CMake reconfigure
+
+`file(GLOB)` enumeration in `Source/ExampleProject/RenderingClient/CMakeLists.txt` did not auto-pick up `GPUPathTracerPass_BindingLayout.cpp` until `cmake .` re-ran. After reconfigure, the TU compiled into `ExampleRenderingClient.lib` and the engine linked clean.
+
+#### Static_assert FIRE-verification re-run (post-split)
+
+The static_assert block lives in `GPUPathTracerPass_BindingLayout.cpp` now (lines 22, 33). Pre-revert: temporarily set `Inno::PTDenoise::ENABLED = true` AND `l_denoiseBindingCount = 4`. Build output:
+
+```text
+GPUPathTracerPass_BindingLayout.cpp(33,42): error C2338: static_assert failed:
+'GPUPathTracer raygen denoiser-binding count must be 5 (b4 + u7..u10). ...'
+```
+
+— assert fires at the new file/line with the expected message. Post-revert: count restored to 5, `ENABLED = false`; build clean.
+
+#### Final line counts (post-split)
+
+| File | Lines | Limit |
+|---|---:|---:|
+| `GPUPathTracerPass_Setup.cpp` | 91 | 300 |
+| `GPUPathTracerPass_BindingLayout.cpp` | 264 | 300 |
+| `GPUPathTracerPass.h` | 144 | 300 |
+| `GPUPathTracerRayGen.hlsl` | 57 | 300 |
+| `common/PTRaygenBindings.hlsl` | 96 | 300 |
+| `common/PTRaygenHelpers.hlsl` | 180 | 300 |
+| `common/PTRaygenIntegrator.hlsl` | 247 | 300 |
+| `common/PTRaygenIntegrator_GBufferWrite.hlsli` | 58 | 300 |
+| `common/PTRaygenIntegrator_NEE.hlsli` | 195 | 300 |
+| `common/PTRaygenIntegrator_Cache.hlsli` | 161 | 300 |
+
+#### Capture spot-check (post-split)
+
+`Bin/RelWithDebInfo/Main.exe -total_frames 30` (toggle OFF default): exit code 0, auto-test confirmed `30 frames rendered, terminating.`, scene load succeeded at frame 5 (`Auto-test: loaded GISponza scene at frame 5`), no D3D12 errors, no GBV warnings, no device-removed. Pre-existing engine warnings only (GPU validation-disabled banner; long-task warnings during teardown). Log at `Build/captures/pt-denoise-cl1-split-toggle-off.log`.
 
 <!-- SECTION:NOTES:END -->

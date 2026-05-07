@@ -1,5 +1,6 @@
 #include "GPUPathTracerPass.h"
 #include "HashGridCacheConstants.h"
+#include "PTDenoiseConstants.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/FrameManagementService.h"
@@ -37,6 +38,11 @@ bool GPUPathTracerPass::Terminate()
 		if (m_HashGridCache_DecayTileBuffer)        l_bufService->Delete(m_HashGridCache_DecayTileBuffer);
 		if (m_HashGridCache_HashBuffer)             l_bufService->Delete(m_HashGridCache_HashBuffer);
 		if (m_HashGridCacheCB)                      l_bufService->Delete(m_HashGridCacheCB);
+	}
+
+	if constexpr (Inno::PTDenoise::ENABLED)
+	{
+		DeletePTGBufferTextures();
 	}
 
 	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Compute);
@@ -104,5 +110,54 @@ void GPUPathTracerPass::OnResize()
 		m_AccumulationBuffer = nullptr;
 	}
 	CreateAccumulationBuffer();
+
+	if constexpr (Inno::PTDenoise::ENABLED)
+	{
+		DeletePTGBufferTextures();
+		CreatePTGBufferTextures();
+	}
+
 	ResetAccumulation();
+}
+
+// PT screen-space denoiser GBuffer-equivalent textures. RGBA16F across all
+// four to mirror the rasterizer GBuffer's float16 RGBA format
+// (RenderingConfigurationService::m_DefaultRenderPassDesc) so DecodeGBuffer
+// in common/lightPassCommon.hlsl reads them with the same precision in PT
+// mode as in raster mode. Position carries 16F precision floor; same as
+// the rasterizer ships, so denoiser passes (CL-2/3/4) get a contract-
+// equivalent input.
+void GPUPathTracerPass::CreatePTGBufferTextures()
+{
+	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+	auto l_texService = g_Engine->Get<TextureResourceService>();
+
+	auto l_create = [&](const char* in_Name, TextureComponent*& out_Tex)
+	{
+		out_Tex = l_texService->Add(in_Name);
+		out_Tex->m_TextureDesc.Sampler          = TextureSampler::Sampler2D;
+		out_Tex->m_TextureDesc.Usage            = TextureUsage::ComputeOnly;
+		out_Tex->m_TextureDesc.PixelDataFormat  = TexturePixelDataFormat::RGBA;
+		out_Tex->m_TextureDesc.PixelDataType    = TexturePixelDataType::Float16;
+		out_Tex->m_TextureDesc.Width            = l_resolution.x;
+		out_Tex->m_TextureDesc.Height           = l_resolution.y;
+		out_Tex->m_TextureDesc.DepthOrArraySize = 1;
+		out_Tex->m_CPUAccessibility             = Accessibility::Immutable;
+		out_Tex->m_GPUAccessibility             = Accessibility::ReadWrite;
+		l_texService->Initialize(out_Tex);
+	};
+
+	l_create("PTDenoise_GBuffer_Position",        m_PTGBuffer_Position);
+	l_create("PTDenoise_GBuffer_NormalMetalness", m_PTGBuffer_NormalMetalness);
+	l_create("PTDenoise_GBuffer_AlbedoRoughness", m_PTGBuffer_AlbedoRoughness);
+	l_create("PTDenoise_GBuffer_MotionHitDist",   m_PTGBuffer_MotionHitDist);
+}
+
+void GPUPathTracerPass::DeletePTGBufferTextures()
+{
+	auto l_texService = g_Engine->Get<TextureResourceService>();
+	if (m_PTGBuffer_MotionHitDist)   { l_texService->Delete(m_PTGBuffer_MotionHitDist);   m_PTGBuffer_MotionHitDist   = nullptr; }
+	if (m_PTGBuffer_AlbedoRoughness) { l_texService->Delete(m_PTGBuffer_AlbedoRoughness); m_PTGBuffer_AlbedoRoughness = nullptr; }
+	if (m_PTGBuffer_NormalMetalness) { l_texService->Delete(m_PTGBuffer_NormalMetalness); m_PTGBuffer_NormalMetalness = nullptr; }
+	if (m_PTGBuffer_Position)        { l_texService->Delete(m_PTGBuffer_Position);        m_PTGBuffer_Position        = nullptr; }
 }

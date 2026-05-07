@@ -18,7 +18,11 @@ struct PathTracerPayload
     float  metalness;  //  4B
     float  roughness;  //  4B
     bool   missed;     //  4B, HLSL pads to 4
-};                     // 56B total; MaxPayloadSizeInBytes = 64 for alignment.
+    uint   instanceID; //  4B — TLAS InstanceID() captured at primary hit;
+                       //  consumed by the PT screen-space denoiser's
+                       //  GBuffer-equivalent RT0.w (sky == 0 sentinel)
+                       //  and by CL-2 history-rejection on disocclusion.
+};                     // 60B total; MaxPayloadSizeInBytes = 64 for alignment.
 
 struct ShadowPayload { bool isShadowed; };
 

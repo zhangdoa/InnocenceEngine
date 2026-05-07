@@ -52,6 +52,7 @@ void ClosestHitShader(inout PathTracerPayload payload, in BuiltInTriangleInterse
 {
     payload.hitPos = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
     payload.missed = false;
+    payload.instanceID = InstanceID();
 
     uint meshSlot = InstanceID();
     uint primIdx = PrimitiveIndex();

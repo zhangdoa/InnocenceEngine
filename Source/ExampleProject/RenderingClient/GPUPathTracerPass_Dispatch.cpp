@@ -1,5 +1,6 @@
 #include "GPUPathTracerPass.h"
 #include "HashGridCacheConstants.h"
+#include "PTDenoiseConstants.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -27,6 +28,13 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	// (set by swap chain presentation), which is invalid on compute command lists.
 	l_fmService->CommandListBegin(m_RayTracingRenderPassComp, m_CommandListComp_Graphics, 0);
 	l_fmService->TryToTransitState(m_AccumulationBuffer, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
+	if constexpr (Inno::PTDenoise::ENABLED)
+	{
+		l_fmService->TryToTransitState(m_PTGBuffer_Position,        m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
+		l_fmService->TryToTransitState(m_PTGBuffer_NormalMetalness, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
+		l_fmService->TryToTransitState(m_PTGBuffer_AlbedoRoughness, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
+		l_fmService->TryToTransitState(m_PTGBuffer_MotionHitDist,   m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
+	}
 	l_fmService->CommandListEnd(m_RayTracingRenderPassComp, m_CommandListComp_Graphics);
 
 	// Compute CL: bind and dispatch rays
@@ -70,8 +78,34 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_ValueIndirectBuffer,           18);
 	}
 
+	if constexpr (Inno::PTDenoise::ENABLED)
+	{
+		// Slot indices follow whatever the layout block in
+		// GPUPathTracerPass_Setup.cpp computed for this toggle combination
+		// (cache OFF + denoise ON: 12..16; cache ON + denoise ON: 19..23).
+		// Mirror that with the same compile-time arithmetic so a slot
+		// drift between Setup and Dispatch cannot creep in.
+		constexpr size_t l_baseBindingCount    = 12;
+		constexpr size_t l_cacheBindingCount   = Inno::PTHashGridCache::ENABLED ? 7 : 0;
+		constexpr size_t l_denoiseFirst        = l_baseBindingCount + l_cacheBindingCount;
+
+		auto l_perFrameBufferPrev = g_Engine->Get<PerFrameDataService>()->GetPreviousFrameBuffer();
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_perFrameBufferPrev,         l_denoiseFirst + 0);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_PTGBuffer_Position,         l_denoiseFirst + 1);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_PTGBuffer_NormalMetalness,  l_denoiseFirst + 2);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_PTGBuffer_AlbedoRoughness,  l_denoiseFirst + 3);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_PTGBuffer_MotionHitDist,    l_denoiseFirst + 4);
+	}
+
 	l_fmService->DispatchRays(m_RayTracingRenderPassComp, m_CommandListComp_Compute, l_resolution.x, l_resolution.y, 1);
 	l_fmService->TryToTransitState(m_AccumulationBuffer, m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);
+	if constexpr (Inno::PTDenoise::ENABLED)
+	{
+		l_fmService->TryToTransitState(m_PTGBuffer_Position,        m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);
+		l_fmService->TryToTransitState(m_PTGBuffer_NormalMetalness, m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);
+		l_fmService->TryToTransitState(m_PTGBuffer_AlbedoRoughness, m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);
+		l_fmService->TryToTransitState(m_PTGBuffer_MotionHitDist,   m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);
+	}
 	l_fmService->CommandListEnd(m_RayTracingRenderPassComp, m_CommandListComp_Compute);
 
 	return true;

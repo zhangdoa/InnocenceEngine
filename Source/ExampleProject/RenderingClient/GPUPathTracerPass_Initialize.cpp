@@ -1,5 +1,6 @@
 #include "GPUPathTracerPass.h"
 #include "HashGridCacheConstants.h"
+#include "PTDenoiseConstants.h"
 
 #include "../../Engine/Services/ShaderProgramResourceService.h"
 #include "../../Engine/Services/RenderPassResourceService.h"
@@ -107,6 +108,11 @@ bool GPUPathTracerPass::Initialize()
 		// Scene-load is the natural reset boundary; queue a clear for the
 		// first PrepareCommandList that runs.
 		m_HashGridCachePendingClear = true;
+	}
+
+	if constexpr (Inno::PTDenoise::ENABLED)
+	{
+		CreatePTGBufferTextures();
 	}
 
 	m_ObjectStatus = ObjectStatus::Suspended;

@@ -147,7 +147,7 @@ bool DX12RenderPassResourceService::CreateRaytracingPipelineStateObject(RenderPa
 
 	D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = {};
 	// PathTracerPayload (see common/pathTracerPayload.hlsli — single source of truth):
-	// hitPos(12) + normal(12) + texCoord(8) + albedo(12) + metalness(4) + roughness(4) + missed(4) = 56B.
+	// hitPos(12) + normal(12) + texCoord(8) + albedo(12) + metalness(4) + roughness(4) + missed(4) + instanceID(4) = 60B.
 	// ShadowPayload: 4B. Round up to 64 for 16B alignment.
 	shaderConfig.MaxPayloadSizeInBytes = 64;
 	shaderConfig.MaxAttributeSizeInBytes = 8; // barycentrics
