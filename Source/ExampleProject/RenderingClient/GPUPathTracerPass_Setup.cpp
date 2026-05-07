@@ -145,44 +145,44 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	if constexpr (Inno::PTHashGridCache::ENABLED)
 	{
 		// b3 - HashGridCacheCB (set 0, binding 3)
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_GPUResourceType   = GPUResourceType::Buffer;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_DescriptorSetIndex = 0;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_DescriptorIndex   = 3;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_ShaderStage       = m_ShaderStage;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_GPUResourceType   = GPUResourceType::Buffer;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorSetIndex = 0;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorIndex   = 3;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_ShaderStage       = m_ShaderStage;
 
 		// u1 - HashBuffer (set 2, binding 1, ReadWrite UAV)
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_GPUResourceType        = GPUResourceType::Buffer;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_DescriptorSetIndex      = 2;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_DescriptorIndex        = 1;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_BindingAccessibility   = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_ResourceAccessibility  = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_ShaderStage            = m_ShaderStage;
+
+		// u2 - DecayTileBuffer (set 2, binding 2, ReadWrite UAV)
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_GPUResourceType        = GPUResourceType::Buffer;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorSetIndex      = 2;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorIndex        = 1;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorIndex        = 2;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_BindingAccessibility   = Accessibility::ReadWrite;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_ResourceAccessibility  = Accessibility::ReadWrite;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_ShaderStage            = m_ShaderStage;
 
-		// u2 - DecayTileBuffer (set 2, binding 2, ReadWrite UAV)
+		// u3 - UpdateCellValueBuffer (set 2, binding 3, ReadWrite UAV)
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_GPUResourceType        = GPUResourceType::Buffer;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_DescriptorSetIndex      = 2;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_DescriptorIndex        = 2;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_DescriptorIndex        = 3;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_BindingAccessibility   = Accessibility::ReadWrite;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_ResourceAccessibility  = Accessibility::ReadWrite;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_ShaderStage            = m_ShaderStage;
 
-		// u3 - UpdateCellValueBuffer (set 2, binding 3, ReadWrite UAV)
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_GPUResourceType        = GPUResourceType::Buffer;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_DescriptorSetIndex      = 2;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_DescriptorIndex        = 3;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_BindingAccessibility   = Accessibility::ReadWrite;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_ResourceAccessibility  = Accessibility::ReadWrite;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_ShaderStage            = m_ShaderStage;
-
 		// u4 - ValueBuffer (set 2, binding 4, ReadWrite UAV) — Site-3 read
 		// target. Sources its values from PTHashGridCacheUpdateTilesPass'
 		// running-mean resolve of UpdateCellValueBuffer.
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_GPUResourceType        = GPUResourceType::Buffer;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_DescriptorSetIndex      = 2;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_DescriptorIndex        = 4;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_BindingAccessibility   = Accessibility::ReadWrite;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_ResourceAccessibility  = Accessibility::ReadWrite;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_ShaderStage            = m_ShaderStage;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_GPUResourceType        = GPUResourceType::Buffer;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_DescriptorSetIndex      = 2;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_DescriptorIndex        = 4;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_BindingAccessibility   = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_ResourceAccessibility  = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_ShaderStage            = m_ShaderStage;
 
 		// u5 - UpdateCellValueIndirectBuffer (set 2, binding 5, ReadWrite UAV).
 		// D1-reversal CL C — the (b) secondary-bounce write target. Capsaicin
@@ -190,12 +190,12 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 		// modulated tertiary-cell mean into the previous vertex's *indirect*
 		// scratch; the integrator's (b) write redirects here from
 		// UpdateCellValueBuffer this CL.
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_GPUResourceType        = GPUResourceType::Buffer;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_DescriptorSetIndex      = 2;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_DescriptorIndex        = 5;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_BindingAccessibility   = Accessibility::ReadWrite;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_ResourceAccessibility  = Accessibility::ReadWrite;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_ShaderStage            = m_ShaderStage;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_GPUResourceType        = GPUResourceType::Buffer;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_DescriptorSetIndex      = 2;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_DescriptorIndex        = 5;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_BindingAccessibility   = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_ResourceAccessibility  = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_ShaderStage            = m_ShaderStage;
 
 		// u6 - ValueIndirectBuffer (set 2, binding 6, ReadWrite UAV) —
 		// reserved for the indirect-lobe Site-3 read in CL D. Slot is bound
@@ -203,12 +203,12 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 		// (the b9a103cc PSO-failure precedent — descriptor-table growth is
 		// the load-bearing failure surface). No HLSL read references this
 		// CL; only the binding declaration in GPUPathTracerRayGen.hlsl.
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[19].m_GPUResourceType        = GPUResourceType::Buffer;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[19].m_DescriptorSetIndex      = 2;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[19].m_DescriptorIndex        = 6;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[19].m_BindingAccessibility   = Accessibility::ReadWrite;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[19].m_ResourceAccessibility  = Accessibility::ReadWrite;
-		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[19].m_ShaderStage            = m_ShaderStage;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_GPUResourceType        = GPUResourceType::Buffer;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_DescriptorSetIndex      = 2;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_DescriptorIndex        = 6;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_BindingAccessibility   = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_ResourceAccessibility  = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[18].m_ShaderStage            = m_ShaderStage;
 	}
 
 	m_MaterialSampler = g_Engine->Get<SamplerResourceService>()->Add("GPUPathTracerMaterialSampler");
