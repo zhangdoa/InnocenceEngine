@@ -316,4 +316,53 @@ GPUPathTracerPass_BindingLayout.cpp(33,42): error C2338: static_assert failed:
 
 `Bin/RelWithDebInfo/Main.exe -total_frames 30` (toggle OFF default): exit code 0, auto-test confirmed `30 frames rendered, terminating.`, scene load succeeded at frame 5 (`Auto-test: loaded GISponza scene at frame 5`), no D3D12 errors, no GBV warnings, no device-removed. Pre-existing engine warnings only (GPU validation-disabled banner; long-task warnings during teardown). Log at `Build/captures/pt-denoise-cl1-split-toggle-off.log`.
 
+## Review (shader-impl, 2026-05-07) — PASS (with one ADVISORY)
+
+Reviewer: shader-impl. Scope: bundled CL-1 substance + TASK-219 file-split. Read every new HLSL file end-to-end, every touched C++ TU, the task's CL-1 implementation note, and `Scripts/Lib/Compile-HLSL.psm1`.
+
+### CL-1 substance (preserved through the split)
+
+- Lobe-tag rule (`PTRaygenIntegrator.hlsl:153-187`): `isSpecularPath` set ONCE at primary-hit BSDF importance sample (`if (bounce == 0u) isSpecularPath = false/true` inside both lobe branches), immutable for the rest of the path. Matches CL-1 design.
+- GBuffer-equivalent UAV writes (`PTRaygenIntegrator_GBufferWrite.hlsli`): bounce==0 gated, RT0 = positionWS + (instanceID + 1u sentinel), RT1 = N + metalness, RT2 = albedo + roughness, RT3 = motionVec(px) + hitDist + 0. Aligns with `lightPassCommon.hlsl::DecodeGBuffer:55-66`. The design-plan RT1/RT2 alpha swap was correctly resolved and is documented in `PTDenoiseShared.hlsl:21-24`.
+- Motion-vector math: `screen_prev - screen_curr` in pixels (`g_FramePrev.v / g_FramePrev.p_original` reprojection of current `payload.hitPos`), Y-flip applied to both screen coords before subtraction. Sign + unit match `OpaquePass.frag:124` so engine-wide reprojection helpers reusable.
+- NEE-at-primary-to-diffuse decision (`PTRaygenIntegrator_NEE.hlsli`): `if (bounce == 0u || !isSpecularPath) radianceDiffuse += ... else radianceSpecular += ...` repeated identically for sun / sky / point / sphere lobes. Indirect bounces follow path tag — correct.
+- Cache+Denoise interaction (`PTRaygenIntegrator_Cache.hlsli:135-144`): cache substitution lobe-routing reads `isSpecularPath` only inside the `bounce >= 1u` cache gate, after the primary-hit lock — well-formed.
+- Sky-miss UAV-zero + sky-routed-to-diffuse (`PTRaygenIntegrator.hlsl:99-111`): correct; matches `DecodeGBuffer`'s `l_RT0.a == 0` sky test.
+- Payload `instanceID` field (`pathTracerPayload.hlsli:21-25`, `GPUPathTracerClosestHit.hlsl:55`): 56B → 60B, MaxPayloadSizeInBytes=64 unchanged. DX12 service comment updated.
+- Bypass invariant verified at source level: every new HLSL line is inside `#if PT_DENOISE_ENABLED`; no temporaries leak into the toggle-off compile path. Toggle-OFF NEE additions to `radiance` are byte-identical to HEAD.
+
+### DXIL byte-identity gate substitution
+
+- Verified `Scripts/Lib/Compile-HLSL.psm1:155` actually compiles with `-Qembed_debug /Zi /Zss`. The agent's claim that DXC bakes source bytes into embedded debug info → byte-identical .dxil through a comment-bearing split is structurally impossible — is correct.
+- Structural diff (instruction count 1730/1730 toggle=0, 1971/1971 toggle=1; intrinsic frequency identical; only block-label suffix differences from one extra inline frame of `RunPathIntegrator`) is the right operative gate for this build configuration. Same opcode, same operands, same control flow — only auto-generated SSA suffixes shift. Acceptable.
+- ADVISORY: file as a TASK-219 follow-up — `HLSL2DXIL.ps1` release-build variant should drop `-Qembed_debug /Zi /Zss` (or grow a `--strip-debug` mode) so future structural splits can use raw SHA-256 .dxil byte-identity as the gate. Not blocking this CL; the structural-diff substitution is rigorous given current flags.
+
+### `.hlsli` snippet pattern
+
+- Precedent established by `pathTracerPayload.hlsli`. Pattern matches `disciplines/on-implement/file-splitting.md` § "Free-function or template-heavy headers" in spirit (split by domain).
+- Each `.hlsli` correctly omits `#pragma once` and function declarations — they are function-body excerpts spliced into `RunPathIntegrator`. Each header documents in-scope dependencies (locals, globals, gated branches) — sufficient for a future caller.
+- Inline-snippet `break` in `_Cache.hlsli:159-160` correctly exits the surrounding bounce loop because the snippet shares scope. No DXIL drift surface vs an inout-parameter free function.
+
+### File-size compliance
+
+All ten touched/new files at or under 300: GPUPathTracerRayGen.hlsl 57, PTRaygenBindings.hlsl 96, PTRaygenHelpers.hlsl 180, PTRaygenIntegrator.hlsl 247, *_GBufferWrite.hlsli 58, *_NEE.hlsli 195, *_Cache.hlsli 161, GPUPathTracerPass_Setup.cpp 91, GPUPathTracerPass_BindingLayout.cpp 264, GPUPathTracerPass.h 144 (Initialize 121, Dispatch 112, .cpp 163, PTDenoiseConstants.h 33 — all well under). Ratchet satisfied.
+
+### static_assert post-move
+
+Lives at `GPUPathTracerPass_BindingLayout.cpp:33`. Predicate `!Inno::PTDenoise::ENABLED || l_denoiseBindingCount == 5` short-circuits on toggle-off (current default). Message text intact: u7/u8/u9/u10 named, b4 + PerFrameConstantBufferPrev rationale, b9a103cc precedent, sibling pass counts (UpdateTiles 1+5, MipCascadeBuild 1+3, PurgeTiles 1+2). Brief's "l_denoiseBindingCount = 4" was the FIRE-verification injection value (deliberately wrong); actual code uses 5 and matches the static_assert constant. FIRE rerun verified at the new file/line — accepted.
+
+### Bypass invariant + out-of-scope creep
+
+`HashGridCacheConstants.h::ENABLED = false`, `PTDenoiseConstants.h::ENABLED = false`. AccumBuffer write path bit-identical to HEAD when both off. No accidental edits to CL-1 substance during the split — every `#if PT_DENOISE_ENABLED` block landed verbatim in its new home. DX12 service change is a comment-only update (56B → 60B); closest-hit adds one line; payload field is the documented add. No out-of-scope creep detected.
+
+### Build hygiene
+
+CMake reconfigure called out in the implementation note (required for `file(GLOB)` to pick up `_BindingLayout.cpp`). Both toggle combinations built clean and `Bin/RelWithDebInfo/Main.exe -total_frames 30` ran to clean termination on the toggle-off default.
+
+### Verdict
+
+**PASS**. CL-1 substance is preserved verbatim through the file-split; the bypass invariant holds at the source level; the DXIL substitute gate is rigorous given DXC's debug-embedding flags. One non-blocking ADVISORY: file a TASK-219 follow-up to add a debug-stripped HLSL2DXIL release variant so future splits can gate on raw .dxil byte-identity.
+
+Reviewed-By: shader-impl
+
 <!-- SECTION:NOTES:END -->
