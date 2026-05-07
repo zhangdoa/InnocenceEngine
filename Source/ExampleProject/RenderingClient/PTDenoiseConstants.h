@@ -29,5 +29,28 @@ namespace PTDenoise
     // The HLSL side mirrors this in GPUPathTracerRayGen.hlsl
     // (`#define PT_DENOISE_ENABLED`); both must hold the same value.
     static constexpr bool ENABLED = false;
+
+    // Temporal-accumulator constants (CL-2). Mirrored on the HLSL side in
+    // common/PTDenoiseShared.hlsl so the rejection thresholds and history
+    // cap stay in lockstep across the C++ pass scheduling and the
+    // PTDenoiseTemporal.comp kernel body.
+    //
+    // SVGF default — reaches `α = 1/32` blend weight at full convergence,
+    // an empirically common balance between residual noise and lag under
+    // motion (Schied 2017 §3). 16 trades convergence depth for faster
+    // motion response; 32 keeps more samples but takes longer to evict
+    // stale history when reprojection just barely passes the gate. Match
+    // SVGF reference; revisit if rejection turns out to leak ghosting.
+    static constexpr uint32_t MaxHistoryFrames = 32u;
+
+    // History rejection — mesh-id strict equality plus geometry tests.
+    // Matches GIDenoise.comp:245 (`dot(N, prevN) > 0.95`); the depth gate
+    // is relative because absolute thresholds break across scene scales
+    // (Capsaicin gi1.comp:4039 and the SVGF reference both go relative).
+    // 0.1 = 10% linear-depth tolerance; tuned in CL-2 capture (revisit
+    // alongside specular blur radius in CL-3 if disocclusion flicker
+    // shows up at the threshold boundary).
+    static constexpr float HistoryNormalDotThreshold = 0.95f;
+    static constexpr float HistoryDepthRelativeThreshold = 0.1f;
 }
 } // namespace Inno

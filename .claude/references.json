@@ -68,6 +68,11 @@
       "reference": "https://cg.ivd.kit.edu/publications/2017/svgf/svgf_preprint.pdf (SVGF). NRD-Sample (https://github.com/NVIDIA-RTX/NRD-Sample) consulted as architectural reference only; no NRD library or NVIDIA-NRD source is linked or vendored. Channel-layout invariant cross-references opaqueGeometryProcessPass.frag:124 and common/lightPassCommon.hlsl:38-67."
     },
     {
+      "glob": "Source/Shaders/HLSL/PTDenoiseTemporal.comp",
+      "paper": "SVGF (Schied et al. 2017) §3 (temporal accumulation) + §4.2 (variance estimation via Σ luma + Σ luma²). TASK-77.2 CL-2 — per-pixel motion-vector reprojection of last frame's per-lobe history, geometry-aware rejection on mesh-id strict equality + relative depth + normal-dot, and a single-tap blend at α = 1/min(N+1, MaxHistoryFrames). Pattern shape ports the engine-side GIDenoise.comp:184-260 reprojection block — same motion-vector sign convention, same normal-dot threshold (0.95), depth gate adapted to the SVGF relative-tolerance form (0.1 of linear depth) since the PT denoiser does not have a Capsaicin-style adaptive cell-size formula at this layer. Variance form is SVGF Σ/Σ² (paper-faithful) rather than Welford so CL-3's à-trous edge-stop weight reads it directly without reconciliation.",
+      "reference": "https://cg.ivd.kit.edu/publications/2017/svgf/svgf_preprint.pdf (SVGF). Engine-side reprojection precedent: Source/Shaders/HLSL/GIDenoise.comp:184-260. NRD-Sample (https://github.com/NVIDIA-RTX/NRD-Sample) consulted as architectural reference only; no NRD library or NVIDIA-NRD source is linked or vendored."
+    },
+    {
       "glob": "Source/Shaders/HLSL/common/PTHashGridCache.hlsl",
       "paper": "GI-1.0 §2.2 (World Cache) — open-addressing spatial hash with secondary-vertex outgoing-radiance storage. Direction-keyed (Capsaicin uses incoming-ray direction quantized to 5×5×5 buckets, NOT surface normal — D3 in the audit).",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/hash_grid_cache.hlsl",

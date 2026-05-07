@@ -51,11 +51,19 @@ namespace Inno
 		// Screen-space PT denoiser GBuffer-equivalent textures (TASK-77.2
 		// CL-1). Channel layout per common/PTDenoiseShared.hlsl, mirroring
 		// opaqueGeometryProcessPass.frag so DecodeGBuffer reads them
-		// unchanged. nullptr when PTDenoise::ENABLED is false.
-		TextureComponent* GetPTGBufferPosition()        { return m_PTGBuffer_Position; }
-		TextureComponent* GetPTGBufferNormalMetalness() { return m_PTGBuffer_NormalMetalness; }
-		TextureComponent* GetPTGBufferAlbedoRoughness() { return m_PTGBuffer_AlbedoRoughness; }
-		TextureComponent* GetPTGBufferMotionHitDist()   { return m_PTGBuffer_MotionHitDist; }
+		// unchanged. Ping-pong (Even/Odd parity on FrameCountSinceLaunch)
+		// so the CL-2 temporal accumulator can read the previous frame's
+		// position/normal/mesh-id for the disocclusion gates. The raygen
+		// always writes the "current" set; the temporal pass reads both.
+		// nullptr when PTDenoise::ENABLED is false.
+		TextureComponent* GetCurrentPTGBufferPosition();
+		TextureComponent* GetCurrentPTGBufferNormalMetalness();
+		TextureComponent* GetCurrentPTGBufferAlbedoRoughness();
+		TextureComponent* GetCurrentPTGBufferMotionHitDist();
+		TextureComponent* GetPreviousPTGBufferPosition();
+		TextureComponent* GetPreviousPTGBufferNormalMetalness();
+		TextureComponent* GetPreviousPTGBufferAlbedoRoughness();
+		TextureComponent* GetPreviousPTGBufferMotionHitDist();
 
 	private:
 		struct PathTracerLightCountData
@@ -96,17 +104,22 @@ namespace Inno
 		GPUBufferComponent* m_HashGridCache_ValueIndirectBuffer = nullptr;
 
 		// Screen-space PT denoiser GBuffer-equivalent textures (TASK-77.2
-		// CL-1, SVGF-shape demodulated diffuse/specular denoiser). Written
-		// by GPUPathTracerRayGen.hlsl at bounce == 0 under PT_DENOISE_ENABLED.
-		// Layout mirrors opaqueGeometryProcessPass.frag so DecodeGBuffer
-		// in common/lightPassCommon.hlsl reads them unchanged. All nullptr
-		// unless PTDenoise::ENABLED is true and Setup/Initialize ran. Bypass
-		// invariant: when disabled, no allocation, no binding, no shader
-		// bytes emitted, AccumBuffer write is bit-identical.
-		TextureComponent* m_PTGBuffer_Position        = nullptr; // RT0: positionWS + instanceID
-		TextureComponent* m_PTGBuffer_NormalMetalness = nullptr; // RT1: normalWS  + metalness
-		TextureComponent* m_PTGBuffer_AlbedoRoughness = nullptr; // RT2: albedo    + roughness
-		TextureComponent* m_PTGBuffer_MotionHitDist   = nullptr; // RT3: motionVec + hitDist + 0
+		// CL-1 introduced; CL-2 ping-pongs them — Even/Odd parity on
+		// FrameCountSinceLaunch). Written by GPUPathTracerRayGen.hlsl at
+		// bounce == 0 under PT_DENOISE_ENABLED. Layout mirrors
+		// opaqueGeometryProcessPass.frag so DecodeGBuffer in
+		// common/lightPassCommon.hlsl reads them unchanged. All nullptr
+		// unless PTDenoise::ENABLED is true and Setup/Initialize ran.
+		// Bypass invariant: when disabled, no allocation, no binding, no
+		// shader bytes emitted, AccumBuffer write is bit-identical.
+		TextureComponent* m_PTGBuffer_Position_Even        = nullptr; // RT0: positionWS + instanceID
+		TextureComponent* m_PTGBuffer_Position_Odd         = nullptr;
+		TextureComponent* m_PTGBuffer_NormalMetalness_Even = nullptr; // RT1: normalWS  + metalness
+		TextureComponent* m_PTGBuffer_NormalMetalness_Odd  = nullptr;
+		TextureComponent* m_PTGBuffer_AlbedoRoughness_Even = nullptr; // RT2: albedo    + roughness
+		TextureComponent* m_PTGBuffer_AlbedoRoughness_Odd  = nullptr;
+		TextureComponent* m_PTGBuffer_MotionHitDist_Even   = nullptr; // RT3: motionVec + hitDist + 0
+		TextureComponent* m_PTGBuffer_MotionHitDist_Odd    = nullptr;
 
 		GPUBufferComponent* m_MaterialBuffer = nullptr;
 

@@ -26,7 +26,9 @@
 #include "PTHashGridCachePurgeTilesPass.h"
 #include "PTHashGridCacheUpdateTilesPass.h"
 #include "PTHashGridCacheMipCascadeBuildPass.h"
+#include "PTDenoiseTemporalPass.h"
 #include "HashGridCacheConstants.h"
+#include "PTDenoiseConstants.h"
 
 #include "../../Engine/Services/DevToggleRegistry.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
@@ -80,6 +82,10 @@ namespace Inno
 			PTHashGridCacheUpdateTilesPass::Get().Initialize();
 			PTHashGridCacheMipCascadeBuildPass::Get().Initialize();
 		}
+		if constexpr (Inno::PTDenoise::ENABLED)
+		{
+			PTDenoiseTemporalPass::Get().Initialize();
+		}
 
 		m_ObjectStatus = ObjectStatus::Activated;
 
@@ -101,6 +107,10 @@ namespace Inno
 				PTHashGridCachePurgeTilesPass::Get().Update();
 				PTHashGridCacheUpdateTilesPass::Get().Update();
 				PTHashGridCacheMipCascadeBuildPass::Get().Update();
+			}
+			if constexpr (Inno::PTDenoise::ENABLED)
+			{
+				PTDenoiseTemporalPass::Get().Update();
 			}
 		}
 
@@ -242,6 +252,10 @@ std::vector<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
 		l_passes.push_back(&PTHashGridCachePurgeTilesPass::Get());
 		l_passes.push_back(&PTHashGridCacheUpdateTilesPass::Get());
 		l_passes.push_back(&PTHashGridCacheMipCascadeBuildPass::Get());
+	}
+	if constexpr (Inno::PTDenoise::ENABLED)
+	{
+		l_passes.push_back(&PTDenoiseTemporalPass::Get());
 	}
 
 	l_passes.push_back(&BRDFLUTPass::Get());

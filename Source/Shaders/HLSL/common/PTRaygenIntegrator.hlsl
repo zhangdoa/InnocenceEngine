@@ -109,6 +109,10 @@ void RunPathIntegrator(uint2 pixel, uint2 resolution)
                 u_PTDenoise_NormalMetalness[pixel]    = float4(0.0f, 0.0f, 0.0f, 0.0f);
                 u_PTDenoise_AlbedoRoughness[pixel]    = float4(0.0f, 0.0f, 0.0f, 0.0f);
                 u_PTDenoise_MotionHitDist[pixel]      = float4(0.0f, 0.0f, 0.0f, 0.0f);
+                // Per-lobe radiance UAVs are written once at the
+                // function tail (single write site for both hit and
+                // miss paths, kept in lockstep with the AccumBuffer
+                // composition that already feeds the same values).
 #endif
             }
             break;
@@ -232,12 +236,24 @@ void RunPathIntegrator(uint2 pixel, uint2 resolution)
     // Algebraically `radianceDiffuse + radianceSpecular == radiance` —
     // every NEE / BSDF / cache contribution that lands in `radiance`
     // also lands in exactly one lobe bucket. Summing here keeps the
-    // fallback display valid in incremental-landing mode (CL-1 ships
-    // toggle-OFF; CL-4 will swap this sink for the composed denoised
-    // diffuse + specular). Floating-point reassociation may differ from
-    // the toggle-off `radiance` value at bit level, by intent — that's
-    // why the bypass invariant gate is `ENABLED == 0`.
+    // fallback display valid in incremental-landing mode (CL-2 still
+    // ships AccumBuffer-driven tonemap; CL-4 swaps this sink for the
+    // composed denoised diffuse + specular). Floating-point
+    // reassociation may differ from the toggle-off `radiance` value
+    // at bit level, by intent — that's why the bypass invariant gate
+    // is `ENABLED == 0`.
     float3 clampedRadiance = min(radianceDiffuse + radianceSpecular, 100000.0f);
+
+    // Per-lobe radiance for the CL-2 temporal accumulator (SVGF
+    // demodulated diffuse / specular channels). Single-buffered: the
+    // temporal pass reads these once, blends into ping-pong history
+    // textures, and the next frame's raygen overwrites them. Same
+    // `min(., 100000)` clamp the AccumBuffer composition uses so a
+    // fireflied lobe value cannot silently destabilise the temporal
+    // moment estimator. Alpha=0 reserved (CL-3 ReBLUR-shape may store
+    // per-lobe hit distance there).
+    u_PTDenoise_RadianceDiffuse[pixel]  = float4(min(radianceDiffuse,  100000.0f), 0.0f);
+    u_PTDenoise_RadianceSpecular[pixel] = float4(min(radianceSpecular, 100000.0f), 0.0f);
 #else
     float3 clampedRadiance = min(radiance, 100000.0f);
 #endif

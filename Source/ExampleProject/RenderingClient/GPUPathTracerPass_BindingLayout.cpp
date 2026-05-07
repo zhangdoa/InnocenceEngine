@@ -18,7 +18,7 @@ void GPUPathTracerPass::ConfigureRaytracingBindings()
 	// PTHashGridCachePurgeTilesPass = 1 CB + 2 UAVs.
 	constexpr size_t l_baseBindingCount    = 12;
 	constexpr size_t l_cacheBindingCount   = Inno::PTHashGridCache::ENABLED ? 7 : 0;
-	constexpr size_t l_denoiseBindingCount = Inno::PTDenoise::ENABLED       ? 5 : 0;
+	constexpr size_t l_denoiseBindingCount = Inno::PTDenoise::ENABLED       ? 7 : 0;
 	static_assert(!Inno::PTHashGridCache::ENABLED || l_cacheBindingCount == 7,
 		"GPUPathTracer raygen cache-binding count must be 7 (b3 + u1..u6). "
 		"u1=HashBuffer, u2=DecayTileBuffer, u3=UpdateCellValueBuffer (direct "
@@ -30,12 +30,16 @@ void GPUPathTracerPass::ConfigureRaytracingBindings()
 		"short-circuits and the cache descriptors are not allocated. Drift "
 		"on either the HLSL register decls or the layout block below is a "
 		"PSO-create failure surface (b9a103cc precedent).");
-	static_assert(!Inno::PTDenoise::ENABLED || l_denoiseBindingCount == 5,
-		"GPUPathTracer raygen denoiser-binding count must be 5 (b4 + u7..u10). "
+	static_assert(!Inno::PTDenoise::ENABLED || l_denoiseBindingCount == 7,
+		"GPUPathTracer raygen denoiser-binding count must be 7 (b4 + u7..u12). "
 		"b4=PerFrameConstantBufferPrev (engine ping-pong CB carrying the "
 		"previous frame's view + p_original for primary-hit motion-vector "
 		"reprojection), u7=PT-GBuffer Position+InstanceID, u8=Normal+Metalness, "
-		"u9=Albedo+Roughness, u10=MotionVec+HitDist. Channel layout per "
+		"u9=Albedo+Roughness, u10=MotionVec+HitDist, u11=RadianceDiffuse, "
+		"u12=RadianceSpecular. The two radiance UAVs (CL-2) are owned by "
+		"PTDenoiseTemporalPass; the path tracer borrows them by accessor so "
+		"the integrator can write the SVGF demodulated diffuse / specular "
+		"channels at the AccumBuffer-composition site. Channel layout per "
 		"common/PTDenoiseShared.hlsl, mirroring the rasterizer GBuffer so "
 		"DecodeGBuffer (common/lightPassCommon.hlsl) reads them unchanged. "
 		"Toggle-gated like the cache block above: when PTDenoise::ENABLED is "
@@ -260,5 +264,26 @@ void GPUPathTracerPass::ConfigureRaytracingBindings()
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 4].m_BindingAccessibility   = Accessibility::ReadWrite;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 4].m_ResourceAccessibility  = Accessibility::ReadWrite;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 4].m_ShaderStage            = m_ShaderStage;
+
+		// u11 - PT-Denoise RadianceDiffuse (set 2, binding 11). CL-2:
+		// SVGF demodulated diffuse channel — written at the AccumBuffer
+		// composition site, consumed by PTDenoiseTemporalPass.
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 5].m_GPUResourceType        = GPUResourceType::Image;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 5].m_DescriptorSetIndex      = 2;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 5].m_DescriptorIndex        = 11;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 5].m_TextureUsage           = TextureUsage::ComputeOnly;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 5].m_BindingAccessibility   = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 5].m_ResourceAccessibility  = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 5].m_ShaderStage            = m_ShaderStage;
+
+		// u12 - PT-Denoise RadianceSpecular (set 2, binding 12). CL-2:
+		// SVGF demodulated specular channel.
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 6].m_GPUResourceType        = GPUResourceType::Image;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 6].m_DescriptorSetIndex      = 2;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 6].m_DescriptorIndex        = 12;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 6].m_TextureUsage           = TextureUsage::ComputeOnly;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 6].m_BindingAccessibility   = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 6].m_ResourceAccessibility  = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 6].m_ShaderStage            = m_ShaderStage;
 	}
 }

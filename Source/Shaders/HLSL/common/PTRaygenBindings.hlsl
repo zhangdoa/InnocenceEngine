@@ -91,6 +91,18 @@ RWTexture2D<float4> u_PTDenoise_AlbedoRoughness    : register(u9);
 
 [[vk::binding(10, 2)]]
 RWTexture2D<float4> u_PTDenoise_MotionHitDist      : register(u10);
+
+// Per-lobe primary-hit radiance, written at the AccumBuffer-composition
+// site. SVGF demodulated diffuse / specular channels (CL-2 input). Both
+// RGBA16F: rgb carries the lobe's unfiltered radiance for the current
+// frame, alpha is reserved (zero on write) — alpha will carry per-lobe
+// hit-distance in CL-3 when ReBLUR-shape specular blur radius needs it,
+// kept zero here to avoid signaling intent we don't yet enforce.
+[[vk::binding(11, 2)]]
+RWTexture2D<float4> u_PTDenoise_RadianceDiffuse    : register(u11);
+
+[[vk::binding(12, 2)]]
+RWTexture2D<float4> u_PTDenoise_RadianceSpecular   : register(u12);
 #endif
 
 #endif // PT_RAYGEN_BINDINGS_HLSL

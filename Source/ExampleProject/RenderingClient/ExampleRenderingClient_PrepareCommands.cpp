@@ -26,7 +26,9 @@
 #include "PTHashGridCachePurgeTilesPass.h"
 #include "PTHashGridCacheUpdateTilesPass.h"
 #include "PTHashGridCacheMipCascadeBuildPass.h"
+#include "PTDenoiseTemporalPass.h"
 #include "HashGridCacheConstants.h"
+#include "PTDenoiseConstants.h"
 
 #include "../../Engine/Services/RenderPassResourceService.h"
 #include "../../Engine/Services/ViewportSourceOverride.h"
@@ -74,6 +76,18 @@ namespace Inno
 				DispatchOrBypass(PTHashGridCacheMipCascadeBuildPass::Get());
 			}
 			DispatchOrBypass(GPUPathTracerPass::Get());
+			if constexpr (Inno::PTDenoise::ENABLED)
+			{
+				// Temporal accumulator runs after the path tracer
+				// (TASK-77.2 CL-2). Reads the GBuffer-equivalent
+				// textures + per-lobe radiance UAVs the raygen just
+				// wrote, blends into per-lobe history textures.
+				// AccumBuffer write at the path tracer is unchanged
+				// in CL-2 — this pass is invisible to the displayed
+				// output until CL-3/CL-4 wire the history into
+				// tonemap input.
+				DispatchOrBypass(PTDenoiseTemporalPass::Get());
+			}
 		}
 
 		m_Canvas = FinalBlendPass::Get().GetResult();

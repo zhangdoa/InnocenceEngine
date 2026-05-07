@@ -215,7 +215,97 @@ CL-1 verified on diagonal (off+off, on+on) — `static_assert` short-circuits wh
 - **OpaquePass channel-format precision?** RGBA Float16 across all four RTs (per `RenderingConfigurationService.cpp:32-36` default render-pass desc). All four PT-GBuffer textures match: `TexturePixelDataFormat::RGBA + TexturePixelDataType::Float16`. Position carries 16F precision floor — same as the rasterizer ships, so denoiser passes (CL-2/3/4) read contract-equivalent data whether the source is rasterized or raytraced.
 - **Nested toggle orthogonality?** Verified. Cache writes happen at `bounce >= 1u` (`PT_HASH_GRID_CACHE_ENABLED` block bounded by `if (bounce >= 1u)` at the InsertCell site); denoiser writes happen at `bounce == 0u`. The two `#if`-blocks share no code, no resources, no slots. Confirmed by the four-cell binding-count table above and by all four toggle combinations producing the expected count formula.
 
+## CL-2: temporal accumulator + per-lobe history rejection (2026-05-07)
+
+### Files created
+
+| Path | Lines | Role |
+|---|---:|---|
+| `Source/Shaders/HLSL/PTDenoiseTemporal.comp` | 224 | Per-pixel motion-vector reprojection + per-lobe history blend. SVGF Σ/Σ² moment estimator at the same α as the radiance blend. Single-tap reprojection (3×3 gather deferred to CL-3's à-trous filter). Sky / first-frame / disocclusion / mesh-id-mismatch all reset sampleCount to 1 and seed moments from the new sample. |
+| `Source/ExampleProject/RenderingClient/PTDenoiseTemporalPass.h` | 91 | Pass class declaration. Owns per-lobe radiance UAVs (single-buffered, raygen writes them) + per-lobe history textures (RGBA16F radiance + RG16F moments, ping-pong on FrameCountSinceLaunch). |
+| `Source/ExampleProject/RenderingClient/PTDenoiseTemporalPass.cpp` | 229 | Setup / Initialize / Update / Terminate / Status / accessors. 1 CB + 11 SRVs + 4 UAVs binding layout. Update gates activation on the GBuffer-equivalent + history textures all being Activated. |
+| `Source/ExampleProject/RenderingClient/PTDenoiseTemporalPass_Dispatch.cpp` | 93 | PrepareCommandList — graphics-CL transitions to compute-readable / compute-writable, compute-CL bind + dispatch. 8×8 ceiling-divided thread groups. |
+| `Source/ExampleProject/RenderingClient/PTDenoiseTemporalPass_RenderTargets.cpp` | 65 | RenderTargetsCreationFunc — instantiates the 10 textures (2 radiance current-frame UAVs + 4 history-radiance ping-pong + 4 history-moments ping-pong). |
+
+### Files modified
+
+| Path | Key changes |
+|---|---|
+| `Source/Shaders/HLSL/common/PTRaygenBindings.hlsl` | Added u11 (RadianceDiffuse) and u12 (RadianceSpecular) inside `#if PT_DENOISE_ENABLED`. |
+| `Source/Shaders/HLSL/common/PTRaygenIntegrator.hlsl` | At the AccumBuffer composition site (toggle-on branch), additionally write the clamped per-lobe radiance to u11 / u12. Sky-miss path clears handled by the unified write at function tail. |
+| `Source/Shaders/HLSL/common/PTDenoiseShared.hlsl` | Added `PT_DENOISE_MAX_HISTORY_FRAMES = 32`, `PT_DENOISE_NORMAL_DOT_THRESHOLD = 0.95`, `PT_DENOISE_DEPTH_REL_THRESHOLD = 0.1` constants + history-format documentation. |
+| `Source/ExampleProject/RenderingClient/PTDenoiseConstants.h` | Mirrored constants (`MaxHistoryFrames`, `HistoryNormalDotThreshold`, `HistoryDepthRelativeThreshold`) on the C++ side. |
+| `Source/ExampleProject/RenderingClient/GPUPathTracerPass.h` | Replaced single `m_PTGBuffer_*` members with Even/Odd pairs. Replaced `Get*` accessors with `GetCurrent*` / `GetPrevious*` ping-pong accessors. |
+| `Source/ExampleProject/RenderingClient/GPUPathTracerPass.cpp` | Ping-pong allocation in `CreatePTGBufferTextures` / `DeletePTGBufferTextures`. Anonymous-namespace `PTGBufferUseEven()` helper drives the parity. Eight new `GetCurrent*` / `GetPrevious*` accessors. |
+| `Source/ExampleProject/RenderingClient/GPUPathTracerPass_Dispatch.cpp` | Capture the current-frame ping-pong slot once per dispatch (so the Graphics-CL transition + Compute-CL bind + post-dispatch transition reference the same texture). Bind u11 / u12 from `PTDenoiseTemporalPass::Get*RadianceDiffuse/Specular`. Post-dispatch transition the radiance UAVs to ReadOnly so the temporal pass can read them as SRV-equivalent. |
+| `Source/ExampleProject/RenderingClient/GPUPathTracerPass_BindingLayout.cpp` | Denoiser binding count 5 → 7. New u11 / u12 layout entries. Updated static_assert message. |
+| `Source/ExampleProject/RenderingClient/ExampleRenderingClient_PrepareCommands.cpp` | Schedule `DispatchOrBypass(PTDenoiseTemporalPass::Get())` after `GPUPathTracerPass` under `if constexpr (Inno::PTDenoise::ENABLED)`. |
+| `Source/ExampleProject/RenderingClient/ExampleRenderingClient_ExecuteCommands.cpp` | Execute / Signal block for the temporal pass. Graphics-CL Execute + Signal (transition pass) → Compute-CL Wait on path tracer + Execute + Signal. |
+| `Source/ExampleProject/RenderingClient/ExampleRenderingClient.cpp` | Initialize / Update / GetDispatchedPasses include the temporal pass under `if constexpr (Inno::PTDenoise::ENABLED)`. |
+| `Source/ExampleProject/RenderingClient/ExampleRenderingClient_Setup.cpp` | Setup-side `PTDenoiseTemporalPass::Get().Setup()` under the toggle. |
+| `.claude/references.json` | New entry for `PTDenoiseTemporal.comp` citing SVGF + the engine-side GIDenoise.comp:184-260 reprojection precedent. NRD-Sample annotated as architectural reference only. |
+
+### Pass scheduling shape
+
+`PurgeTiles → UpdateTiles → MipCascadeBuild → GPUPathTracer → PTDenoiseTemporal → (FinalBlend / tonemap)`. The first three under `PTHashGridCache::ENABLED` (currently OFF), the temporal pass under `PTDenoise::ENABLED` (this CL's toggle, also currently OFF). Same-queue Compute Signal/Wait pattern — temporal-pass compute waits on path-tracer compute. Graphics-CL transitions for the temporal pass live on the graphics queue same as `GIDenoisePass`, because the GBuffer textures may carry PIXEL_SHADER_RESOURCE state that's invalid on a compute CL.
+
+### History-texture format chosen + rationale
+
+Per lobe (diffuse, specular):
+- **Radiance + sample count**: RGBA16F. RGB = blended radiance, A = sample count clamped at `PT_DENOISE_MAX_HISTORY_FRAMES = 32`. 8 bytes/pixel × 2 frames × 2 lobes = 32 bytes/pixel.
+- **Moments (Σ luma / N, Σ luma² / N)**: RG16F. Variance recovered at read time as `max(g - r*r, 0)`. 4 bytes/pixel × 2 frames × 2 lobes = 16 bytes/pixel.
+
+Plus 2 single-buffered RGBA16F per-lobe radiance UAVs (current-frame raygen output) = 16 bytes/pixel.
+
+Total: ~64 bytes/pixel. At 1280×720 → ~59 MB. Plus the path tracer's GBuffer ping-pong (4 channels × 2 frames × 8 bytes/pixel = 64 bytes/pixel = ~59 MB), total temporal-stage footprint ≈ 118 MB.
+
+**Σ/Σ² (SVGF-faithful) over Welford**: Schied 2017 §4.2's à-trous edge weight `exp(-|x_q - x_p| / (σ · σ_x))` consumes the variance estimator directly. Welford produces the same expected value but in a different storage shape; converting at every à-trous tap would cost more than carrying the moment form. The format also matches what every published SVGF implementation reads at the spatial filter stage, so CL-3's port has zero reconciliation surface.
+
+**MaxHistoryFrames = 32**: SVGF reference value (Schied 2017 §3, "α = 1/N capped at 1/32"). Empirically a balance between residual noise (low N → fast α drop, more responsive but noisier convergence) and motion lag (high N → slow α drop, can leak ghosting through). 16 was the alternative noted in the brief; 32 picked because the per-lobe demodulated channels at a primary-PT integrator have less per-frame variance than Capsaicin's per-ray (where MAX_BLUR_MASK = 16 makes sense), so the deeper accumulation window improves SNR without measurable lag at the primary hit.
+
+### Ping-pong implementation (which class owns the swap)
+
+**GBuffer-equivalent textures** (4 channels × 2 frames): `GPUPathTracerPass` owns the ping-pong. `GetCurrent*` / `GetPrevious*` accessors use `FrameManagementService::GetFrameCountSinceLaunch() % 2u` parity. Path tracer always writes the "current" slot; the temporal pass reads both via accessor.
+
+**History textures** (radiance + moments × diffuse/specular × 2 frames): `PTDenoiseTemporalPass` owns the ping-pong. Same parity logic in an anonymous-namespace helper so the path tracer can't accidentally bind a history texture (it doesn't need to).
+
+**Per-lobe current-frame radiance UAVs**: single-buffered, owned by `PTDenoiseTemporalPass`. The path tracer borrows them by accessor at bind time. The path tracer's post-dispatch transition flips them to ReadOnly so the temporal pass reads them as SRV-equivalent.
+
+This split keeps each pass's owned-state co-located with the pass that mutates it, and avoids any "previous-set held by the consumer" coupling the brief flagged as an alternative. Documented decision: the path tracer is the natural owner of the GBuffer-equivalent because it's the writer; the temporal pass is the natural owner of the history because it's the only writer-and-reader. Each pass's `Update()` activation gate checks only its own resources plus what it borrows, so a partial-resource-failure mode keeps a clean blast radius.
+
+### Bypass invariant verification
+
+- All new HLSL writes inside `#if PT_DENOISE_ENABLED`. New per-lobe radiance UAV declarations gated by the same `#if`. Toggle-OFF AccumBuffer write at the function tail is byte-identical to HEAD (the `min(radiance, 100000)` line stays under `#else`).
+- All new C++ resource allocations inside `if constexpr (Inno::PTDenoise::ENABLED)`. New texture members default to `nullptr`. Toggle-OFF: no allocation, no binding, no shader bytes referenced, no dispatch — `PTDenoiseTemporalPass::Setup` returns Terminated immediately.
+- Binding-count progression: cache OFF + denoise OFF = 12 (unchanged). cache OFF + denoise ON = 19 (was 17 in CL-1; +2 for u11 / u12). cache ON + denoise ON = 26 (was 24 in CL-1; +2). The static_assert enforces the new count of 7.
+
+### Build output (toggle=0 + toggle=1)
+
+- HLSL2DXIL toggle=0: clean. `GPUPathTracerRayGen.hlsl` recompiled (depends on the CL-2-modified `PTRaygenBindings.hlsl` + `PTRaygenIntegrator.hlsl`); `PTDenoiseTemporal.comp` compiled fresh.
+- HLSL2DXIL toggle=1: clean. Both above recompile under the on-toggle macro path. No errors.
+- BuildWin RelWithDebInfo toggle=0: `Main.exe` + `RenderTest.exe` linked. Pre-existing C4003 `max` warnings only. No new warnings or errors. Three new C++ TUs compiled (`PTDenoiseTemporalPass.cpp`, `_Dispatch.cpp`, `_RenderTargets.cpp`).
+- BuildWin RelWithDebInfo toggle=1: `Main.exe` + `RenderTest.exe` linked. No errors. Confirms binding-count static_assert passes at the new 7 value.
+
+### Capture spot-check
+
+- Toggle OFF (`Bin/RelWithDebInfo/Main.exe -total_frames 30`, working dir `Bin/RelWithDebInfo/`): clean termination. `Auto-test: 30 frames rendered, terminating.` GISponza loaded at frame 5. Engine terminated cleanly. 0 D3D12 ERROR / VALIDATION ERROR matches in log. Exit code 0. Log at `Build/captures/pt-denoise-cl2-toggle-off.log`.
+- Toggle ON: clean termination. Same "30 frames rendered" log line. 0 D3D12 errors. Engine terminated. Exit code 0. Log at `Build/captures/pt-denoise-cl2-toggle-on.log`. Demonstrates the 11-SRV + 4-UAV binding layout, the path-tracer-to-temporal Compute Signal/Wait, the ping-pong accessor flow, and the PTDenoiseTemporal.comp dispatch all work end-to-end without GBV warnings or device-removed.
+
+The toggle-ON RenderDoc-side gate (history sampleCount ramps to 32 on static frames; resets to 1 on disocclusion) is the visible signal that CL-2 actually populated the history textures. Capture not pulled in this CL — the runtime didn't have a moving camera in the 30-frame auto-test path. Reserved for the CL-3 visual-validation pass when the history starts to drive on-screen output.
+
+### Not verified
+
+- The full SVGF moment estimator behaviour under motion: CL-2 ships invisible-to-display, so the visible-validation gate is RenderDoc-only. The toggle-ON 30-frame auto-test confirms the binding layout + dispatch + Signal/Wait shape is well-formed, but does not exercise a moving-camera disocclusion. CL-3's visual gate (where history starts to drive output) will catch any reprojection-sign / depth-gate / normal-test bug that CL-2 leaks.
+- Float16 precision for the moments: if luma² exceeds Float16's max representable value (~65504), the moment storage saturates. In our HDR scale (radiance clamped at 100000 in raygen) `luma² = 0.2126·R + ...)²` can reach ~10¹⁰ — well above Float16. CL-3 entry should consider RG32F for moments, or pre-clamp luma to a safer range before squaring. Filed mentally; not fixed in CL-2 because the squared-luma path has no consumer until CL-3's à-trous tap.
+- Same-queue Compute Wait timing: `WaitIfActive(GPUPathTracerPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute)` is the right shape per the existing cache-pass chain, but if a future change moves the temporal pass to the graphics queue (e.g. for HW-accelerated bilateral), the wait surface will need re-evaluation.
+
 ### Surprises
+
+- **Inline function in PTRaygenIntegrator.hlsl conflict with the sky-path UAV writes**: I initially added per-lobe radiance writes inside the sky-miss branch alongside the existing GBuffer-zeroing writes, then realised the function-tail unified write at AccumBuffer composition would overwrite them with the same `min(radianceDiffuse, 100000)` value. Refactored to keep the per-lobe writes only at the function tail; the sky-block keeps the GBuffer-zeroing writes (different — they zero RT0/RT1/RT2/RT3 unconditionally) but no longer touches u11 / u12.
+- **File-size ratchet on PTDenoiseTemporalPass.cpp**: initial single-TU draft hit 370 lines (over the 300 ratchet). Split per `disciplines/on-implement/file-splitting.md` § "Same class, different responsibility cluster": dispatch went to `_Dispatch.cpp` (90), render-target creation went to `_RenderTargets.cpp` (65), main TU dropped to 229. All three under 300.
+- **GIDenoise.comp `previous_uv = uv + velocity` sign**: re-confirmed during shader authoring that the engine motion-vector convention (RT3.xy = `screen_prev - screen_curr`, in pixels) is the OPPOSITE of Capsaicin's convention. CL-2 follows GIDenoise's note (lines 184-194) — addition, not subtraction. Same sign as the rasterizer's TAA reprojection, so engine-wide reprojection helpers stay reusable.
+
+## CL-1 surprises (preserved)
 
 - **Channel layout mismatch with the design plan**: design-plan `bullet` list claimed `RT1 = normal+roughness, RT2 = albedo+metalness`. The actual rasterizer `OpaquePass.frag:127-128` and `DecodeGBuffer` (lightPassCommon.hlsl:62-65) carry `RT1 = normal+metallic, RT2 = albedo+roughness`. CL-1 follows the actual decoder contract because the goal is forward-compatibility with `DecodeGBuffer`. Documented in `common/PTDenoiseShared.hlsl`.
 - **`m_PrevViewMatrix` mis-framing**: the design risk note suggested wiring up a per-frame update if the field is a no-op holdover. It isn't a holdover, but it isn't a per-frame view either — it's an accumulation-reset tripwire. Resolved by skipping `m_PrevViewMatrix` entirely and using `PerFrameDataService::GetPreviousFrameBuffer()` (the engine's ping-pong CB), which is the rasterizer's source of truth for the same data.

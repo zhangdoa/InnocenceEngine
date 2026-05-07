@@ -1,0 +1,224 @@
+// shadertype=hlsl
+// Per-pixel screen-space temporal accumulator for the SVGF-shape PT
+// denoiser (TASK-77.2 CL-2). Pattern ports GIDenoise.comp's reprojection
+// shape (lines 184-260) — motion-vector reprojection, geometry-aware
+// history rejection, and a sample-count-driven blend — split into two
+// per-lobe channels (diffuse, specular) that the CL-3 à-trous filter
+// will read for variance-guided edge-aware blur.
+//
+// Reference: SVGF (Schied et al. 2017), §3 (temporal accumulation) and
+// §4.2 (variance estimation via Σ luma + Σ luma²).
+//
+// Output shape (per lobe, ping-pong):
+//   out_HistoryRadiance.rgba = (radiance.rgb, sampleCount.a)
+//                              clamped to PT_DENOISE_MAX_HISTORY_FRAMES.
+//   out_HistoryMoments.rg    = (Σ luma / N, Σ luma² / N).
+//
+// CL-2 behavioural gate: AccumBuffer write in raygen is unchanged
+// (the integrator still feeds tonemap). This pass populates the
+// history textures invisibly — CL-3/CL-4 are where the history starts
+// to drive the displayed output. RenderDoc inspection of the history
+// textures is the visibility surface for this CL.
+
+#include "common/common.hlsl"
+#include "common/PTDenoiseShared.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID         : SV_GroupID;
+	uint3 groupThreadID   : SV_GroupThreadID;
+	uint3 dispatchThreadID: SV_DispatchThreadID;
+	uint  groupIndex      : SV_GroupIndex;
+};
+
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0) { PerFrame_CB g_Frame; }
+
+// Current-frame raygen outputs. RT0..RT3 are the GBuffer-equivalent
+// channels (CL-1); the per-lobe radiance UAVs are the CL-2 raygen
+// additions. Bound as SRV here; raygen flips them to ReadOnly after
+// dispatch.
+[[vk::binding(0, 1)]]
+Texture2D<float4> in_PT_RT0_PositionInstanceID : register(t0); // RT0 (CL-1)
+[[vk::binding(1, 1)]]
+Texture2D<float4> in_PT_RT1_NormalMetalness    : register(t1); // RT1
+[[vk::binding(2, 1)]]
+Texture2D<float4> in_PT_RT3_MotionHitDist      : register(t2); // RT3
+[[vk::binding(3, 1)]]
+Texture2D<float4> in_PT_RadianceDiffuse        : register(t3); // u11 in raygen
+[[vk::binding(4, 1)]]
+Texture2D<float4> in_PT_RadianceSpecular       : register(t4); // u12 in raygen
+
+// Previous-frame inputs — ping-pong slot from last frame's PT pass +
+// last frame's temporal output. The disocclusion gates compare the
+// reprojected previous frame's geometry to the current frame's
+// (Capsaicin gi1.comp:4023-4060 shape, GIDenoise.comp:184-260 here).
+[[vk::binding(5, 1)]]
+Texture2D<float4> in_PT_RT0_PositionInstanceID_Prev : register(t5);
+[[vk::binding(6, 1)]]
+Texture2D<float4> in_PT_RT1_NormalMetalness_Prev    : register(t6);
+[[vk::binding(7, 1)]]
+Texture2D<float4> in_HistoryRadianceDiffuse_Prev    : register(t7);
+[[vk::binding(8, 1)]]
+Texture2D<float2> in_HistoryMomentsDiffuse_Prev     : register(t8);
+[[vk::binding(9, 1)]]
+Texture2D<float4> in_HistoryRadianceSpecular_Prev   : register(t9);
+[[vk::binding(10, 1)]]
+Texture2D<float2> in_HistoryMomentsSpecular_Prev    : register(t10);
+
+// Current-frame history outputs — written here, become the next
+// frame's *_Prev SRVs.
+[[vk::binding(0, 2)]]
+RWTexture2D<float4> out_HistoryRadianceDiffuse  : register(u0);
+[[vk::binding(1, 2)]]
+RWTexture2D<float2> out_HistoryMomentsDiffuse   : register(u1);
+[[vk::binding(2, 2)]]
+RWTexture2D<float4> out_HistoryRadianceSpecular : register(u2);
+[[vk::binding(3, 2)]]
+RWTexture2D<float2> out_HistoryMomentsSpecular  : register(u3);
+
+// Per-lobe blended (radiance, sampleCount, moment.r, moment.g).
+// Runs the SVGF Σ/Σ² estimator at the same alpha as the radiance
+// blend so variance reflects the same effective sample window.
+struct LobeBlend
+{
+	float3 radiance;
+	float  sampleCount;
+	float  momentR;
+	float  momentG;
+};
+
+LobeBlend BlendLobe(float3 in_currRadiance, float4 in_prevHistory, float2 in_prevMoments,
+                    bool in_acceptHistory)
+{
+	LobeBlend l_out;
+	if (!in_acceptHistory)
+	{
+		// History rejected (sky / first frame / disocclusion / mesh-id
+		// flip). Sample count resets to 1, moments seed from the new
+		// sample's luma so variance recovers from a clean start.
+		float l_luma = GetLuma(in_currRadiance);
+		l_out.radiance    = in_currRadiance;
+		l_out.sampleCount = 1.0f;
+		l_out.momentR     = l_luma;
+		l_out.momentG     = l_luma * l_luma;
+		return l_out;
+	}
+
+	// SVGF cap: α = 1 / min(N + 1, MAX_HISTORY). Sample count
+	// monotonically rises until the cap, then α saturates at the cap-
+	// floor blend rate (1/32 with our MaxHistoryFrames).
+	float l_n  = min(in_prevHistory.a + 1.0f, PT_DENOISE_MAX_HISTORY_FRAMES);
+	float l_alpha = 1.0f / l_n;
+	float l_luma  = GetLuma(in_currRadiance);
+
+	l_out.radiance    = lerp(in_prevHistory.rgb, in_currRadiance, l_alpha);
+	l_out.sampleCount = l_n;
+	l_out.momentR     = lerp(in_prevMoments.r, l_luma,           l_alpha);
+	l_out.momentG     = lerp(in_prevMoments.g, l_luma * l_luma,  l_alpha);
+	return l_out;
+}
+
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+	uint2 l_pixel    = input.dispatchThreadID.xy;
+	int2  l_viewport = int2(g_Frame.viewportSize.xy);
+	if (any(int2(l_pixel) >= l_viewport))
+		return;
+
+	// Sky-or-miss test mirrors DecodeGBuffer's `RT0.a == 0` gate
+	// (lightPassCommon.hlsl:55). Sky pixels never accumulate — write
+	// zeros so the CL-3 spatial filter sees a clean tile and downstream
+	// reads do not pull stale history.
+	float4 l_RT0 = in_PT_RT0_PositionInstanceID[l_pixel];
+	bool   l_isSky = (l_RT0.a == 0.0f);
+	if (l_isSky)
+	{
+		out_HistoryRadianceDiffuse[l_pixel]  = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		out_HistoryMomentsDiffuse[l_pixel]   = float2(0.0f, 0.0f);
+		out_HistoryRadianceSpecular[l_pixel] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		out_HistoryMomentsSpecular[l_pixel]  = float2(0.0f, 0.0f);
+		return;
+	}
+
+	float3 l_worldPos    = l_RT0.xyz;
+	float  l_meshIdCurr  = l_RT0.a; // raygen stores instanceID + 1; sky == 0 caught above
+	float3 l_normalCurr  = normalize(in_PT_RT1_NormalMetalness[l_pixel].xyz);
+	float3 l_currDiffuse  = in_PT_RadianceDiffuse[l_pixel].rgb;
+	float3 l_currSpecular = in_PT_RadianceSpecular[l_pixel].rgb;
+
+	// Reprojection. CL-1's RT3.xy stores `screen_prev - screen_curr` in
+	// pixels (mirrors OpaquePass.frag:124); Capsaicin / GIDenoise sign
+	// convention is the opposite, so previous_uv = uv + velocity (see
+	// GIDenoise.comp:185-194 commentary for why this addition is the
+	// engine's source of truth).
+	float2 l_uv          = (float2(l_pixel) + 0.5f) / g_Frame.viewportSize.xy;
+	float2 l_motionPx    = in_PT_RT3_MotionHitDist[l_pixel].xy;
+	float2 l_velocityUV  = l_motionPx / g_Frame.viewportSize.xy;
+	float2 l_prevUV      = l_uv + l_velocityUV;
+
+	bool   l_diffuseAccept  = false;
+	bool   l_specularAccept = false;
+	float4 l_prevDiffuse  = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	float4 l_prevSpecular = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	float2 l_prevDiffuseMom  = float2(0.0f, 0.0f);
+	float2 l_prevSpecularMom = float2(0.0f, 0.0f);
+
+	if (all(l_prevUV >= 0.0f) && all(l_prevUV < 1.0f))
+	{
+		// Single-tap nearest-neighbour reprojection. GIDenoise.comp does
+		// a 3×3 bilinear-snap gather; CL-2 keeps it simple here because
+		// the per-lobe sample count is stored in alpha rather than as a
+		// bilateral-blur blend. CL-3's à-trous filter will widen the
+		// effective spatial radius with variance guidance, so sub-pixel
+		// reprojection bleed at the temporal stage is left unaddressed
+		// for this CL.
+		int2 l_prevTexel = int2(floor(l_prevUV * g_Frame.viewportSize.xy));
+		if (all(l_prevTexel >= int2(0, 0)) && all(l_prevTexel < l_viewport))
+		{
+			float4 l_prevRT0 = in_PT_RT0_PositionInstanceID_Prev.Load(int3(l_prevTexel, 0));
+			float  l_meshIdPrev = l_prevRT0.a;
+			bool   l_prevSky = (l_meshIdPrev == 0.0f);
+
+			if (!l_prevSky && l_meshIdCurr == l_meshIdPrev)
+			{
+				float3 l_prevNormal = normalize(
+					in_PT_RT1_NormalMetalness_Prev.Load(int3(l_prevTexel, 0)).xyz);
+
+				float3 l_prevWorld = l_prevRT0.xyz;
+				float  l_depthCurr = length(l_worldPos  - g_Frame.camera_posWS.xyz);
+				float  l_depthPrev = length(l_prevWorld - g_Frame.camera_posWS.xyz);
+				float  l_depthDelta = abs(l_depthPrev - l_depthCurr);
+				bool   l_depthOk = (l_depthDelta < l_depthCurr * PT_DENOISE_DEPTH_REL_THRESHOLD);
+				bool   l_normalOk = (dot(l_normalCurr, l_prevNormal) > PT_DENOISE_NORMAL_DOT_THRESHOLD);
+
+				if (l_depthOk && l_normalOk)
+				{
+					l_prevDiffuse     = in_HistoryRadianceDiffuse_Prev.Load(int3(l_prevTexel, 0));
+					l_prevSpecular    = in_HistoryRadianceSpecular_Prev.Load(int3(l_prevTexel, 0));
+					l_prevDiffuseMom  = in_HistoryMomentsDiffuse_Prev.Load(int3(l_prevTexel, 0));
+					l_prevSpecularMom = in_HistoryMomentsSpecular_Prev.Load(int3(l_prevTexel, 0));
+					// Per-lobe accept independently. SVGF treats the two
+					// channels as independent estimators; if a future CL
+					// adds per-lobe-specific gates (e.g. roughness-tied
+					// specular hysteresis under ReBLUR-shape), the split
+					// is already in place. CL-2 uses the same gate for
+					// both.
+					l_diffuseAccept  = (l_prevDiffuse.a  > 0.0f);
+					l_specularAccept = (l_prevSpecular.a > 0.0f);
+				}
+			}
+		}
+	}
+
+	LobeBlend l_diffuse  = BlendLobe(l_currDiffuse,  l_prevDiffuse,  l_prevDiffuseMom,
+	                                 l_diffuseAccept);
+	LobeBlend l_specular = BlendLobe(l_currSpecular, l_prevSpecular, l_prevSpecularMom,
+	                                 l_specularAccept);
+
+	out_HistoryRadianceDiffuse[l_pixel]  = float4(l_diffuse.radiance,  l_diffuse.sampleCount);
+	out_HistoryMomentsDiffuse[l_pixel]   = float2(l_diffuse.momentR,   l_diffuse.momentG);
+	out_HistoryRadianceSpecular[l_pixel] = float4(l_specular.radiance, l_specular.sampleCount);
+	out_HistoryMomentsSpecular[l_pixel]  = float2(l_specular.momentR,  l_specular.momentG);
+}
