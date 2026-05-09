@@ -5,7 +5,7 @@
 const fs = require('fs')
 const { execSync } = require('child_process')
 
-// .claude/disciplines/on-commit/commit-message-policy.md requires one of these
+// .claude/skills/commit-message-policy/SKILL.md requires one of these
 // headers on every AI-authored commit.
 const ATTRIBUTION_RE = /^(Code-AI-Generated-By|Message-AI-Generated-By):\s*\S/m
 

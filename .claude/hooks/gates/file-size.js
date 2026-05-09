@@ -2,7 +2,7 @@
 // For each staged file matching FILE_SIZE_EXT_RE (and not excluded by
 // FILE_SIZE_EXCLUDE_RE), block if `new_lines > FILE_SIZE_LIMIT`.
 // No grandfathering — touching an oversized file forces it under the limit
-// in the same CL. Split per `disciplines/on-implement/file-splitting.md`.
+// in the same CL. Split per `skills/file-splitting/SKILL.md`.
 
 const {
   FILE_SIZE_LIMIT, FILE_SIZE_EXT_RE, FILE_SIZE_EXCLUDE_RE,
@@ -42,7 +42,7 @@ function emit(violations) {
     list + more,
     '',
     'Touching a file makes you responsible for its size. Split per',
-    '`.claude/disciplines/on-implement/file-splitting.md`:',
+    '`.claude/skills/file-splitting/SKILL.md`:',
     '  • Same class, different responsibility cluster → Foo_SubsectionName.cpp.',
     '  • Separate concern → new class; original holds an instance.',
     '  • Free-function header → split by domain; umbrella header includes parts.',

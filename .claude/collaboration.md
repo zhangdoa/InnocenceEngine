@@ -14,7 +14,7 @@ Cross-stage work that is genuinely unavoidable (e.g., a `code-impl` change needs
 
 Main-session = dispatcher. Read staged scope → match it to a stage from `.claude/team.md` → invoke via `Agent` tool. Universal commit-gate rules fire on every CL.
 
-`Agent` invocations default to `run_in_background: true`. Foreground dispatch must satisfy the two-condition test in `.claude/disciplines/on-dispatch/agent-dispatch.md`. Any agent that delegates to a sub-agent is itself a dispatcher.
+`Agent` invocations default to `run_in_background: true`. Foreground dispatch must satisfy the two-condition test in skill `agent-dispatch` (user-level). Project gate enforcement and `task-mgmt` override live in skill `dispatch-briefs`. Any agent that delegates to a sub-agent is itself a dispatcher.
 
 ## Escalation: agent teams
 

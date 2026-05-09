@@ -9,35 +9,42 @@ Project-scoped orchestration. Meta / cross-project rules in user-scope `CLAUDE.m
 
 ## Working principles
 
-- An agent is a stage of actions. Disciplines are the rules guiding actions inside a stage. No human-role simulation.
+- An agent is a stage of actions. Skills are the rules and procedures the agent applies inside a stage. No human-role simulation.
 - Push back on scope that trades structural health for narrow completion.
 - Surface structural observations.
 - Never end a turn with "awaiting next instruction."
 
-## Stages and disciplines
+## Stages and skills
 
-Stages live under `.claude/agents/`. Each stage declares which disciplines it loads, when. Disciplines are loaded **per stage**, not preloaded.
+Stages live under `.claude/agents/`. Skills live under `.claude/skills/<name>/SKILL.md` and auto-load by description match; agents may also pin must-load skills in their manifest.
 
-| Discipline directory | Loaded when |
+Generic, project-agnostic skills live at user level (`~/.claude/skills/`). Project-specific skills extend or specialise:
+
+| Project skill | Use when |
 |---|---|
-| `disciplines/always/` | At session start. |
-| `disciplines/on-session-start/` | Session begins. |
-| `disciplines/on-design/` | Choosing structure / naming / tech. |
-| `disciplines/on-implement/` | Writing source diffs (C++, HLSL, TS, harness, build). |
-| `disciplines/on-bug-fix/` | Reproducing / bisecting / fixing a regression. |
-| `disciplines/on-commit/` | Before `git commit`. |
-| `disciplines/on-dispatch/` | Calling the `Agent` tool. |
-| `disciplines/dispatcher/` | Main-session-only sub-rules. Sub-stages skip. |
+| `backlog-workflow` | Filing, working, or closing a backlog task. |
+| `persistence-venue` | Deciding where to record a rule, fact, or correction. |
+| `workspace-hygiene` | Creating files, scratch output, or new docs. |
+| `session-start` | Start of every new session. |
+| `dispatch-briefs` | Main-session shaping a dispatch brief. |
+| `commit-message-policy`, `peer-review-required` | Before `git commit`. |
+| `split-before-grow`, `file-splitting` | File-size gate hits. |
+| `cpp-style`, `safety-observability` | Engine C++. |
+| `shader-standards` | Engine HLSL. |
+| `paper-port`, `paper-audit` | Paper-driven implementation. |
+| `test-etiquette`, `visual-validation` | Engine / editor / Playwright runs; rendering output. |
+| `perf-frame-budget`, `regression-build-chain` | Engine perf measurement; engine regression bisects. |
+| `comment-discipline`, `fundamentals` | Editing harness files; engine-specific quality bar. |
 
 Roster: `.claude/team.md`. Project-state snapshots: `.claude/state/*.md` (direction, remote-sync, engine invariants) — update in the same CL that lands a directional change.
 
 ## Session start
 
-First action every new session: invoke `task-mgmt`. No substantive work before briefing + user direction. Procedure: `.claude/disciplines/on-session-start/session-start.md`.
+First action every new session: invoke `task-mgmt`. No substantive work before briefing + user direction. Procedure: skill `session-start`.
 
 ## Dispatch
 
-Main-session = dispatcher. Cross-stage work routes through `task-mgmt`. Peer review on every non-trivial implementation dispatch — fresh dispatch, never main-session, never the implementer (`.claude/disciplines/on-commit/peer-review-required.md`).
+Main-session = dispatcher. Cross-stage work routes through `task-mgmt`. Peer review on every non-trivial implementation dispatch — fresh dispatch, never main-session, never the implementer (skill `peer-review-required`).
 
 ## Harness enforcement
 

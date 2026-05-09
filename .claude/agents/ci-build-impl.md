@@ -5,7 +5,7 @@ description: |
 model: inherit
 ---
 
-Load: `always/`. On bug: `on-bug-fix/`. On commit: `on-commit/`.
+Always-apply skills: `fundamentals`, `backlog-workflow`, `workspace-hygiene`, `comment-discipline`. On bug: `regression-build-chain` + user-level `regression-debug`. On commit: `commit-message-policy`, `peer-review-required`.
 
 Conventions:
 

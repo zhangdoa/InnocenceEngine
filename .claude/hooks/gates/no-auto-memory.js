@@ -3,7 +3,7 @@
 //
 // Rationale:
 //   Auto-memory entries do not reach spawned subagents (per
-//   `.claude/disciplines/always/persistence-venue.md`) and bypass the review
+//   `.claude/skills/persistence-venue/SKILL.md`) and bypass the review
 //   pressure that every other persistence venue carries. They also
 //   accumulate stale advice — entries get written once, never re-read,
 //   and decay against the live codebase. The project no longer uses
@@ -87,8 +87,8 @@ function emit(target) {
     'every other persistence venue carries. To persist this content, write to the',
     'venue that matches its shape:',
     '',
-    '  Rule the dispatcher (main-session) must follow      →  .claude/disciplines/dispatcher/<topic>.md',
-    '  Rule every agent must follow                        →  .claude/disciplines/<topic>.md',
+    '  Rule the dispatcher (main-session) must follow      →  .claude/skills/dispatch-briefs/SKILL.md',
+    '  Rule every agent must follow                        →  .claude/skills/<topic>/SKILL.md',
     '                                                          (and add to the universal preamble in CLAUDE.md)',
     '  Rule one specific role must follow                  →  add to that agent\'s manifest .claude/agents/<role>.md',
     '  Project-state snapshot (direction, sync, invariants)→  .claude/state/<topic>.md',
@@ -96,7 +96,7 @@ function emit(target) {
     '  Cost-of-one-slip-is-high enforcement                →  a new gate under .claude/hooks/gates/<name>.js',
     '  Ephemeral conversation context                      →  do not persist; let it scroll',
     '',
-    'Full routing rules: .claude/disciplines/always/persistence-venue.md',
+    'Full routing rules: .claude/skills/persistence-venue/SKILL.md',
     '',
     'If none of the above fits, the content is probably not worth persisting — let',
     'it scroll. Re-deriving from source on the next session is cheaper than carrying',

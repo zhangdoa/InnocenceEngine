@@ -1,5 +1,5 @@
 // Peer-review gate — the commit message must contain one of the
-// peer-review artifact lines per .claude/disciplines/on-commit/peer-review-required.md.
+// peer-review artifact lines per .claude/skills/peer-review-required/SKILL.md.
 //
 //   Reviewed-By: <reviewer-agent>      (one or more — pass)
 //   Review-Skipped: <reason>           (single skip — pass)
@@ -31,7 +31,7 @@ function emit() {
     '',
     '[commit-gate] git commit blocked — peer-review artifact missing.',
     '',
-    'Per .claude/disciplines/on-commit/peer-review-required.md, every commit must',
+    'Per .claude/skills/peer-review-required/SKILL.md, every commit must',
     'end with one of:',
     '  Reviewed-By: <reviewer-agent>       (one or more)',
     '  Review-Skipped: <reason>            (per "When required" categories)',

@@ -176,10 +176,10 @@ group('block message — routes to each new venue', () => {
     cwd: 'C:\\GitRepo\\InnocenceEngine',
   })
   assert(r.blocked, 'blocked')
-  assert(r.stderr.includes('disciplines/dispatcher/'),
-    'mentions dispatcher discipline venue')
-  assert(r.stderr.includes('disciplines/<topic>.md'),
-    'mentions universal discipline venue')
+  assert(r.stderr.includes('skills/dispatch-briefs/SKILL.md'),
+    'mentions dispatcher skill venue')
+  assert(r.stderr.includes('skills/<topic>/SKILL.md'),
+    'mentions universal skill venue')
   assert(r.stderr.includes('agents/<role>.md'),
     'mentions agent-manifest venue')
   assert(r.stderr.includes('state/<topic>.md'),
@@ -188,8 +188,8 @@ group('block message — routes to each new venue', () => {
     'mentions backlog Implementation Notes venue')
   assert(r.stderr.includes('hooks/gates/'),
     'mentions hook-gate venue')
-  assert(r.stderr.includes('persistence-venue.md'),
-    'pointer to full discipline')
+  assert(r.stderr.includes('persistence-venue/SKILL.md'),
+    'pointer to full skill')
   assert(r.stderr.toLowerCase().includes('disabled'),
     'states the rule plainly (auto-memory is disabled)')
 })

@@ -1,6 +1,6 @@
 # /wrap-up — end-of-session capture
 
-Run before `/clear`. After `/clear`, the conversation is gone; commits and discipline files are all that survive. This is the moment to write things down.
+Run before `/clear`. After `/clear`, the conversation is gone; commits and skill files are all that survive. This is the moment to write things down.
 
 The command does not automate capture. It walks main-session through a four-question checklist and produces a *concrete CL plan* — a list of follow-up edits to land (or trivial inline commits to make) before the session is cleared. Main-session does the reading, drafting, and committing; the checklist is the prompt structure.
 
@@ -8,26 +8,26 @@ The command does not automate capture. It walks main-session through a four-ques
 
 Run the four passes in order. Each pass produces zero or more entries in the CL plan. Stop with an empty plan only after all four passes return empty.
 
-### Pass 1 — discipline gaps surfaced this session
+### Pass 1 — skill gaps surfaced this session
 
 Review session commits and dispatch transcripts. For each, ask:
 
-- Did a rule get *spoken* this session that is not yet *written* in `.claude/disciplines/`?
-- Did an agent (or main-session itself) repeat a mistake that an existing discipline already covers? If yes, the discipline either failed to surface in the brief or its wording is too weak — file the fix.
-- Did a new pattern emerge (e.g. a new architectural seam, a new dispatch shape, a new gate) that deserves a discipline of its own?
+- Did a rule get *spoken* this session that is not yet *written* in `.claude/skills/` (project) or `~/.claude/skills/` (generic)?
+- Did an agent (or main-session itself) repeat a mistake that an existing skill already covers? If yes, the skill either failed to surface in the brief or its wording is too weak — file the fix.
+- Did a new pattern emerge (e.g. a new architectural seam, a new dispatch shape, a new gate) that deserves a skill of its own?
 
-Output per finding: target file (existing discipline edit, or new `disciplines/<stage>/<name>.md`), one-sentence rule, owning stage (almost always `harness-impl`).
+Output per finding: target file (existing skill edit, or new `.claude/skills/<name>/SKILL.md` for project-specific or `~/.claude/skills/<name>/SKILL.md` for generic), one-sentence rule, owning stage (almost always `harness-impl`).
 
 ### Pass 2 — ADVISORY items not filed
 
-Read the session's commit bodies *and the corresponding tasks' Implementation Notes `## Review` blocks* for `ADVISORY` lines from peer reviewers (verdict tier per `on-commit/peer-review-required.md`). The implementer's commit body sometimes summarizes a verdict as "PASS+ADVISORY" without enumerating the advisories — those live in the task's Implementation Notes. For each ADVISORY:
+Read the session's commit bodies *and the corresponding tasks' Implementation Notes `## Review` blocks* for `ADVISORY` lines from peer reviewers (verdict tier per skill `peer-review-required`). The implementer's commit body sometimes summarizes a verdict as "PASS+ADVISORY" without enumerating the advisories — those live in the task's Implementation Notes. For each ADVISORY:
 
 - Did it become a backlog task? If yes, skip.
 - Is it small enough to land inline as a follow-up CL in this session? If yes, queue it in the plan.
-- Is it a structural concern that needs its own task? File via `mcp__backlog__task_create` (per `backlog-workflow.md` § "Don't pile on backlog tasks" — only file if the work is genuinely *worth tracking*, not as a dump).
-- Is it a discipline gap masquerading as an ADVISORY? Promote to Pass 1.
+- Is it a structural concern that needs its own task? File via `mcp__backlog__task_create` (per skill `backlog-workflow` § "Don't pile on backlog tasks" — only file if the work is genuinely *worth tracking*, not as a dump).
+- Is it a skill gap masquerading as an ADVISORY? Promote to Pass 1.
 
-Output per finding: action (inline CL / file task / discipline edit / discard with reason).
+Output per finding: action (inline CL / file task / skill edit / discard with reason).
 
 ### Pass 3 — process gaps patched superficially
 
@@ -40,20 +40,20 @@ For each gap:
 - Is there a structural fix at a higher layer? (Move the build into the test runner; make the gap unreachable.)
 - If yes and it is small, queue an inline CL.
 - If yes and it is non-trivial, file a task.
-- If no, capture the limitation in the relevant discipline so future-Claude knows the patch is partial.
+- If no, capture the limitation in the relevant skill so future-Claude knows the patch is partial.
 
 Output per finding: target file or task, one-sentence rationale.
 
 ### Pass 4 — dispatcher patterns and feedback
 
-Reusable rules that govern *main-session itself*, not the sub-agents it dispatches. These belong in `.claude/disciplines/dispatcher/`. Examples: a brief-shaping rule, a sequencing rule (parallel vs sequential dispatch), a recovery pattern when a sub-agent reports a wrong-layer fix.
+Reusable rules that govern *main-session itself*, not the sub-agents it dispatches. Generic dispatcher rules go to user-level `~/.claude/CLAUDE.md` § Dispatcher discipline; project-specific extensions go to skill `dispatch-briefs`. Examples: a brief-shaping rule, a sequencing rule (parallel vs sequential dispatch), a recovery pattern when a sub-agent reports a wrong-layer fix.
 
 For each:
 
-- Is this a new dispatcher rule, or an extension of an existing one in `disciplines/dispatcher/`?
-- Phrase the rule in abstract terms — readable cold by a future agent with no memory of the incident that prompted it. Disciplines have no human-memory continuity; SHA / transcript citations are noise to the next reader. State the rule, the failure mode it prevents, and how to apply.
+- Is this a new dispatcher rule, or an extension of an existing one in `dispatch-briefs` (project) or user-level `CLAUDE.md`?
+- Phrase the rule in abstract terms — readable cold by a future agent with no memory of the incident that prompted it. Skills have no human-memory continuity; SHA / transcript citations are noise to the next reader. State the rule, the failure mode it prevents, and how to apply.
 
-Output per finding: target file under `disciplines/dispatcher/`, one-sentence rule.
+Output per finding: target file (skill `dispatch-briefs` or user-level CLAUDE.md), one-sentence rule.
 
 ## CL plan output shape
 
@@ -68,12 +68,12 @@ After the four passes, emit a single block with this shape, then stop:
 Total: N follow-up CLs / M new backlog tasks / K inline edits.
 ```
 
-If a plan entry is small enough to land inline as a single CL with no peer-review surface (per `on-commit/peer-review-required.md` § "Skip categories" — backlog/docs-only or harness self-edit), main-session may commit it directly in this session. Larger entries get dispatched to the owning stage.
+If a plan entry is small enough to land inline as a single CL with no peer-review surface (per skill `peer-review-required` § "Skip categories" — backlog/docs-only or harness self-edit), main-session may commit it directly in this session. Larger entries get dispatched to the owning stage.
 
 ## What this command is not
 
-- Not a substitute for in-flight discipline updates. If a rule is clear mid-session, write it then; do not defer to wrap-up.
-- Not an opportunity to dump every session observation as a backlog task. Per `backlog-workflow.md` § "Don't pile on backlog tasks", file only what is genuinely worth tracking.
+- Not a substitute for in-flight skill updates. If a rule is clear mid-session, write it then; do not defer to wrap-up.
+- Not an opportunity to dump every session observation as a backlog task. Per skill `backlog-workflow` § "Don't pile on backlog tasks", file only what is genuinely worth tracking.
 - Not a victory lap. The output is a CL plan, not a summary of what got shipped.
 
 ## Future automation (note, not a task)

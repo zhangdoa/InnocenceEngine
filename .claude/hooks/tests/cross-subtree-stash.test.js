@@ -90,7 +90,7 @@ group('parseGitStashCommand — non-stash commands', () => {
 group('resolveOwner — representative paths per subtree', () => {
   const cases = [
     ['.claude/hooks/session-gate.js',                          'harness-impl'],
-    ['.claude/disciplines/always/fundamentals.md',             'harness-impl'],
+    ['.claude/skills/fundamentals/SKILL.md',             'harness-impl'],
     ['.backlog/tasks/task-196.md',                             'task-mgmt'],
     ['.alignments/TASK-66-cube-shadow.md',                     'harness-impl'],
     ['CMake/Modules/InnoCommon.cmake',                         'ci-build-impl'],

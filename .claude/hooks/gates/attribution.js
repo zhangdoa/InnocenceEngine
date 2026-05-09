@@ -1,5 +1,5 @@
 // Attribution gate — the commit message must contain one of the
-// AI-authorship headers per .claude/disciplines/on-commit/commit-message-policy.md.
+// AI-authorship headers per .claude/skills/commit-message-policy/SKILL.md.
 // No escape sentinel: every Claude-issued commit is AI-authored.
 
 const { ATTRIBUTION_RE } = require('../lib/common')
@@ -14,7 +14,7 @@ function emit() {
     '',
     '[commit-gate] git commit blocked — attribution header missing.',
     '',
-    'Per .claude/disciplines/on-commit/commit-message-policy.md, every Claude-issued commit must',
+    'Per .claude/skills/commit-message-policy/SKILL.md, every Claude-issued commit must',
     'end with one of:',
     '  Code-AI-Generated-By: <model name>',
     '  Message-AI-Generated-By: <model name>',

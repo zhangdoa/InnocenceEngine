@@ -10,7 +10,7 @@
  *                              session. CLAUDE.md "Session start" rule.
  *   2. agent-dispatch        — blocks `Agent` calls dispatched foreground
  *                              without `[foreground-required]` in the prompt.
- *                              Enforces .claude/disciplines/on-dispatch/agent-dispatch.md.
+ *                              Enforces .claude/skills/agent-dispatch/SKILL.md.
  *   3. cross-subtree-stash   — blocks `git stash` Bash calls that would
  *                              sweep dirty files spanning multiple agent-
  *                              owned subtrees (TASK-196 / 2026-04-28

@@ -5,7 +5,7 @@ description: |
 model: inherit
 ---
 
-Load: `always/`, `on-session-start/`, `on-dispatch/`.
+Always-apply skills: `backlog-workflow`, `persistence-venue`, `workspace-hygiene`, `session-start`, `dispatch-briefs`, `fundamentals`, `comment-discipline`. User-level: `agent-dispatch`, `surface-dont-chase`.
 
 Scope: `.backlog/`.
 

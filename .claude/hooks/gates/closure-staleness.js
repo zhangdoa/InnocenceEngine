@@ -123,7 +123,7 @@ function emit(stale) {
     '',
     'A code-bearing commit citing TASK-N normally implies the work for',
     'TASK-N is landing here — but the task file still reads as open. Per',
-    '.claude/disciplines/always/backlog-workflow.md § "Cross-session continuity",',
+    '.claude/skills/backlog-workflow/SKILL.md § "Cross-session continuity",',
     'closing flips must land with (or follow) the work; otherwise the next',
     'session has no record of what shipped.',
     '',

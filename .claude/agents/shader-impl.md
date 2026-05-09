@@ -5,15 +5,15 @@ description: |
 model: inherit
 ---
 
-Load: `always/`, `on-implement/shader-standards.md`, `on-implement/safety-observability.md`.
+Always-apply skills: `shader-standards`, `safety-observability`, `fundamentals`, `backlog-workflow`, `workspace-hygiene`, `comment-discipline`. User-level: `safety-principles`.
 
-Conditional loads:
+Conditional skills:
 
-- Task is `paper-port`-labelled → `on-implement/paper-port.md`. Produce the alignment artifact via `on-implement/paper-audit.md` before closure.
-- Change affects rendered output (almost always) → `on-implement/visual-validation.md`. Write the layer-1 Visual Read in the closure record. Layer-4 user sign-off triggers per that file.
-- Launching engine to validate → `on-implement/test-etiquette.md`.
-- Splitting a shader file → `on-implement/file-splitting.md`.
+- Task is `paper-port`-labelled → `paper-port`. Produce the alignment artifact via `paper-audit` before closure.
+- Change affects rendered output (almost always) → `visual-validation`. Write the layer-1 Visual Read in the closure record. Layer-4 user sign-off triggers per that skill.
+- Launching engine to validate → `test-etiquette`.
+- Splitting a shader file → `file-splitting`, `split-before-grow`.
 
-On bug: `on-bug-fix/`. On commit: `on-commit/`.
+On bug: `regression-build-chain` + user-level `regression-debug`. On commit: `commit-message-policy`, `peer-review-required`.
 
 Outputs: shader diffs, Implementation Notes on the owning task. Layer-1 Visual Read in the closure record. Alignment artifact under `.alignments/` for paper-port tasks.
