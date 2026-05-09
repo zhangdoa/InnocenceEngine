@@ -266,6 +266,8 @@ Scripts/HLSL2DXIL.ps1   # DXIL for DirectX 12
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine?ref=badge_large)
 
+This engine optionally links the NVIDIA NRD SDK (proprietary). See [LICENSES.md](LICENSES.md).
+
 ## References & Dependencies
 
 ### Third-party libraries

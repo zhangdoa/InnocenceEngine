@@ -36,3 +36,7 @@
 [submodule "Source/External/GitSubmodules/catppuccin-palette"]
 	path = Source/External/GitSubmodules/catppuccin-palette
 	url = https://github.com/catppuccin/palette.git
+[submodule "Source/External/GitSubmodules/NRD"]
+	path = Source/External/GitSubmodules/NRD
+	url = https://github.com/NVIDIAGameWorks/RayTracingDenoiser.git
+	ignore = dirty

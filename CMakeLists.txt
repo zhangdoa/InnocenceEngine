@@ -84,6 +84,18 @@ if (PREPARE_ENV)
 endif()
 
 option(BUILD_THIRD_PARTY "Build third-party libraries" ON)
+
+# NVIDIA NRD (RayTracingDenoiser) integration. When ON, the CL-1 build-system
+# wiring under CMake/BuildThirdPartyLibs.cmake compiles the submodule at
+# Source/External/GitSubmodules/NRD; when OFF the submodule is left untouched
+# and no engine TU pulls NRD headers (NRDConstants.h is the only client-side
+# header and it deliberately #includes nothing from NRD). The compile-time
+# constexpr Inno::NRD::ENABLED in NRDConstants.h mirrors this option so engine
+# code in subsequent CLs can `if constexpr` over it without conditional
+# compilation. CL-1 lands the build-system skeleton only; engine wiring lands
+# in CL-2 / CL-3 of TASK-77.4.
+option(BUILD_WITH_NRD "Build NVIDIA NRD denoiser integration" ON)
+
 include(CMake/BuildThirdPartyLibs.cmake)
 
 # Create Data/Generated directory structure (not version-controlled)

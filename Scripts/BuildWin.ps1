@@ -35,13 +35,39 @@
 
 param(
     [switch]$SkipShaderCompile,
-    [switch]$SkipClangdIndexRefresh
+    [switch]$SkipClangdIndexRefresh,
+    [ValidateSet('ON', 'OFF')]
+    [string]$BuildWithNRD
 )
 
 $ErrorActionPreference = 'Stop'
 
 $buildDir = Resolve-Path (Join-Path $PSScriptRoot '..\Build')
 $outFile  = Join-Path $buildDir 'msbuild_out.txt'
+
+# CL-1 NRD wiring: when -BuildWithNRD is passed (ON/OFF), reconfigure CMake so
+# the next msbuild picks up the BUILD_WITH_NRD option. Omitting the switch
+# leaves the existing cache value untouched (same as any other CMake option).
+# The reconfigure stays cheap: -DCMAKE_BUILD_TYPE=RelWithDebInfo matches the
+# existing cache and the only changing variable is BUILD_WITH_NRD itself.
+#
+# CMake writes all message() output to stderr. PowerShell 5.1 with
+# $ErrorActionPreference='Stop' wraps every native-command stderr line as an
+# ErrorRecord and aborts the script — see Scripts/CLAUDE.md. We override the
+# preference for the cmake call alone and gate on $LASTEXITCODE explicitly.
+if ($BuildWithNRD) {
+    Write-Host "[BuildWin] Reconfiguring with -DBUILD_WITH_NRD=$BuildWithNRD..."
+    $prevPref = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    $sourceDir = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+    & cmake -S $sourceDir -B $buildDir "-DBUILD_WITH_NRD=$BuildWithNRD"
+    $cmakeExit = $LASTEXITCODE
+    $ErrorActionPreference = $prevPref
+    if ($cmakeExit -ne 0) {
+        Write-Error "[BuildWin] CMake reconfigure failed (exit $cmakeExit). Aborting build."
+        exit $cmakeExit
+    }
+}
 
 function Invoke-MsBuild($project) {
     & msbuild.exe $project `

@@ -1,54 +1,68 @@
 function(build_third_party name src_dir cmake_args)
     string(TOUPPER ${name} UPPER_NAME)
-    
+
+    # Optional 4th positional argument: a CMake config name to use when
+    # configuring + building the third-party (e.g. "Release"). Some submodules
+    # (NRD) hard-code CMAKE_CONFIGURATION_TYPES = "Debug;Release" for multi-
+    # config generators and reject the engine's RelWithDebInfo, mirroring the
+    # mapping that build_physx_custom does inline. Defaults to ${CMAKE_BUILD_TYPE}
+    # so the existing assimp call stays unchanged.
+    set(BUILD_CONFIG ${CMAKE_BUILD_TYPE})
+    if(ARGC GREATER 3)
+        set(BUILD_CONFIG ${ARGV3})
+    endif()
+
     # Simple build directory under main project build
     set(BUILD_DIR ${CMAKE_BINARY_DIR}/third_party/${name})
-    
+
     # Check if already built (look for any lib files)
     file(GLOB_RECURSE EXISTING_LIBS "${BUILD_DIR}/*${CMAKE_STATIC_LIBRARY_SUFFIX}")
-    
+
     set(SHOULD_BUILD FALSE)
     if(NOT EXISTING_LIBS OR FORCE_REBUILD_THIRD_PARTY)
         set(SHOULD_BUILD TRUE)
     endif()
 
     if(BUILD_THIRD_PARTY AND SHOULD_BUILD)
-        message(STATUS "Building ${name}...")
-        
+        message(STATUS "Building ${name} (${BUILD_CONFIG})...")
+
         # Configure and build in one go
         execute_process(
-            COMMAND ${CMAKE_COMMAND} 
-                -S ${src_dir} 
+            COMMAND ${CMAKE_COMMAND}
+                -S ${src_dir}
                 -B ${BUILD_DIR}
-                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+                -DCMAKE_BUILD_TYPE=${BUILD_CONFIG}
                 -DCMAKE_INSTALL_PREFIX=${BUILD_DIR}/install
                 ${cmake_args}
             RESULT_VARIABLE CONFIG_RESULT
         )
-        
+
         if(CONFIG_RESULT)
             message(FATAL_ERROR "Failed to configure ${name}")
         endif()
-        
+
         execute_process(
-            COMMAND ${CMAKE_COMMAND} --build ${BUILD_DIR} --config ${CMAKE_BUILD_TYPE} --parallel
+            COMMAND ${CMAKE_COMMAND} --build ${BUILD_DIR} --config ${BUILD_CONFIG} --parallel
             RESULT_VARIABLE BUILD_RESULT
         )
-        
+
         if(BUILD_RESULT)
             message(FATAL_ERROR "Failed to build ${name}")
         endif()
-        
+
         # Install for clean layout
         execute_process(
-            COMMAND ${CMAKE_COMMAND} --install ${BUILD_DIR} --config ${CMAKE_BUILD_TYPE}
+            COMMAND ${CMAKE_COMMAND} --install ${BUILD_DIR} --config ${BUILD_CONFIG}
         )
     else()
         message(STATUS "Skipping ${name} build (already exists or BUILD_THIRD_PARTY=OFF)")
     endif()
 
-    # Always copy DLLs to runtime output directory (whether built or not)
-    file(GLOB_RECURSE DLL_FILES 
+    # Always copy DLLs to runtime output directory (whether built or not).
+    # Deployed under the engine's runtime config (CMAKE_BUILD_TYPE), not the
+    # third-party's BUILD_CONFIG — the engine binary lives in the engine config
+    # directory and Windows DLL search resolves there.
+    file(GLOB_RECURSE DLL_FILES
         "${BUILD_DIR}/install/bin/*.dll"
         "${BUILD_DIR}/bin/*.dll"
         "${BUILD_DIR}/*.dll"
@@ -200,3 +214,25 @@ build_third_party(
 )
 
 build_physx_custom()
+
+# NVIDIA NRD (RayTracingDenoiser). Gated on the root BUILD_WITH_NRD option so
+# OFF-builds skip submodule compile entirely and stay byte-identical to a
+# pre-NRD baseline. NRD has self-contained CMake (mirrors the assimp shape)
+# and pulls ShaderMake + MathLib via FetchContent during configure. Static
+# library variant chosen to keep deployment to a single PE; the SHARED default
+# would require extra DLL copy plumbing which CL-1 does not need (no engine TU
+# wires to NRD until CL-2). Engine code reads INNO_BUILD_WITH_NRD via the
+# Inno::NRD::ENABLED constexpr in NRDConstants.h.
+#
+# 4th arg "Release": NRD's CMakeLists hard-codes CMAKE_CONFIGURATION_TYPES to
+# "Debug;Release" for multi-config generators (Visual Studio), so passing the
+# engine's RelWithDebInfo causes "configuration not found" at the --build step.
+# Mirrors the RelWithDebInfo→Release mapping that build_physx_custom does.
+if(BUILD_WITH_NRD)
+    build_third_party(
+        NRD
+        ${INNO_GITSUBMODULE_DIRECTORIES}/NRD
+        "-DNRD_STATIC_LIBRARY=ON"
+        "Release"
+    )
+endif()
