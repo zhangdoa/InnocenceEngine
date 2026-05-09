@@ -18,6 +18,10 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDesc textureDesc)
 		}
 		return l_internalFormat;
 	}
+	else if (textureDesc.PixelDataFormat == TexturePixelDataFormat::RGB10A2)
+	{
+		return DXGI_FORMAT_R10G10B10A2_UNORM;
+	}
 	else if (textureDesc.IsSRGB)
 	{
 		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;

@@ -214,18 +214,11 @@ bool PTNRDFormatConvertPass::RenderTargetsCreationFunc()
 	       TexturePixelDataFormat::R, TexturePixelDataType::Float32,
 	       m_NRD_ViewZ);
 
-	// IN_NORMAL_ROUGHNESS — NRD wants R10G10B10A2_UNORM per the auto-
-	// generated NRDConfig.hlsli pin (NRD_NORMAL_ENCODING_R10G10B10A2_UNORM).
-	// The engine's TexturePixelData{Format,Type} enums have no DXGI tag for
-	// that exact format; RGBA8_UNORM is the closest interchange-format the
-	// engine maps today (DXGI_FORMAT_R8G8B8A8_UNORM). Bits-of-precision
-	// drop on the normal oct-encode is acceptable for CL-2 because nothing
-	// downstream consumes this output yet — CL-3 will either widen the
-	// engine PixelDataFormat enum or flip NRDConfig's normal-encoding to
-	// the OCT_PACKED_8 mode that lives natively in 8-bit. Recorded as a
-	// CL-3 known-todo so the format gap surfaces at integration time.
+	// IN_NORMAL_ROUGHNESS — R10G10B10A2_UNORM, pinned by NRDConfig.hlsli
+	// (NRD_NORMAL_ENCODING_R10G10B10A2_UNORM). PixelDataType is unused for
+	// this packed tag; the format-mapper resolves on the tag alone.
 	l_make("PTNRDFormatConvert_NormalRoughness",
-	       TexturePixelDataFormat::RGBA, TexturePixelDataType::UByte,
+	       TexturePixelDataFormat::RGB10A2, TexturePixelDataType::UByte,
 	       m_NRD_NormalRoughness);
 
 	// IN_MV — RG16F (2D-pixel motion). NRD CommonSettings::motionVectorScale

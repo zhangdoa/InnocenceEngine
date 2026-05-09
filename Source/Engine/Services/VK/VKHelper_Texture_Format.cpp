@@ -18,6 +18,10 @@ VkFormat VKHelper::GetTextureFormat(TextureDesc textureDesc)
 	{
 		l_internalFormat = VkFormat::VK_FORMAT_D24_UNORM_S8_UINT;
 	}
+	else if (textureDesc.PixelDataFormat == TexturePixelDataFormat::RGB10A2)
+	{
+		l_internalFormat = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+	}
 	else
 	{
 		if (textureDesc.PixelDataType == TexturePixelDataType::UByte)
