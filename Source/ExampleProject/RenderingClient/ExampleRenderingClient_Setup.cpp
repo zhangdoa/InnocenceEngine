@@ -26,9 +26,9 @@
 #include "PTHashGridCachePurgeTilesPass.h"
 #include "PTHashGridCacheUpdateTilesPass.h"
 #include "PTHashGridCacheMipCascadeBuildPass.h"
-#include "PTDenoiseTemporalPass.h"
+#include "PTNRDFormatConvertPass.h"
 #include "HashGridCacheConstants.h"
-#include "PTDenoiseConstants.h"
+#include "NRDConstants.h"
 
 #include "../../Engine/Services/DevToggleRegistry.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -245,9 +245,9 @@ namespace Inno
 			PTHashGridCacheUpdateTilesPass::Get().Setup();
 			PTHashGridCacheMipCascadeBuildPass::Get().Setup();
 		}
-		if constexpr (Inno::PTDenoise::ENABLED)
+		if constexpr (Inno::NRD::ENABLED)
 		{
-			PTDenoiseTemporalPass::Get().Setup();
+			PTNRDFormatConvertPass::Get().Setup();
 		}
 
 		// AnimationPass::Get().Setup();

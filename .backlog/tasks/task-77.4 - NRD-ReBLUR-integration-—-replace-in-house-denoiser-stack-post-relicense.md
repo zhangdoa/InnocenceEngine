@@ -351,6 +351,82 @@ Both prior blocking findings are resolved. One advisory observation logged for f
 ### Recommendation
 
 Stamp `Reviewed-By: ci-build-impl` at `Build/commit-message.txt:47` and proceed to commit. Loop bound: closed at iteration 2 with PASS — no further surface to user required.
+
+## CL-2 surfaced (filed for follow-up)
+
+Three discoveries beyond CL-2's authored scope. Each is recorded here per `surface-don't-chase` so CL-3 entry sees them at the task-file level rather than buried in source comments.
+
+**S-1. Stale CL-1/CL-2 prose in `Source/Shaders/HLSL/common/PTDenoiseShared.hlsl` lines 7 and 30.** Line 7 still narrates "in-house SVGF temporal accumulation" framing; line 30 still references "CL-2 history-rejection." Both predate the NRD pivot and are now obsolete — temporal accumulation now lives inside NRD ReBLUR, and the engine's history-rejection path is gone with `PTDenoiseTemporalPass`. Surfaced in CL-2; deferred to a follow-up cleanup CL or fold into a CL-3 prose-update pass. The fix is structural enough (touches a shader's documentation contract) that bundling it into CL-2 would have inflated scope past the format-convert charter.
+
+**S-2. Unused service handle at `Source/ExampleProject/RenderingClient/GPUPathTracerPass.cpp:19` inside `Terminate`.** `auto l_fmService = g_Engine->Get<FrameManagementService>();` binds the service but no consumer in the function body uses it. Verified via `Grep l_fmService` in the file — the declaration is the only hit. Pre-existing (predates CL-2; not introduced by the format-convert work). Filed for a future TU sweep through the rendering-client subtree, or for an ADVISORY pickup in any later cleanup CL touching this TU.
+
+**S-3. R10G10B10A2_UNORM format gap (CL-3 blocker).** The engine's `TexturePixelDataFormat` enum at `Source/Engine/Common/GraphicsPrimitive.h:107` does not enumerate R10G10B10A2; the DXGI mapper at `Source/Engine/Services/DX12/DX12Helper_Texture_Format.cpp:42` resolves only the 8-bit RGBA path (`RGBA + UByte → DXGI_FORMAT_R8G8B8A8_UNORM`). NRD ReBLUR's `IN_NORMAL_ROUGHNESS` slot expects R10G10B10A2_UNORM packing for octahedral normal + roughness. CL-2 substituted `RGBA8_UNORM` for `out_NRD_NormalRoughness` as a CL-2-benign placeholder (no later pass reads it in CL-2; format mismatch surfaces only when NRD reads the UAV in CL-3). Inline doc lives at `Source/ExampleProject/RenderingClient/PTNRDFormatConvertPass.cpp:218-227`. CL-3 must EITHER widen the engine enum (preferred — R10G10B10A2_UNORM is broadly useful for HDR back-buffers and normal-encoding beyond just NRD) OR flip NRD's `NRD_NORMAL_ENCODING` to `NRD_NORMAL_ENCODING_OCT_PACKED_8` (cheaper but pins NRD to a specific encoding choice and forecloses other consumers). Decision deferred to CL-3 dispatch.
+
+## Cross-Stage Review (task-mgmt, 2026-05-09)
+
+**Verdict: BLOCKED**
+
+Two blocking items must land before commit. One additional advisory documents the format-gap that needs explicit surfacing in Implementation Notes for CL-3 entry.
+
+### Blocking findings
+
+**B-3. Five files include `PTDenoiseConstants.h` with zero references to anything inside it.**
+- The renamed gate sites read `Inno::NRD::ENABLED` (defined in `NRDConstants.h`, also #included in all 5 files). `PTDenoiseConstants.h` only exports `Inno::PTDenoise::ENABLED` and is never referenced in these TUs:
+  - `Source/ExampleProject/RenderingClient/ExampleRenderingClient.cpp:31` — only `Inno::NRD::ENABLED` (lines 86, 112, 257). Grep `PTDenoise|PT_DENOISE` returns only the include line.
+  - `Source/ExampleProject/RenderingClient/ExampleRenderingClient_Setup.cpp:31` — only `Inno::NRD::ENABLED` (line 249). Grep returns only the include line.
+  - `Source/ExampleProject/RenderingClient/ExampleRenderingClient_PrepareCommands.cpp:31` — only `Inno::NRD::ENABLED` (line 80). Grep returns only the include line.
+  - `Source/ExampleProject/RenderingClient/ExampleRenderingClient_ExecuteCommands.cpp:14` — only `Inno::NRD::ENABLED` (line 152). Grep returns only the include line.
+  - `Source/ExampleProject/RenderingClient/PTNRDFormatConvertPass.cpp:5` — only `Inno::NRD::ENABLED` (lines 18, 104, 118, 152). Grep returns only the include line.
+- These were live includes before the rename of gate sites from `Inno::PTDenoise::ENABLED` → `Inno::NRD::ENABLED`. The rename was out of the brief's explicit scope (brief said "keep PTDenoise namespace, only flip the value") but is a structural improvement worth keeping. The cleanup is incomplete: the dead includes remain.
+- **Fix**: drop the `#include "PTDenoiseConstants.h"` line from those 5 files. `GPUPathTracerPass.cpp:3`, `GPUPathTracerPass_Dispatch.cpp:3`, `GPUPathTracerPass_BindingLayout.cpp:3`, `GPUPathTracerPass_Initialize.cpp:3` legitimately use `Inno::PTDenoise::ENABLED` and must keep the include — verified by grep.
+- Trivial; ~30 second fix. After cleanup the working tree should grep-show `PTDenoiseConstants.h` includes only on the four `GPUPathTracerPass*` TUs (plus the header itself).
+
+**B-4. Surfaced items not recorded in Implementation Notes — `surface-don't-chase` violation.**
+The brief explicitly listed three items the implementer should have surfaced into Implementation Notes:
+- Stale CL-1/CL-2 prose at `Source/Shaders/HLSL/common/PTDenoiseShared.hlsl:7` ("CL-2 temporal accumulation, CL-3 spatial à-trous") and line 30 ("CL-2 history-rejection") — verified still present.
+- Pre-existing unused `auto l_fmService = g_Engine->Get<FrameManagementService>();` at `Source/ExampleProject/RenderingClient/GPUPathTracerPass.cpp:19` (within `Terminate`) — verified: `Grep l_fmService` returns only the declaration line, no consumers in the function body.
+- The R10G10B10A2_UNORM ↔ RGBA8_UNORM substitution as a CL-3 known-todo (see B-5/A below).
+- A grep of the task file for `l_fmService|FrameManagementService.*unused|stale.*include|R10G10B10A2|widen the engine|format enum` returns zero hits inside the CL-2 implementation-narrative band of Implementation Notes. The CL-3 todo lives only in inline source comments (`PTNRDFormatConvertPass.cpp:218-227`, `.h:33-39`); the stale shader prose and unused service look-up are not recorded anywhere outside this review block.
+- **Fix**: add a `## CL-2 landed` (or equivalent) sub-section to Implementation Notes capturing the three surfaced items so CL-3 entry sees them at task-file level, not buried in source. Per skill `surface-dont-chase`, "discoveries beyond the originally-scoped task get filed or discarded — never silently folded in." Inline source comments alone do not satisfy "filed."
+
+### Advisory (non-blocking)
+
+**A-9. Pixel-format substitution `RGBA8_UNORM` for NRD's `R10G10B10A2_UNORM` is structurally correct for CL-2.**
+- Verified: `Source/Engine/Common/GraphicsPrimitive.h:107` — `enum class TexturePixelDataFormat { Invalid, R, RG, RGB, RGBA, BGRA, Depth, DepthStencil, BC1, BC3, BC4, BC5 }` has no R10G10B10A2 tag. The DXGI mapper at `Source/Engine/Services/DX12/DX12Helper_Texture_Format.cpp:42` resolves `RGBA + UByte` → `DXGI_FORMAT_R8G8B8A8_UNORM`. There is no path to R10G10B10A2_UNORM through the current enum.
+- Runtime impact for CL-2 is benign: the format-convert pass writes `out_NRD_NormalRoughness` but no later pass reads it (CL-2 plan is "format-convert dispatches, outputs unconsumed; display reverts to baseline 1-spp PT"). NRD's pack-helpers expecting R10G10B10A2_UNORM will manifest as wrong-bits only in CL-3 when NRD reads these UAVs.
+- The inline doc at `PTNRDFormatConvertPass.cpp:218-227` is clear about the substitution and the CL-3 resolution path (widen enum or flip NRDConfig). This must also surface in Implementation Notes (B-4) so CL-3 entry doesn't lose the constraint.
+
+**A-10. Cross-stage binding numeric coherence verified.**
+- HLSL register block (`PTNRDFormatConvert.comp:91-116`): `b0` (PerFrameConstantBuffer), `t0..t5` (RT0..RT3 + RadianceDiffuse + RadianceSpecular), `u0..u4` (ViewZ R32F, NormalRoughness RGBA8 sub, MotionVector RG16F, DiffRadianceHitDist RGBA16F, SpecRadianceHitDist RGBA16F). 12 descriptors total.
+- C++ binding-layout (`PTNRDFormatConvertPass.cpp:51-88`): `m_ResourceBindingLayoutDescs.resize(12)`. Slot 0 = Buffer/CBV (set 0). Slots 1..6 = Image/SRV (set 1, indices 0..5). Slots 7..11 = Image/UAV (set 2, indices 0..4).
+- C++ binds (`PTNRDFormatConvertPass_Dispatch.cpp:58-69`) issue 12 `BindGPUResource` calls slots 0..11 in order matching the layout. 1:1 alignment confirmed.
+- The 6 SRV inputs map to `GPUPathTracerPass::Get{PTGBufferPosition, PTGBufferNormalMetalness, PTGBufferAlbedoRoughness, PTGBufferMotionHitDist, PTRadianceDiffuse, PTRadianceSpecular}()` — accessor declarations verified at `GPUPathTracerPass.h:60-65`.
+- No `static_assert` is wired (cache passes use that pattern); the binding layout is mirrored manually as the implementer noted. Drift would surface as a PSO-create failure. Acceptable for CL-2; could harden in CL-3 if static_assert pattern adopted.
+
+**A-11. Toggle coordination verified.**
+- C++: `Source/ExampleProject/RenderingClient/PTDenoiseConstants.h:30` — `static constexpr bool ENABLED = true;` ✓
+- HLSL: `Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl:32` — `#define PT_DENOISE_ENABLED 1` ✓
+- Both pinned to true, lockstep maintained per the header's contract.
+
+**A-12. File-size gate.**
+All touched files under 300 lines: `PTNRDFormatConvertPass.cpp` 211, `PTNRDFormatConvertPass.h` 88, `PTNRDFormatConvertPass_Dispatch.cpp` 77, `PTNRDFormatConvert.comp` 211, `GPUPathTracerPass.cpp` 150, `GPUPathTracerPass_BindingLayout.cpp` 260, `PTRaygenIntegrator.hlsl` 254. (Note: `PTNRDFormatConvertPass.cpp` measured at 211, brief claimed 249 — count rerun under PowerShell `Get-Content | Measure-Object -Line`; no gate impact either way.)
+
+**A-13. Visual / runtime testing — Review-Skipped-Visual.**
+Per task plan, CL-2's user-visible end-state is "display reverts to baseline 1-spp PT (NRD not dispatched yet)." The integrator's AccumBuffer write at `PTRaygenIntegrator.hlsl:281` is preserved, so the user-facing display path is alive on inspection. Format-convert outputs are written to UAVs no later pass reads. Brief explicitly directed "do not attempt to launch the engine" for CL-2.
+- **Review-Skipped-Visual: CL-2 plan defers visual sign-off to CL-3 — display path preserved by source inspection only.**
+- Diffuse-demod over-correction at primary surface (CookTorranceGGX evaluates both diffuse + specular; demodulating by primary albedo over-divides the specular leak in the diffuse channel) — implementer's claim that this matches ReBLUR reference behavior is consistent with the comment at `PTRaygenIntegrator.hlsl:264-273`. Visual sign-off lives with CL-3.
+
+### Evidence summary
+
+- Dead-include verification: 5× `Grep PTDenoise|PT_DENOISE` runs each return only the `#include "PTDenoiseConstants.h"` line, no callers.
+- Toggle: `PTDenoiseConstants.h:30` true, `GPUPathTracerRayGen.hlsl:32` 1.
+- Format enum: `GraphicsPrimitive.h:107` enumerates 12 values, none R10G10B10A2.
+- Binding mirror: HLSL b0/t0..t5/u0..u4 = 12 ↔ C++ resize(12) + 12 BindGPUResource calls.
+- Implementation Notes grep: zero hits for `l_fmService|FrameManagementService.*unused|stale.*include|R10G10B10A2|widen the engine|format enum` in the CL-2 narrative band.
+
+### Recommendation
+
+Resolve B-3 (drop 5 dead includes) and B-4 (file 3 surfaced items into Implementation Notes) before commit. After cleanup, the CL is ready to commit with `Reviewed-By: task-mgmt (cross-stage CL-2)` — re-review of the two-line follow-up is not required if the dead-include removal is verified clean by a `Grep PTDenoise` on the 5 affected TUs returning zero matches.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done

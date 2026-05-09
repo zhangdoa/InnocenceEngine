@@ -29,7 +29,7 @@
 // Reference: SVGF (Schied 2017) — temporal accumulation + edge-aware
 // à-trous spatial filter. Architectural pattern; CL-1 lands the signal-
 // split + GBuffer-equivalent write only.
-#define PT_DENOISE_ENABLED 0
+#define PT_DENOISE_ENABLED 1
 
 #if PT_DENOISE_ENABLED
 #include "common/PTDenoiseShared.hlsl"

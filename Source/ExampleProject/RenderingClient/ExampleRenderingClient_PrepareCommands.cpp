@@ -26,9 +26,9 @@
 #include "PTHashGridCachePurgeTilesPass.h"
 #include "PTHashGridCacheUpdateTilesPass.h"
 #include "PTHashGridCacheMipCascadeBuildPass.h"
-#include "PTDenoiseTemporalPass.h"
+#include "PTNRDFormatConvertPass.h"
 #include "HashGridCacheConstants.h"
-#include "PTDenoiseConstants.h"
+#include "NRDConstants.h"
 
 #include "../../Engine/Services/RenderPassResourceService.h"
 #include "../../Engine/Services/ViewportSourceOverride.h"
@@ -76,17 +76,18 @@ namespace Inno
 				DispatchOrBypass(PTHashGridCacheMipCascadeBuildPass::Get());
 			}
 			DispatchOrBypass(GPUPathTracerPass::Get());
-			if constexpr (Inno::PTDenoise::ENABLED)
+			if constexpr (Inno::NRD::ENABLED)
 			{
-				// Temporal accumulator runs after the path tracer
-				// (TASK-77.2 CL-2). Reads the GBuffer-equivalent
+				// NRD format-convert runs after the path tracer
+				// (TASK-77.4 CL-2). Reads the GBuffer-equivalent
 				// textures + per-lobe radiance UAVs the raygen just
-				// wrote, blends into per-lobe history textures.
-				// AccumBuffer write at the path tracer is unchanged
-				// in CL-2 — this pass is invisible to the displayed
-				// output until CL-3/CL-4 wire the history into
-				// tonemap input.
-				DispatchOrBypass(PTDenoiseTemporalPass::Get());
+				// wrote, packs them into the five textures NRD
+				// ReBLUR consumes (IN_VIEWZ / IN_NORMAL_ROUGHNESS /
+				// IN_MV / IN_DIFF/SPEC_RADIANCE_HITDIST). CL-2 ships
+				// invisibly behind the AccumBuffer write — this
+				// pass's outputs are unconsumed until CL-3 wires
+				// PTNRDDenoisePass + PTNRDCompositionPass.
+				DispatchOrBypass(PTNRDFormatConvertPass::Get());
 			}
 		}
 

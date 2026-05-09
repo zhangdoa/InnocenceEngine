@@ -59,6 +59,11 @@ void RunPathIntegrator(uint2 pixel, uint2 resolution)
     float3 radianceDiffuse  = float3(0.0f, 0.0f, 0.0f);
     float3 radianceSpecular = float3(0.0f, 0.0f, 0.0f);
     bool   isSpecularPath   = false;
+
+    // Primary-hit albedo carried out of the for-loop body (where `albedo`
+    // is locally scoped) so the tail UAV write can demodulate the diffuse
+    // channel. NRD ReBLUR convention — TASK-77.4 CL-2.
+    float3 albedo_primary = float3(0.0f, 0.0f, 0.0f);
 #endif
 
 #if PT_HASH_GRID_CACHE_ENABLED
@@ -137,6 +142,12 @@ void RunPathIntegrator(uint2 pixel, uint2 resolution)
         float  roughness = max(payload.roughness, F0_DIELECTRIC);
 
 #include "PTRaygenIntegrator_GBufferWrite.hlsli"
+
+#if PT_DENOISE_ENABLED
+        if (bounce == 0u)
+            albedo_primary = albedo;
+#endif
+
 #include "PTRaygenIntegrator_NEE.hlsli"
 #include "PTRaygenIntegrator_Cache.hlsli"
 
@@ -244,15 +255,25 @@ void RunPathIntegrator(uint2 pixel, uint2 resolution)
     // is `ENABLED == 0`.
     float3 clampedRadiance = min(radianceDiffuse + radianceSpecular, 100000.0f);
 
-    // Per-lobe radiance for the CL-2 temporal accumulator (SVGF
-    // demodulated diffuse / specular channels). Single-buffered: the
-    // temporal pass reads these once, blends into ping-pong history
-    // textures, and the next frame's raygen overwrites them. Same
-    // `min(., 100000)` clamp the AccumBuffer composition uses so a
-    // fireflied lobe value cannot silently destabilise the temporal
-    // moment estimator. Alpha=0 reserved (CL-3 ReBLUR-shape may store
-    // per-lobe hit distance there).
-    u_PTDenoise_RadianceDiffuse[pixel]  = float4(min(radianceDiffuse,  100000.0f), 0.0f);
+    // Per-lobe radiance for the NRD ReBLUR denoiser (TASK-77.4 CL-2).
+    // Format-convert pass (PTNRDFormatConvert.comp) packs these into
+    // IN_DIFF_RADIANCE_HITDIST / IN_SPEC_RADIANCE_HITDIST. The 100000
+    // magnitude clamp keeps fireflies from saturating REBLUR's YCoCg
+    // pack space.
+    //
+    // Diffuse-channel albedo demodulation: divide by primary-hit albedo
+    // with a 0.001 floor (sky / black-albedo gate). Bounce-0 NEE carries
+    // one primary-albedo factor in CookTorranceGGX's diffuse Lambert
+    // term; bounce >= 1 contributions carry one primary-albedo factor
+    // in `throughput` from the bounce-0 BSDF importance sample (line
+    // ~184). One division cancels that factor uniformly across all
+    // contributions, matching the NRD-Sample TraceOpaque.hlsl reference.
+    // Specular channel stays un-demodulated (GGX specular has no
+    // primary-albedo factor). CL-3 composition re-multiplies diffuse by
+    // raw RT2.rgb with the same floor.
+    float3 l_albedoDemod = max(albedo_primary, float3(0.001f, 0.001f, 0.001f));
+    float3 l_diffOut = min(radianceDiffuse, 100000.0f) / l_albedoDemod;
+    u_PTDenoise_RadianceDiffuse[pixel]  = float4(l_diffOut,                     0.0f);
     u_PTDenoise_RadianceSpecular[pixel] = float4(min(radianceSpecular, 100000.0f), 0.0f);
 #else
     float3 clampedRadiance = min(radiance, 100000.0f);

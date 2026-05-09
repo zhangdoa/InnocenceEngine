@@ -49,21 +49,20 @@ namespace Inno
 		GPUBufferComponent* GetFrameCountCB()                     { return m_FrameCountCB; }
 
 		// Screen-space PT denoiser GBuffer-equivalent textures (TASK-77.2
-		// CL-1). Channel layout per common/PTDenoiseShared.hlsl, mirroring
-		// opaqueGeometryProcessPass.frag so DecodeGBuffer reads them
-		// unchanged. Ping-pong (Even/Odd parity on FrameCountSinceLaunch)
-		// so the CL-2 temporal accumulator can read the previous frame's
-		// position/normal/mesh-id for the disocclusion gates. The raygen
-		// always writes the "current" set; the temporal pass reads both.
+		// CL-1; ping-pong dropped in TASK-77.4 CL-2). Channel layout per
+		// common/PTDenoiseShared.hlsl, mirroring opaqueGeometryProcessPass.frag
+		// so DecodeGBuffer reads them unchanged. Single-buffered: NRD ReBLUR
+		// owns prev-frame reconstruction via motion vectors, so the engine
+		// never needs to read last frame's GBuffer-equivalent textures.
+		// Per-lobe radiance UAVs (CL-2 raygen output) and the four GBuffer
+		// channels are all single-buffered with this same accessor shape.
 		// nullptr when PTDenoise::ENABLED is false.
-		TextureComponent* GetCurrentPTGBufferPosition();
-		TextureComponent* GetCurrentPTGBufferNormalMetalness();
-		TextureComponent* GetCurrentPTGBufferAlbedoRoughness();
-		TextureComponent* GetCurrentPTGBufferMotionHitDist();
-		TextureComponent* GetPreviousPTGBufferPosition();
-		TextureComponent* GetPreviousPTGBufferNormalMetalness();
-		TextureComponent* GetPreviousPTGBufferAlbedoRoughness();
-		TextureComponent* GetPreviousPTGBufferMotionHitDist();
+		TextureComponent* GetPTGBufferPosition()        { return m_PTGBuffer_Position; }
+		TextureComponent* GetPTGBufferNormalMetalness() { return m_PTGBuffer_NormalMetalness; }
+		TextureComponent* GetPTGBufferAlbedoRoughness() { return m_PTGBuffer_AlbedoRoughness; }
+		TextureComponent* GetPTGBufferMotionHitDist()   { return m_PTGBuffer_MotionHitDist; }
+		TextureComponent* GetPTRadianceDiffuse()        { return m_PTRadianceDiffuse; }
+		TextureComponent* GetPTRadianceSpecular()       { return m_PTRadianceSpecular; }
 
 	private:
 		struct PathTracerLightCountData
@@ -104,22 +103,24 @@ namespace Inno
 		GPUBufferComponent* m_HashGridCache_ValueIndirectBuffer = nullptr;
 
 		// Screen-space PT denoiser GBuffer-equivalent textures (TASK-77.2
-		// CL-1 introduced; CL-2 ping-pongs them — Even/Odd parity on
-		// FrameCountSinceLaunch). Written by GPUPathTracerRayGen.hlsl at
-		// bounce == 0 under PT_DENOISE_ENABLED. Layout mirrors
-		// opaqueGeometryProcessPass.frag so DecodeGBuffer in
-		// common/lightPassCommon.hlsl reads them unchanged. All nullptr
-		// unless PTDenoise::ENABLED is true and Setup/Initialize ran.
-		// Bypass invariant: when disabled, no allocation, no binding, no
-		// shader bytes emitted, AccumBuffer write is bit-identical.
-		TextureComponent* m_PTGBuffer_Position_Even        = nullptr; // RT0: positionWS + instanceID
-		TextureComponent* m_PTGBuffer_Position_Odd         = nullptr;
-		TextureComponent* m_PTGBuffer_NormalMetalness_Even = nullptr; // RT1: normalWS  + metalness
-		TextureComponent* m_PTGBuffer_NormalMetalness_Odd  = nullptr;
-		TextureComponent* m_PTGBuffer_AlbedoRoughness_Even = nullptr; // RT2: albedo    + roughness
-		TextureComponent* m_PTGBuffer_AlbedoRoughness_Odd  = nullptr;
-		TextureComponent* m_PTGBuffer_MotionHitDist_Even   = nullptr; // RT3: motionVec + hitDist + 0
-		TextureComponent* m_PTGBuffer_MotionHitDist_Odd    = nullptr;
+		// CL-1 introduced; ping-pong dropped in TASK-77.4 CL-2 because NRD
+		// ReBLUR reconstructs prev-frame internally from motion vectors).
+		// Written by GPUPathTracerRayGen.hlsl at bounce == 0 under
+		// PT_DENOISE_ENABLED; consumed by PTNRDFormatConvertPass on the same
+		// frame. Layout mirrors opaqueGeometryProcessPass.frag so
+		// DecodeGBuffer in common/lightPassCommon.hlsl reads them unchanged.
+		// Per-lobe radiance UAVs travel alongside on the same toggle —
+		// raygen writes them at the AccumBuffer composition site, the
+		// format-convert pass reads them, NRD denoises them in CL-3.
+		// All nullptr unless PTDenoise::ENABLED is true and Setup/Initialize
+		// ran. Bypass invariant: when disabled, no allocation, no binding,
+		// no shader bytes emitted, AccumBuffer write is bit-identical.
+		TextureComponent* m_PTGBuffer_Position        = nullptr; // RT0: positionWS + instanceID
+		TextureComponent* m_PTGBuffer_NormalMetalness = nullptr; // RT1: normalWS  + metalness
+		TextureComponent* m_PTGBuffer_AlbedoRoughness = nullptr; // RT2: albedo    + roughness
+		TextureComponent* m_PTGBuffer_MotionHitDist   = nullptr; // RT3: motionVec + hitDist + 0
+		TextureComponent* m_PTRadianceDiffuse         = nullptr; // raygen u11: per-lobe diffuse radiance
+		TextureComponent* m_PTRadianceSpecular        = nullptr; // raygen u12: per-lobe specular radiance
 
 		GPUBufferComponent* m_MaterialBuffer = nullptr;
 

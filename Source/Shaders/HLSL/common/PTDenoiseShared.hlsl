@@ -64,24 +64,4 @@
 #define PT_DENOISE_RT3_HITDIST_Z            /* float  primary-hit distance */
 #define PT_DENOISE_RT3_RESERVED_W           /* float  reserved             */
 
-// Temporal-accumulator constants (CL-2). Mirrored on the C++ side in
-// PTDenoiseConstants.h. PTDenoiseTemporal.comp consumes these for per-
-// lobe history blending; CL-3's à-trous filter inherits the variance
-// shape declared below.
-//
-// History storage convention (per lobe — diffuse, specular, two
-// ping-pong sets each):
-//   RGBA16F  rgb = blended radiance, a = sample count clamped to
-//                  PT_DENOISE_MAX_HISTORY_FRAMES.
-//   RG16F    r   = first  luma moment (Σ luma  / N).
-//            g   = second luma moment (Σ luma² / N).
-// Variance recovered as `max(g - r*r, 0)` — SVGF Σ/Σ² shape (Schied
-// 2017 §4.2). Welford was considered and rejected: SVGF's published
-// derivation, the à-trous edge weight, and most reference
-// implementations consume the moment form directly. Mismatch would
-// require an extra reconciliation step in CL-3 with no upside.
-#define PT_DENOISE_MAX_HISTORY_FRAMES   32.0f
-#define PT_DENOISE_NORMAL_DOT_THRESHOLD 0.95f
-#define PT_DENOISE_DEPTH_REL_THRESHOLD  0.1f
-
 #endif // PT_DENOISE_SHARED_HLSL

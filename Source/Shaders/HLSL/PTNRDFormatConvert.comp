@@ -1,0 +1,231 @@
+// shadertype=hlsl
+// Engine GBuffer + per-lobe radiance UAVs -> NRD ReBLUR-expected layouts.
+// Pure data-shaping pass: reads the path-tracer's primary-hit GBuffer
+// (RT0..RT3) and the per-lobe radiance UAVs (CL-2 raygen outputs), packs
+// them through NRD's front-end helpers, and writes the five textures the
+// NRD ReBLUR_DiffuseSpecular denoiser consumes (IN_VIEWZ,
+// IN_NORMAL_ROUGHNESS, IN_MV, IN_DIFF_RADIANCE_HITDIST,
+// IN_SPEC_RADIANCE_HITDIST). NRD dispatch + back-end unpack live in CL-3.
+//
+// Reference: NRD v4.17.4 (submodule SHA 2784717).
+// NRD.hlsli front-end signatures verified against the checked-in submodule:
+//   - NRD_FrontEnd_PackNormalAndRoughness(N, roughness, materialID)   3-arg
+//   - REBLUR_FrontEnd_GetNormHitDist(hitDist, viewZ, hitDistParams, roughness)
+//   - REBLUR_FrontEnd_PackRadianceAndNormHitDist(radiance, normHitDist, sanitize)
+// NRDConfig.hlsli (auto-generated under the submodule) selects:
+//   NRD_NORMAL_ENCODING == NRD_NORMAL_ENCODING_R10G10B10A2_UNORM (= 2)
+//   NRD_ROUGHNESS_ENCODING == NRD_ROUGHNESS_ENCODING_LINEAR       (= 1)
+// IN_NORMAL_ROUGHNESS therefore expects R10G10B10A2_UNORM at the texture
+// level (not RGBA8 oct as the original task plan's table claimed); the
+// pack helper writes (oct.xyz, materialID/3) into that layout.
+//
+// IN_MV: brief picks 2D-pixel motion. NRDDescs.h ResourceType comment for
+// IN_MV says "3D world-space motion (RGBA16f+) or 2D screen-space motion
+// (RG16f+), MVs must be non-jittered, MV = previous - current". The CL-1
+// raygen GBuffer write stores screen_prev - screen_curr in pixels (matches
+// NRD's prev-curr sign convention), so we copy RT3.xy verbatim into a
+// RG16F texture and let CL-3 set CommonSettings::motionVectorScale = {1,1,0}.
+//
+// Hit-distance normalization: REBLUR_FrontEnd_GetNormHitDist consumes the
+// engine's RT3.z scalar (length(hitPos - cameraWS) at primary hit) plus
+// linear viewZ + hitDistParams + linearRoughness. hitDistParams come from
+// CL-1's Inno::NRD::DefaultHitDistParams = {3, 0.1, 20, -25}; only the
+// first three feed REBLUR_FrontEnd_GetNormHitDist (the .D = -25 component
+// is consumed by ReBLUR's back-end internal math, not the front-end pack).
+// We pass the .ABC triplet here.
+//
+// Sky handling: when RT0.a == 0 (sky-miss sentinel from the integrator
+// GBuffer write), all five outputs are zero-written. NRD's
+// CommonSettings::denoisingRange will be configured (CL-3) to match the
+// engine's far plane so out-of-range pixels are skipped by the denoiser
+// anyway, but writing zeros here keeps the SRVs tidy for RenderDoc
+// inspection and avoids feeding NaN/inf-shaped sentinels to NRD's
+// front-end sanitize path.
+//
+// CL split:
+//   CL-2 (this file)  - format-convert pass + integrator demod.
+//   CL-3              - NRD pass class, dispatch, composition (un-pack
+//                       OUT_DIFF/SPEC, multiply diffuse by primary albedo,
+//                       add specular, write tonemap input).
+//
+// Bindings (C++ side mirrors verbatim):
+//   b0 (space 0)  - PerFrameConstantBuffer (g_Frame; v + viewportSize).
+//   t0 (space 1)  - in_PT_RT0_PositionInstanceID (RGBA32F SRV, RT0).
+//   t1 (space 1)  - in_PT_RT1_NormalMetalness    (RGBA16F  SRV, RT1).
+//   t2 (space 1)  - in_PT_RT2_AlbedoRoughness    (RGBA8    SRV, RT2).
+//   t3 (space 1)  - in_PT_RT3_MotionHitDist      (RGBA16F  SRV, RT3).
+//   t4 (space 1)  - in_PT_RadianceDiffuse        (RGBA16F  SRV, raygen u11).
+//   t5 (space 1)  - in_PT_RadianceSpecular       (RGBA16F  SRV, raygen u12).
+//   u0 (space 2)  - out_NRD_ViewZ                (R32F  UAV).
+//   u1 (space 2)  - out_NRD_NormalRoughness      (R10G10B10A2_UNORM UAV).
+//   u2 (space 2)  - out_NRD_MotionVector         (RG16F UAV).
+//   u3 (space 2)  - out_NRD_DiffRadianceHitDist  (RGBA16F UAV).
+//   u4 (space 2)  - out_NRD_SpecRadianceHitDist  (RGBA16F UAV).
+// Push-constant / root-constant block carries hitDistParams.xyz so the C++
+// side can hot-swap NV defaults vs DevToggleRegistry overrides without a
+// shader recompile (CL-4 tuning hooks). Held in the per-frame CB for now;
+// CL-4 may promote to root constants when the toggle wiring lands.
+
+#include "common/common.hlsl"
+
+// NRD's HLSL helper header. Path is relative to this file's directory; dxc
+// resolves "../../External/..." via the including-file directory rule. The
+// header has no resource-binding side effects unless we call its
+// NRD_INPUTS_START / NRD_INPUT macros, which we do not — we only use its
+// front-end pack helpers (NRD_FrontEnd_PackNormalAndRoughness,
+// REBLUR_FrontEnd_GetNormHitDist, REBLUR_FrontEnd_PackRadianceAndNormHitDist)
+// and the constants they fold over (NRD_FP16_MAX, etc.). Compile-HLSL.psm1's
+// dependency tracker only walks depth-1 #include's, so an NRD submodule bump
+// will not auto-trigger a recompile of this file; -FullClean covers paranoid
+// bisects.
+#include "../../External/GitSubmodules/NRD/Shaders/NRD.hlsli"
+
+struct ComputeInputType
+{
+	uint3 groupID         : SV_GroupID;
+	uint3 groupThreadID   : SV_GroupThreadID;
+	uint3 dispatchThreadID: SV_DispatchThreadID;
+	uint  groupIndex      : SV_GroupIndex;
+};
+
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0) { PerFrame_CB g_Frame; }
+
+[[vk::binding(0, 1)]]
+Texture2D<float4> in_PT_RT0_PositionInstanceID : register(t0);
+[[vk::binding(1, 1)]]
+Texture2D<float4> in_PT_RT1_NormalMetalness    : register(t1);
+[[vk::binding(2, 1)]]
+Texture2D<float4> in_PT_RT2_AlbedoRoughness    : register(t2);
+[[vk::binding(3, 1)]]
+Texture2D<float4> in_PT_RT3_MotionHitDist      : register(t3);
+[[vk::binding(4, 1)]]
+Texture2D<float4> in_PT_RadianceDiffuse        : register(t4);
+[[vk::binding(5, 1)]]
+Texture2D<float4> in_PT_RadianceSpecular       : register(t5);
+
+[[vk::binding(0, 2)]]
+RWTexture2D<float>  out_NRD_ViewZ                : register(u0);
+[[vk::binding(1, 2)]]
+RWTexture2D<float4> out_NRD_NormalRoughness      : register(u1);
+[[vk::binding(2, 2)]]
+RWTexture2D<float2> out_NRD_MotionVector         : register(u2);
+[[vk::binding(3, 2)]]
+RWTexture2D<float4> out_NRD_DiffRadianceHitDist  : register(u3);
+[[vk::binding(4, 2)]]
+RWTexture2D<float4> out_NRD_SpecRadianceHitDist  : register(u4);
+
+// NV ReBLUR defaults: A=3, B=0.1, C=20, D=-25 (CL-1 NRDConstants.h ::
+// DefaultHitDistParams). Front-end normalization consumes A/B/C only; D is
+// applied inside REBLUR's back-end. Held as a literal here pending CL-4's
+// DevToggleRegistry-driven override path.
+static const float3 PT_NRD_HIT_DIST_PARAMS_ABC = float3(3.0f, 0.1f, 20.0f);
+
+// Same as the integrator's near-zero-albedo floor. Demodulation is applied
+// at the integrator write site (single source of truth for primary albedo);
+// this constant is documented here for the CL-3 composition pass which will
+// re-multiply by the same floor to round-trip the demod cleanly.
+static const float PT_NRD_ALBEDO_FLOOR = 0.001f;
+
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+	uint2 l_pixel    = input.dispatchThreadID.xy;
+	int2  l_viewport = int2(g_Frame.viewportSize.xy);
+	if (any(int2(l_pixel) >= l_viewport))
+		return;
+
+	float4 l_RT0 = in_PT_RT0_PositionInstanceID[l_pixel];
+	float4 l_RT1 = in_PT_RT1_NormalMetalness[l_pixel];
+	float4 l_RT2 = in_PT_RT2_AlbedoRoughness[l_pixel];
+	float4 l_RT3 = in_PT_RT3_MotionHitDist[l_pixel];
+
+	// Sky test mirrors DecodeGBuffer (lightPassCommon.hlsl:55) and the
+	// integrator's GBuffer-write sky branch (PTRaygenIntegrator.hlsl:108):
+	// RT0.a == 0 means the primary ray missed all geometry. Zero every NRD
+	// output and bail; CL-3's NRD CommonSettings::denoisingRange will also
+	// skip these pixels but writing zero keeps the SRVs deterministic for
+	// RenderDoc and avoids handing NaN/inf to NRD's front-end sanitize path.
+	bool l_isSky = (l_RT0.a == 0.0f);
+	if (l_isSky)
+	{
+		out_NRD_ViewZ[l_pixel]               = 0.0f;
+		out_NRD_NormalRoughness[l_pixel]     = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		out_NRD_MotionVector[l_pixel]        = float2(0.0f, 0.0f);
+		out_NRD_DiffRadianceHitDist[l_pixel] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		out_NRD_SpecRadianceHitDist[l_pixel] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		return;
+	}
+
+	float3 l_worldPos  = l_RT0.xyz;
+	float3 l_normalWS  = normalize(l_RT1.xyz);
+	float  l_roughness = l_RT2.w;
+
+	// Linear view-Z. Engine row-major matrices are uploaded in row-vector
+	// convention (skill shader-standards), so primary multiplication is
+	// `mul(vec, M)`. Mirrors PTRaygenIntegrator_GBufferWrite.hlsli:37.
+	// NRD wants the actual signed view-Z; ReBLUR clamps internally on
+	// abs() per _REBLUR_GetHitDistanceNormalization, but we keep the sign
+	// for downstream consumers (e.g. validation overlays).
+	float4 l_hitVS = mul(float4(l_worldPos, 1.0f), g_Frame.v);
+	float  l_viewZ = l_hitVS.z;
+
+	// IN_NORMAL_ROUGHNESS pack. NRDConfig.hlsli pins
+	// NRD_NORMAL_ENCODING_R10G10B10A2_UNORM + NRD_ROUGHNESS_ENCODING_LINEAR;
+	// the helper writes (oct(N).xyz, materialID/3) into the .xyzw slots.
+	// We do not yet enumerate engine material IDs to NRD (NRD's material
+	// ID is used only for cross-material disocclusion gates which CL-3
+	// does not enable), so materialID = 0 — NRD treats every pixel as the
+	// same material class.
+	float4 l_packedNormalRoughness =
+		NRD_FrontEnd_PackNormalAndRoughness(l_normalWS, l_roughness, /*materialID=*/0.0f);
+
+	// IN_MV pack. RT3.xy stores `screen_prev - screen_curr` in pixels
+	// (PTRaygenIntegrator_GBufferWrite.hlsli:53), which matches NRD's
+	// stated convention "MV = previous - current". 2D-pixel mode so RG16F
+	// is enough; CL-3 sets CommonSettings::motionVectorScale = {1,1,0}.
+	float2 l_motionVec = l_RT3.xy;
+
+	// IN_VIEWZ pack. R32F slot; pass viewZ as-is (units = engine world
+	// units; CL-3 CommonSettings::meterToUnitsMultiplier reconciles this
+	// with NRD's internal-meter convention if needed).
+	out_NRD_ViewZ[l_pixel]           = l_viewZ;
+	out_NRD_NormalRoughness[l_pixel] = l_packedNormalRoughness;
+	out_NRD_MotionVector[l_pixel]    = l_motionVec;
+
+	// IN_DIFF / IN_SPEC radiance + normalized hit-distance. The integrator
+	// writes hit distance into RT3.z as length(hitPos - cameraWS) — that
+	// length is the primary-ray viewspace distance, NOT the NRD-required
+	// "distance to first hit AFTER the primary surface". For CL-2 we
+	// consume RT3.z as-is for both lobes; CL-5 (the per-bounce hit-distance
+	// rework that NRD's ReBLUR docs single out as the highest-quality
+	// signal) is out of CL-2 scope and noted in the task plan's risks
+	// table. The same RT3.z hit distance feeds both the diffuse and
+	// specular packs because the integrator does not currently split per-
+	// lobe hit distance. Treating RT3.z as the surrogate is a paper-
+	// faithful first approximation per ReBLUR docs §"hitDist": "for the
+	// 1st bounce after the primary hit or PSR must be provided as is".
+	float  l_hitDist = max(l_RT3.z, 0.0f);
+
+	// REBLUR_FrontEnd_GetNormHitDist(hitDist, viewZ, hitDistParams, roughness)
+	// roughness arg semantics (NRD.hlsli:28): "isDiffuse ? 1.0 : roughness".
+	// Diffuse channel always passes 1.0; specular channel passes the linear
+	// roughness from RT2.w.
+	float  l_normHitDistDiff = REBLUR_FrontEnd_GetNormHitDist(
+		l_hitDist, l_viewZ, PT_NRD_HIT_DIST_PARAMS_ABC, /*isDiffuse->*/ 1.0f);
+	float  l_normHitDistSpec = REBLUR_FrontEnd_GetNormHitDist(
+		l_hitDist, l_viewZ, PT_NRD_HIT_DIST_PARAMS_ABC, l_roughness);
+
+	float3 l_radDiff = in_PT_RadianceDiffuse[l_pixel].rgb;
+	float3 l_radSpec = in_PT_RadianceSpecular[l_pixel].rgb;
+
+	// REBLUR_FrontEnd_PackRadianceAndNormHitDist sanitizes NaN/inf and runs
+	// linear -> YCoCg before packing into RGBA16F. Pass `sanitize=true`
+	// because the integrator's clamp(min(., 100000)) is a magnitude clamp,
+	// not a NaN/inf scrub — a fireflied path that produced inf from
+	// throughput * pdf-near-zero would still survive the 100000 ceiling.
+	out_NRD_DiffRadianceHitDist[l_pixel] =
+		REBLUR_FrontEnd_PackRadianceAndNormHitDist(l_radDiff, l_normHitDistDiff, /*sanitize=*/ true);
+	out_NRD_SpecRadianceHitDist[l_pixel] =
+		REBLUR_FrontEnd_PackRadianceAndNormHitDist(l_radSpec, l_normHitDistSpec, /*sanitize=*/ true);
+}

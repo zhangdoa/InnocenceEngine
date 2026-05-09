@@ -120,18 +120,18 @@ void GPUPathTracerPass::OnResize()
 	ResetAccumulation();
 }
 
-// PT screen-space denoiser GBuffer-equivalent textures. RGBA16F across all
-// four (per ping-pong slot) to mirror the rasterizer GBuffer's float16
-// RGBA format (RenderingConfigurationService::m_DefaultRenderPassDesc) so
-// DecodeGBuffer in common/lightPassCommon.hlsl reads them with the same
-// precision in PT mode as in raster mode. Position carries 16F precision
-// floor; same as the rasterizer ships, so denoiser passes (CL-2/3/4) get
-// a contract-equivalent input.
+// PT screen-space denoiser GBuffer-equivalent + per-lobe radiance textures.
+// RGBA16F to mirror the rasterizer GBuffer's float16 RGBA format
+// (RenderingConfigurationService::m_DefaultRenderPassDesc) so DecodeGBuffer
+// in common/lightPassCommon.hlsl reads them with the same precision in PT
+// mode as in raster mode. Position carries 16F precision floor; same as the
+// rasterizer ships, so the format-convert pass downstream gets a contract-
+// equivalent input.
 //
-// Ping-pong shape (CL-2): 4 channels × 2 frames = 8 textures. Even/Odd
-// parity follows FrameCountSinceLaunch — current = parity-of-frame; the
-// temporal pass reads both current (this frame's PT writes) and
-// previous (last frame's PT writes) for the disocclusion gates.
+// CL-2 (TASK-77.4) collapsed the Even/Odd ping-pong introduced by TASK-77.2:
+// NRD ReBLUR owns prev-frame reconstruction via motion vectors, so the
+// engine never re-reads last frame's GBuffer-equivalent textures. 6 single-
+// buffered RGBA16F textures (RT0..RT3 + per-lobe diffuse / specular).
 void GPUPathTracerPass::CreatePTGBufferTextures()
 {
 	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -152,75 +152,22 @@ void GPUPathTracerPass::CreatePTGBufferTextures()
 		l_texService->Initialize(out_Tex);
 	};
 
-	l_create("PTDenoise_GBuffer_Position_Even",        m_PTGBuffer_Position_Even);
-	l_create("PTDenoise_GBuffer_Position_Odd",         m_PTGBuffer_Position_Odd);
-	l_create("PTDenoise_GBuffer_NormalMetalness_Even", m_PTGBuffer_NormalMetalness_Even);
-	l_create("PTDenoise_GBuffer_NormalMetalness_Odd",  m_PTGBuffer_NormalMetalness_Odd);
-	l_create("PTDenoise_GBuffer_AlbedoRoughness_Even", m_PTGBuffer_AlbedoRoughness_Even);
-	l_create("PTDenoise_GBuffer_AlbedoRoughness_Odd",  m_PTGBuffer_AlbedoRoughness_Odd);
-	l_create("PTDenoise_GBuffer_MotionHitDist_Even",   m_PTGBuffer_MotionHitDist_Even);
-	l_create("PTDenoise_GBuffer_MotionHitDist_Odd",    m_PTGBuffer_MotionHitDist_Odd);
+	l_create("PTDenoise_GBuffer_Position",        m_PTGBuffer_Position);
+	l_create("PTDenoise_GBuffer_NormalMetalness", m_PTGBuffer_NormalMetalness);
+	l_create("PTDenoise_GBuffer_AlbedoRoughness", m_PTGBuffer_AlbedoRoughness);
+	l_create("PTDenoise_GBuffer_MotionHitDist",   m_PTGBuffer_MotionHitDist);
+	l_create("PTDenoise_RadianceDiffuse",         m_PTRadianceDiffuse);
+	l_create("PTDenoise_RadianceSpecular",        m_PTRadianceSpecular);
 }
 
 void GPUPathTracerPass::DeletePTGBufferTextures()
 {
 	auto l_texService = g_Engine->Get<TextureResourceService>();
 	auto l_drop = [&](TextureComponent*& tex) { if (tex) { l_texService->Delete(tex); tex = nullptr; } };
-	l_drop(m_PTGBuffer_MotionHitDist_Odd);
-	l_drop(m_PTGBuffer_MotionHitDist_Even);
-	l_drop(m_PTGBuffer_AlbedoRoughness_Odd);
-	l_drop(m_PTGBuffer_AlbedoRoughness_Even);
-	l_drop(m_PTGBuffer_NormalMetalness_Odd);
-	l_drop(m_PTGBuffer_NormalMetalness_Even);
-	l_drop(m_PTGBuffer_Position_Odd);
-	l_drop(m_PTGBuffer_Position_Even);
-}
-
-namespace
-{
-	bool PTGBufferUseEven()
-	{
-		const uint32_t l_frame = g_Engine->Get<FrameManagementService>()->GetFrameCountSinceLaunch();
-		return (l_frame % 2u) == 0u;
-	}
-}
-
-TextureComponent* GPUPathTracerPass::GetCurrentPTGBufferPosition()
-{
-	return PTGBufferUseEven() ? m_PTGBuffer_Position_Even : m_PTGBuffer_Position_Odd;
-}
-
-TextureComponent* GPUPathTracerPass::GetCurrentPTGBufferNormalMetalness()
-{
-	return PTGBufferUseEven() ? m_PTGBuffer_NormalMetalness_Even : m_PTGBuffer_NormalMetalness_Odd;
-}
-
-TextureComponent* GPUPathTracerPass::GetCurrentPTGBufferAlbedoRoughness()
-{
-	return PTGBufferUseEven() ? m_PTGBuffer_AlbedoRoughness_Even : m_PTGBuffer_AlbedoRoughness_Odd;
-}
-
-TextureComponent* GPUPathTracerPass::GetCurrentPTGBufferMotionHitDist()
-{
-	return PTGBufferUseEven() ? m_PTGBuffer_MotionHitDist_Even : m_PTGBuffer_MotionHitDist_Odd;
-}
-
-TextureComponent* GPUPathTracerPass::GetPreviousPTGBufferPosition()
-{
-	return PTGBufferUseEven() ? m_PTGBuffer_Position_Odd : m_PTGBuffer_Position_Even;
-}
-
-TextureComponent* GPUPathTracerPass::GetPreviousPTGBufferNormalMetalness()
-{
-	return PTGBufferUseEven() ? m_PTGBuffer_NormalMetalness_Odd : m_PTGBuffer_NormalMetalness_Even;
-}
-
-TextureComponent* GPUPathTracerPass::GetPreviousPTGBufferAlbedoRoughness()
-{
-	return PTGBufferUseEven() ? m_PTGBuffer_AlbedoRoughness_Odd : m_PTGBuffer_AlbedoRoughness_Even;
-}
-
-TextureComponent* GPUPathTracerPass::GetPreviousPTGBufferMotionHitDist()
-{
-	return PTGBufferUseEven() ? m_PTGBuffer_MotionHitDist_Odd : m_PTGBuffer_MotionHitDist_Even;
+	l_drop(m_PTRadianceSpecular);
+	l_drop(m_PTRadianceDiffuse);
+	l_drop(m_PTGBuffer_MotionHitDist);
+	l_drop(m_PTGBuffer_AlbedoRoughness);
+	l_drop(m_PTGBuffer_NormalMetalness);
+	l_drop(m_PTGBuffer_Position);
 }

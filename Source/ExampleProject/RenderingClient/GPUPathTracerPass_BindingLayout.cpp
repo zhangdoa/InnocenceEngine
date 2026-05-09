@@ -36,10 +36,10 @@ void GPUPathTracerPass::ConfigureRaytracingBindings()
 		"previous frame's view + p_original for primary-hit motion-vector "
 		"reprojection), u7=PT-GBuffer Position+InstanceID, u8=Normal+Metalness, "
 		"u9=Albedo+Roughness, u10=MotionVec+HitDist, u11=RadianceDiffuse, "
-		"u12=RadianceSpecular. The two radiance UAVs (CL-2) are owned by "
-		"PTDenoiseTemporalPass; the path tracer borrows them by accessor so "
-		"the integrator can write the SVGF demodulated diffuse / specular "
-		"channels at the AccumBuffer-composition site. Channel layout per "
+		"u12=RadianceSpecular. All six UAVs are owned by GPUPathTracerPass "
+		"(TASK-77.4 CL-2 collapsed the prior PTDenoiseTemporalPass-owned "
+		"radiance pair onto this pass). PTNRDFormatConvertPass reads the six "
+		"as SRVs in the same frame. Channel layout per "
 		"common/PTDenoiseShared.hlsl, mirroring the rasterizer GBuffer so "
 		"DecodeGBuffer (common/lightPassCommon.hlsl) reads them unchanged. "
 		"Toggle-gated like the cache block above: when PTDenoise::ENABLED is "
@@ -265,9 +265,9 @@ void GPUPathTracerPass::ConfigureRaytracingBindings()
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 4].m_ResourceAccessibility  = Accessibility::ReadWrite;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 4].m_ShaderStage            = m_ShaderStage;
 
-		// u11 - PT-Denoise RadianceDiffuse (set 2, binding 11). CL-2:
-		// SVGF demodulated diffuse channel — written at the AccumBuffer
-		// composition site, consumed by PTDenoiseTemporalPass.
+		// u11 - PT-Denoise RadianceDiffuse (set 2, binding 11). TASK-77.4
+		// CL-2: per-lobe demodulated diffuse channel — written at the
+		// AccumBuffer composition site, consumed by PTNRDFormatConvertPass.
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 5].m_GPUResourceType        = GPUResourceType::Image;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 5].m_DescriptorSetIndex      = 2;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 5].m_DescriptorIndex        = 11;
@@ -276,8 +276,8 @@ void GPUPathTracerPass::ConfigureRaytracingBindings()
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 5].m_ResourceAccessibility  = Accessibility::ReadWrite;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 5].m_ShaderStage            = m_ShaderStage;
 
-		// u12 - PT-Denoise RadianceSpecular (set 2, binding 12). CL-2:
-		// SVGF demodulated specular channel.
+		// u12 - PT-Denoise RadianceSpecular (set 2, binding 12). TASK-77.4
+		// CL-2: per-lobe demodulated specular channel.
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 6].m_GPUResourceType        = GPUResourceType::Image;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 6].m_DescriptorSetIndex      = 2;
 		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[l_denoiseFirst + 6].m_DescriptorIndex        = 12;

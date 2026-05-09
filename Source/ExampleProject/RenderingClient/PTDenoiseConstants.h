@@ -1,56 +1,32 @@
 #pragma once
 
-// C++ mirror of the screen-space PT denoiser toggle and shared layout
-// constants defined in Source/Shaders/HLSL/common/PTDenoiseShared.hlsl.
-// The shader header owns the canonical channel-layout enumeration; this
-// header carries the C++ side's compile-time toggle so GPUPathTracerPass
-// can branch on `if constexpr (Inno::PTDenoise::ENABLED)` for resource
-// allocation, binding, and dispatch without redefining the channel
-// layout per pass.
+// C++ mirror of the per-lobe GBuffer-equivalent UAV write toggle defined in
+// Source/Shaders/HLSL/common/PTDenoiseShared.hlsl. The shader header owns the
+// canonical channel-layout enumeration; this header carries the C++ side's
+// compile-time toggle so GPUPathTracerPass can branch on
+// `if constexpr (Inno::PTDenoise::ENABLED)` for resource allocation, binding,
+// and dispatch without redefining the channel layout per pass.
 //
-// Reference: SVGF (Schied et al. 2017) — temporal accumulation +
-// edge-aware à-trous spatial filter. Architectural pattern; CL-1 lands
-// only the primary-hit signal split + GBuffer-equivalent UAV writes.
+// Drift between this header's ENABLED flag and the HLSL PT_DENOISE_ENABLED
+// #define manifests as a root-signature / DXIL mismatch — keep them in
+// lockstep. As of TASK-77.4 CL-2 both are pinned to true: NRD ReBLUR consumes
+// the per-lobe radiance UAVs + the GBuffer-equivalent textures via the new
+// PTNRDFormatConvertPass, so this toggle is no longer optional.
 //
-// Drift between this header's ENABLED flag and the HLSL
-// PT_DENOISE_ENABLED #define manifests as a root-signature / DXIL
-// mismatch — keep them in lockstep.
+// The PTDenoise namespace name survives CL-2 because flipping it to NRD
+// would touch every if-constexpr site in GPUPathTracerPass; a future CL can
+// rename the namespace (or merge with Inno::NRD) once that mass-rename has
+// its own diff isolated.
 
 namespace Inno
 {
 namespace PTDenoise
 {
-    // Master compile-time toggle. When false, GPUPathTracerPass does not
-    // allocate or bind the GBuffer-equivalent UAVs, and the corresponding
-    // #if-gated raygen code in GPUPathTracerRayGen.hlsl strips out at
-    // compile time. AccumBuffer write is bit-identical to the toggle-off
-    // path tracer.
-    //
-    // The HLSL side mirrors this in GPUPathTracerRayGen.hlsl
+    // Master compile-time toggle. When true, GPUPathTracerPass allocates and
+    // binds the GBuffer-equivalent UAVs, and the corresponding #if-gated
+    // raygen code in GPUPathTracerRayGen.hlsl emits the per-lobe radiance
+    // writes. The HLSL side mirrors this in GPUPathTracerRayGen.hlsl
     // (`#define PT_DENOISE_ENABLED`); both must hold the same value.
-    static constexpr bool ENABLED = false;
-
-    // Temporal-accumulator constants (CL-2). Mirrored on the HLSL side in
-    // common/PTDenoiseShared.hlsl so the rejection thresholds and history
-    // cap stay in lockstep across the C++ pass scheduling and the
-    // PTDenoiseTemporal.comp kernel body.
-    //
-    // SVGF default — reaches `α = 1/32` blend weight at full convergence,
-    // an empirically common balance between residual noise and lag under
-    // motion (Schied 2017 §3). 16 trades convergence depth for faster
-    // motion response; 32 keeps more samples but takes longer to evict
-    // stale history when reprojection just barely passes the gate. Match
-    // SVGF reference; revisit if rejection turns out to leak ghosting.
-    static constexpr uint32_t MaxHistoryFrames = 32u;
-
-    // History rejection — mesh-id strict equality plus geometry tests.
-    // Matches GIDenoise.comp:245 (`dot(N, prevN) > 0.95`); the depth gate
-    // is relative because absolute thresholds break across scene scales
-    // (Capsaicin gi1.comp:4039 and the SVGF reference both go relative).
-    // 0.1 = 10% linear-depth tolerance; tuned in CL-2 capture (revisit
-    // alongside specular blur radius in CL-3 if disocclusion flicker
-    // shows up at the threshold boundary).
-    static constexpr float HistoryNormalDotThreshold = 0.95f;
-    static constexpr float HistoryDepthRelativeThreshold = 0.1f;
+    static constexpr bool ENABLED = true;
 }
 } // namespace Inno

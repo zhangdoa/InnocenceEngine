@@ -9,9 +9,9 @@
 #include "PTHashGridCachePurgeTilesPass.h"
 #include "PTHashGridCacheUpdateTilesPass.h"
 #include "PTHashGridCacheMipCascadeBuildPass.h"
-#include "PTDenoiseTemporalPass.h"
+#include "PTNRDFormatConvertPass.h"
 #include "HashGridCacheConstants.h"
-#include "PTDenoiseConstants.h"
+#include "NRDConstants.h"
 
 #include "../../Engine/Services/GraphicsHardwareService.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
@@ -143,35 +143,34 @@ namespace Inno
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		// PTDenoise temporal accumulator (TASK-77.2 CL-2). Runs on the
-		// Compute queue after the path tracer finishes; the Graphics CL
-		// transition pre-pass and the Compute dispatch each get their own
-		// Execute / Signal pair. Toggle-OFF: pass stays Terminated, no
+		// PTNRDFormatConvert (TASK-77.4 CL-2). Runs on the Compute queue
+		// after the path tracer finishes; the Graphics CL transition pre-
+		// pass and the Compute dispatch each get their own Execute / Signal
+		// pair. Toggle-OFF (BUILD_WITH_NRD=OFF): pass stays Terminated, no
 		// dispatch — the entire block elides at compile time.
-		if constexpr (Inno::PTDenoise::ENABLED)
+		if constexpr (Inno::NRD::ENABLED)
 		{
 			if (m_GPUPathTracerActive
-				&& PTDenoiseTemporalPass::Get().GetStatus() == ObjectStatus::Activated
-				&& !IsBypassed(PTDenoiseTemporalPass::Get()))
+				&& PTNRDFormatConvertPass::Get().GetStatus() == ObjectStatus::Activated
+				&& !IsBypassed(PTNRDFormatConvertPass::Get()))
 			{
-				auto l_renderPass = PTDenoiseTemporalPass::Get().GetRenderPassComp();
+				auto l_renderPass = PTNRDFormatConvertPass::Get().GetRenderPassComp();
 
-				// Graphics CL: transition the GBuffer-equivalent +
-				// per-lobe radiance + history textures into the
-				// states the compute kernel expects. Same shape as
-				// GIDenoisePass — graphics-queue transitions because
-				// the GBuffer textures may carry PIXEL_SHADER_RESOURCE
-				// state from a prior frame's read.
-				auto l_graphicsCL = PTDenoiseTemporalPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+				// Graphics CL: transition the five output UAVs into
+				// the states the compute kernel expects. Required
+				// because tracked state may include
+				// PIXEL_SHADER_RESOURCE (set by swap chain
+				// presentation), invalid on a compute command list.
+				auto l_graphicsCL = PTNRDFormatConvertPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 				l_hwService->Execute(l_graphicsCL, GPUEngineType::Graphics);
 				l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 				l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 				// Wait on the path tracer — its compute dispatch wrote
-				// the per-lobe radiance UAVs + GBuffer textures we read.
+				// the GBuffer + per-lobe radiance UAVs we read as SRVs.
 				WaitIfActive(GPUPathTracerPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
 
-				auto l_computeCL = PTDenoiseTemporalPass::Get().GetCommandListComp(GPUEngineType::Compute);
+				auto l_computeCL = PTNRDFormatConvertPass::Get().GetCommandListComp(GPUEngineType::Compute);
 				l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
 				l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 			}
