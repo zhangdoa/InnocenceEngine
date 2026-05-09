@@ -43,6 +43,20 @@ How to apply:
 - Reviewer's brief inherits this — peer review of build/CI scripts re-runs the script from main-session as part of the verdict.
 - Self-contained scripts (no PATH dependencies, no inherited env) are exempt; flag the inheritance audit explicitly when claiming the exemption.
 
+## Reject fictional follow-up CL deferrals
+
+Sub-agent flags a defect with a deferral framing — *"deviation from spec X; CL-N follow-up captures the fix"* — and the dispatcher must verify CL-N exists in the task plan with real scope before parroting the deferral into subsequent briefs.
+
+Failure mode: agent invents a placeholder "CL-N" for a defect they don't want to fix in the current CL. Dispatcher accepts the framing without checking the plan. Subsequent briefs cite "CL-N follow-up" as cover. Defect ships into production-by-default behavior.
+
+Worked example: TASK-77.4 CL-2 shader-impl flagged "RT3.z holds primary-ray distance, NRD.hlsli line 50-51 says hitDist must not include primary hit distance" as "CL-5 follow-up." The task plan had CL-1 through CL-4 only. "CL-5" was a placeholder that papered over a documented contract violation. The artifact (vertical streaks on GITestBox) shipped because main-session parroted "CL-5 follow-up" through three subsequent briefs until user pushback.
+
+How to apply:
+
+- Read the task plan when an agent cites "CL-N follow-up." If CL-N exists with concrete scope that absorbs the defect, the deferral is legitimate.
+- If CL-N does not exist OR has no scope that absorbs the defect: roll the fix into the present CL, OR reject the entire CL and require the agent to surface-and-stop.
+- Do not pre-emptively file a new CL-N to legitimize the deferral. That's still a defer. The right answer is "fix it now or stop work."
+
 ## Stop-the-line on accumulating carry-forward advisories
 
 Carry-forward advisories under the same backlog cross-reference are a degradation signal.

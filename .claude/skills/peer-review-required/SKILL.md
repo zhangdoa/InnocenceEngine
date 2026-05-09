@@ -12,6 +12,7 @@ Every non-trivial implementation dispatch is followed by a peer-review dispatch 
 - **Backlog / docs-only** (`.backlog/`, `Documents/`, `.md`, `.claude/`, `.alignments/`, `.gitignore`). Closing a task → review still required.
 - **Hook fixes / harness self-edits** where the diff is the gate logic the reviewer would consult. Surface which gate in the commit message.
 - **Mechanical refactors with a single deterministic transformation** (rename, file move, generated-data sweep). Articulate why there's no design surface.
+  - **Excluded**: enum tag additions to serialized-by-integer enums. These have ABI surface against any persisted asset metadata; require review of the enum's serialization callsite consumers regardless of how mechanical the transformation looks. See skill `cpp-style` § "Serialized enums tail-append."
 
 Unsure → required.
 
