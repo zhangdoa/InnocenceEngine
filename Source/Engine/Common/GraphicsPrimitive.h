@@ -104,7 +104,7 @@ namespace Inno
 
 		enum class TextureSampler { Invalid, Sampler1D, Sampler2D, Sampler3D, Sampler1DArray, Sampler2DArray, SamplerCubemap };
 		enum class TextureUsage { Invalid, Sample, ColorAttachment, DepthAttachment, DepthStencilAttachment, ComputeOnly };
-		enum class TexturePixelDataFormat { Invalid, R, RG, RGB, RGBA, BGRA, RGB10A2, Depth, DepthStencil, BC1, BC3, BC4, BC5 };
+		enum class TexturePixelDataFormat { Invalid, R, RG, RGB, RGBA, BGRA, Depth, DepthStencil, BC1, BC3, BC4, BC5, RGB10A2 };
 		enum class TexturePixelDataType { Invalid, UByte, SByte, UShort, SShort, UInt8, SInt8, UInt16, SInt16, UInt32, SInt32, Float16, Float32, Double, Compressed };
 		enum class TextureWrapMethod { Invalid, Edge, Repeat, Border };
 		enum class TextureFilterMethod { Invalid, Nearest, Linear };
