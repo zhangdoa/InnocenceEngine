@@ -86,4 +86,14 @@ Umbrella moves from R&D-direction-only to actively-decomposed. Phase tasks get f
 **TASK-77.3 candidate, NOT filed**: cache reactivation as long-tail feeder above the new denoiser; possible ReSTIR GI integration on primary hit. Per `backlog-workflow.md` § "Don't pile on" — file when 77.2 outcome makes 77.3 the natural pick.
 
 **Other axes still scope-able**: light BVH, balance-heuristic MIS, blue-noise stratified sampling, OIDN integration. Same "don't pile on" rule.
+
+## Phase progression update (2026-05-09) — license unblock + NRD pivot
+
+**TASK-77.2 closed** as superseded. In-house SVGF-shape denoiser shipped CL-1 + CL-2 (GBuffer-equivalent + lobe split — these survive as feed-in to the successor task). CL-3 (spatial bilateral) and Option D (per-pixel disocclusion-aware AccumBuffer) both shipped with regressions (contour artifacts, fireflies, intense ghosting). Three iteration sessions hit one of two failure modes: (1) bilateral-filter inherent edge artifacts, (2) envelope-clamp patterns over-darkening because variance moments tracked the noisy 1-spp PT input, not the blended history. Pattern is the architectural trap (SVGF/Capsaicin/in-house-NRD-clone) — same shape walked back twice prior in the project's history.
+
+**Project relicensed GPL-3.0 → MIT** (commit `18b6ece3`). The earlier "no NRD" rule was based on an incorrect premise — the LICENSE file was GPL but user remembered MIT. GPL-3.0 + NVIDIA SDK is hard-incompatible (open-source-incompatibility clause + § 5(c) propagation). MIT is permissive, does not propagate restrictions onto linked dependencies, no conflict.
+
+**TASK-77.4 filed**: NRD ReBLUR integration (replaces the in-house denoiser). 4-CL plan, ~1300 LoC, 5-7 days. CL-1 (library plumbing) + CL-2 (format-conversion + delete temporal pass + integrator albedo demod) + CL-3 (NRD dispatch + composition, first user-visible) + CL-4 optional (tuning + AMD/Intel runtime fallback). License-bundling: `LICENSES.md` aggregator at root + NV attribution line.
+
+**TASK-77.3 candidate stays unfiled**: cache reactivation as feeder above the NRD denoiser. Re-evaluate after TASK-77.4 lands.
 <!-- SECTION:NOTES:END -->

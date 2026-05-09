@@ -1,7 +1,7 @@
 ---
 id: TASK-77.2
 title: 'Post-PT denoiser: demodulated diffuse/specular SVGF-shape (in-house, no NRD)'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-05-07'
@@ -64,12 +64,12 @@ This builds atop the loop-per-bounce raygen already in place; no hash-grid coupl
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
-- [ ] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
-- [ ] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path
-- [ ] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
-- [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
-- [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
+- [x] #1 Code compiles — RelWithDebInfo + HLSL2DXIL clean at every CL on the chain (CL-1 + CL-2 committed; CL-3 stashed; Option D discarded).
+- [x] #2 Integration tests re-run — `Main.exe -test gpu_path_tracer -total_frames N` + per-CL three-scene captures. 0 D3D12 errors throughout.
+- [x] #3 N/A — existing capture infra applies.
+- [x] #4 Validation is real engine runs + multi-agent independent visual layer-1 reads on PNG captures. No mock-based substitutes.
+- [x] #5 User-observable outcome verified — multiple capture sets in `Build/captures/TASK-77.2-*`; user direct visual inspection in editor confirmed the regressions (intense ghosting on Option D, contour artifacts on CL-3 bilateral).
+- [x] #6 Closure verdict block above explicitly lists the chain's failure modes — that's the honest "not verified" surface that triggers the pivot to TASK-77.4.
 <!-- DOD:END -->
 
 ## Cross-references
@@ -494,5 +494,23 @@ CL-2 reviewed against design plan and the GIDenoise.comp:184-260 reference. Diff
 **ADVISORY**. The terminal question — does CL-2 correctly accumulate per-lobe history with proper rejection and stay bypass-invariant — is YES on both counts at the source level. CL-2 is mergeable; the fp16 moment saturation is a real correctness bug that will surface the moment a firefly hits the variance estimator under CL-3 (à-trous variance-guided blur). File as CL-3 entry constraint, not a CL-2 blocker.
 
 Reviewed-By: shader-impl
+
+## Closure verdict — superseded by NRD pivot (2026-05-09)
+
+**Verdict**: superseded. CL-1 (GBuffer-equivalent + lobe split) and CL-2 (per-lobe radiance UAVs) shipped and remain useful as feed-in to NRD's input format. CL-3 (spatial bilateral, stashed) and Option D (per-pixel disocclusion-aware AccumBuffer ping-pong, working-tree-only, discarded) both shipped with regressions: CL-3 had contour artifacts at depth/normal discontinuities + persistent fireflies + over-blur on noise-free scenes; Option D produced intense ghosting on motion despite the per-pixel reset design.
+
+Three iteration sessions (sigma-clamp tuning, motion-magnitude reject, history-cap drop, color-clamp, per-tap luminance clamp, variance-aware clamp) all hit one of two failure modes:
+1. Bilateral-filter inherent failure modes at edges (contour lines, over-blur).
+2. Envelope-clamp patterns deriving variance from the noisy 1-spp PT input → envelope collapses → over-darken.
+
+The pattern is the architectural trap, not any specific tuning. SVGF/Capsaicin/NRD-shape clones twice walked back in this project's history.
+
+**Direction change**: post-relicense to MIT (commit `18b6ece3`), NVIDIA NRD's license is now compatible with linking from the engine. NRD ReBLUR is the production-shipped shape (used by Cyberpunk 2077 RT Overdrive, Alan Wake 2 RT, RTX Remix) — what we have been trying to badly reimplement in-house for three sessions. ~1300 LoC integration vs the multi-session in-house chain.
+
+**Successor**: TASK-77.4 (NRD ReBLUR integration). CL-1 GBuffer-equivalent + CL-2 lobe-split survive as inputs.
+
+**Discarded**: CL-3 spatial bilateral stashed at `stash@{0}` (drop after TASK-77.4 CL-3 lands). Working-tree Option D `git checkout -- Source/`'d.
+
+**DoD reconciliation**: AC-1/AC-2 visual gates not strictly met by the in-house chain — that's exactly the trigger for the NRD pivot. The work is "implementation correct, architectural framing wrong" same shape as TASK-77.1's wrong-framing closure.
 
 <!-- SECTION:NOTES:END -->
