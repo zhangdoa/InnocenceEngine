@@ -1,9 +1,10 @@
 ---
 id: TASK-99
 title: 'Rendering: bring back the volumetric pass and fix accumulated issues'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-19 18:11'
+updated_date: '2026-05-09'
 labels:
   - rendering
   - regression
@@ -41,6 +42,40 @@ The engine has a sky and directional sun; dusty Sponza interiors with god-rays i
 - No validation errors under `-gpu_validation`.
 - Test tier 2 (Main.exe integration) stays green.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## Obsolete under PT-primary direction (2026-04-30) + reframed as PT-side medium integration (TASK-99.1)
+
+### Why the original framing fails
+
+Task brief assumed *"the old commented one almost works"* — re-enable + triage fallout. Investigation (2026-05-09 dispatch, code-impl agent) found the opposite:
+
+- All four sub-pass bodies (`froxelization`, `irraidanceInjection`, `rayMarching`, `visualization`) in `VolumetricPass_ExecuteCommands.cpp` are stubs — `BindGPUResource` / `Dispatch` / `CommandListBegin/End` blocks fully commented out.
+- ExecuteCommands waits on render-pass components that are never recorded.
+- TODO at `VolumetricPass_ExecuteCommands.cpp:60,117` — `// TODO: Implement per-pass dispatch params buffer for VolumetricPass`. Shaders read `dispatchParams[6]/[7]` slots that don't exist.
+- Shaders live at `Source/Shaders/HLSL/WIP/volumetric*` — never on the active shader path since the rename at `a511d710`.
+- No "last known good" exists in `git log --all`. Commit `99227710` (June 2025) deleted the previously-commented `Initialize/ExecuteCommands/Terminate` registration calls; they were already commented before deletion.
+
+### Why direction-obsolescence on top of that
+
+Task filed 2026-04-19. Project pivoted to PT-primary 2026-04-30 (`.claude/state/project-direction.md`). The existing volumetric design is a **rasterizer-side** subsystem — froxel + ray-march sourcing irradiance from the raster light list, composing into the lit raster buffer. Under PT-primary, participating-media scattering structurally belongs in the path tracer's medium integration, not a parallel raster subsystem maintained in lockstep. Same logic that closed TASK-153.
+
+### Resolution
+
+- **TASK-99 → Done (obsolete-under-PT-primary).** AC #1 / #2 / #3 unticked — they were not done; they target a subsystem that is no longer load-bearing. No integration tests run, no RenderDoc captures produced, no `-gpu_validation` exercise. Honestly: nothing was verified because nothing was implemented.
+- **Existing raster volumetric files retained as dead code for now.** `Source/ExampleProject/RenderingClient/VolumetricPass.{h,cpp}`, `VolumetricPass_Setup.cpp`, `VolumetricPass_Internal.h`, `VolumetricPass_ExecuteCommands.cpp`, `Source/Shaders/HLSL/WIP/volumetric*` — never registered, never compiled into the active graph. Removal is a separate cleanup CL (or absorbs into TASK-99.1's scope when PT medium integration lands).
+- **Follow-up filed: TASK-99.1** — PT-side medium integration. Spec at `docs/superpowers/specs/2026-05-09-pt-media-single-scattering-design.md`. Replaces this raster-side feature.
+
+### Cross-references
+
+- TASK-77 — PT-primary direction parent.
+- TASK-99.1 — successor (PT-side participating media).
+- TASK-153, TASK-137 — sibling closures on 2026-04-30 batch (rasterizer-trick subsystems demoted under PT-primary).
+- Commit `99227710` — June 2025 deletion of registration calls.
+- Commit `a511d710` — shader move into `WIP/`.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
