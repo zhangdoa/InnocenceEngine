@@ -186,6 +186,21 @@ namespace Inno
 			Log(Success, "TASK-182 INNO_RASTERIZED_GI='", l_RasterizedGIEnv,
 				"' applied; RasterizedGI = ", l_OnRequested ? "ON" : "OFF (clear-on-bypass active).");
 		}
+
+		// TASK-77.4 CL-4 NRD anti-firefly live A/B. The setter writes through
+		// to the dispatch-site read venue (NRDConstants.h::g_DenoiserSettings)
+		// so the next frame's SetDenoiserSettings picks up the new value. The
+		// other ReBLUR knobs (HitDistParams, MaxAccumulatedFrameNum,
+		// LobeAngleFraction, RoughnessFraction) are not bool and thus not
+		// representable through DevToggleRegistry's bool-only API; they are
+		// edit-and-recompile tunables (see g_DenoiserSettings comment).
+		// Registered unconditionally so the toggle list is stable across
+		// NRD ON/OFF builds; the setter is a no-op write to a header-only
+		// inline storage and stays valid even when ENABLED is false (the
+		// engine just won't read the field on the OFF path).
+		DevToggleRegistry::RegisterToggle("NRDAntiFirefly",
+			[]() { return Inno::NRD::g_DenoiserSettings.EnableAntiFirefly; },
+			[](bool desired) { Inno::NRD::g_DenoiserSettings.EnableAntiFirefly = desired; });
 	}
 
 	bool ExampleRenderingClientImpl::Setup(IServiceConfig* systemConfig)

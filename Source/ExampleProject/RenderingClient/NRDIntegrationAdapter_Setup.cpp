@@ -33,6 +33,29 @@ namespace Inno
 		m_Impl->m_ResourceWidth  = in_ResolutionX;
 		m_Impl->m_ResourceHeight = in_ResolutionY;
 
+		// CL-4 vendor-force-off — NRD is NV-developed; perf and correctness
+		// on AMD/Intel are not guaranteed by NV docs. Read VendorId from the
+		// engine's cached DXGI_ADAPTER_DESC (DX12Context.h:17, populated at
+		// device-create) and refuse to initialize when the adapter is not
+		// NVIDIA. Initialize returning false propagates: PTNRDDenoisePass
+		// stays !Activated, PTNRDCompositionPass stays !Activated, and
+		// ExampleRenderingClient_PrepareCommands.cpp:155-163 falls through
+		// to the raw PT AccumBuffer for the tonemap source. Single binary
+		// ships everywhere; AMD/Intel users get raw 1-spp PT.
+		// Compile-time-disable via Inno::NRD::FORCE_OFF_ON_NON_NV_GPU=false
+		// in NRDConstants.h to test ReBLUR on a non-NV GPU.
+		if constexpr (Inno::NRD::FORCE_OFF_ON_NON_NV_GPU)
+		{
+			const uint32_t l_vendorID = l_ctx->m_adapterDesc.VendorId;
+			if (l_vendorID != Inno::NRD::NVIDIA_VENDOR_ID)
+			{
+				Log(Warning, "NRDAdapter: DXGI VendorId=", l_vendorID,
+				    " (NVIDIA=4318=0x10DE); FORCE_OFF_ON_NON_NV_GPU is true. ",
+				    "Skipping NRD instance creation; engine falls back to raw 1-spp PT.");
+				return false;
+			}
+		}
+
 		// Create NRD instance with REBLUR_DIFFUSE_SPECULAR.
 		nrd::DenoiserDesc l_DenoiserDesc = {};
 		l_DenoiserDesc.identifier        = 0;

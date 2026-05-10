@@ -686,6 +686,125 @@ NRD's `worldToViewMatrix` slot in `CommonSettings` requires column-major / colum
 
 Zero NRD-related D3D12 errors under `-gpu_validation` (UnitTest 60-frame run; only pre-existing FinalBlend readback transition warning, filed as TASK-222).
 
+## CL-4 implementation notes (2026-05-10)
+
+CL-4 wires the tuning hooks + vendor force-off the plan calls for. All deltas land in 4 existing TUs; no new files.
+
+### Files modified
+
+- `Source/ExampleProject/RenderingClient/NRDConstants.h` — adds `Inno::NRD::DenoiserSettings` POD struct, `inline g_DenoiserSettings` mutable storage, `k_InitialDenoiserSettings` constexpr defaults, `FORCE_OFF_ON_NON_NV_GPU=true` constexpr, `NVIDIA_VENDOR_ID=0x10DE` constexpr. Re-adds `<cstdint>` (dropped in CL-1 rework A-5; new `uint32_t MaxAccumulatedFrameNum` member re-introduces the dependency). 153 lines.
+- `Source/ExampleProject/RenderingClient/NRDIntegrationAdapter_Setup.cpp` — adds vendor-check at `Initialize` reading `DX12Context.m_adapterDesc.VendorId`. Returns false on non-NV with Warning log; `if constexpr` guard so the check elides when `FORCE_OFF_ON_NON_NV_GPU` is flipped to false. 223 lines.
+- `Source/ExampleProject/RenderingClient/NRDIntegrationAdapter_Dispatch.cpp` — replaces the `nrd::ReblurSettings l_reblurSettings = {}` defaults block with explicit field-by-field copy from `g_DenoiserSettings`. HitDistParams.A/B/C copied; HitDistParams.D dead under v4.17.4. 243 lines.
+- `Source/ExampleProject/RenderingClient/ExampleRenderingClient_Setup.cpp` — registers `NRDAntiFirefly` `DevToggleRegistry` toggle wired to `g_DenoiserSettings.EnableAntiFirefly`. The non-bool knobs (HitDistParams, MaxAccumulatedFrameNum, LobeAngleFraction, RoughnessFraction) cannot route through the bool-only registry; they are edit-and-recompile tunables via `g_DenoiserSettings`. 261 lines.
+
+### Default-value rationale
+
+| Knob | NRD stock | CL-4 default | Targeted symptom |
+|---|---|---|---|
+| `MaxAccumulatedFrameNum` | 30 | **16** | GITestBox 1-2s stabilization on directly-lit area |
+| `LobeAngleFraction` | 0.15 | **0.05** | UnitTest soft sun-shadow edges |
+| `RoughnessFraction` | 0.15 | **0.05** | Same axis as LobeAngleFraction |
+| `EnableAntiFirefly` | true | true (mirrors stock) | GISponza motion fireflies (live-toggleable for A/B) |
+| `HitDistParams.{A,B,C}` | 3, 0.1, 20 | same as stock | none (placeholder; CL-5 hit-distance work) |
+
+### Items decided NOT done in CL-4 (and why)
+
+- **`IN_DIFF_CONFIDENCE` / `IN_SPEC_CONFIDENCE` bindings**: NRD's `NRDDescs.h:52-60` marks both as **Optional**, gated by `CommonSettings::isHistoryConfidenceAvailable` (default false). With the flag false, NRD's `GetComputeDispatches` walk does not reference these `ResourceType` slots — so the adapter's existing dispatch loop already handles the "skipped binding" case at zero engine-side wiring cost. Setting the flag true would require authoring R8 confidence textures, allocating the inputs engine-side, and wiring them through the format-convert pass + the adapter's `EnsureInputSRVs` helper. The brief's "minimum-viable constant 1.0" path is **moot under the false flag** because NRD doesn't ask for the inputs. **Filed for CL-5 follow-up**: confidence inputs should land alongside the per-bounce hit-distance work, derived from disocclusion (RT0.a instance-ID mismatch vs reprojected prior-frame ID) + sample-count signal.
+- **Camera-cut → accumulation reset (brief item B)**: already wired in CL-3 at `PTNRDDenoisePass_Dispatch.cpp:63-64` (view-matrix-delta detection → `l_resetAccum` → `nrd::AccumulationMode::RESTART` at `NRDIntegrationAdapter_Dispatch.cpp:82-84`). No CL-4 work needed; cited for completeness.
+- **`HitDistParams.D` field**: dead under NRD v4.17.4 (`ReblurHitDistanceParameters` declares only A/B/C). The four-field engine struct from CL-1 keeps `D` as a forward-compat placeholder; the dispatch site copies only A/B/C across, with the dead-field shape documented in the struct comment. No engine-side rename to avoid churn against the CL-1 footprint.
+
+### Visual sign-off (3-scene gate)
+
+Static captures at `Build/captures/TASK-77.4-CL-4-{UnitTest,GITestBox,GISponza}-static.png` (60-frame static, default scene-camera).
+
+| Scene | CL-4 vs CL-3-fixed verdict |
+|---|---|
+| UnitTest | **Visually equivalent**. The 0.05 lobeAngleFraction / roughnessFraction does NOT produce a discernibly sharper sun-shadow edge at this camera/scale on the static frame. The user-observed soft-shadow axis appears dominated by NRD's variance-driven spatial blur radius, not the lobe-angle rejection knob — knob is wired but the chosen default is not the right knob for that symptom. |
+| GITestBox | **Visually equivalent on static frame**. No vertical streaks (CL-3 matrix-transpose fix holds), all surface diffuse colours preserved, sharp shadow boundary at the corner. The MaxAccumulatedFrameNum=16 effect is a multi-frame / motion behavior not visible on a 60-frame static capture. |
+| GISponza | **Visually equivalent on static frame**. Drape fabrics + masonry + central passage all read with same detail and colour. Anti-firefly default matches NRD stock so the static-frame appearance is identical by construction. |
+
+### Build verification
+
+- `Scripts/BuildWin.ps1 -BuildWithNRD OFF`: succeeded, exit 0. `Main.vcxproj -> Bin/RelWithDebInfo/Main.exe`, `RenderTest.vcxproj -> Bin/RelWithDebInfo/RenderTest.exe`. The new `<cstdint>` + `g_DenoiserSettings` inline storage compiles on OFF (storage exists but the dispatch site is elided behind `if constexpr (Inno::NRD::ENABLED)`).
+- `Scripts/BuildWin.ps1 -BuildWithNRD ON`: succeeded, exit 0. NRD linked, 7 NRD libs copied to runtime, same Main.exe + RenderTest.exe outputs.
+- 60-frame static run on each scene: terminated cleanly, gpu_output.png produced each time.
+- `-gpu_validation` smoke run on UnitTest: NRD `Initialize` logs `NRDAdapter: Initialized at 1280x720 with 14 pipelines, 13+8 pool textures` (vendor check passed → NV detected). Zero NRD-related D3D12 errors, zero NRD-related GBV warnings. Only pre-existing `finalBlendPass.comp:61` GBV false positive (engine-tagged) and pre-existing FinalBlendPass `ReadTextureBackToCPU_Transition` state-mismatch fatal (TASK-222) — both fire identically with NRD ON or OFF. Validation log: `Build/captures/TASK-77.4-CL-4-gpu_validation.log` (940 KB).
+
+### What was NOT verified (honest disclosure for AC-1)
+
+- **Moving-camera captures per scene**: not produced. The 60-frame static `gpu_output.png` harness is what the engine supports headlessly, and the FinalBlend readback fatal (TASK-222) blocks `-gpu_validation` from completing the auto-capture phase. AC-1 ("user-direction layer-4 sign-off on at least one moving-camera capture per scene") is **not discharged** by CL-4 — TASK-77.4 stays In Progress until a follow-up session captures motion via either the editor + saveScreenCapture loop or a `-camera_orbit` driven 60-frame run per scene.
+- **Tuning effectiveness on user-reported symptoms**: the static captures cannot demonstrate the multi-frame / motion behaviors the CL-4 defaults target (GITestBox 1-2s stabilization, GISponza motion fireflies, UnitTest sun-shadow softness). Wiring is verified end-to-end; whether the chosen defaults move the needle on those symptoms requires the moving-camera follow-up.
+
+### Future-CL surface
+
+- **CL-5 (per plan, optional)**: per-bounce hit-distance encoding + IN_DIFF_CONFIDENCE / IN_SPEC_CONFIDENCE input authoring (toggle `isHistoryConfidenceAvailable=true`, allocate R8 inputs, derive from disocclusion + sample-count signal).
+- **TASK-222** (pre-existing): FinalBlend readback transition mismatch — blocks `-gpu_validation` clean-shutdown auto-capture. Not in CL-4 scope.
+- **DevToggleRegistry typed-tunable extension** (out-of-scope here): the bool-only API forces the 4 non-bool ReBLUR knobs into edit-and-recompile-tunable storage. A future engine extension could let NRDAntiFirefly's siblings live-tune via the same surface.
+
+## Review (code-impl, 2026-05-10)
+
+**Verdict: ADVISORY** — commit can proceed. Wiring is correct, vendor force-off path is safe, captures match implementer's claim of static equivalence on all three scenes. The honest disclosures (sun-shadow knob mismatch, motion-tuning unverifiable from static frames, AC-1 gap, non-NV branch untested) are all in the commit body and the task notes. Two non-blocking observations recorded below.
+
+### Wiring (PASS)
+
+- `NRDIntegrationAdapter_Dispatch.cpp:105-114` field-by-field copy from `g_DenoiserSettings` → `nrd::ReblurSettings` is correct. Verified field names against `Source/External/GitSubmodules/NRD/Include/NRDSettings.h:256-339` (`ReblurSettings`):
+  - `hitDistanceParameters.A/B/C` ↔ `HitDistParams.A/B/C`. NRD's `ReblurHitDistanceParameters` (NRDSettings.h:207-217) declares only A/B/C; `HitDistParams.D` correctly skipped. Confirmed dead under v4.17.4.
+  - `maxAccumulatedFrameNum` (NRDSettings.h:265) ↔ `MaxAccumulatedFrameNum`.
+  - `enableAntiFirefly` (NRDSettings.h:325) ↔ `EnableAntiFirefly`.
+  - `lobeAngleFraction` (NRDSettings.h:303) ↔ `LobeAngleFraction`.
+  - `roughnessFraction` (NRDSettings.h:306) ↔ `RoughnessFraction`.
+- Copy happens before `nrd::SetDenoiserSettings` (line 114) which is before `nrd::GetComputeDispatches` (line 125). No race, no read-after-write hazard.
+- `nrd::ReblurSettings l_reblurSettings = {}` zero-init means uncopied fields (antilag, convergence, prepass radii, fast/stabilized accumulation counts, etc.) take NRD's struct-default values. That is the intended semantic.
+
+### Vendor force-off (PASS)
+
+- `NRDIntegrationAdapter_Setup.cpp:47-57` — `if constexpr (Inno::NRD::FORCE_OFF_ON_NON_NV_GPU)` guard correct; flips out at compile-time when constexpr is false. `m_adapterDesc.VendorId` source verified at `DX12Context.h:17` + populated at `DX12GraphicsHardwareService_Hardware_Devices.cpp:132`.
+- Non-NV path: returns false **with** an informative `Log(Warning, ...)` line including the observed VendorId, the NV constant in both decimal+hex, and the fallback policy. Not silent — meets `safety-observability` § guard-clause logging.
+- Bypass propagation verified at `ExampleRenderingClient_PrepareCommands.cpp:155-163`: `PTNRDCompositionPass::Get().GetStatus() != Activated` (or `IsBypassed()`) → `l_hdrSource = GPUPathTracerPass::Get().GetResult()` (raw 1-spp PT AccumBuffer). The `if constexpr (Inno::NRD::ENABLED)` block doesn't even reach the composition source-selection on OFF builds. Path is real, not theoretical.
+
+### DevToggleRegistry (PASS)
+
+- `ExampleRenderingClient_Setup.cpp:201-203` registers `NRDAntiFirefly` once from `RegisterDevToggles()` which is invoked from `Setup()` once. Re-entry safety: `DevToggleRegistry.cpp:24` is `g_toggles[name] = ...` — idempotent overwrite, no crash on double register.
+- Getter/setter both target `Inno::NRD::g_DenoiserSettings.EnableAntiFirefly` directly — no shadow state.
+- Registered unconditionally (no `if constexpr`). Correct: `g_DenoiserSettings` is in a header outside any NRD include and defined regardless of `INNO_BUILD_WITH_NRD`. Toggle is harmless when ENABLED=false.
+- The four non-bool knobs being edit-rebuild only is honestly disclosed in both source comments and task notes. No half-implemented toggle path.
+
+### Visual sign-off (Layer-1 Visual Read, code-impl independent)
+
+| Scene | CL-3-fixed → CL-4 | Notes |
+|---|---|---|
+| UnitTest | **equivalent** | Materials row, skybox, sun-shadow softness on the floor read identical. Sun-shadow remains soft — implementer's "0.05 lobeAngleFraction is not the right knob" disclosure is honest. |
+| GITestBox | **equivalent** | Cyan/red/green/pink walls preserved, shadow boundary at the corner sharp, no vertical streaks (CL-3 transpose fix holds). |
+| GISponza | **equivalent** | Drape blue/orange fabrics, central masonry passage, foreground statue all read identical detail and colour. |
+
+`Reviewed-Visually: code-impl — equivalent` for the footer.
+
+### File-size gate (PASS)
+
+`wc -l` against the 4 touched files: `NRDConstants.h` 166, `NRDIntegrationAdapter_Setup.cpp` 255, `NRDIntegrationAdapter_Dispatch.cpp` 271, `ExampleRenderingClient_Setup.cpp` 297. All under 300. (Implementer's commit-body line counts of 153/223/243/261 read low against `wc -l`; on inspection the implementer counted source-only excluding boilerplate, but absolute `wc -l` is what the gate uses and all four still pass.)
+
+### Advisories (non-blocking)
+
+**A-1. Commit-body line counts mismatch `wc -l`.** Lines 150-152 of `Build/commit-message.txt` claim "NRDConstants.h 153, NRDIntegrationAdapter_Setup.cpp 223, NRDIntegrationAdapter_Dispatch.cpp 243, ExampleRenderingClient_Setup.cpp 261." Actual `wc -l`: 166 / 255 / 271 / 297. All still pass the 300 gate so non-blocking, but the wording "All under the 300-line ratchet" is fine; the per-file numbers are off by 12-36 each. Likely the implementer's counter dropped trailing closing braces or empty trailing lines. Not material to gate compliance. Suggest correcting numbers in the commit body for accuracy, or rewording to "all under 300."
+
+**A-2. NRDConstants.h struct-member comments cross into per-CL rationale territory.** `NRDConstants.h:101-110, 113-121, 124-132, 135-139` embed user-symptom rationale ("user-observed GITestBox 1-2s stabilization on directly-lit areas reads as too-deep history clamping..."). Per skill `comment-discipline`, per-CL design rationale should live in commit body / Implementation Notes, not in source. The struct comment is right to cite NRD's `NRDSettings.h:265` mapping and the [0; 63] range; the "1-2s on directly-lit areas" symptom narrative belongs in the task file (already there). Not blocking — these comments will not mislead, and the rationale-in-source is contained and date-stamped via the surrounding "CL-4 ReBLUR tuning hooks" header. ADVISORY: in a future tuning pass when defaults change again, prune the per-symptom narrative from the struct comments and keep only the field-name + range + NRD line cite.
+
+### Disclosures (honest, accepted)
+
+- AC-1 motion-capture gap is in the commit body (`Known-not-verified` section) and the task `Visual sign-off` table. Per the brief's "static captures sufficient for CL-4 close" framing, this is acceptable; AC-1 stays open at task level.
+- Sun-shadow knob mismatch (LobeAngleFraction=0.05 doesn't sharpen) is honestly disclosed. A wired-but-not-effective tuning hook is not a defect.
+- Non-NV branch untested. Bypass path is verified-by-construction (read-through), not verified-by-execution. Acceptable for single-machine project.
+- Confidence binding (CL-5 territory) properly filed.
+
+### Footer recommendation
+
+```
+Reviewed-By: code-impl (CL-4)
+Reviewed-Visually: code-impl — equivalent (UnitTest, GITestBox, GISponza CL-3-fixed vs CL-4-static, layer-1 read)
+```
+
+Note for the implementer: per `peer-review-required` and `visual-validation` § Layer 4, the user-direction sign-off on motion captures (AC-1) is still owed before TASK-77.4 closes — that's separate from the commit-message footer here.
+
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done

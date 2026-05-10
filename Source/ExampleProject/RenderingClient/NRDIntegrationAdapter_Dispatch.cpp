@@ -91,8 +91,26 @@ namespace Inno
 			return false;
 		}
 
-		// === SetDenoiserSettings — defaults are sufficient for first launch ===
-		nrd::ReblurSettings l_reblurSettings = {};  // NV defaults
+		// === SetDenoiserSettings — CL-4 tuning hooks read from g_DenoiserSettings ===
+		// Live-tunable knobs land in NRDConstants.h::g_DenoiserSettings; the
+		// dispatch site copies them onto NRD's settings struct each frame.
+		// Defaults differ from NRD stock for three engine-specific reasons
+		// documented in NRDConstants.h (UnitTest sun-shadow edge sharpness,
+		// GITestBox stabilization frame budget, GISponza static-jitter axis).
+		// HitDistParams.D from CL-1 is unused under NRD v4.17.4 (NRD's
+		// ReblurHitDistanceParameters declares only A/B/C); only A/B/C copy
+		// across, with no warning logged because the dead-field shape is
+		// documented at NRDConstants.h::HitDistParams. CL-5 follow-up:
+		// per-bounce hit-distance handling.
+		nrd::ReblurSettings l_reblurSettings = {};  // start from NRD defaults
+		const Inno::NRD::DenoiserSettings& l_tune = Inno::NRD::g_DenoiserSettings;
+		l_reblurSettings.hitDistanceParameters.A   = l_tune.HitDistanceParams.A;
+		l_reblurSettings.hitDistanceParameters.B   = l_tune.HitDistanceParams.B;
+		l_reblurSettings.hitDistanceParameters.C   = l_tune.HitDistanceParams.C;
+		l_reblurSettings.maxAccumulatedFrameNum    = l_tune.MaxAccumulatedFrameNum;
+		l_reblurSettings.enableAntiFirefly         = l_tune.EnableAntiFirefly;
+		l_reblurSettings.lobeAngleFraction         = l_tune.LobeAngleFraction;
+		l_reblurSettings.roughnessFraction         = l_tune.RoughnessFraction;
 		l_result = nrd::SetDenoiserSettings(*m_Impl->m_NRDInstance, 0, &l_reblurSettings);
 		if (l_result != nrd::Result::SUCCESS)
 		{
