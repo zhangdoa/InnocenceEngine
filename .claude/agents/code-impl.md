@@ -12,7 +12,7 @@ Conditional skills (by task / change shape):
 - Task is `paper-port`-labelled → `paper-port`. Produce the alignment artifact via `paper-audit` before closure.
 - Change affects rendered output → `visual-validation`. Write the layer-1 Visual Read assessment in the closure record (Implementation Notes + commit body). Layer-4 user sign-off triggers per that skill.
 - Launching engine / editor / Playwright → `test-etiquette`.
-- Splitting a source file or extracting a class → `file-splitting`, `split-before-grow`.
+- Splitting a source file or extracting a class → `file-splitting`.
 
 On bug: `regression-build-chain` + user-level `regression-debug`. On commit: `commit-message-policy`, `peer-review-required`.
 

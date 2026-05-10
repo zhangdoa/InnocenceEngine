@@ -28,7 +28,7 @@ Generic, project-agnostic skills live at user level (`~/.claude/skills/`). Proje
 | `session-start` | Start of every new session. |
 | `dispatch-briefs` | Main-session shaping a dispatch brief. |
 | `commit-message-policy`, `peer-review-required` | Before `git commit`. |
-| `split-before-grow`, `file-splitting` | File-size gate hits. |
+| `file-splitting` | File-size gate hits, or before adding code that would push a file past the limit. |
 | `cpp-style`, `safety-observability` | Engine C++. |
 | `shader-standards` | Engine HLSL. |
 | `paper-port`, `paper-audit` | Paper-driven implementation. |
