@@ -23,15 +23,33 @@ bool DX12RenderPassResourceService::CreatePipelineStateObject(RenderPassComponen
 	}
 	else if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute && !renderPass->m_RenderPassDesc.m_UseRaytracing)
 	{
-		LoadComputeShaders(renderPass);
-
-		l_PSO->m_ComputePSODesc.pRootSignature = l_PSO->m_RootSignature.Get();
-		auto l_HResult = m_ctx->m_device->CreateComputePipelineState(&l_PSO->m_ComputePSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
-
-		if (FAILED(l_HResult))
+		// Compute passes without a shader program are valid: TASK-77.4
+		// CL-3 PTNRDDenoisePass owns its own root signatures + PSOs via
+		// the NRDIntegrationAdapter (raw-D3D12 passthrough), so the
+		// engine-side render-pass shell carries no shader. Skip PSO
+		// creation in that case; downstream Bind / Dispatch helpers
+		// already gate on m_PipelineStateObject and the adapter binds
+		// its own root sig + PSO directly to the command list. The pass
+		// still needs a render-pass-component (semaphores) for the
+		// Execute / Signal / Wait fence chain in
+		// ExampleRenderingClient_ExecuteCommands.cpp, which is what the
+		// rest of InitializeRenderPass produces unchanged.
+		if (renderPass->m_ShaderProgram)
 		{
-			LogD3D12CreateFailure(m_ctx->m_device.Get(), "Compute PSO", renderPass->m_InstanceName.c_str(), l_HResult);
-			return false;
+			LoadComputeShaders(renderPass);
+
+			l_PSO->m_ComputePSODesc.pRootSignature = l_PSO->m_RootSignature.Get();
+			auto l_HResult = m_ctx->m_device->CreateComputePipelineState(&l_PSO->m_ComputePSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
+
+			if (FAILED(l_HResult))
+			{
+				LogD3D12CreateFailure(m_ctx->m_device.Get(), "Compute PSO", renderPass->m_InstanceName.c_str(), l_HResult);
+				return false;
+			}
+		}
+		else
+		{
+			Log(Verbose, "Compute PSO skipped for ", renderPass->m_InstanceName.c_str(), " (no shader program — pass owns its own PSOs).");
 		}
 	}
 

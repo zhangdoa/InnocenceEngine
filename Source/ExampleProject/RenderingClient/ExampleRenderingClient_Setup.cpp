@@ -27,6 +27,8 @@
 #include "PTHashGridCacheUpdateTilesPass.h"
 #include "PTHashGridCacheMipCascadeBuildPass.h"
 #include "PTNRDFormatConvertPass.h"
+#include "PTNRDDenoisePass.h"
+#include "PTNRDCompositionPass.h"
 #include "HashGridCacheConstants.h"
 #include "NRDConstants.h"
 
@@ -248,6 +250,8 @@ namespace Inno
 		if constexpr (Inno::NRD::ENABLED)
 		{
 			PTNRDFormatConvertPass::Get().Setup();
+			PTNRDDenoisePass::Get().Setup();
+			PTNRDCompositionPass::Get().Setup();
 		}
 
 		// AnimationPass::Get().Setup();

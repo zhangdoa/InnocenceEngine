@@ -10,6 +10,8 @@
 #include "PTHashGridCacheUpdateTilesPass.h"
 #include "PTHashGridCacheMipCascadeBuildPass.h"
 #include "PTNRDFormatConvertPass.h"
+#include "PTNRDDenoisePass.h"
+#include "PTNRDCompositionPass.h"
 #include "HashGridCacheConstants.h"
 #include "NRDConstants.h"
 
@@ -174,6 +176,53 @@ namespace Inno
 				l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
 				l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 			}
+
+			// PTNRDDenoise (TASK-77.4 CL-3). Compute-queue only — the
+			// adapter records its NRD compute dispatches into the pass's
+			// Compute CL via a raw ID3D12GraphicsCommandList* pulled out
+			// by DX12Helper::AsDX12CommandList. No graphics-queue work
+			// (the adapter manages its own resource transitions in-CL),
+			// so no graphics Execute / Signal here. Wait on
+			// PTNRDFormatConvertPass — its 5 output UAVs are this
+			// pass's SRV inputs (already in NON_PIXEL_SHADER_RESOURCE
+			// state from the format-convert exit transition).
+			if (m_GPUPathTracerActive
+				&& PTNRDDenoisePass::Get().GetStatus() == ObjectStatus::Activated
+				&& !IsBypassed(PTNRDDenoisePass::Get()))
+			{
+				WaitIfActive(PTNRDFormatConvertPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
+
+				auto l_renderPass = PTNRDDenoisePass::Get().GetRenderPassComp();
+				auto l_computeCL  = PTNRDDenoisePass::Get().GetCommandListComp(GPUEngineType::Compute);
+				l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
+				l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			}
+
+			// PTNRDComposition (TASK-77.4 CL-3). Standard engine pass:
+			// graphics CL transitions the output UAV from cross-frame
+			// ReadOnly to ReadWrite, compute CL runs the unpack +
+			// re-modulation kernel that produces the tonemap input.
+			// Same pattern as PTNRDFormatConvertPass above. Wait on
+			// PTNRDDenoise — its OUT_DIFF / OUT_SPEC borrowed shells
+			// are this pass's SRV inputs (transitioned to
+			// NON_PIXEL_SHADER_RESOURCE at the adapter's dispatch tail).
+			if (m_GPUPathTracerActive
+				&& PTNRDCompositionPass::Get().GetStatus() == ObjectStatus::Activated
+				&& !IsBypassed(PTNRDCompositionPass::Get()))
+			{
+				auto l_renderPass = PTNRDCompositionPass::Get().GetRenderPassComp();
+
+				auto l_graphicsCL = PTNRDCompositionPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+				l_hwService->Execute(l_graphicsCL, GPUEngineType::Graphics);
+				l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+				l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+
+				WaitIfActive(PTNRDDenoisePass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
+
+				auto l_computeCL = PTNRDCompositionPass::Get().GetCommandListComp(GPUEngineType::Compute);
+				l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
+				l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			}
 		}
 
 		if (!m_GPUPathTracerActive)
@@ -182,7 +231,17 @@ namespace Inno
 		if (LuminanceHistogramPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(LuminanceHistogramPass::Get()))
 		{
 			if (m_GPUPathTracerActive)
+			{
 				WaitIfActive(GPUPathTracerPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+				// Under NRD-ENABLED the histogram source is the
+				// composition output, not the PT result. WaitIfActive
+				// is a no-op when the pass is unactivated / bypassed,
+				// so the PT-only wait above stays correct on the OFF
+				// path; NRD-ON adds the second wait without re-shaping
+				// the OFF code.
+				if constexpr (Inno::NRD::ENABLED)
+					WaitIfActive(PTNRDCompositionPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			}
 			else
 				WaitIfActive(TAAPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
@@ -210,7 +269,11 @@ namespace Inno
 		if (FinalBlendPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(FinalBlendPass::Get()))
 		{
 			if (m_GPUPathTracerActive)
+			{
 				WaitIfActive(GPUPathTracerPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+				if constexpr (Inno::NRD::ENABLED)
+					WaitIfActive(PTNRDCompositionPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			}
 			else
 				WaitIfActive(TAAPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			WaitIfActive(LuminanceAveragePass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);

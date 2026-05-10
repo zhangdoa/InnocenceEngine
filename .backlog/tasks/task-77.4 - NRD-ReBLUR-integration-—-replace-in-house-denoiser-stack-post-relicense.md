@@ -4,7 +4,7 @@ title: NRD ReBLUR integration — replace in-house denoiser stack (post-relicens
 status: In Progress
 assignee: []
 created_date: '2026-05-09'
-updated_date: '2026-05-09 13:35'
+updated_date: '2026-05-09 16:00'
 labels:
   - R&D
   - path-tracer
@@ -427,6 +427,265 @@ Per task plan, CL-2's user-visible end-state is "display reverts to baseline 1-s
 ### Recommendation
 
 Resolve B-3 (drop 5 dead includes) and B-4 (file 3 surfaced items into Implementation Notes) before commit. After cleanup, the CL is ready to commit with `Reviewed-By: task-mgmt (cross-stage CL-2)` — re-review of the two-line follow-up is not required if the dead-include removal is verified clean by a `Grep PTDenoise` on the 5 affected TUs returning zero matches.
+
+## CL-3 approach pivot — Option (b): bypass NRDIntegration.hpp/NRI (2026-05-09)
+
+### Original CL-3 plan vs. what the SDK actually requires
+
+The original plan (Implementation Notes line 49) read: *"`NRDIntegration.hpp` adapter under `Source/ExampleProject/RenderingClient/NRDIntegrationAdapter.{h,cpp}` (translates engine `TextureComponent*` → NRI `Resource`)..."* The framing assumed `NRDIntegration.hpp` was a thin facade we could feed engine textures into. In CL-3 dispatch a code-impl reading of the SDK surfaced the actual shape:
+
+- `NRDIntegration.hpp` is **not** a thin facade. It is a ~1000-line wrapper that owns: an `nri::Device*`, an `nri::PipelineLayout*`, `nri::DescriptorPool*` ring buffer, `nri::Buffer*` constant ring buffer, `nri::Memory*` allocations, ~20 `nri::Pipeline*` per ReBLUR_DIFFUSE_SPECULAR instance, plus `nri::Texture*` for permanent + transient pools.
+- Public entry points (`Recreate`, `Denoise`, `SetCommonSettings`) all take `nri::Device*` / `nri::CommandBuffer&` / `nri::CommandBufferD3D12Desc` parameters. Cited types: `nri::Device`, `nri::CommandBufferD3D12Desc`, `ResourceSnapshot::SetResource(slot, Resource)` where `Resource::nri::Texture*` is an NRI type.
+- **NRD's release update cadence is structurally tied to NRI** (`#error NRI.h` is not included" at NRDIntegration.h:23, and `static_assert(NRI_VERSION >= 179)` at NRDIntegration.hpp:20). The NV-supported integration path is gated on building NRI alongside NRD.
+
+Original plan's "translates engine `TextureComponent*` → NRI `Resource`" was structurally impossible without a second NV third-party tree (NRI) and an engine-wide barrier-handoff rewrite — the engine's `FrameManagementService::TryToTransitState` model encodes barriers per `TextureComponent*` against engine-tracked state, while NRI's `nri::CoreInterface::CmdBarrier` encodes them against `nri::AccessLayoutStage` on `nri::Texture*` handles, and the two trackers cannot be reconciled without making one authoritative.
+
+### Why (b) was chosen over (a) full NRI integration
+
+(a) full NRI integration would require:
+1. Importing NRI as a second NV submodule (~30-40k LoC across `Source/External/GitSubmodules/NRI`), with its own CMake, its own headers, and its own D3D12 interop layer.
+2. Choosing ownership of barrier state: either let NRI track every engine texture (rewriting `FrameManagementService` to delegate barriers, breaking the existing pattern across all ~30 engine passes) or shim a translation layer (doubling the barrier-tracking surface, with a known consistency hazard).
+3. Adopting NRI's command-buffer abstraction (`nri::CommandBuffer&`) for the NRD passes, which means either wrapping engine `CommandListComponent*` as `nri::CommandBufferD3D12Desc` per-frame or carrying a parallel command list. The `nri::CommandBufferD3D12Desc` route works (NRI accepts a raw `ID3D12GraphicsCommandList*`) but requires barrier-state coordination at the wrap site.
+
+The accepted cost vs. the project's "single user, no-onboarding" framing (`CLAUDE.md` line 7) made (a) disproportionate for a single denoiser integration.
+
+### Why (b) was chosen over (c) scaffolding-only
+
+(c) scaffolding-only (define hooks, allocate textures, never dispatch) ships zero user-visible improvement and fails CL-3's stated goal ("First user-visible improvement", task plan line 49). The whole point of post-relicense unblocking was to replace the in-house denoiser stack with a working ReBLUR pipeline. (c) defers that to CL-4+, which means another 1-2 dispatch cycles before any ReBLUR output reaches the screen.
+
+### Accepted techdebt
+
+- `NRDIntegration.hpp` is NV's supported entry point for production ReBLUR integrations. It encapsulates the per-frame ring-buffer constant buffer logic, descriptor-pool ring across queued frames, descriptor caching, format demotion/promotion, and `_WaitForIdle` semantics on resize/destroy.
+- Hand-porting over `Instance` API directly means each NRD release that touches `GetComputeDispatches`'s output shape, `InstanceDesc`'s pipeline-layout fields, or the NRD HLSL include's space/register layout, will require a parallel rewrite in the adapter — there is no automatic version-bump path.
+- Mitigation: SHA pin `2784717` in `.gitmodules` means submodule updates are deliberate (an explicit `git -C ... checkout <newSHA>` + commit step), not passive (`git submodule update --remote` is gated by the absence of a `branch =` line, per CL-1 rework B-1 resolution).
+
+### Revisit triggers
+
+- (i) NRD rewires the `Instance` API surface across versions (e.g., new `DispatchDesc` fields the adapter needs to honour, restructured `pipelineDesc.resourceRanges[]`, breaking `GetComputeDispatches` contract) — adapter rewrite cost crosses NRI integration cost.
+- (ii) Engine grows a unified barrier-tracking abstraction (e.g., a `BarrierService` that owns all `TryToTransitState` decisions and exposes a query API for foreign owners) that NRI's model could federate with via a translation layer instead of full ownership.
+- (iii) We add a second NRD denoiser (e.g. SIGMA shadow denoiser, REFERENCE accumulator) and the parallel-rewrite cost (two adapters tracking the `Instance` API instead of one) crosses the NRI-as-shared-platform cost.
+
+### Code-impl wall (2026-05-09)
+
+CL-3 dispatch attempted to author the adapter against the engine's `RenderPassComponent` / `ShaderProgramComponent` abstractions. The hand-port surfaced four binding-model incompatibilities that block the approach as scoped:
+
+1. **Per-pipeline binding cardinality is variable.** NRD ReBLUR_DIFFUSE_SPECULAR generates ~20 compute pipelines (verified `instanceDesc.pipelinesNum` in `NRDIntegration.hpp::RecreatePipelines` line 211). Each pipeline declares its own `pipelineDesc.resourceRanges[]` (1-2 ranges, variable `descriptorsNum`). The engine's `RenderPassComponent::m_ResourceBindingLayoutDescs` is fixed at Setup time (cf. `PTNRDFormatConvertPass.cpp:50` `resize(12)`); one `RenderPassComponent` per NRD pipeline would require ~20 parallel pass shells, each with its own root signature, and per-frame the `DispatchDesc.resources[]` flat array does not map onto the engine's per-slot named accessors.
+2. **CBV register-space mismatch.** NRD's pre-compiled DXIL hard-codes `cbuffer ... : register(b0, space1)` (verified `NRD.hlsli:144` + `NRD.hlsli:81-85`: `NRD_CONSTANT_BUFFER_REGISTER_INDEX = 0`, `NRD_CONSTANT_BUFFER_AND_SAMPLERS_SPACE_INDEX = 1`). The engine's `DX12RenderPassResourceService::CreateRootSignature` at `Source/Engine/Services/DX12/DX12RenderPassResourceService_RootSignature.cpp:11-169` constructs a `CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC` with each root parameter `InitAsConstantBufferView(m_DescriptorIndex)` — `RegisterSpace` defaults to 0 (the per-parameter `register()` call has no space override), and `m_DescriptorSetIndex` from the binding-layout desc is **read but unused for register-space mapping**. Only the bindless mesh path explicitly sets `RegisterSpace = 1/2` (verified `DX12Helper_BindlessMesh.cpp:78,86`).
+3. **Static-sampler register-space mismatch.** NRD requires 2 static samplers at `register(s0/s1, space1)` (`NRD.hlsli:157`). The engine treats samplers as dynamic per-pass `GPUResourceType::Sampler` descriptors via `m_DescriptorIndex`, also placed at space 0. There is no `m_RegisterSpace` field in `ResourceBindingLayoutDesc` and no static-sampler hook on `RenderPassComponent`.
+4. **No per-dispatch dynamic CB offset.** `NRDIntegration.hpp:824-845` rotates a single `m_ConstantBuffer` ring buffer with a per-dispatch `dynamicConstantBufferOffset` written through `CmdSetRootDescriptor(commandBuffer, {0, m_ConstantBufferView, dynamicConstantBufferOffset})`. The engine's `FrameManagementService::BindGPUResource` binds whole `GPUBufferComponent*` instances with no byte-offset alias path — the per-frame ring-buffer pattern would need a new engine API.
+
+The brief explicitly declined option (a) NRI integration. Each of (1)/(2)/(3)/(4) requires either a generic-pipeline-engine refactor (extend `ResourceBindingLayoutDesc` with `m_RegisterSpace`, add static-sampler support, add CB ring-buffer offset binding, allow per-pipeline variable binding counts) **or** a raw-D3D12-passthrough mode on `RenderPassComponent` that skips its own root-signature generation and lets a pass owner supply a pre-built `ID3D12RootSignature*` + raw descriptor-table hand-binding (the path `imgui_impl_dx12.cpp` and `DX12TextureResourceService_Mipmap.cpp` use today, but only as private engine subsystems with raw D3D12 access).
+
+Either fix is structural engine work outside CL-3's scope, and the second one (raw-passthrough) is structurally what option (a) NRI integration enables NV-side — so doing it engine-side reproduces option (a)'s cost shape while losing NV's supported abstraction.
+
+**Status**: code-impl surfaced the wall and stopped per brief instruction (*"If you hit a wall on the Instance API ... surface and stop. Do NOT silently fall back to NRI integration"*). No `NRDIntegrationAdapter.{h,cpp}` was authored; the techdebt comment block is not in the working tree because there is no entry-point file yet.
+
+### Forward options for dispatcher
+
+| Option | Shape | Cost | Trade-off |
+|---|---|---|---|
+| **(b1)** Generic-pipeline engine refactor | Extend `ResourceBindingLayoutDesc::m_RegisterSpace`, add static-sampler list to `RenderPassDesc`, add ring-buffer CB-view binding API, allow `m_ResourceBindingLayoutDescs` to be per-pipeline rather than per-pass. | High — touches every pass through the engine's root-signature generation. Net engine generalisation that benefits all third-party shader integrations going forward. | Single-author serial work; no payoff outside NRD until a second use case lands. |
+| **(b2)** Raw-D3D12-passthrough hook on `RenderPassComponent` | Add `m_RawRootSignature` + `m_RawDescriptorHeaps` opt-in on `RenderPassComponent`. When set, `CreateRootSignature` is skipped and `BindGPUResource` is replaced by `BindRawRootDescriptors`. Adapter authors raw D3D12 dispatch sequence inside its own `PrepareCommandList`. | Medium — bypasses the whole binding-layout system for one pass family. Adapter does the entire NRD dispatch logic in raw D3D12, mirroring `NRDIntegration.hpp` but against engine-allocated `ID3D12Resource*` (extracted from `TextureComponent*` via `DX12TextureComponent`). | Dual-tier engine API (typed vs raw). NRI-shaped cost without NRI's NV-supported abstraction. |
+| **(a)** Reverse the option-(b) decision and integrate NRI | Import NRI submodule, federate barrier ownership, use `RecreateD3D12` + `DenoiseD3D12` entry points. | High but with NV-supported abstraction. | The user already declined this; reopening requires re-deciding (a) vs (b1) vs (b2) explicitly. |
+| **(c)** Defer CL-3 to a later milestone, ship CL-2 only for now | Mark CL-3 as blocked-on-engine-binding-refactor; close CL-2 as the user-visible work for this dispatch cycle. | Zero engine work, zero ReBLUR output until (b1)/(b2)/(a) decided. | Re-enters the in-house-denoiser failure mode (TASK-77.2) for any rendering work this milestone. |
+
+Recommendation rank: (b2) > (b1) > (a) > (c). (b2) is the smallest engine surface that unblocks NRD without subscribing to NRI; (b1) is more general but pays for generalisation we do not have a second use case for; (a) reverses a user decision; (c) preserves the failure mode the task was filed to fix.
+
+## CL-3 sub-pivot — (b2) raw-D3D12 passthrough (2026-05-09)
+
+Second tier of techdebt within CL-3. The first tier (Option (b) over (a)) is recorded above ("CL-3 approach pivot — Option (b)") — it captures the choice to bypass NRDIntegration.hpp + NRI in favour of NRD's lower-level `Instance` API. The wall the prior code-impl dispatch hit (four engine-binding-model gaps) blocked the *Option (b1)* shape — wiring the `Instance` API through the engine's typed `RenderPassComponent` / `ShaderProgramComponent` abstractions. This sub-pivot records the user-approved choice of *Option (b2)*: raw-D3D12 passthrough beneath `RenderPassComponent`, scoped to one private subsystem.
+
+### The four engine-binding gaps that motivated (b2) over (b1)
+
+Verified in the prior dispatch and re-cited here so this subsection stands alone for future readers:
+
+1. **Per-pipeline binding cardinality is variable.** ReBLUR_DIFFUSE_SPECULAR generates ~20 compute pipelines, each with its own `pipelineDesc.resourceRanges[]` (variable `descriptorsNum`). The engine's `RenderPassComponent::m_ResourceBindingLayoutDescs` is fixed at Setup time (one cardinality per pass).
+2. **CBV register-space override.** NRD hard-codes `cbuffer ... : register(b0, space1)`. Engine's `DX12RenderPassResourceService::CreateRootSignature` defaults all root params to `RegisterSpace = 0`; the per-binding `m_DescriptorSetIndex` is read but unused for register-space mapping. Only the bindless-mesh path explicitly sets `RegisterSpace = 1/2`.
+3. **Static samplers at non-zero space.** NRD requires 2 static samplers at `register(s0/s1, space1)`. Engine treats samplers as dynamic per-pass `Sampler`-type bindings via `m_DescriptorIndex`, also at space 0; no static-sampler hook on `RenderPassComponent`.
+4. **Per-dispatch dynamic CB byte-offset.** NRD rotates a single ring-buffer CB with a per-dispatch byte offset (`SetComputeRootConstantBufferView(GPUVA + offset)`). Engine's `BindGPUResource` binds whole `GPUBufferComponent*` instances; no byte-offset alias path.
+
+### Why (b2) over (b1)
+
+User signed off on NRD-specific techdebt, not engine generalisation. (b1) pays four engine-wide binding-model invariant changes for one consumer (NRD). (b2) keeps the techdebt scoped to one private subsystem (`NRDIntegrationAdapter`), preserving the engine's binding model for every other pass. The (b2) trade — a dual-tier compute API — is bounded: only the adapter and its two engine pass shells (`PTNRDDenoisePass` / `PTNRDCompositionPass`) cross the tier boundary; every other pass continues to use the engine's typed binding path unchanged.
+
+If a second third-party shader tree needs the same accommodation later, the parallel-rewrite cost crosses the (b1) refactor cost, and the trade flips. The revisit triggers below capture that condition.
+
+### Precedent — (b2) extends an existing dual-tier pattern, does not introduce a new one
+
+Two engine subsystems already operate as raw-D3D12 private subsystems beneath the `RenderPassComponent` abstraction:
+
+- `Source/Engine/ThirdParty/ImGui/imgui_impl_dx12.cpp` (752 LoC). Backend renderer for Dear ImGui. Owns its own `ID3D12RootSignature*`, `ID3D12PipelineState*`, descriptor heap entries, and constant-buffer ring; takes a raw `ID3D12GraphicsCommandList*` from the engine each frame and records draws directly. Wired through `Source/Engine/ThirdParty/ImGuiWrapper/ImGuiRendererDX12.cpp` which downcasts `g_Engine->Get<GraphicsHardwareService>()` to `DX12GraphicsHardwareService*` and reads `GetDevice()` / `GetDescriptorHeapAccessor()`.
+- `Source/Engine/Services/DX12/DX12TextureResourceService_Mipmap.cpp` (240 LoC). Mipmap generator. Owns its own root signatures + PSOs (separate 2D / 3D variants), takes the engine's `CommandListComponent*`, calls `DX12Helper::AsDX12CommandList` to extract the raw `ID3D12GraphicsCommandList7*`, and records compute dispatches directly with `SetComputeRootSignature` / `SetPipelineState` / `Dispatch`.
+
+Both predate NRD and are accepted engine practice for "this subsystem's binding model is sufficiently different from the engine's that wrapping it costs more than scoping a raw-D3D12 escape hatch to its own TU." (b2) extends the same pattern to a third subsystem (NRD denoise dispatch). It does not introduce a new architectural tier.
+
+### Accepted techdebt
+
+- **Dual-tier compute API.** Engine-abstracted (typed `RenderPassComponent` / `BindGPUResource`) for ~30 existing passes; raw-D3D12-passthrough for the NRD adapter. Future maintainers must understand both tiers.
+- **NRD release update fragility.** NRD's `Instance` API can break across versions: `GetComputeDispatches`'s output shape, `InstanceDesc::pipelines[]` layout, `DispatchDesc::resources[]` flat-array semantics, NRD HLSL space/register hard-codes. Each break may require parallel rewrites of the adapter's dispatch sequence. Mitigation: SHA pin (`2784717` in `.gitmodules`, no `branch =` line per CL-1 rework B-1 — submodule updates require a deliberate `git -C ... checkout <newSHA>` + commit step).
+
+### Revisit triggers
+
+- (i) A second third-party shader tree (FidelityFX, Streamline, AMD GPUOpen denoisers) lands and the parallel-rewrite cost across two adapters crosses the (b1) engine-refactor cost.
+- (ii) NRD rewires its `Instance` API across versions in a way that forces the adapter's dispatch loop to be rewritten — at that point, evaluating whether the rewrite cost approaches a (b1) refactor or a fresh NRDIntegration.hpp+NRI integration is appropriate.
+- (iii) The engine grows a unified barrier-tracking layer (e.g., a `BarrierService` that owns all `TryToTransitState` decisions and exposes a query API for foreign owners). At that point NRI's federated-barrier-ownership shape becomes reachable, reopening Option (a).
+
+## CL-3 implementation notes (2026-05-09)
+
+Implementation work landed against the (b2) sub-pivot. Net diff: ~1100 LoC adapter (split across `NRDIntegrationAdapter.{h,cpp,_Impl.h,_Setup.cpp,_Dispatch.cpp,_DispatchHelpers.cpp,_SetupHelpers_Pool.cpp,_SetupHelpers_Pipelines.cpp}`), +149 LoC `PTNRDComposition.comp` shader, +75 LoC `PTNRDDenoisePass.{h,cpp,_Dispatch.cpp}` engine-side wrapper, +51 LoC `PTNRDCompositionPass.{h,cpp,_Dispatch.cpp}` engine-side composition pass, plus +63 LoC `_ExecuteCommands.cpp` wiring + edits to aggregator + `_PrepareCommands.cpp` tonemap binding swap.
+
+### Two structural calls landed inside (b2)
+
+1. **OUT_DIFF / OUT_SPEC are USER-supplied resources.** The first cut of the adapter assumed NRD's pool would allocate OUT_DIFF / OUT_SPEC (treating them as `PERMANENT_POOL` slots aliased by `ResourceType::OUT_*`). Verified at runtime via D3D12 GBV: NRD's raw `Instance` API treats `OUT_*` as user-supplied (mirrors `NRDIntegration.hpp`'s `ResourceSnapshot.slots[]` for non-pool ResourceTypes — see `NRDIntegration.h:121`). Adapter now allocates OUT_DIFF / OUT_SPEC RGBA16F textures itself + provides UAV/SRV CPU descriptors via `NRDAdapterHelpers::AllocateOutputTexture` + wires engine `TextureComponent` shells via `NRDAdapterHelpers::SetupBorrowedShell`.
+2. **REBLUR mv-reprojection writes IN_MV.** `Reblur_DiffuseSpecular.hpp:270` `PushOutput(IN_MV)` makes NRD treat IN_MV as a STORAGE_TEXTURE in some dispatches. Adapter allocates a UAV CPU descriptor for IN_MV (`m_InputMVUAVSlot`), tracks IN_MV's state across the dispatch (`m_InputMVState`), and restores it to the engine state-tracker's recorded value at the dispatch tail so the format-convert pass's frame N+1 transition emits a valid `before` state.
+
+### Engine-side fixes pulled in by CL-3
+
+- `DX12RenderPassResourceService_Pipeline.cpp::CreatePipelineStateObject`: early-out the Compute-PSO branch when `m_ShaderProgram == nullptr`. PTNRDDenoisePass holds a render-pass-component for status / semaphore / CL-pair purposes only — the adapter owns the real PSOs. Without the gate, `LoadComputeShaders` returns silently with empty CS bytecode and `CreateComputePipelineState` fails E_INVALIDARG.
+- `PTNRDCompositionPass::PrepareCommandList`: gate on `m_ObjectStatus == ObjectStatus::Activated` BEFORE emitting any `TryToTransitState` — recording barriers when the CL won't be submitted desynchronises the engine's per-resource state tracker (the adapter forces the composition pass to skip frame 1 because OUT_DIFF / OUT_SPEC shells only activate at adapter `Initialize`, which runs lazily during `PTNRDDenoisePass.PrepareCommandList` earlier in the same frame). The same gate is appropriate on every pass that depends on a transitively-lazy upstream — surfaced as a future structural-improvement candidate but not retro-applied here.
+- `Source/ExampleProject/RenderingClient/CMakeLists.txt`: explicitly link `Source/External/GitSubmodules/NRD/_Bin/Release/NRD.lib` + `Build/third_party/NRD/_deps/shadermake-build/Release/ShaderMakeBlob.lib`. The `${NRD_LIBS}` GLOB in `CMake/BuildThirdPartyLibs.cmake` misses NRD.lib because NRD's own CMakeLists writes it outside the engine build tree.
+
+### Visual end-state (3-scene gate)
+
+- **UnitTest.InnoScene**: shaderballs + spheres on flat plane with partly-cloudy sky. Capture `Build/captures/TASK-77.4-CL-3-UnitTest.png`. Layer-1 read: smooth surfaces, no firefly speckles, sky pass-through clean (RT0.a==0 branch in `PTNRDComposition.comp` routes AccumBuffer.rgb verbatim). 30-frame static-camera convergence is acceptable.
+- **GITestBox.InnoScene**: enclosed cornell-box-like scene with textured walls + indirect lighting. Capture `Build/captures/TASK-77.4-CL-3-GITestBox.png`. Layer-1 read: visible vertical-streak artifacts on cyan and green walls — characteristic NRD ReBLUR anisotropic spatial-filter footprint on textured surfaces with non-converged history. Stable across frames; no fireflies. Acceptable for first cut; ReBLUR settings tuning is CL-4 scope.
+- **GISponza.InnoScene**: scene fails to load with `E_INVALIDARG` on default-heap-buffer create call (texture upload). Pre-existing scene-load defect, not introduced by this CL — both BUILD_WITH_NRD=ON and =OFF builds fail identically. No NRD output to validate.
+
+### Not verified
+
+- GISponza visual: pre-existing load-time failure (no NRD output to assess).
+- Multi-frame motion stability: only static-camera 30-frame runs captured. The streak artifacts on GITestBox may relate to motion-vector / hit-distance handling that CL-4 / CL-5 would address.
+- ReBLUR settings tuning: defaults only (CL-4 scope).
+- Long-run stability: 30-frame runs only.
+- AMD / Intel runtime fallback (CL-4 scope).
+
+### Pre-existing issues unmasked but not introduced by CL-3
+
+- `ReadTextureBackToCPU` emits a transition barrier from `m_WriteState=UAV` against an actual GPU state of `0x8C0` (read-state) when run during shutdown's `FinalizeGPUResults` → `TryWriteAutoCapture` path. Pre-existing — fires identically on BUILD_WITH_NRD=OFF runs. Per-frame trigger path (frame 30) succeeds and writes `gpu_output.png`. Surfaced for follow-up filing but not in CL-3 scope.
+- `finalBlendPass.comp(61) GBV "Uninitialized root argument"` warning on Compute queue. Pre-existing GBV false positive flagged as `Release-shader false positive (non-fatal)` by the engine's debug-callback handler. Fires identically with NRD ON or OFF.
+
+## CL-3 prereq enum-shift regression (2026-05-09, fixed by 0da9e278)
+
+### Bisect finding
+
+The "GISponza fails to load with `E_INVALIDARG` on default-heap-buffer create" effect previously called out as pre-existing in this task's notes (lines 552 / 556 of the prior visual-end-state section) was NOT pre-existing — it was introduced by the CL-3 prereq commit `815f23af` (TexturePixelDataFormat widening). At commit `53331e1f` (CL-2, one before the prereq) GISponza loads cleanly; at `815f23af` GISponza fatal-exits with `D3D12 ERROR ... Format = UNKNOWN` on a `BC1`-format texture (Bin/[2026-5-9-21-5-5-551].Log line 236 captures the failure signature). Bisect was executed by main-session via separate dispatch.
+
+### Fix shape
+
+Tail-append `RGB10A2` to slot 12 of `TexturePixelDataFormat` instead of mid-inserting at slot 6. The prereq's mid-insert shifted `Depth` 6→7, `DepthStencil` 7→8, and `BC1..BC5` each by +1 — silently invalidating every `Bin/Data/Generated/Components/*.TextureComponent.json` whose `"PixelDataFormat"` field encoded the original integer values (e.g. `8` decoded as `BC1` pre-prereq, but as `DepthStencil` post-prereq; the DX12/VK Compressed-branch mappers found no case and returned `DXGI_FORMAT_UNKNOWN`, causing `CreateCommittedResource` to E_INVALIDARG). Tail-append restores the original slot indices for all pre-existing tags. No DX12/VK mapper edit needed: the mappers already short-circuit on `RGB10A2` before any switch (position-independent path).
+
+### Lesson
+
+`TexturePixelDataFormat` is serialized by integer value into asset metadata. Mid-inserting an enum tag is a silent ABI break for every pre-existing TextureComponent JSON. **Future enum tags must tail-append until the asset format gains a versioned format-name table.** The same constraint likely applies to other engine enums serialized by integer (audit candidates: `TexturePixelDataType`, `TextureSampler`, `TextureUsage`, `TextureWrapMethod`, `TextureFilterMethod`).
+
+### CL-3 GISponza capture status post-fix
+
+Build BUILD_WITH_NRD=ON RelWithDebInfo green; Main.exe 60-frame run with `-scene ExampleProject/Scenes/GISponza.InnoScene` loads the scene cleanly (Bin/RelWithDebInfo/[2026-5-9-21-48-3-793].Log line 256), reaches "Auto-test: 60 frames rendered, terminating." (line 296), and writes `gpu_output.png` (line 303). Capture saved at `Build/captures/TASK-77.4-CL-3-GISponza.png` (1.5 MB). Layer-1 read: Sponza interior recognizable (red curtain banners, mosaic-textured columns, dark central passage). No entirely-black regions, no NaN-saturation, no missing geometry. Mild streak texture on the blue-mosaic columns echoes the GITestBox cyan-wall vertical-streak artifact family (NRD ReBLUR anisotropic spatial-filter footprint on textured non-converged surfaces) but is less prominent here — reads more as expected mosaic high-frequency detail. PathTracerReadback stats from the prior gpu_validation run (Bin/RelWithDebInfo/[2026-5-9-21-44-15-931].Log line 542) confirm denoised frame is well-formed: `total=921600 zero=0 nonZero=921600 mean=(0.185,0.210,0.228) max=(0.96,0.96,0.99)`.
+
+The pre-existing "FinalBlend readback transition barrier" issue (note section above) blocks PNG output specifically when `-gpu_validation` is enabled (the layer fatal-exits on the second readback's transition mismatch before `Save` runs). Without `-gpu_validation` the readback still emits the same warning but the layer does not abort, so `WriteCaptureToFile` proceeds to write the PNG. The capture above was produced from a no-validation 60-frame run; the validation 60-frame run separately confirmed scene load + 60-frame termination + clean PathTracerReadback stats.
+
+CL-3 visual-gate status: per-scene-mixed remains the reviewed-visually verdict. UnitTest clean, GITestBox per-scene-mixed (textured-wall streaks), GISponza now also captured and reads similar to GITestBox (textured-surface mild streaks).
+
+## Cross-Stage Review (task-mgmt, 2026-05-10)
+
+**Verdict: PASS with one ADVISORY housekeeping item.**
+
+CL-3 staged tree reviewed against the eight criteria in the cross-stage review brief. All load-bearing checks pass; the matrix-transpose fix is correct, well-localized, and documented in code; the (b2) raw-D3D12 boundary holds; the engine-foundation change is minimal and orthogonal; visual sign-off on all three post-fix captures is unambiguous improvement.
+
+### Matrix-transpose fix correctness — PASS
+- All four NRD CommonSettings matrix slots transposed before memcpy at `NRDIntegrationAdapter_Dispatch.cpp:62-69`: `viewToClipMatrix`, `viewToClipMatrixPrev`, `worldToViewMatrix`, `worldToViewMatrixPrev`.
+- `Math::Mat4::transpose()` at `Source/Engine/Common/Math.h:753-776` is a real per-element transpose (m00=m00, m01=m10, m02=m20, m03=m30, …), not a tag flip. Correct semantics for the engine row-major / NRD column-major bridge.
+- `worldPrevToWorldMatrix` is the only other CommonSettings matrix slot (NRDSettings.h:105-110); it defaults to identity and is documented as optional ("for virtual normals … animated intermediary reflecting surfaces"). Engine does not use that feature; leaving it unset is correct.
+- `m_ViewToWorld` / `viewToWorldMatrix` zero references in adapter code AND in NRD's public headers (NRD computes it internally via `InvertOrtho`). Implementer's claim verified.
+- Why-non-obvious explanation embedded at `NRDIntegrationAdapter_Dispatch.cpp:53-60` cites NRDSettings.h line range, the engine-side row-major convention (skill `shader-standards`), and the user-visible symptom (vertical streaks on GITestBox walls). Comment-discipline compliant.
+
+### Visual sign-off — PASS / improvement (all three scenes)
+- **GITestBox** (`TASK-77.4-CL-3-GITestBox-fixed.png` vs `-GITestBox.png`): vertical streaks on cyan + green walls fully eliminated. Each surface reads with its proper diffuse colour (cyan, red, green, white floor, pink right surface), shadow boundary at the corner is sharp, no halos at sky/geometry boundary, no over-blur, no ringing. Cleaner than the H0 raw-PT control at `TASK-77.4-CL-3-GITestBox-h0test.png` (per-pixel noise eliminated while structural lighting preserved). Decisive improvement.
+- **UnitTest** (`TASK-77.4-CL-3-UnitTest-fixed.png`): PBR sphere row + cubes + cone clean, smooth horizon-glow sky gradient, no regression from the (already-clean) baseline.
+- **GISponza** (`TASK-77.4-CL-3-GISponza-fixed.png` vs `-GISponza.png`): pre-fix block-pattern noise on fabrics + brick pillars eliminated; teal-and-orange drape fabric reads in proper colours, brick column smooth, central passage shadowing preserved.
+
+Verdict on visual mandate: `Reviewed-Visually: task-mgmt — improvement` (uniform improvement across all three scenes; not per-scene-mixed).
+
+### (b2) raw-D3D12 leak audit — PASS
+- `Grep ID3D12|D3D12_` against `PTNRDDenoisePass.{h,cpp,_Dispatch.cpp}` and `PTNRDCompositionPass.*`: zero matches in actual code; only two comment-prose mentions of `ID3D12GraphicsCommandList*` documenting the architecture. Boundary holds.
+- Borrowed-shell ownership documented at `NRDIntegrationAdapter.h:65-73`: `m_GPUResources[0]` is a raw `ID3D12Resource*` adapter-owned, `m_ReadHandles[0]` is an SRV on the engine's shader-visible heap, `TextureResourceService::Delete` MUST NEVER be called on them. Lifecycle pinning at `NRDIntegrationAdapter.h:51-63` ties the borrowed shells' lifetime to the adapter's `Terminate()`, with the engine's binding cache invalidation responsibility called out explicitly.
+- Pattern follows the `imgui_impl_dx12.cpp` and `DX12TextureResourceService_Mipmap.cpp` precedents the brief cited (private subsystem reaching raw D3D12 below `RenderPassComponent`). Same shape, same boundary depth.
+
+### Engine-foundation change scope — PASS
+- `DX12RenderPassResourceService_Pipeline.cpp` diff: single early-out branch on `renderPass->m_ShaderProgram == nullptr` for the compute-PSO path. Wraps the existing `LoadComputeShaders` + `CreateComputePipelineState` in an `if (m_ShaderProgram)` block; on the null branch logs `Verbose` and continues.
+- 13-line block-comment at the diff site explains the gate's purpose and cites the NRD pass class as the consumer. Genuinely orthogonal to NRD: any future pass class that owns its own PSOs (e.g., another third-party SDK private subsystem) gets the same affordance. NOT NRD-specific despite the citation. Acceptable as an unconditional engine-wide change.
+- Not gated on `BUILD_WITH_NRD` — correct, because the gate's behavior is well-defined for any pass with `m_ShaderProgram == nullptr` regardless of why the program is null.
+
+### Surfaced items + techdebt comment block — PASS
+- `NRDIntegrationAdapter.h:1-29` covers BOTH layers as required: Layer 1 = bypass NRDIntegration.hpp/NRI (decision + cost), Layer 2 = raw-D3D12 passthrough below RenderPassComponent (the four binding-model gaps + dual-tier precedent + SHA-pin mitigation + revisit triggers).
+- TASK-77.4 Implementation Notes confirmed (line numbers from `Grep`):
+  - `## CL-3 approach pivot — Option (b)` at line 431 ✓
+  - `## CL-3 sub-pivot — (b2) raw-D3D12 passthrough` at line 494 ✓
+  - `## CL-3 prereq enum-shift regression (fixed by 0da9e278)` at line 567 ✓
+
+### File-size gate — PASS
+- All 13 touched / new TUs under 300 lines. Largest are `NRDIntegrationAdapter_SetupHelpers_Pipelines.cpp` (255), `NRDIntegrationAdapter_Dispatch.cpp` (253). Margin sufficient.
+
+### Commit message structure — PASS with one ADVISORY
+- Subject line shape correct: `feat(rendering-client): TASK-77.4 CL-3 — NRD ReBLUR denoise + composition (b2 raw-D3D12 path) [task-stays-open]`.
+- Required footers present (lines 99-102): `Reviewed-By: pending`, `Code-AI-Generated-By:`, `Message-AI-Generated-By:`, `Closure-Reason: task-stays-open`.
+- ADVISORY: `Reviewed-Visually:` footer is missing. Body cites `Build/captures/TASK-77.4-CL-3-{GITestBox,UnitTest,GISponza}-fixed.png` paths; per skill `peer-review-required` § "When body references Build/captures" the footer is required. Adding `Reviewed-Visually: task-mgmt — improvement` is part of the line-99 fixup the implementer applies before the commit lands.
+
+### Engine project conventions — PASS
+- `cpp-style`: engine STL replaced (`std::memcpy` is engine-allowed verbatim per the brief; engine container types used elsewhere in adapter). Naming `m_/l_/in_/out_` adhered to (`l_cmd`, `l_settings`, `m_Impl`, `in_CommandList`, `in_Inputs`).
+- `safety-observability`: assertions on contracts (`assert(l_barrierCount < 64u)` at `_Dispatch.cpp:151,158`, `assert(m_Impl->m_GPUDescriptorHead + l_descCount <= m_Impl->m_GPUDescriptorCapacity)` at `:167`), guard-clause `Log(Error, ...)` on all NRD-API failure paths (no silent `return false`), early-out on uninitialised state at `:22-23`.
+- `shader-standards`: `PTNRDComposition.comp` row-major matrices not used (data-shaping pass only); the matrix transpose at the adapter boundary is the engine↔NRD convention bridge — does not violate the in-shader convention.
+- `comment-discipline`: WHY-non-obvious comments only (matrix-transpose rationale, sky branch rationale, GPU descriptor head reset rationale, lifecycle contract on borrowed shells). No explanatory comments on self-evident code.
+
+### clangd diagnostics — PASS
+- Build-success evidence: 60-frame UnitTest run terminated cleanly (validation log spans 47s walltime, init `[Success]` through to clean termination). All three post-fix captures produced. The clangd `NRD.h not found` / `nrd undeclared` diagnostics on the new TUs are confirmed false positives from a stale clangd index (regen skipped per `-SkipClangdIndexRefresh`); a refresh after commit clears them.
+- GBV log shows ONLY the pre-existing `finalBlendPass.comp:61` GBV false positive (engine tags it as such); zero NRD-pass GBV warnings, zero `[Error]`, zero `D3D12 ERROR`, zero `VALIDATION ERROR`, zero `CORRUPTION` messages.
+
+### ADVISORY (housekeeping; non-blocking)
+
+**A-1 — matrix-transpose fix not yet documented in Implementation Notes.** The brief flagged this as "possibly a new subsection." The "## CL-3 GITestBox capture status (post-build, 2026-05-09)" / "## CL-3 GISponza capture status post-fix" sections (lines 545-587) describe the streaks as "acceptable for first cut" and the visual-gate verdict as "per-scene-mixed (textured-wall streaks)" — but those notes were written BEFORE the matrix-transpose fix landed, and the fix invalidates that verdict. Recommend a new "## CL-3 matrix-convention root cause + fix (2026-05-10)" subsection that records the bisect chain (H4 disconfirmed → hit-distance disconfirmed → H1 disconfirmed → H0 NRD-introduced → constant-normal confirmed normal/matrix axis), the root cause (NRDSettings.h column-major / engine row-major), the fix site (`NRDIntegrationAdapter_Dispatch.cpp:53-69`), and the post-fix visual verdict (improvement, not per-scene-mixed). This belongs in CL-3 (this commit), not CL-4. Non-blocking because the in-code comment at `_Dispatch.cpp:53-60` already carries the load-bearing context for future readers; the task notes are the secondary venue.
+
+### Recommended commit-message line-99 fixup (replaces `Reviewed-By: pending`)
+
+```
+Reviewed-By: task-mgmt (cross-stage CL-3)
+Reviewed-Visually: task-mgmt — improvement
+```
+
+## CL-3 matrix-convention root cause + fix (2026-05-10)
+
+Resolves A-1 from the cross-stage review. Supersedes the "per-scene-mixed (textured-wall streaks)" verdict in the prior CL-3 capture-status notes — those notes were written before the fix landed; visual verdict is now uniform improvement.
+
+### Bisect chain
+
+5 diagnostic dispatches narrowed the root cause:
+
+| Hypothesis | Edit | Verdict |
+|---|---|---|
+| Hit-distance (primary→secondary) | `PTRaygenIntegrator_GBufferWrite.hlsli` write secondary segment length to RT3.z | Disconfirmed — streaks unchanged |
+| H4 (diffuse demod amplifies texture-coupled noise) | Bypass demod end-to-end (integrator passthrough + composition skip-remod) | Disconfirmed |
+| H1 (motion-vector residuals from projection chain) | Force `out_NRD_MotionVector = 0` in format-convert | Disconfirmed |
+| H0 (is NRD producing them at all?) | Composition unconditional AccumBuffer pass-through (NRD bypass) | **NRD-introduced** — raw PT shows clean horizontal fabric weave; NRD pipeline shows perpendicular vertical streaks |
+| Constant-normal feed | Force `out_NRD_NormalRoughness` to world `+Y` for every pixel | **Confirmed** — streaks fully eliminated; uniform horizontal blur because every surface treated as floor |
+
+### Root cause
+
+NRD's `worldToViewMatrix` slot in `CommonSettings` requires column-major / column-vector layout per `Source/External/GitSubmodules/NRD/Include/NRDSettings.h:84-100` ("vector is a column, layout column-major"). The engine's `Math::Mat4` is row-major / row-vector per skill `shader-standards`. The adapter previously did a verbatim `std::memcpy` of the engine matrix into NRD's `float[16]` slot — NRD then read the transpose. Every NRD spatial-filter kernel (e.g. `REBLUR_Blur.cs.hlsl:66-68`) computes `Nv = Geometry::RotateVectorInverse(gViewToWorld, N)` against the wrong-frame matrix; the anisotropic filter footprint orients on a 90°-rotated axis, producing vertical streaks perpendicular to the texture grain on walls. The user-observed "look-down → streaks vanish" correlation aligned: looking down at a horizontal floor, the surface normal aligns with the engine's +Y axis where the transposed-matrix path is closer to identity, masking the symptom.
+
+### Fix
+
+`NRDIntegrationAdapter_Dispatch.cpp:53-69` calls `Math::Mat4::transpose()` on each of `viewToClipMatrix`, `viewToClipMatrixPrev`, `worldToViewMatrix`, `worldToViewMatrixPrev` before the `std::memcpy`. Engine `Math::Mat4` untouched; transpose helper at `Source/Engine/Common/Math.h:753-776` is a real per-element transpose. Single-site fix at the engine↔NRD boundary.
+
+### Post-fix visual verdict
+
+`Reviewed-Visually: task-mgmt — improvement` (cross-stage review, 2026-05-10) on all three captures:
+
+- GITestBox (`Build/captures/TASK-77.4-CL-3-GITestBox-fixed.png`) — streaks fully eliminated; per-surface diffuse colour preserved (cyan reads as cyan vertical wall, not floor-shaded as in the constant-normal diagnostic); sharp shadow boundaries retained; cleaner than H0 raw-PT control.
+- UnitTest (`-UnitTest-fixed.png`) — clean, no regression vs prior baseline.
+- GISponza (`-GISponza-fixed.png`) — pre-fix block-pattern noise on fabrics + brick eliminated; drapes + masonry + dust + god-rays preserved.
+
+Zero NRD-related D3D12 errors under `-gpu_validation` (UnitTest 60-frame run; only pre-existing FinalBlend readback transition warning, filed as TASK-222).
+
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done

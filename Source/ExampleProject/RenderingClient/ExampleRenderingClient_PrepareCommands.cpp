@@ -27,6 +27,8 @@
 #include "PTHashGridCacheUpdateTilesPass.h"
 #include "PTHashGridCacheMipCascadeBuildPass.h"
 #include "PTNRDFormatConvertPass.h"
+#include "PTNRDDenoisePass.h"
+#include "PTNRDCompositionPass.h"
 #include "HashGridCacheConstants.h"
 #include "NRDConstants.h"
 
@@ -78,16 +80,16 @@ namespace Inno
 			DispatchOrBypass(GPUPathTracerPass::Get());
 			if constexpr (Inno::NRD::ENABLED)
 			{
-				// NRD format-convert runs after the path tracer
-				// (TASK-77.4 CL-2). Reads the GBuffer-equivalent
-				// textures + per-lobe radiance UAVs the raygen just
-				// wrote, packs them into the five textures NRD
-				// ReBLUR consumes (IN_VIEWZ / IN_NORMAL_ROUGHNESS /
-				// IN_MV / IN_DIFF/SPEC_RADIANCE_HITDIST). CL-2 ships
-				// invisibly behind the AccumBuffer write — this
-				// pass's outputs are unconsumed until CL-3 wires
-				// PTNRDDenoisePass + PTNRDCompositionPass.
+				// NRD chain (TASK-77.4 CL-2 + CL-3). Format-convert
+				// packs PT outputs into NRD's expected layouts;
+				// denoise hands a raw D3D12 command list to the NRD
+				// adapter which records the ReBLUR_DIFFUSE_SPECULAR
+				// dispatch sequence directly; composition unpacks
+				// NRD outputs and re-modulates by primary albedo to
+				// produce the tonemap input.
 				DispatchOrBypass(PTNRDFormatConvertPass::Get());
+				DispatchOrBypass(PTNRDDenoisePass::Get());
+				DispatchOrBypass(PTNRDCompositionPass::Get());
 			}
 		}
 
@@ -144,7 +146,21 @@ namespace Inno
 		GPUResourceComponent* l_hdrSource = nullptr;
 		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
+			// TASK-77.4 CL-3: under NRD-ENABLED the tonemap source is
+			// the composition output (denoised + re-modulated) instead
+			// of the raw AccumBuffer. Fall back to the PT AccumBuffer
+			// when composition has not yet activated (first-frame /
+			// adapter-init failure / pass-bypass), so the visible
+			// output never goes black on a transient state.
 			l_hdrSource = GPUPathTracerPass::Get().GetResult();
+			if constexpr (Inno::NRD::ENABLED)
+			{
+				if (PTNRDCompositionPass::Get().GetStatus() == ObjectStatus::Activated
+					&& !IsBypassed(PTNRDCompositionPass::Get()))
+				{
+					l_hdrSource = PTNRDCompositionPass::Get().GetResult();
+				}
+			}
 		}
 		else
 		{

@@ -27,6 +27,8 @@
 #include "PTHashGridCacheUpdateTilesPass.h"
 #include "PTHashGridCacheMipCascadeBuildPass.h"
 #include "PTNRDFormatConvertPass.h"
+#include "PTNRDDenoisePass.h"
+#include "PTNRDCompositionPass.h"
 #include "HashGridCacheConstants.h"
 #include "NRDConstants.h"
 
@@ -85,6 +87,8 @@ namespace Inno
 		if constexpr (Inno::NRD::ENABLED)
 		{
 			PTNRDFormatConvertPass::Get().Initialize();
+			PTNRDDenoisePass::Get().Initialize();
+			PTNRDCompositionPass::Get().Initialize();
 		}
 
 		m_ObjectStatus = ObjectStatus::Activated;
@@ -111,6 +115,8 @@ namespace Inno
 			if constexpr (Inno::NRD::ENABLED)
 			{
 				PTNRDFormatConvertPass::Get().Update();
+				PTNRDDenoisePass::Get().Update();
+				PTNRDCompositionPass::Get().Update();
 			}
 		}
 
@@ -148,6 +154,18 @@ namespace Inno
 
 		// Auto-capture readback now happens in Update() on the last frame,
 		// before the CPU path tracer runs and causes a GPU device timeout.
+
+		// NRD chain (TASK-77.4 CL-2 + CL-3) terminates before any consumer
+		// pass — Composition reads NRD outputs, Denoise owns the adapter
+		// (which holds raw ID3D12Resource* allocations and must release them
+		// before the device dies). Order: composition → denoise → format-
+		// convert (reverse of frame execution: consumer → producer).
+		if constexpr (Inno::NRD::ENABLED)
+		{
+			PTNRDCompositionPass::Get().Terminate();
+			PTNRDDenoisePass::Get().Terminate();
+			PTNRDFormatConvertPass::Get().Terminate();
+		}
 
 		FinalBlendPass::Get().Terminate();
 
@@ -256,6 +274,8 @@ std::vector<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
 	if constexpr (Inno::NRD::ENABLED)
 	{
 		l_passes.push_back(&PTNRDFormatConvertPass::Get());
+		l_passes.push_back(&PTNRDDenoisePass::Get());
+		l_passes.push_back(&PTNRDCompositionPass::Get());
 	}
 
 	l_passes.push_back(&BRDFLUTPass::Get());

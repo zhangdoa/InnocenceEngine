@@ -1,0 +1,160 @@
+// shadertype=hlsl
+// NRD ReBLUR back-end unpack + per-lobe re-modulation, post-denoise.
+//
+// Pure data-shaping pass: reads NRD's denoised diffuse + specular packed
+// outputs (OUT_DIFF/SPEC_RADIANCE_HITDIST), unpacks them through the NRD
+// back-end helper (YCoCg -> linear, no other transforms), re-modulates the
+// diffuse lobe by the primary-hit albedo that the integrator demodulated
+// at the per-lobe write site (PTRaygenIntegrator.hlsl:274-275 — divide by
+// max(albedo, 0.001) carried through CL-2), and sums to the tonemap input
+// surface. The composition output replaces GPUPathTracerPass::GetResult()
+// (the AccumBuffer) as the tonemap source for hit pixels; sky pixels pass
+// through verbatim from the AccumBuffer because NRD does not denoise
+// outside CommonSettings::denoisingRange and the integrator's sky branch
+// already accumulates `throughput * SkyColor()` into the AccumBuffer at
+// every frame (PTRaygenIntegrator.hlsl:102, 281).
+//
+// Reference: NRD v4.17.4 (submodule SHA 2784717).
+// NRD.hlsli back-end signature verified against the checked-in submodule
+// (NRD.hlsli:852):
+//     float4 REBLUR_BackEnd_UnpackRadianceAndNormHitDist(float4 data)
+//         data.xyz = _NRD_YCoCgToLinear(data.xyz)
+//         return data
+// Returns .rgb = linear radiance, .a = normalized hit distance. The
+// composition pass uses .rgb only; .a is preserved for diagnostic readback
+// but consumed nowhere downstream.
+//
+// Sky handling (decision):
+//   The integrator zero-fills RT0/RT1/RT2/RT3 at the sky-miss branch
+//   (PTRaygenIntegrator.hlsl:113-116) AND writes
+//   `throughput * SkyColor(ray.Direction)` into both `radianceDiffuse` and
+//   the AccumBuffer composition (lines 112, 281). The format-convert pass
+//   short-circuits NRD inputs to zero on RT0.a == 0 (PTNRDFormatConvert.comp:149)
+//   so NRD's OUT_DIFF/SPEC are zero on sky pixels — they carry no usable
+//   sky luminance. The AccumBuffer at the same pixel carries the correct
+//   frame-averaged sky term. Composition therefore branches on RT0.a == 0
+//   and passes AccumBuffer.rgb through for sky; otherwise composes
+//   `albedo * outDiff.rgb + outSpec.rgb` for surfaces.
+//
+// CL split:
+//   CL-2              - format-convert pass + integrator demod (landed
+//                       at 53331e1f).
+//   CL-3 (this file)  - back-end unpack + composition. Output replaces
+//                       AccumBuffer as the tonemap source.
+//   CL-4 (optional)   - DevToggleRegistry tuning hooks; vendor-fallback.
+//
+// Bindings (C++ side mirrors verbatim — see PTNRDCompositionPass.cpp,
+// authored in the follow-up code-impl dispatch):
+//   b0 (space 0)  - PerFrameConstantBuffer (g_Frame; viewportSize.xy
+//                   for the bounds check). No view-space transforms in
+//                   this pass; viewport is the only field consumed.
+//   t0 (space 1)  - in_PT_RT0_PositionInstanceID (RGBA32F SRV, RT0).
+//                   Sky test source — .a == 0 means primary miss, mirrors
+//                   PTNRDFormatConvert.comp:149 and DecodeGBuffer
+//                   (lightPassCommon.hlsl:55).
+//   t1 (space 1)  - in_PT_RT2_AlbedoRoughness    (RGBA8    SRV, RT2).
+//                   .rgb is primary-hit albedo. The CL-2 integrator demod
+//                   divided radianceDiffuse by max(albedo, 0.001); this
+//                   pass re-multiplies by the same raw RT2.rgb with the
+//                   same PT_NRD_ALBEDO_FLOOR to round-trip cleanly.
+//   t2 (space 1)  - in_NRD_OutDiffRadianceHitDist (RGBA16F SRV).
+//                   NRD-allocated denoiser output for OUT_DIFF_RADIANCE_HITDIST.
+//   t3 (space 1)  - in_NRD_OutSpecRadianceHitDist (RGBA16F SRV).
+//                   NRD-allocated denoiser output for OUT_SPEC_RADIANCE_HITDIST.
+//   t4 (space 1)  - in_PT_AccumBuffer            (RGBA32F SRV, AccumBuffer).
+//                   Sky pass-through source. Bound as SRV; the integrator
+//                   pass writes it (UAV) earlier in the frame, so the
+//                   adapter must transition WriteOnly -> ReadOnly before
+//                   this pass dispatches.
+//   u0 (space 2)  - out_FinalRadiance            (RGBA16F UAV).
+//                   Tonemap input. RGBA16F suffices; HDR magnitudes are
+//                   already clamped at the integrator (100000 ceiling) and
+//                   re-multiplied by albedo here (<= 1.0 multiplier). The
+//                   .a channel is written 1.0 to mirror AccumBuffer's
+//                   alpha-channel convention (line 281: `float4(rgb, 1.0f)`).
+
+#include "common/common.hlsl"
+
+// NRD's HLSL helper header. Same depth-1-include caveat as the format-convert
+// pass — Compile-HLSL.psm1's dependency tracker won't auto-rebuild on an NRD
+// submodule bump; -FullClean covers paranoid bisects.
+#include "../../External/GitSubmodules/NRD/Shaders/NRD.hlsli"
+
+struct ComputeInputType
+{
+	uint3 groupID         : SV_GroupID;
+	uint3 groupThreadID   : SV_GroupThreadID;
+	uint3 dispatchThreadID: SV_DispatchThreadID;
+	uint  groupIndex      : SV_GroupIndex;
+};
+
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0) { PerFrame_CB g_Frame; }
+
+[[vk::binding(0, 1)]]
+Texture2D<float4> in_PT_RT0_PositionInstanceID  : register(t0);
+[[vk::binding(1, 1)]]
+Texture2D<float4> in_PT_RT2_AlbedoRoughness     : register(t1);
+[[vk::binding(2, 1)]]
+Texture2D<float4> in_NRD_OutDiffRadianceHitDist : register(t2);
+[[vk::binding(3, 1)]]
+Texture2D<float4> in_NRD_OutSpecRadianceHitDist : register(t3);
+[[vk::binding(4, 1)]]
+Texture2D<float4> in_PT_AccumBuffer             : register(t4);
+
+[[vk::binding(0, 2)]]
+RWTexture2D<float4> out_FinalRadiance : register(u0);
+
+// Mirrors the integrator's demod floor (PTRaygenIntegrator.hlsl:274) so the
+// re-modulation here cancels the same denominator the CL-2 demod applied.
+// Documented as a constant in PTNRDFormatConvert.comp:128 as well; kept
+// duplicated rather than promoted to a shared header because NRDConfig and
+// NRD.hlsli already pin this file to the NRD submodule path and a third
+// shared header for one float would inflate the dependency graph.
+static const float PT_NRD_ALBEDO_FLOOR = 0.001f;
+
+// Group size: 8x8 matches PTNRDFormatConvert.comp:130. Both passes are
+// screen-resolution dispatches with no LDS / no group-sync barriers, so
+// the group shape is dictated by occupancy alone and 64 threads/group is
+// the engine's standard pick (PTDenoiseTemporal.comp's screen-resolution
+// dispatch shape, the cited precedent in the format-convert header).
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+	uint2 l_pixel    = input.dispatchThreadID.xy;
+	int2  l_viewport = int2(g_Frame.viewportSize.xy);
+	if (any(int2(l_pixel) >= l_viewport))
+		return;
+
+	// Sky test: RT0.a == 0 mirrors the format-convert sky branch
+	// (PTNRDFormatConvert.comp:149) and DecodeGBuffer's sky test
+	// (lightPassCommon.hlsl:55). Sky pixels pass the AccumBuffer term
+	// through verbatim (see header comment "Sky handling").
+	float4 l_RT0   = in_PT_RT0_PositionInstanceID[l_pixel];
+	bool   l_isSky = (l_RT0.a == 0.0f);
+	if (l_isSky)
+	{
+		float3 l_skyRGB = in_PT_AccumBuffer[l_pixel].rgb;
+		out_FinalRadiance[l_pixel] = float4(l_skyRGB, 1.0f);
+		return;
+	}
+
+	// Surface composition: unpack NRD outputs (YCoCg -> linear, .a is the
+	// normalized hit distance; we discard it), re-multiply the diffuse
+	// channel by primary-hit albedo to undo the CL-2 integrator demod, and
+	// sum with the un-demodulated specular channel.
+	float4 l_diffPacked = in_NRD_OutDiffRadianceHitDist[l_pixel];
+	float4 l_specPacked = in_NRD_OutSpecRadianceHitDist[l_pixel];
+
+	float3 l_diffRadiance = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(l_diffPacked).rgb;
+	float3 l_specRadiance = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(l_specPacked).rgb;
+
+	// Re-modulate diffuse by primary-hit albedo (RT2.rgb) with the same
+	// PT_NRD_ALBEDO_FLOOR the integrator's per-lobe write applied. Specular
+	// stays un-demodulated (GGX has no primary-albedo factor).
+	float3 l_albedoRaw     = in_PT_RT2_AlbedoRoughness[l_pixel].rgb;
+	float3 l_albedoFloored = max(l_albedoRaw, float3(PT_NRD_ALBEDO_FLOOR, PT_NRD_ALBEDO_FLOOR, PT_NRD_ALBEDO_FLOOR));
+	float3 l_finalRGB      = l_albedoFloored * l_diffRadiance + l_specRadiance;
+
+	out_FinalRadiance[l_pixel] = float4(l_finalRGB, 1.0f);
+}
