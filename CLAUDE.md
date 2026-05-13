@@ -29,7 +29,7 @@ Generic, project-agnostic skills live at user level (`~/.claude/skills/`). Proje
 | `dispatch-briefs` | Main-session shaping a dispatch brief. |
 | `commit-message-policy`, `peer-review-required` | Before `git commit`. |
 | `file-splitting` | File-size gate hits, or before adding code that would push a file past the limit. |
-| `cpp-style`, `safety-observability` | Engine C++. |
+| `cpp-style`, `safety-observability`, `threading-contracts` | Engine C++. |
 | `shader-standards` | Engine HLSL. |
 | `paper-port`, `paper-audit` | Paper-driven implementation. |
 | `test-etiquette`, `visual-validation` | Engine / editor / Playwright runs; rendering output. |
