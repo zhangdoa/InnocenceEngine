@@ -9,6 +9,11 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 
 target_link_libraries(Main Engine ExampleProjectFactory)
+# CompileHlslShaders runs before Main links — POST_BUILD deploy then
+# mirrors fresh DXIL into Bin/<Config>/Shaders/DXIL/ (TASK-202).
+if(TARGET CompileHlslShaders)
+  add_dependencies(Main CompileHlslShaders)
+endif()
 inno_deploy_runtime_payload(Main)
 
 add_executable(RenderTest WIN32 WinMain.cpp)
@@ -20,4 +25,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 
 target_link_libraries(RenderTest Engine TestClientFactory)
+if(TARGET CompileHlslShaders)
+  add_dependencies(RenderTest CompileHlslShaders)
+endif()
 inno_deploy_runtime_payload(RenderTest)

@@ -98,6 +98,8 @@ option(BUILD_WITH_NRD "Build NVIDIA NRD denoiser integration" ON)
 
 include(CMake/BuildThirdPartyLibs.cmake)
 
+include(CMake/CompileHlslShaders.cmake)
+
 # Create Data/Generated directory structure (not version-controlled)
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/Data/Generated/Components")
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/Data/Generated/Fonts")
