@@ -1,7 +1,7 @@
 ---
 id: TASK-222
 title: FinalBlend readback transition blocks PNG output during -gpu_validation runs
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-05-10'
 updated_date: '2026-05-13 22:29'
