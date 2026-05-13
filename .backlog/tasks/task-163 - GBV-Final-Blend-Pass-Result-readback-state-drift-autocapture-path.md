@@ -1,9 +1,10 @@
 ---
 id: TASK-163
 title: 'GBV: Final Blend Pass Result readback state-drift (autocapture path)'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-27 19:00'
+updated_date: '2026-05-13 22:42'
 labels:
   - graphics
   - dx12
@@ -86,5 +87,34 @@ Same class of bug (engine-layer `m_CurrentState` drift); different instance (UAV
 <!-- AC:END -->
 
 ## Implementation Notes
+
 <!-- SECTION:NOTES:BEGIN -->
+<!-- SECTION:NOTES:BEGIN -->
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## Closed as duplicate of TASK-222
+
+TASK-163 and TASK-222 described the same D3D12 validation ERROR:
+- Same resource: `Final Blend Pass Result_DefaultHeap_Texture_Frame*`
+- Same state-tracker mismatch: engine recorded `0x8C0` (SRV composite), GPU at `0x8` (UAV)
+- Same call site: `DX12TextureResourceService::ReadTextureBackToCPU` ← `TryWriteAutoCapture`
+
+Filed independently 2 weeks apart (TASK-163: 2026-04-27, TASK-222: 2026-05-10). Both authors anchored on slightly different stack-trace contexts (TASK-163 emphasized "missing m_CurrentState update after FinalBlendPass UAV write"; TASK-222 emphasized "speculatively-recorded `0x8C0` from PrepareSwapChainCommands"). The latter framing turned out to be the accurate root cause.
+
+TASK-222's shipped fix:
+- Lifted the speculative `SetCurrentState(.., m_WriteState)` override out of `WriteCaptureToFile`
+- Confined it to the two mid-frame caller sites in `HandleAutoCaptureTriggers` via the new `AlignTrackerForMidFrameReadback()` helper
+- Shutdown path leaves tracker untouched (post-`WaitForGPUIdle` it already matches GPU)
+
+Verified non-offscreen `-gpu_validation -total_frames 30`: zero `D3D12 ERROR`, capture PNG written.
+
+No further work needed under TASK-163; refer to TASK-222 commit `4f2c867c` for the diff and verification logs.
+<!-- SECTION:FINAL_SUMMARY:END -->
+
+2026-05-14 — **Closed as duplicate of TASK-222** (shipped 2026-05-14). Same resource (`Final Blend Pass Result_DefaultHeap_Texture_Frame*`), same state mismatch (`0x8C0` SRV vs `0x8` UAV), same call site (`DX12TextureResourceService::ReadTextureBackToCPU` ← `TryWriteAutoCapture`). The two were filed independently weeks apart (TASK-163: 2026-04-27, TASK-222: 2026-05-10) without realizing they overlap. TASK-222's fix (extract `AlignTrackerForMidFrameReadback()`, apply only at mid-frame caller sites, leave shutdown path alone) addresses this. No further work needed.
+<!-- SECTION:NOTES:END -->
+
 <!-- SECTION:NOTES:END -->
