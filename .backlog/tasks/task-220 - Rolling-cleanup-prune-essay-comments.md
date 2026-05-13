@@ -4,7 +4,7 @@ title: 'Rolling cleanup: prune essay comments'
 status: In Progress
 assignee: []
 created_date: '2026-05-05 20:26'
-updated_date: '2026-05-13 22:58'
+updated_date: '2026-05-13 23:25'
 labels:
   - tech-debt
   - code-quality
@@ -34,6 +34,8 @@ Rolling sweep against `disciplines/always/comment-discipline.md`. Per CL: pick o
 2026-05-14 — Picked up autonomously after TASK-139 closure. Rolling tracker; this CL covers one file or tight cluster, per task ground rules. Selecting a non-rendering subtree to avoid any TASK-77.4 overlap (foundation / services / common are good candidates).
 
 2026-05-14 — CL: prune essay comments in `Source/Engine/ThirdParty/JSONWrapper/JSONSerializer_Components.cpp`. 96 lines removed, 0 inserted. Deleted: two large commented-out dead-code blocks (ProcessSkeleton, ProcessAnimations), four TASK-N/SHA design-history blocks (TASK-27, TASK-28, two TASK-144), `@TODO: Implement SkeletonComponent loading` stale TODO, two `// Note: For binary X data, additional fields are added by AssetService::Save` cross-file footnotes, and several WHAT-restatement / cross-file-reference lines. Kept: init-order WHY at TemplateAssetService re-entry, deferred-activation contract about BLAS readiness, perf WHY for off-loading STB decode to background thread. Build green (Engine.lib + Main.exe). `Main.exe -mode 0 -renderer 0 -loglevel 0 -total_frames 30 -offscreen` ran clean; final log line `Engine has been terminated.`; gpu_output.png + cpu_reference.png written. AC #3 keeps the task open as a rolling tracker.
+
+2026-05-14 — Iteration #2 CL: prune essay comments in `Source/Engine/Services/Common/FrameManagementServiceImpl_FrameQueries.cpp`. 39 lines removed, 4 inserted (two trimmed WHY one-liners replace multi-paragraph essays). Deleted: TASK-213 CL A/B design-history headers above `IsSteadyState` and `GetSteadyStateRelativeFrameCount`, multi-paragraph K=3 derivation citing a `Build/captures/...` log path (path will rot), 120-frame budget essay paraphrasing the constant name, "flap-back log" WHAT-restatement essay, "Update the rolling TLAS-stability counter" WHAT-restatement, "120-frame timeout watchdog (R2)" WHAT-restatement, TASK-213 CL B snapshot-rationale essay. Kept (trimmed to one-liner): K=3 invariant note about TLAS-rebuild gaps (concrete WHY for the magic number); harness-grep load-bearing warning on the "Auto-test: steady state reached at frame=" log string (external consumer reads it). No #include orphaned (every header still referenced by live code). Build green (`Scripts/BuildWin.ps1 -SkipShaderCompile`); `Main.exe -mode 0 -renderer 0 -loglevel 0 -total_frames 30 -offscreen` ran to `Engine has been terminated.`; load-bearing log line `Auto-test: steady state reached at frame=4` still fires. AC #3 keeps the task open as a rolling tracker.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
