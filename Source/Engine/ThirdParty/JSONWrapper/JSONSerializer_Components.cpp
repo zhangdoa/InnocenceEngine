@@ -2,7 +2,6 @@
 #include "../../Common/IOService.h"
 #include "../../Services/EntityRegistry.h"
 #include "../../Services/TemplateAssetService.h"
-#include "../../Services/PhysicsSimulationService.h"
 #include "../../Services/AssetService.h"
 #include "../../Engine.h"
 #include "../../Services/TextureResourceService.h"
@@ -70,8 +69,6 @@ void JSONWrapper::to_json(json& j, const MeshComponent& component)
     {
         {"MeshShape", MeshShape::Customized}
     };
-
-    // Note: For binary mesh data, additional fields are added by AssetService::Save
 }
 
 void JSONWrapper::to_json(json& j, const MaterialComponent& component)
@@ -126,8 +123,6 @@ void JSONWrapper::to_json(json& j, const TextureComponent& component)
         j["Width"]           = component.m_TextureDesc.Width;
         j["Height"]          = component.m_TextureDesc.Height;
     }
-
-    // Note: For binary texture data, additional fields are added by AssetService::Save
 }
 
 bool JSONWrapper::Load(const char* fileName, TransformComponent& component)
@@ -157,10 +152,8 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component, EntityID 
         if (!l_template)
         {
             // TemplateAssetService not yet initialized (called during its own init).
-            // Return false so the caller regenerates the mesh procedurally.
             return false;
         }
-        // Copy the template component so this component shares its asset handle and GPU resources.
         component = *l_template;
         // Queue for deferred activation: the asset may not be Resident yet (BLAS still building).
         // InitializeComponents will activate this component once the shared handle is Resident.
@@ -196,7 +189,6 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component, EntityID 
     {
         auto l_bones = j["Bones"];
         std::string l_skeletonName = l_bones["Name"];
-        // @TODO: Implement SkeletonComponent loading
     }
 
     g_Engine->Get<MeshResourceService>()->Initialize(&component, l_vertices, l_indices, owner);
@@ -220,11 +212,6 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component, Entit
     if (!l_asset)
         return false;
 
-    // TASK-27: AllocateMaterialAsset is get-or-create. When we recycle an existing asset we
-    // must clear every JSON-derived field that this loader populates; otherwise stale state
-    // accumulates across loads (the texture-name leak fixed ad-hoc in aef0f866). Always
-    // reset, even on first allocation — m_WasNewlyCreated guarantees the allocator itself
-    // already initialised the slot, so the clear is cheap in that case.
     l_asset->m_TextureNames.clear();
     if (!l_allocation.m_WasNewlyCreated)
         l_asset->m_Attributes = MaterialAttributes{};
@@ -232,8 +219,6 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component, Entit
     if (j.find("TextureComponents") != j.end())
     {
         auto l_j = j["TextureComponents"];
-        // TASK-28: loader-side visibility of GPU-layout overflow. DrawCallService truncates
-        // at upload time; we warn here so the root cause (the material JSON) is obvious.
         if (l_j.size() > MaxTextureSlotCount)
         {
             Log(Warning, "Material '", component.m_InstanceName.c_str(),
@@ -250,16 +235,10 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component, Entit
             if (l_textureName.empty())
                 continue;
 
-            // Load the TextureComponent into the pool if not already resident.
-            // DrawCallService looks up textures by name (without trailing '/'); the pool
-            // normalizes keys by stripping the sacrificial '/' so both forms match.
             auto l_existing = l_textureService->Find(l_textureName.c_str());
             if (l_existing)
                 continue;
 
-            // Only load if the TextureComponent JSON actually exists. Basic/template textures
-            // are created procedurally and have no JSON file; skipping them here is correct —
-            // they are handled by TemplateAssetService and found via EntityRegistry.
             auto l_filePath = AssetService::GetAssetFilePath(l_textureName.c_str());
             auto l_fullPath = g_Engine->Get<IOService>()->getDataDirectory() + l_filePath;
             if (!std::filesystem::exists(l_fullPath))
@@ -320,75 +299,6 @@ bool JSONWrapper::Load(const char* fileName, TextureComponent& component, Entity
     return true;
 }
 
-// SkeletonComponent* JSONWrapper::ProcessSkeleton(const json& j, const char* name)
-// {
-// 	SkeletonComponent* l_SkeletonComp;
-
-// 	// check if this file has already been loaded once
-// 	if (g_Engine->Get<AssetService>()->FindLoadedSkeleton(name, l_SkeletonComp))
-// 	{
-// 		return l_SkeletonComp;
-// 	}
-// 	else
-// 	{
-// 		l_SkeletonComp = g_Engine->Get<AnimationService>()->AddSkeletonComponent();
-// 		l_SkeletonComp->m_InstanceName = name;
-
-// 		auto l_size = j["Bones"].size();
-// 		l_SkeletonComp->m_BoneList.reserve(l_size);
-// 		l_SkeletonComp->m_BoneList.fulfill();
-
-// 		for (auto i : j["Bones"])
-// 		{
-// 			Bone l_boneData;
-// 			from_json(i["Transformation"], l_boneData.m_LocalToBoneSpace);
-// 			l_SkeletonComp->m_BoneList[i["ID"]] = l_boneData;
-// 		}
-
-// 		g_Engine->Get<AssetService>()->RecordLoadedSkeleton(name, l_SkeletonComp);
-// 		g_Engine->Get<AnimationService>()->InitializeSkeletonComponent(l_SkeletonComp);
-
-// 		return l_SkeletonComp;
-// 	}
-// }
-
-// bool JSONWrapper::ProcessAnimations(const json& j)
-// {
-// 	for (auto i : j)
-// 	{
-// 		std::string l_animationFileName = i["File"];
-
-// 		std::ifstream l_animationFile(g_Engine->Get<IOService>()->getWorkingDirectory() + l_animationFileName, std::ios::binary);
-
-// 		if (!l_animationFile.is_open())
-// 		{
-// 			Log(Error, "std::ifstream: can't open file ", l_animationFileName.c_str(), "!");
-// 			return false;
-// 		}
-
-// 		auto l_ADC = g_Engine->Get<AnimationService>()->AddAnimationComponent();
-// 		l_ADC->m_InstanceName = l_animationFileName;
-
-// 		std::streamoff l_offset = 0;
-
-// 		g_Engine->Get<IOService>()->deserialize(l_animationFile, l_offset, &l_ADC->m_Duration);
-// 		l_offset += sizeof(l_ADC->m_Duration);
-// 		g_Engine->Get<IOService>()->deserialize(l_animationFile, l_offset, &l_ADC->m_NumChannels);
-// 		l_offset += sizeof(l_ADC->m_NumChannels);
-// 		g_Engine->Get<IOService>()->deserialize(l_animationFile, l_offset, &l_ADC->m_NumTicks);
-// 		l_offset += sizeof(l_ADC->m_NumTicks);
-
-// 		auto l_keyDataSize = g_Engine->Get<IOService>()->getFileSize(l_animationFile) - l_offset;
-// 		l_ADC->m_KeyData.resize(l_keyDataSize / sizeof(KeyData));
-// 		g_Engine->Get<IOService>()->deserializeVector(l_animationFile, l_offset, l_keyDataSize, l_ADC->m_KeyData);
-
-// 		g_Engine->Get<AssetService>()->RecordLoadedAnimation(l_animationFileName.c_str(), l_ADC);
-// 		g_Engine->Get<AnimationService>()->InitializeAnimationComponent(l_ADC);
-// 	}
-
-// 	return true;
-// }
-
 bool JSONWrapper::Load(const char* fileName, LightComponent& component)
 {
     json j;
@@ -403,9 +313,6 @@ bool JSONWrapper::Load(const char* fileName, LightComponent& component)
     component.m_LuminousFlux = j["LuminousFlux"];
     component.m_UseColorTemperature = j["UseColorTemperature"];
 
-    // Older scene files lack CastShadow; fall back to the in-struct default
-    // so the rasterizer-side shadow flag round-trips cleanly. Mirrors the
-    // CameraComponent ExposureMode default-fallback idiom (TASK-144).
     component.m_CastShadow = j.value("CastShadow", component.m_CastShadow);
 
     return true;
@@ -426,10 +333,6 @@ bool JSONWrapper::Load(const char* fileName, CameraComponent& component)
     component.m_ShutterTime = j["ShutterTime"];
     component.m_ISO = j["ISO"];
 
-    // New in TASK-144: data-driven auto-exposure key + mode toggle. Use
-    // value() with the in-struct defaults so older scene files (which lack
-    // these keys) round-trip without erroring; the defaults preserve the
-    // pre-TASK-144 hardcoded behavior (Auto mode, K=6.0, no EV bias).
     component.m_ExposureMode = static_cast<ExposureMode>(j.value("ExposureMode", static_cast<uint32_t>(component.m_ExposureMode)));
     component.m_AutoExposureKey = j.value("AutoExposureKey", component.m_AutoExposureKey);
     component.m_AutoExposureCompensation = j.value("AutoExposureCompensation", component.m_AutoExposureCompensation);

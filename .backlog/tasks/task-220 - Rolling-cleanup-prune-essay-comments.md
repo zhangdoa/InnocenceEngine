@@ -1,9 +1,10 @@
 ---
 id: TASK-220
 title: 'Rolling cleanup: prune essay comments'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-05-05 20:26'
+updated_date: '2026-05-13 22:58'
 labels:
   - tech-debt
   - code-quality
@@ -22,10 +23,18 @@ Rolling sweep against `disciplines/always/comment-discipline.md`. Per CL: pick o
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each CL prunes one file or cluster; build + test green; no behavior change.
-- [ ] #2 Comments kept only when the discipline says keep.
+- [x] #1 Each CL prunes one file or cluster; build + test green; no behavior change.
+- [x] #2 Comments kept only when the discipline says keep.
 - [ ] #3 Stays open as a rolling tracker; new violations caught at write-time, not refiled here.
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-05-14 — Picked up autonomously after TASK-139 closure. Rolling tracker; this CL covers one file or tight cluster, per task ground rules. Selecting a non-rendering subtree to avoid any TASK-77.4 overlap (foundation / services / common are good candidates).
+
+2026-05-14 — CL: prune essay comments in `Source/Engine/ThirdParty/JSONWrapper/JSONSerializer_Components.cpp`. 96 lines removed, 0 inserted. Deleted: two large commented-out dead-code blocks (ProcessSkeleton, ProcessAnimations), four TASK-N/SHA design-history blocks (TASK-27, TASK-28, two TASK-144), `@TODO: Implement SkeletonComponent loading` stale TODO, two `// Note: For binary X data, additional fields are added by AssetService::Save` cross-file footnotes, and several WHAT-restatement / cross-file-reference lines. Kept: init-order WHY at TemplateAssetService re-entry, deferred-activation contract about BLAS readiness, perf WHY for off-loading STB decode to background thread. Build green (Engine.lib + Main.exe). `Main.exe -mode 0 -renderer 0 -loglevel 0 -total_frames 30 -offscreen` ran clean; final log line `Engine has been terminated.`; gpu_output.png + cpu_reference.png written. AC #3 keeps the task open as a rolling tracker.
+<!-- SECTION:NOTES:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
