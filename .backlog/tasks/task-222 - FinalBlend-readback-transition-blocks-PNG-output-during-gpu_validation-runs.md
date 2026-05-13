@@ -1,9 +1,10 @@
 ---
 id: TASK-222
-title: 'FinalBlend readback transition blocks PNG output during -gpu_validation runs'
-status: To Do
+title: FinalBlend readback transition blocks PNG output during -gpu_validation runs
+status: In Progress
 assignee: []
 created_date: '2026-05-10'
+updated_date: '2026-05-13 21:56'
 labels:
   - rendering
   - bug
@@ -66,3 +67,9 @@ Engine state-tracker records the FinalBlend pass result texture's state as `0x8C
 - [ ] #3 Pre-existing integration tests covering rendering / shutdown remain green
 - [ ] #4 Final summary lists what was NOT verified
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-05-13 — Session-start picked this up as the highest-value non-77 candidate per user direction (autonomous non-77 work). Force-multiplier rationale: removes 'two launches per validation cycle' pattern documented in skill `visual-validation`. Starting with audit-first investigation (find 0x8C0 recording site) before fix-shape decision.
+<!-- SECTION:NOTES:END -->
