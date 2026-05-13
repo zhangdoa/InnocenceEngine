@@ -5,7 +5,6 @@
 #include "../../Engine/Services/EditorService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
-#include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/TextureResourceService.h"
 
 #include "../../Engine/Engine.h"
@@ -159,6 +158,8 @@ namespace Inno
 			&& m_autoCaptureFrameCount >= static_cast<uint32_t>(l_initCfg.dumpFramesStart)
 			&& m_autoCaptureFrameCount <= static_cast<uint32_t>(l_initCfg.dumpFramesEnd))
 		{
+			AlignTrackerForMidFrameReadback();
+
 			char l_buf[64];
 			snprintf(l_buf, sizeof(l_buf), "gpu_output_%04u.png", m_autoCaptureFrameCount);
 			WriteCaptureToFile(l_buf);
@@ -171,8 +172,19 @@ namespace Inno
 		if (l_triggerAtFrame > 0 && !m_autoCaptureWritten)
 		{
 			if (m_autoCaptureFrameCount >= l_triggerAtFrame)
+			{
+				AlignTrackerForMidFrameReadback();
 				TryWriteAutoCapture();
+			}
 		}
+	}
+
+	void ExampleRenderingClientImpl::AlignTrackerForMidFrameReadback()
+	{
+		auto* l_fmService = g_Engine->Get<FrameManagementService>();
+		auto* l_srcTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
+		auto l_texFrameIndex = l_srcTex->m_TextureDesc.IsMultiBuffer ? l_fmService->GetCurrentFrame() : 0u;
+		l_srcTex->SetCurrentState(l_texFrameIndex, l_srcTex->m_WriteState);
 	}
 
 	bool ExampleRenderingClientImpl::WriteCaptureToFile(const char* filename)
@@ -184,8 +196,6 @@ namespace Inno
 		l_hwService->WaitOnCPU(l_semVal, GPUEngineType::Graphics);
 
 		auto l_srcTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
-		auto l_texFrameIndex = l_srcTex->m_TextureDesc.IsMultiBuffer ? l_fmService->GetCurrentFrame() : 0u;
-		l_srcTex->SetCurrentState(l_texFrameIndex, l_srcTex->m_WriteState);
 		auto l_floatPixels = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(
 			FinalBlendPass::Get().GetRenderPassComp(), l_srcTex);
 

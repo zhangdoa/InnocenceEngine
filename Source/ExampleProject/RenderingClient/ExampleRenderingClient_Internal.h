@@ -90,6 +90,11 @@ namespace Inno
 		void HandleScreenCapture();
 		void HandleAutoCaptureTriggers();
 
+		// Swap-chain CL has speculatively recorded the post-frame SRV
+		// transition into the tracker but has not executed; restore tracker
+		// to the actual GPU state (UAV) before issuing the readback barrier.
+		void AlignTrackerForMidFrameReadback();
+
 		ObjectStatus m_ObjectStatus;
 	};
 }
