@@ -1,9 +1,10 @@
 ---
 id: TASK-187
-title: 'Sub-agent discipline compliance — enforcement (hooks or manifest inlining)'
-status: To Do
+title: Sub-agent discipline compliance — enforcement (hooks or manifest inlining)
+status: In Progress
 assignee: []
 created_date: '2026-04-28 18:10'
+updated_date: '2026-05-13 23:03'
 labels:
   - harness
   - hooks
@@ -11,12 +12,12 @@ labels:
   - meta
   - enforcement
 dependencies: []
-priority: high
 references:
   - .claude/agents/
   - .claude/disciplines/
   - .claude/hooks/
   - CLAUDE.md
+priority: high
 ---
 
 ## Description
@@ -79,10 +80,18 @@ A mechanism that turns "agent should read disciplines" into "agent has read disc
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Mechanism chosen with a/b/c rationale
+- [x] #1 Mechanism chosen with a/b/c rationale
 - [ ] #2 Mechanism implemented; agents can no longer dispatch without discipline content reaching their context
 - [ ] #3 Verification test demonstrates an agent has the discipline content available (read-back / cite-by-section)
 - [ ] #4 Drift audit (if manifest-inlining is the mechanism) — hook or script catches manifest staleness vs. discipline source
 - [ ] #5 CLAUDE.md + peer-review-required.md cross-reference the enforcement layer
 - [ ] #6 Peer review per discipline
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-05-14 — Picked up autonomously. Two-stage approach: first dispatch design phase (AC #1) to choose mechanism with a/b/c rationale; subsequent dispatch implements chosen mechanism (ACs #2 – #6). Bounded scope per stage, peer review per `peer-review-required`.
+
+2026-05-14 — AC #1 met: design saved at `.backlog/decisions/TASK-187-enforcement-mechanism-2026-05-14.md`. Picked mechanism: PreToolUse `skill-evidence` sub-gate in `session-gate.js`, scoped to sub-agent transcripts, blocking non-passive tool calls until the transcript shows `Skill(<name>)` for every skill on the manifest's always-apply line. Three-reference rationale (training-default / SOTA / project-precedent) names `task-mgmt-brief.js` + `peer-review.js` as the precedent pattern. MVP slice: `code-impl`, `shader-impl`, `harness-impl` first. Implementation (ACs #2 – #6) deferred to a follow-up dispatch.
+<!-- SECTION:NOTES:END -->
