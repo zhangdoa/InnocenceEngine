@@ -34,68 +34,44 @@ bool SceneService::LoadSync(const char* fileName)
 
 	Log(Verbose, "Loading scene ", fileName, "...");
 
-	// Unloading phase — order is critical:
-	// 0. Flush all GPU work before destroying resources that may still be in flight
 	g_Engine->Get<FrameManagementService>()->WaitForGPUIdle();
 
-	// 1. Client unloading callbacks fire FIRST so clients release their references
-	// (RenderPassComponent*, GPUBufferComponent*, etc.) before the engine destroys
-	// the underlying resources. Running them later (the previous order) meant client
-	// callbacks dereferenced freed pointers — a latent crash whenever a client did
-	// any non-trivial cleanup beyond clearing its own member to nullptr.
+	// Client unloading callbacks must run before resource destruction so
+	// clients release component pointers before the underlying GPU resources
+	// go away.
 	for (auto* cb : m_sceneUnloadingCallbacks)
 		(*cb)();
 
-	// 2. Free GPU resources (component pointers still valid for the OnSceneUnloading
-	// pass which iterates the resource pools)
 	g_Engine->Get<MeshResourceService>()->OnSceneUnloading();
 	g_Engine->Get<TextureResourceService>()->OnSceneUnloading();
 	g_Engine->Get<MaterialResourceService>()->OnSceneUnloading();
 
-	// 2b. Release scene-lifespan assets from the AssetService asset tables (TASK-52).
-	// Without this, AllocateMeshAsset/Material/Texture continues to return the prior
-	// scene's asset handle on name collision (residency still reads as Resident) while
-	// its underlying GPU resources have just been freed — the new scene's MeshComponent
-	// inherits a stale GPU VA and the first ExecuteIndirect / TLAS build that touches
-	// it page-faults. Releasing here bumps the generation, clears the LUT, and forces
-	// AllocateMeshAsset to hand the new scene a fresh slot.
+	// Bump asset-table generation so AllocateMesh/Material/Texture cannot
+	// hand the next scene a stale handle that name-collides with a just-freed
+	// GPU resource.
 	AssetService::ReleaseAssetsByLifespan(ObjectLifespan::Scene);
 
-	// 3. Destroy scene-scoped components
 	g_Engine->Get<EntityRegistry>()->CleanUp(ObjectLifespan::Scene);
 	JSONWrapper::ClearLoadedCompFilenames();
 	Log(Success, "Scene entities cleaned up.");
 
-	// 4. Clear transform hierarchy (nodes index into now-empty storage, safe to reset)
 	g_Engine->Get<TransformService>()->OnSceneUnloading();
-
-	// 5. Clear physics simulation state and PhysX actors
 	g_Engine->Get<PhysicsSimulationService>()->OnSceneUnloading();
 
-	// Load the new scene
 	AssetService::LoadScene(fileName);
 
-	// 5b. Drain the deferred-initialization queues synchronously before
-	// rendering resumes. AssetService::LoadScene queues mesh / texture /
-	// material / GPU-buffer init tasks; FrameManagementService::Update
-	// drains them one frame at a time. Without this drain, the first
-	// post-load draw sees a mix of Activated and still-pending components
-	// — Activated meshes draw, non-Activated meshes either skip or
-	// reference garbage vertex/index buffers. The shader-ball-varies-
-	// every-launch symptom (TASK-109) traces directly to this race.
-	// GPU-idle wait afterwards to ensure upload command lists complete
-	// before the next command list references the resources.
+	// Drain deferred-init queues synchronously: the first post-load draw must
+	// not see a mix of Activated and still-pending components, or meshes will
+	// reference unuploaded vertex/index buffers. GPU-idle afterwards ensures
+	// upload command lists complete before the next frame references them.
 	g_Engine->Get<MeshResourceService>()->InitializeComponents();
 	g_Engine->Get<TextureResourceService>()->InitializeComponents();
 	g_Engine->Get<MaterialResourceService>()->InitializeComponents();
 	g_Engine->Get<GPUBufferResourceService>()->InitializeComponents();
 	g_Engine->Get<FrameManagementService>()->WaitForGPUIdle();
 
-	// Loaded phase:
-	// 6. Refresh engine service state that depends on loaded scene data
 	g_Engine->Get<BillboardDrawCallService>()->OnSceneLoaded();
 
-	// 7. Client loaded callbacks (GIDataLoader, VXGIRenderer, WorldSystem, Editor)
 	for (auto* cb : m_sceneLoadedCallbacks)
 		(*cb)();
 
