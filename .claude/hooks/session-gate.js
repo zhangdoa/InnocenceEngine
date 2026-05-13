@@ -8,14 +8,18 @@
  *   1. task-mgmt-brief    — blocks substantive tool use until task-mgmt
  *                              subagent has been invoked at least once this
  *                              session. CLAUDE.md "Session start" rule.
- *   2. agent-dispatch        — blocks `Agent` calls dispatched foreground
+ *   2. skill-evidence        — blocks a sub-agent's side-effecting tool
+ *                              calls until its transcript shows a `Skill`
+ *                              invocation for every name on its manifest's
+ *                              "Always-apply skills" line. TASK-187 design.
+ *   3. agent-dispatch        — blocks `Agent` calls dispatched foreground
  *                              without `[foreground-required]` in the prompt.
  *                              Enforces .claude/skills/agent-dispatch/SKILL.md.
- *   3. cross-subtree-stash   — blocks `git stash` Bash calls that would
+ *   4. cross-subtree-stash   — blocks `git stash` Bash calls that would
  *                              sweep dirty files spanning multiple agent-
  *                              owned subtrees (TASK-196 / 2026-04-28
  *                              cross-agent collision incident).
- *   4. no-auto-memory        — blocks Write/Edit/MultiEdit/NotebookEdit
+ *   5. no-auto-memory        — blocks Write/Edit/MultiEdit/NotebookEdit
  *                              targeting the Claude default auto-memory
  *                              directory. The block message routes to the
  *                              new venues so a future Claude does not stall.
@@ -29,6 +33,7 @@
 
 const GATES = [
   require('./gates/task-mgmt-brief'),
+  require('./gates/skill-evidence'),
   require('./gates/agent-dispatch'),
   require('./gates/cross-subtree-stash'),
   require('./gates/no-auto-memory'),

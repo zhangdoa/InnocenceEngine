@@ -194,43 +194,10 @@ function detectClosingTasks(cwd, staged) {
 // parent transcript as before.
 function resolveActiveTranscriptPath(xpFromHook, currentCmd) {
   if (!xpFromHook || !currentCmd) return xpFromHook
-  const path = require('path')
-  const base = path.basename(xpFromHook)
-  if (!base.endsWith('.jsonl')) return xpFromHook
-  const stem = base.slice(0, -'.jsonl'.length)
-  const subDir = path.join(path.dirname(xpFromHook), stem, 'subagents')
-  let entries
-  try { entries = fs.readdirSync(subDir) } catch { return xpFromHook }
-  const candidates = entries.filter(f => f.endsWith('.jsonl'))
-  const matches = []
-  for (const name of candidates) {
-    const full = path.join(subDir, name)
-    let raw
-    try { raw = fs.readFileSync(full, 'utf8') } catch { continue }
-    const lines = raw.split('\n').filter(Boolean)
-    if (lines.length === 0) continue
-    // Inspect from the tail backward for the last assistant Bash tool_use.
-    let lastBashCmd = null
-    for (let i = lines.length - 1; i >= 0; i--) {
-      let row
-      try { row = JSON.parse(lines[i]) } catch { continue }
-      const role = row.type || row.role || row.message?.role
-      if (role !== 'assistant') continue
-      const content = row.message?.content
-      if (!Array.isArray(content)) continue
-      let found = null
-      for (const b of content) {
-        if (b?.type === 'tool_use' && b?.name === 'Bash') {
-          found = b.input?.command || ''
-        }
-      }
-      if (found !== null) { lastBashCmd = found; break }
-    }
-    if (lastBashCmd === currentCmd) matches.push(full)
-  }
-  // Unique match wins; ambiguous (0 or 2+) falls back to parent.
-  if (matches.length === 1) return matches[0]
-  return xpFromHook
+  const { resolveActiveSubagentTranscript } = require('./subagent-transcript')
+  return resolveActiveSubagentTranscript(xpFromHook, (b) =>
+    b?.type === 'tool_use' && b?.name === 'Bash' && (b.input?.command || '') === currentCmd
+  )
 }
 
 // Collect the effective commit message text from both inline flags and

@@ -81,3 +81,4 @@ Enforced by `gates/peer-review.js` and `gates/visual-review.js`.
 
 - `dispatch-briefs` § Stop-the-line.
 - `backlog-workflow`, `commit-message-policy.md`, `paper-audit`, `visual-validation`, `agent-dispatch` (user level).
+- Sub-agent always-apply skill loading is enforced mechanically by `gates/skill-evidence.js` — the dispatch-time counterpart of this commit-time review gate.

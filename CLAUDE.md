@@ -52,4 +52,5 @@ Main-session = dispatcher. Cross-stage work routes through `task-mgmt`. Peer rev
 - Per-gate logic: `.claude/hooks/gates/<name>.js`. Shared helpers: `.claude/hooks/lib/common.js`.
 - Both fail open on internal errors.
 - Each gate's block message lists its escape sentinel.
+- `gates/skill-evidence.js` blocks sub-agent side-effecting tool calls until the sub-agent's transcript shows a `Skill` invocation for every name on its manifest's "Always-apply skills" line. Design: `.backlog/decisions/TASK-187-enforcement-mechanism-2026-05-14.md`.
 - Commit-message drafts: `Build/commit-message.txt` (gitignored).

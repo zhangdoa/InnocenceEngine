@@ -1,10 +1,10 @@
 ---
 id: TASK-187
 title: Sub-agent discipline compliance — enforcement (hooks or manifest inlining)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-04-28 18:10'
-updated_date: '2026-05-13 23:03'
+updated_date: '2026-05-13 23:16'
 labels:
   - harness
   - hooks
@@ -81,11 +81,11 @@ A mechanism that turns "agent should read disciplines" into "agent has read disc
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Mechanism chosen with a/b/c rationale
-- [ ] #2 Mechanism implemented; agents can no longer dispatch without discipline content reaching their context
-- [ ] #3 Verification test demonstrates an agent has the discipline content available (read-back / cite-by-section)
-- [ ] #4 Drift audit (if manifest-inlining is the mechanism) — hook or script catches manifest staleness vs. discipline source
-- [ ] #5 CLAUDE.md + peer-review-required.md cross-reference the enforcement layer
-- [ ] #6 Peer review per discipline
+- [x] #2 Mechanism implemented; agents can no longer dispatch without discipline content reaching their context
+- [x] #3 Verification test demonstrates an agent has the discipline content available (read-back / cite-by-section)
+- [x] #4 Drift audit (if manifest-inlining is the mechanism) — hook or script catches manifest staleness vs. discipline source
+- [x] #5 CLAUDE.md + peer-review-required.md cross-reference the enforcement layer
+- [x] #6 Peer review per discipline
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -94,4 +94,67 @@ A mechanism that turns "agent should read disciplines" into "agent has read disc
 2026-05-14 — Picked up autonomously. Two-stage approach: first dispatch design phase (AC #1) to choose mechanism with a/b/c rationale; subsequent dispatch implements chosen mechanism (ACs #2 – #6). Bounded scope per stage, peer review per `peer-review-required`.
 
 2026-05-14 — AC #1 met: design saved at `.backlog/decisions/TASK-187-enforcement-mechanism-2026-05-14.md`. Picked mechanism: PreToolUse `skill-evidence` sub-gate in `session-gate.js`, scoped to sub-agent transcripts, blocking non-passive tool calls until the transcript shows `Skill(<name>)` for every skill on the manifest's always-apply line. Three-reference rationale (training-default / SOTA / project-precedent) names `task-mgmt-brief.js` + `peer-review.js` as the precedent pattern. MVP slice: `code-impl`, `shader-impl`, `harness-impl` first. Implementation (ACs #2 – #6) deferred to a follow-up dispatch.
+
+2026-05-14 — Stage 2 (harness-impl). ACs #2, #4 (N/A), #5 met pre-review. Files landed:
+
+- `.claude/hooks/gates/skill-evidence.js` (new). Passive-tool allowlist mirrors `task-mgmt-brief.js`. Block message names manifest path + missing skills + remedy form. Fails open on missing transcript / unresolvable sub-agent / unrecognised manifest / unknown subagent_type; load-bearing block fires only when a recognised manifest has a known always-apply set and a Skill name is missing.
+- `.claude/hooks/lib/subagent-transcript.js` (new). Houses `resolveActiveSubagentTranscript`, `mapAgentIdToSubagentType`, `parseAlwaysApplySkills`, `scanTranscriptForSkillUses`. Extracted from `common.js` to keep that under the 300-line gate.
+- `.claude/hooks/lib/common.js` — `resolveActiveTranscriptPath` is now a one-line delegation to the new module's generalised matcher; same Bash-only semantics for the existing commit-gate caller.
+- `.claude/hooks/session-gate.js` — `skill-evidence` registered between `task-mgmt-brief` and `agent-dispatch`, per design ordering.
+- `.claude/hooks/tests/skill-evidence.test.js` (new). 38 tests covering: 3 manifest round-trips (conditional-phrase truncation isolates always-apply from `On commit:` / `User-level:` clauses), Skill-tool-use scan, passive-tool pass-through, fail-open paths, load-bearing block + post-Skill satisfaction + partial-satisfaction-still-blocks, unknown-subagent fail-open.
+- `.claude/skills/peer-review-required/SKILL.md` § Cross-references — one-line pointer to `gates/skill-evidence.js` as the dispatch-time counterpart.
+- `CLAUDE.md` § "Harness enforcement" — one bullet naming the new gate + the decision-doc path.
+
+AC #4 (drift audit): N/A. The picked mechanism reads manifests live at PreToolUse — no copy of skill content to go stale. If a manifest renames a skill, the next sub-agent dispatch fails loudly (block message names the missing skill); if a `SKILL.md` referenced from a manifest is deleted, the agent's `Skill` call fails first. Either failure surfaces in the same dispatch.
+
+Verification (AC #3): positive case exercised live. Running as `harness-impl` (this dispatch), the gate fired correctly on the first non-passive Bash call before the always-apply skills had been loaded — block message named the manifest, listed all five missing skills (`fundamentals`, `comment-discipline`, `backlog-workflow`, `workspace-hygiene`, `persistence-venue`), and instructed the remedy. Each `Skill(<name>)` invocation satisfied one entry; subsequent side-effecting calls passed. Negative case is synthesized in the test suite (`gate.run — load-bearing block path (harness-impl, no Skill calls)`): synthetic parent + sub-agent transcript pair with no Skill rows blocks; appending the five Skill rows passes.
+
+AC #6 pending: peer review fires in a follow-up dispatch from main session.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## TASK-187 Final Summary
+
+### What shipped
+
+A PreToolUse `skill-evidence` sub-gate that enforces sub-agent always-apply skill loading mechanically. When a sub-agent in `ENFORCED_AGENTS` (`code-impl`, `shader-impl`, `harness-impl` for v1) attempts a non-passive tool call (Write, Edit, Bash with side effects, etc.) without having invoked `Skill(<name>)` for every skill listed on its manifest's "Always-apply skills" line, the gate blocks with an actionable message naming the manifest path, the missing skill(s), and the literal `Skill(skill="X")` remedy lines.
+
+Passive tools (`Read`, `Glob`, `Grep`, `ToolSearch`, `Skill`) remain free so the agent can satisfy the gate.
+
+### Mechanism choice
+
+PreToolUse transcript-scan gate. Design doc `.backlog/decisions/TASK-187-enforcement-mechanism-2026-05-14.md` rejected (a) inline-into-manifests (drift + token cost), (b) acknowledgment-block (validates prose not loading), in favor of (c) project-precedent transcript-scan pattern (`task-mgmt-brief.js` + `peer-review.js`).
+
+### Files
+
+- New: `.claude/hooks/gates/skill-evidence.js` (134 lines), `.claude/hooks/lib/subagent-transcript.js` (178 lines, extracted from `common.js` to stay under the 300-line file-size gate), `.claude/hooks/tests/skill-evidence.test.js` (284 lines, 38 tests).
+- Edit: `.claude/hooks/lib/common.js` (256 lines after split), `.claude/hooks/session-gate.js` (registers new gate between `task-mgmt-brief` and `agent-dispatch`), `.claude/skills/peer-review-required/SKILL.md` (cross-reference), `CLAUDE.md` (root, harness-enforcement bullet).
+
+### ACs
+
+- #1 PASS — design with three-reference rationale: `.backlog/decisions/TASK-187-enforcement-mechanism-2026-05-14.md`.
+- #2 PASS — mechanism implemented; live + unit-tested.
+- #3 PASS — live positive (implementer experienced the gate during their own dispatch); negative case synthesized in `skill-evidence.test.js § "[gate.run — load-bearing block path]"`.
+- #4 N/A — picked mechanism is drift-free by construction (manifests are read live; no inlining).
+- #5 PASS — `CLAUDE.md` § "Harness enforcement" + `peer-review-required/SKILL.md` § Cross-references.
+- #6 PASS — peer review by code-review verdict PASS (one non-blocking ADVISORY on regex soft-wrap asymmetry; documented for follow-up).
+
+### Peer review verdict
+
+PASS with one ADVISORY (regex `ALWAYS_APPLY_RE` and `CONDITIONAL_PHRASE_RE` have a soft-wrap asymmetry that's low-risk for current manifest formatting but worth a one-line caveat if/when a manifest is reflowed). Non-blocking; the regex round-trips cleanly against all 5 enforced/MVP-staged manifests.
+
+### What was NOT verified
+
+- `task-mgmt` and `ci-build-impl` not yet added to `ENFORCED_AGENTS` — per design, slot in once the regex is proven against the first 3 (manifest shapes confirmed compatible by reviewer; addition is a one-line array extend).
+- Conditional-skill enforcement (v2 per design).
+- Main-session compliance (out of scope by design).
+- User-level skill resolution behavior in the Skill tool runtime (v2 concern per design).
+- A "malformed manifest" unit-test variant beyond the missing-file path (structurally covered by the existing null-on-failure return).
+
+### Follow-up
+
+- Soft-wrap regex caveat — one-line comment near `ALWAYS_APPLY_RE` documenting that a future re-flow could mis-terminate. Non-blocking; can roll into the v2 conditional-skills expansion.
+- Add `task-mgmt`, `ci-build-impl` to `ENFORCED_AGENTS` once observed stable in production.
+<!-- SECTION:FINAL_SUMMARY:END -->
