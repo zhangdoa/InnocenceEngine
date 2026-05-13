@@ -10,7 +10,6 @@
 #include "../../Engine/Engine.h"
 
 #include <chrono>
-#include <cmath>
 #include <cstring>
 #include <filesystem>
 #include <iomanip>
@@ -207,11 +206,12 @@ namespace Inno
 
 		std::vector<uint8_t> l_uint8Pixels;
 		l_uint8Pixels.reserve(l_floatPixels.size() * 4);
+		// TASK-139: FinalBlendPass already writes gamma-encoded sRGB (AGX tonemap); no extra encode here.
 		for (const auto& px : l_floatPixels)
 		{
-			l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.x, 0.0f)), 1.0f)));
-			l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.y, 0.0f)), 1.0f)));
-			l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.z, 0.0f)), 1.0f)));
+			l_uint8Pixels.push_back(uint8_t(255.99f * std::min(std::max(px.x, 0.0f), 1.0f)));
+			l_uint8Pixels.push_back(uint8_t(255.99f * std::min(std::max(px.y, 0.0f), 1.0f)));
+			l_uint8Pixels.push_back(uint8_t(255.99f * std::min(std::max(px.z, 0.0f), 1.0f)));
 			l_uint8Pixels.push_back(uint8_t(255));
 		}
 
