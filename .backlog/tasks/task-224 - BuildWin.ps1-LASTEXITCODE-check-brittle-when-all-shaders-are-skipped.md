@@ -63,7 +63,7 @@ Verification:
 
 AC #3 disposition: re-justified, not removed. Test driver's `$global:LASTEXITCODE = 0` at `Scripts/Tests/Test-BuildWinDxilPrestep.ps1:102` is independently needed for `Set-StrictMode -Version Latest` on-read protection — existing inline comment at `Scripts/Tests/Test-BuildWinDxilPrestep.ps1:97-101` already documents this. Different concern from the BuildWin brittleness.
 
-Not verified: a full `Scripts/BuildWin.ps1` invocation chained through to msbuild post-fix. The brittle-case symptom is fully captured by the pre-step block alone (lines 95-105); msbuild is a separate code path downstream of the gate and untouched by this change.
+End-to-end re-verification (added during closure for gate-required qualifying test): `Scripts/BuildWin.ps1 -SkipClangdIndexRefresh` ran clean post-fix — pre-step gate did not trip, msbuild built `Engine.lib`, `Main.exe`, `RenderTest.exe` (incremental, no C++ changed), post-build deploy mirrored DXIL + Data to `Bin/RelWithDebInfo/`. Then `Main.exe -total_frames 30 -offscreen` (from `Bin/RelWithDebInfo`) ran to `Engine has been terminated.`
 
 ### Review (ci-build-impl, 2026-05-14)
 
@@ -101,5 +101,5 @@ Fix shape #2 (narrow init right before the pre-step call) picked, applied at `Sc
 - [x] #3 Pre-existing integration test (`Test-BuildWinDxilPrestep.ps1`) covers the changed area. New test not written — see #5 for the brittle-case-specific repro.
 - [x] #4 Validation is real-process: `Test-BuildWinDxilPrestep.ps1` invokes real `HLSL2DXIL.ps1` + `dxc.exe` + real DXIL files. The brittle-case repro invokes the actual `HLSL2DXIL.ps1` script in a fresh `powershell.exe` process. No mock-based tests.
 - [x] #5 Terminal transcript captured: fresh `powershell.exe -NoProfile`, `cmd /c exit 42` salts `$LASTEXITCODE` to 42, post-fix pre-step block clears it to 0 before the call, all-skipped pre-step leaves it at 0, gate check passes.
-- [x] #6 Not verified: full `BuildWin.ps1 → msbuild` end-to-end chain post-fix. The brittle-case symptom is fully captured by the pre-step block alone (lines 95-105); msbuild is downstream of the gate and untouched. Stated honestly above.
+- [x] #6 Additional end-to-end verification: `Scripts/BuildWin.ps1 -SkipClangdIndexRefresh` ran post-fix; pre-step block did not trip the gate, msbuild produced `Engine.lib`, `Main.exe`, `RenderTest.exe`, post-build deploy mirrored DXIL and Data to `Bin/RelWithDebInfo/`. `Main.exe -mode 0 -renderer 0 -loglevel 0 -total_frames 30 -offscreen` (run from `Bin/RelWithDebInfo`) ran to `Engine has been terminated.` Not verified: behaviour in shell sessions where the post-fix init is bypassed (would require regressing the fix — not run).
 <!-- DOD:END -->
