@@ -96,7 +96,7 @@ if ($SkipShaderCompile) {
     Write-Host '[BuildWin] -SkipShaderCompile set — skipping HLSL -> DXIL pre-step.'
 } else {
     Write-Host '[BuildWin] HLSL -> DXIL pre-step (idempotent; recompiles only stale shaders)...'
-    & (Join-Path $PSScriptRoot 'HLSL2DXIL_NoPause.ps1')
+    & (Join-Path $PSScriptRoot 'HLSL2DXIL.ps1') -NoPause
     if ($LASTEXITCODE -ne 0) {
         Write-Error "[BuildWin] HLSL -> DXIL pre-step failed (exit $LASTEXITCODE). Aborting build."
         exit $LASTEXITCODE

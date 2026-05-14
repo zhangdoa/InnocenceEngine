@@ -10,7 +10,7 @@ Generic bisect procedure (Confirm → Baseline → Bisect → Identify → Under
 ## Build chain notes
 
 - Mirror-semantic: shader compile drops orphan `.dxil`; `inno_deploy_runtime_payload` wipes-and-recopies.
-- Paranoid bisects across binding refactors → `Scripts/HLSL2DXIL_NoPause.ps1 -FullClean`.
+- Paranoid bisects across binding refactors → `Scripts/HLSL2DXIL.ps1 -NoPause -FullClean`.
 - Clangd index purge automated via `Scripts/PurgeStaleClangdIndex.ps1` and the `post-checkout` / `post-merge` hooks.
 
 ## Cross-references

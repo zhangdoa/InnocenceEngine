@@ -1,7 +1,9 @@
 # Compile-HLSL.psm1
 #
-# Single source of truth for the HLSL -> DXIL compile step. Wrappers in
-# Scripts/HLSL2DXIL.ps1 and Scripts/HLSL2DXIL_NoPause.ps1 delegate here.
+# Single source of truth for the HLSL -> DXIL compile step. The wrapper in
+# Scripts/HLSL2DXIL.ps1 delegates here (use its -NoPause switch for CI /
+# CMake / hook invocations; the trailing Pause stays on by default for
+# interactive double-click usage).
 #
 # MIRROR SEMANTICS — TASK-146
 # ---------------------------

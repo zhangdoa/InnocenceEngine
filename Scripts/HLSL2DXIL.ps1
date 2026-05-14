@@ -10,10 +10,16 @@
 # Pass -FullClean to additionally wipe the entire output directory at start
 # (forces full rebuild; useful for paranoid bisects).
 #
-# This script ends with `Pause` for interactive double-click invocation; the
-# Scripts/HLSL2DXIL_NoPause.ps1 wrapper omits the pause for CI / automation.
+# Pass -NoPause to suppress the trailing Pause; required for CI / msbuild /
+# CMake / git-hook invocations that must not block on user input. The default
+# (no switch) keeps the Pause for interactive double-click usage. TASK-212
+# Phase 2 consolidated the previously-split HLSL2DXIL_NoPause.ps1 into this
+# switch.
 
-param([switch]$FullClean)
+param(
+    [switch]$FullClean,
+    [switch]$NoPause
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -28,4 +34,4 @@ Invoke-HlslToDxil `
     -DxcExePath    (Join-Path $repoRoot 'Build\Tools\dxc\bin\x64\dxc.exe') `
     -FullClean:$FullClean
 
-Pause
+if (-not $NoPause) { Pause }

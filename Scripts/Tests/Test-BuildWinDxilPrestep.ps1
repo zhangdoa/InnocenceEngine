@@ -10,8 +10,8 @@
 #   2. Bump the source LastWriteTime to "now" (simulates a 20:08 HLSL edit
 #      against a 20:03 DXIL -- the exact CL C scenario).
 #   3. Invoke BuildWin.ps1's HLSL pre-step (via direct call to
-#      HLSL2DXIL_NoPause.ps1 -- same code path BuildWin.ps1 takes, identical
-#      module, identical args). Capture stdout.
+#      HLSL2DXIL.ps1 -NoPause -- same code path BuildWin.ps1 takes,
+#      identical module, identical args). Capture stdout.
 #   4. Assert:
 #        - stdout contains "Compiling <shader>" line for the bumped shader,
 #        - the DXIL on disk has a LastWriteTimeUtc > the pre-test snapshot.
@@ -20,11 +20,14 @@
 #
 # Why not invoke BuildWin.ps1 directly: the script chains into msbuild after
 # the pre-step, which costs minutes and requires a VS shell. The contract
-# under test is BuildWin.ps1 -> HLSL2DXIL_NoPause.ps1; the chained msbuild
+# under test is BuildWin.ps1 -> HLSL2DXIL.ps1 -NoPause; the chained msbuild
 # call is independent of the staleness fix and does not need to run for the
 # AC #4 evidence. The corresponding integration check ("no msbuild error
 # attributable to stale DXIL after this pre-step") is implicit in the
 # idempotent recompile contract verified here.
+#
+# TASK-212 Phase 2: switched from HLSL2DXIL_NoPause.ps1 to
+# HLSL2DXIL.ps1 -NoPause (the variant file was consolidated into a switch).
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -41,25 +44,24 @@ if (-not (Test-Path $sourcePath)) {
     exit 1
 }
 if (-not (Test-Path $dxilPath)) {
-    Write-Error "Test DXIL not found (run HLSL2DXIL_NoPause.ps1 once first to populate): $dxilPath"
+    Write-Error "Test DXIL not found (run HLSL2DXIL.ps1 -NoPause once first to populate): $dxilPath"
     exit 1
 }
 
 # Phase 0: Static wiring check -- confirm BuildWin.ps1 actually invokes the
-# pre-step. The runtime test below exercises HLSL2DXIL_NoPause.ps1 directly
+# pre-step. The runtime test below exercises HLSL2DXIL.ps1 -NoPause directly
 # (cheap, deterministic, no msbuild dependency); this static check ensures
 # BuildWin.ps1 still chains to it. If someone refactors BuildWin.ps1 and
 # drops the pre-step invocation, the runtime DXIL-mtime test would still
-# pass against direct HLSL2DXIL_NoPause.ps1 invocation -- but the AC #4
-# guarantee on BuildWin.ps1 itself would be broken silently. Hence this
-# guard.
+# pass against direct HLSL2DXIL.ps1 invocation -- but the AC #4 guarantee
+# on BuildWin.ps1 itself would be broken silently. Hence this guard.
 $buildWinPath = Join-Path $repoRoot 'Scripts\BuildWin.ps1'
 $buildWinBody = Get-Content -Raw -Path $buildWinPath
-if ($buildWinBody -notmatch 'HLSL2DXIL_NoPause\.ps1') {
-    Write-Error "FAIL [phase 0]: BuildWin.ps1 does not invoke HLSL2DXIL_NoPause.ps1. AC #1 wiring missing."
+if ($buildWinBody -notmatch 'HLSL2DXIL\.ps1.*-NoPause') {
+    Write-Error "FAIL [phase 0]: BuildWin.ps1 does not invoke 'HLSL2DXIL.ps1 -NoPause'. AC #1 wiring missing."
     exit 1
 }
-Write-Host "[phase 0] OK: BuildWin.ps1 references HLSL2DXIL_NoPause.ps1."
+Write-Host "[phase 0] OK: BuildWin.ps1 references HLSL2DXIL.ps1 -NoPause."
 Write-Host ''
 
 $originalSourceMtime = (Get-Item $sourcePath).LastWriteTime
@@ -88,8 +90,8 @@ try {
     # neither reliable nor needed -- the load-bearing assertion is on the
     # DXIL mtime, which is what actually decides whether stale-DXIL is
     # silently reused at runtime.
-    $preStep = Join-Path $repoRoot 'Scripts\HLSL2DXIL_NoPause.ps1'
-    Write-Host "[run] invoking $preStep"
+    $preStep = Join-Path $repoRoot 'Scripts\HLSL2DXIL.ps1'
+    Write-Host "[run] invoking $preStep -NoPause"
     Write-Host ''
 
     # Initialise $LASTEXITCODE so Set-StrictMode doesn't throw on read if the
@@ -98,7 +100,7 @@ try {
     # an uncaught throw would propagate here as a terminating error rather
     # than via $LASTEXITCODE; the strict-read guard is for the green path.
     $global:LASTEXITCODE = 0
-    & $preStep
+    & $preStep -NoPause
     $preStepExit = if (Test-Path Variable:LASTEXITCODE) { $LASTEXITCODE } else { 0 }
     Write-Host ''
     Write-Host "[run] Pre-step exit code: $preStepExit"

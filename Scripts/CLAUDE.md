@@ -2,7 +2,7 @@
 
 Orchestrates the engine build. Invariants:
 
-- Pre-step: invokes `HLSL2DXIL_NoPause.ps1` before `msbuild`. The shader compile module (`Lib/Compile-HLSL.psm1`) is the single source of truth for staleness — it does per-shader and per-`#include` `LastWriteTimeUtc` comparisons. Do not duplicate that predicate in `BuildWin.ps1`; query the module.
+- Pre-step: invokes `HLSL2DXIL.ps1 -NoPause` before `msbuild`. The shader compile module (`Lib/Compile-HLSL.psm1`) is the single source of truth for staleness — it does per-shader and per-`#include` `LastWriteTimeUtc` comparisons. Do not duplicate that predicate in `BuildWin.ps1`; query the module.
 - Pre-step failure aborts before `msbuild`. A partial DXIL set produces silent-stale failures at runtime.
 - Post-step: invokes `RegenClangdIndex.ps1` after `msbuild` succeeds. Runs a parallel Ninja configure to emit `compile_commands.json` (the VS generator does not emit it), then chains `PurgeStaleClangdIndex.ps1` to drop orphan `.idx` cache entries.
 - Post-step failure emits `Write-Warning` and lets the build's exit code stand. The engine binary is fine; the clangd index is just stale until next refresh.
@@ -34,8 +34,7 @@ Applies until the project moves to PowerShell 7+ or commits to UTF-8-with-BOM so
 | Script                       | Role                                                                  |
 |------------------------------|-----------------------------------------------------------------------|
 | `BuildWin.ps1`               | Build Main + RenderTest. HLSL pre-step + clangd post-step.            |
-| `HLSL2DXIL.ps1`              | Interactive HLSL → DXIL compile (ends with `Pause`).                  |
-| `HLSL2DXIL_NoPause.ps1`      | CI / automation HLSL → DXIL compile (no `Pause`).                     |
+| `HLSL2DXIL.ps1`              | Interactive HLSL → DXIL compile (use `-NoPause` for CI / automation invocations). |
 | `Lib/Compile-HLSL.psm1`      | Shared compile module — single source of truth for shader build policy. |
 | `PostBuildWin.ps1`           | Post-build deploy / cleanup hooks.                                    |
 | `StartEngineWin.ps1`         | Launch the runtime engine binary.                                     |
