@@ -42,11 +42,13 @@ const PASSIVE_TOOLS = new Set([
   'Read', 'Glob', 'Grep', 'ToolSearch', 'Skill',
 ])
 
-// MVP per design: enforce only the three highest-traffic impl stages.
-// Other subagent_types fail open until their manifest's always-apply
-// shape has been audited against the parse regex.
+// Per design, enforced incrementally: implementation stages first
+// (code-impl/shader-impl/harness-impl), then task-mgmt/ci-build-impl
+// after their manifest shapes were proven against the parse regex by
+// the peer review. Other subagent_types fail open until audited.
 const ENFORCED_AGENTS = new Set([
   'code-impl', 'shader-impl', 'harness-impl',
+  'task-mgmt', 'ci-build-impl',
 ])
 
 const REPO_ROOT_FROM_HOOK = path.resolve(__dirname, '..', '..', '..')

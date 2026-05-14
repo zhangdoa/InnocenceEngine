@@ -5,9 +5,12 @@
 // same shape as no-auto-memory.test.js. Each test prints PASS/FAIL
 // and the process exits non-zero on any failure.
 //
-// Three layers tested:
-//   1. parseAlwaysApplySkills — round-trip against the three real impl
-//      manifests; conditional-phrase truncation isolates always-apply.
+// Layer 1 (parseAlwaysApplySkills round-trip) lives in
+// skill-evidence-parse.test.js — auto-run here via require() so this
+// remains the canonical entry point. Split was forced by the 300-line
+// file-size gate after the task-mgmt + ci-build-impl extension.
+//
+// Layers covered here:
 //   2. scanTranscriptForSkillUses — synthetic JSONL with Skill tool_uses.
 //   3. gate.run — passive tools pass; non-existent / unresolvable
 //      transcripts fail open; the load-bearing block path is exercised
@@ -18,12 +21,12 @@ const os = require('os')
 const path = require('path')
 
 const {
-  parseAlwaysApplySkills,
   scanTranscriptForSkillUses,
   resolveActiveSubagentTranscript,
   mapAgentIdToSubagentType,
 } = require('../lib/subagent-transcript')
 const gate = require('../gates/skill-evidence')
+const parseTests = require('./skill-evidence-parse.test')
 
 let passed = 0
 let failed = 0
@@ -54,38 +57,7 @@ function runGate(input) {
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..')
 
-// ---------------------------------------------------------------------
-// Layer 1: parseAlwaysApplySkills round-trip
-// ---------------------------------------------------------------------
-group('parseAlwaysApplySkills — code-impl', () => {
-  const s = parseAlwaysApplySkills(path.join(REPO_ROOT, '.claude', 'agents', 'code-impl.md'))
-  assert(Array.isArray(s) && s.length > 0, 'returns non-empty list')
-  assert(s.includes('cpp-style'), 'includes cpp-style')
-  assert(s.includes('safety-principles'), 'includes user-level safety-principles')
-  assert(!s.includes('paper-port'), 'excludes conditional paper-port')
-  assert(!s.includes('commit-message-policy'), 'excludes on-commit policies')
-})
-
-group('parseAlwaysApplySkills — shader-impl', () => {
-  const s = parseAlwaysApplySkills(path.join(REPO_ROOT, '.claude', 'agents', 'shader-impl.md'))
-  assert(s.includes('shader-standards'), 'includes shader-standards')
-  assert(s.includes('safety-principles'), 'includes user-level safety-principles')
-  assert(!s.includes('visual-validation'), 'excludes conditional visual-validation')
-})
-
-group('parseAlwaysApplySkills — harness-impl conditional truncation', () => {
-  const s = parseAlwaysApplySkills(path.join(REPO_ROOT, '.claude', 'agents', 'harness-impl.md'))
-  assert(s.includes('persistence-venue'), 'includes persistence-venue')
-  assert(!s.includes('commit-message-policy'),
-    'excludes on-commit commit-message-policy (same line, different clause)')
-  assert(!s.includes('peer-review-required'),
-    'excludes on-commit peer-review-required')
-})
-
-group('parseAlwaysApplySkills — missing file returns null', () => {
-  const s = parseAlwaysApplySkills(path.join(REPO_ROOT, 'nonexistent-manifest.md'))
-  assert(s === null, 'fail-open trigger')
-})
+// Layer 1 tests run via the sibling file's require() side-effect above.
 
 // ---------------------------------------------------------------------
 // Layer 2: scanTranscriptForSkillUses
@@ -250,8 +222,8 @@ group('gate.run — partial satisfaction still blocks, names only missing', () =
 })
 
 group('gate.run — unknown subagent_type fails open', () => {
-  // Synthesize a session whose Agent dispatch is `task-mgmt` (not in
-  // ENFORCED_AGENTS for v1) — gate must let the Write through silently.
+  // Synthesize a session whose Agent dispatch is `general-purpose` (not
+  // in ENFORCED_AGENTS) — gate must let the Write through silently.
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-evidence-unk-'))
   const sessionId = 'fake-session-2'
   const parentXp = path.join(tmp, sessionId + '.jsonl')
@@ -263,7 +235,7 @@ group('gate.run — unknown subagent_type fails open', () => {
   const parentRows = [
     { type: 'assistant', message: { role: 'assistant', content: [
       { type: 'tool_use', id: toolUseId, name: 'Agent',
-        input: { subagent_type: 'task-mgmt', prompt: 'x', description: 'd' } },
+        input: { subagent_type: 'general-purpose', prompt: 'x', description: 'd' } },
     ] } },
     { type: 'user', message: { role: 'user', content: [
       { type: 'tool_result', tool_use_id: toolUseId, content: [
@@ -280,5 +252,8 @@ group('gate.run — unknown subagent_type fails open', () => {
   assert(!r.blocked, 'unenforced subagent_type → pass')
 })
 
-console.log(`\n${passed} passed, ${failed} failed`)
-process.exit(failed === 0 ? 0 : 1)
+const parseResult = parseTests.run()
+const totalPassed = passed + parseResult.passed
+const totalFailed = failed + parseResult.failed
+console.log(`\n${totalPassed} passed, ${totalFailed} failed`)
+process.exit(totalFailed === 0 ? 0 : 1)
