@@ -8,21 +8,9 @@ using namespace Inno;
 
 bool Engine::Run()
 {
-	// Bake mode (TASK-68): headless, one-shot import-then-exit. The normal
-	// Run loop depends on WindowSystem being Activated; in bake mode we use
-	// the HeadlessWindowService and never enter frame pacing.
-	//
-	// Per-file parallelism (TASK-70 axis 1): each path runs on its own
-	// std::thread. Inside ImportSync, ProcessAssimpScene fans out mesh and
-	// material work to TaskScheduler workers (axis 2). If the outer file loop
-	// also ran on scheduler workers, a worker's outer task would call
-	// Thread::AddTask on itself — Thread::AddTask requires the target thread
-	// to leave Busy, which can't happen while the outer task blocks on its
-	// own sub-tasks. std::thread keeps the orchestrator off the worker pool
-	// so sub-task submissions make forward progress. AssimpWrapper::Import is
-	// thread-safe: each call constructs its own local Assimp::Importer, writes
-	// to unique filenames, and goes through the per-type shared_mutex-guarded
-	// AssetService registries.
+	// std::thread (not TaskScheduler) for the outer file loop: ImportSync fans
+	// out per-file mesh/material work to scheduler workers, and a worker
+	// blocking on sub-tasks on its own thread would deadlock on Thread::Busy.
 	if (m_pImpl->m_initConfig.isBakeMode)
 	{
 		const std::string l_list(m_pImpl->m_initConfig.bakeInputs);
