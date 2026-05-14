@@ -1,10 +1,13 @@
 ---
 id: TASK-212
-title: 'Scripts/ folder fragmentation — dead scripts, naming drift, overlapping test drivers'
-status: To Do
+title: >-
+  Scripts/ folder fragmentation — dead scripts, naming drift, overlapping test
+  drivers
+status: In Progress
 assignee:
   - ci-build-expert
 created_date: '2026-05-02 00:00'
+updated_date: '2026-05-14 02:35'
 labels:
   - hygiene
   - build
@@ -176,4 +179,6 @@ Pick during dispatch. Phased is probably right given the 25+ files and the cross
 
 <!-- SECTION:NOTES:BEGIN -->
 (filed by producer 2026-05-02; awaiting dispatch)
+
+2026-05-14 — Picked up autonomously. Going Phase 1 only this CL: delete dead scripts + README cleanup. Phases 2 (HLSL pair consolidation), 3 (test-driver shared module + naming sweep), 4 (README/CLAUDE.md rules) stay for follow-ups. Phase 1 is well-defined per the task's caller cross-reference table — 8 scripts with no callers point to nonexistent binaries / removed paths.
 <!-- SECTION:NOTES:END -->

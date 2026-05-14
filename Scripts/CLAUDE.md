@@ -37,7 +37,6 @@ Applies until the project moves to PowerShell 7+ or commits to UTF-8-with-BOM so
 | `HLSL2DXIL.ps1`              | Interactive HLSL → DXIL compile (ends with `Pause`).                  |
 | `HLSL2DXIL_NoPause.ps1`      | CI / automation HLSL → DXIL compile (no `Pause`).                     |
 | `Lib/Compile-HLSL.psm1`      | Shared compile module — single source of truth for shader build policy. |
-| `GenerateMetadataWin.ps1`    | Generate component metadata (parser pass).                            |
 | `PostBuildWin.ps1`           | Post-build deploy / cleanup hooks.                                    |
 | `StartEngineWin.ps1`         | Launch the runtime engine binary.                                     |
 | `StartEditorWin.ps1`         | Launch the editor binary.                                             |
@@ -45,9 +44,7 @@ Applies until the project moves to PowerShell 7+ or commits to UTF-8-with-BOM so
 | `TestGIScene.ps1`            | GI scene capture / regression driver.                                 |
 | `TestGPUPathTracer.ps1`      | GPU path tracer single-scene capture.                                 |
 | `TestPathTracerThreeScenes.ps1` | Three-scene PT capture.                                            |
-| `VerifyEditorStack.ps1`      | Editor stack verification.                                            |
 | `InteractiveTest.ps1`        | Interactive engine smoke test.                                        |
-| `ConvertModels.ps1`          | Model converter wrapper.                                              |
 | `DownloadAssets.ps1`         | Asset download / sync.                                                |
 | `RegenClangdIndex.ps1`       | Regenerate clangd compile_commands.json index.                        |
 | `PurgeStaleClangdIndex.ps1`  | Purge stale clangd index entries.                                     |

@@ -118,43 +118,9 @@ Scripts/BuildWin.ps1
 Scripts/PostBuildWin.ps1
 ```
 
-### Linux
+### Linux / macOS
 
-Tested OS: Ubuntu 18.04 LTS
-
-#### Prerequisites
-
-- GCC 8.0 or Clang 7.0+
-- CMake 3.10+
-- OpenGL library (lGL)
-
-#### Build
-
-```shell
-bash Scripts/SetupLinux.sh
-bash Scripts/BuildAssimpLinux.sh
-bash Scripts/BuildGLADLinux.sh
-bash Scripts/BuildEngineLinux.sh
-```
-
-### macOS
-
-Tested OS: macOS 10.13.6, 10.15.4
-
-#### Prerequisites
-
-- CMake 3.10+
-- Apple Clang 10.0 or LLVM Clang 8.0+
-
-#### Build
-
-```shell
-bash Scripts/SetupMac.sh
-bash Scripts/BuildAssimpMac-Xcode.sh
-bash Scripts/BuildGLADMac-Xcode.sh
-bash Scripts/BuildEngineMac-Xcode.sh
-bash Scripts/PostBuildMac.sh
-```
+The engine is currently Windows-only. Multi-platform support is not maintained.
 
 ## Sample assets
 
@@ -196,33 +162,13 @@ OriginalAssets/Models/
 
 1. Implement `ILogicClient` and `IRenderingClient` and place source files under `Source/Client/LogicClient` and `Source/Client/RenderingClient`
 2. Set the CMake variables `INNO_LOGIC_CLIENT` and `INNO_RENDERING_CLIENT` in `Source/CMakeLists.txt` to your class names
-3. Build and launch via `Bin/RelWithDebInfo/Main.exe` (Windows) or the equivalent on Linux/macOS
+3. Build and launch via `Bin/RelWithDebInfo/Main.exe`
 
 ## How to debug
-
-### Windows
 
 1. Open the workspace folder in VSCode
 2. Set debug launch arguments in `.vscode/launch.json`
 3. Start debug with F5
-
-### Linux
-
-1. Load the working copy in your IDE of choice
-2. Select build/makefile and hit compile and debug (F6 in Atom)
-
-### macOS
-
-1. Open `Build/InnocenceEngine.xcodeproj`
-2. Select Product → Run (⌘R)
-
-## How to bake a scene?
-
-### Windows
-
-```powershell
-Scripts/BakeScene.ps1 -sceneName [scene file name without extension]
-```
 
 ## Launch arguments
 

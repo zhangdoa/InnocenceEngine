@@ -1,1 +1,0 @@
-Get-ChildItem -Recurse -Path ..\Source\Engine -Include *.h | ForEach-Object {..\Bin\Debug\Reflector.exe $_.FullName}
