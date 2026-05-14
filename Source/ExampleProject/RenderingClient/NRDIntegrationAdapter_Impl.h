@@ -11,7 +11,6 @@
 #include <NRD.h>
 
 #include <vector>
-#include <unordered_map>
 #include <cstdint>
 
 namespace Inno

@@ -3,8 +3,6 @@
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
 
-#include "BillboardPass.h"
-#include "DebugPass.h"
 #include "LuminanceAveragePass.h"
 
 #include "../../Engine/Engine.h"

@@ -7,10 +7,6 @@
 #include "../../Engine/Services/GraphicsHardwareService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
-#include "OpaquePass.h"
-#include "PreTAAPass.h"
-#include "LightCullingPass.h"
-
 using namespace Inno;
 
 bool VolumetricPass::froxelization()

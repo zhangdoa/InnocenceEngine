@@ -1,13 +1,8 @@
 ﻿#include "DebugPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
-#include "../../Engine/Services/DebugDrawCallService.h"
 #include "../../Engine/Services/TemplateAssetService.h"
-#include "../../Engine/Services/AssetService.h"
-#include "../../Engine/Services/PhysicsSimulationService.h"
 #include "../../Engine/Services/BVHService.h"
-
-#include "OpaquePass.h"
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/ShaderProgramResourceService.h"

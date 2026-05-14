@@ -5,9 +5,6 @@
 #include "../../Engine/Services/DrawCallService.h"
 #include "../../Engine/Services/TemplateAssetService.h"
 
-#include "BRDFLUTPass.h"
-#include "BRDFLUTMSPass.h"
-
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/ShaderProgramResourceService.h"
 #include "../../Engine/Services/RenderPassResourceService.h"

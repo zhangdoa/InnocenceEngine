@@ -3,7 +3,6 @@
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
-#include "../../Engine/Services/TemplateAssetService.h"
 
 #include "OpaquePass.h"
 #include "LightPass.h"

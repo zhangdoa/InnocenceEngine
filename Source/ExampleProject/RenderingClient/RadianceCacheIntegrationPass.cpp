@@ -3,9 +3,7 @@
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
-#include "../../Engine/Services/TemplateAssetService.h"
 
-#include "RadianceCacheReprojectionPass.h"
 #include "RadianceCacheFilterVerticalPass.h"
 
 #include "../../Engine/Engine.h"

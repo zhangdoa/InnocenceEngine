@@ -3,8 +3,6 @@
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
 
-#include "OpaquePass.h"
-
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/ShaderProgramResourceService.h"
 #include "../../Engine/Services/RenderPassResourceService.h"

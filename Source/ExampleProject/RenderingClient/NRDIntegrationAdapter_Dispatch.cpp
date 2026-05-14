@@ -4,7 +4,6 @@
 
 #include "NRDIntegrationAdapter_Impl.h"
 
-#include "../../Engine/Services/DX12/DX12GraphicsHardwareService.h"
 #include "../../Engine/Services/DX12/DX12Helper_Common.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
 #include "../../Engine/Common/LogService.h"

@@ -2,8 +2,6 @@
 #include "../../Engine/Interface/IRenderPass.h"
 #include "../../Engine/Component/TextureComponent.h"
 
-#include "NRDConstants.h"
-
 namespace Inno
 {
 #if INNO_BUILD_WITH_NRD

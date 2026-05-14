@@ -30,8 +30,6 @@
 
 #pragma once
 
-#include "NRDConstants.h"
-
 #if INNO_BUILD_WITH_NRD
 
 #include "../../Engine/Component/TextureComponent.h"
@@ -40,8 +38,6 @@
 
 #include <NRD.h>
 
-#include <vector>
-#include <unordered_map>
 #include <cstdint>
 
 namespace Inno

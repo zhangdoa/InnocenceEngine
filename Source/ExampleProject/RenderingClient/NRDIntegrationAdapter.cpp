@@ -4,9 +4,6 @@
 
 #include "NRDIntegrationAdapter_Impl.h"
 
-#include "../../Engine/Common/LogService.h"
-#include "../../Engine/Engine.h"
-
 using namespace Inno;
 
 NRDIntegrationAdapter::NRDIntegrationAdapter()
