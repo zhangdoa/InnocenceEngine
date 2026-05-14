@@ -124,6 +124,11 @@ function mapAgentIdToSubagentType(parentXp, agentId) {
 //
 // Returns string[] of skill names on success, null on read / parse
 // failure (gate fail-open trigger).
+// Soft-wrap caveat: if a manifest reflows the always-apply line so it
+// continues with `\nUser-level:`, ALWAYS_APPLY_RE's `\n[A-Z]` terminator
+// matches before the CONDITIONAL_PHRASE_RE exemption can fire, truncating
+// the capture early. Current manifests keep User-level on the same line;
+// reflow audit lands in the v2 conditional-skills extension.
 const ALWAYS_APPLY_RE = /^Always-apply skills:\s*(.+?)(?:\r?\n\r?\n|\r?\n[A-Z]|$)/ms
 const CONDITIONAL_PHRASE_RE = /\.\s+(?!User-level:)[A-Z][a-zA-Z-]*(?:\s+[a-z]+)?:/
 function parseAlwaysApplySkills(manifestPath) {
