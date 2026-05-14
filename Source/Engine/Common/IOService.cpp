@@ -22,11 +22,7 @@ bool IOService::setupWorkingDirectory()
 	return true;
 }
 
-// TASK-30: callers historically pass either a relative path (to be resolved against the
-// working directory) or an absolute path (already fully qualified by AssetService). The
-// old unconditional `m_workingDir + filePath` produced a doubly-rooted garbage path for
-// absolute inputs; files then silently failed to open. ResolvePath keeps relative inputs
-// working while treating absolute inputs verbatim, so both regimes are safe at the API.
+// Absolute inputs pass through verbatim; relative inputs are rooted at workingDir.
 static std::string ResolvePath(const std::string& workingDir, const char* filePath)
 {
 	if (filePath && fs::path(filePath).is_absolute())
@@ -177,7 +173,6 @@ std::string IOService::validateFileName(const char* filePath)
 
 bool IOService::addCPPClassFiles(const CPPClassDesc& desc)
 {
-	// Build header file
 	auto l_headerFileName = desc.filePath + desc.className + ".h";
 	std::ofstream l_headerFile(IOService::getWorkingDirectory() + l_headerFileName, std::ios::out | std::ios::trunc);
 
@@ -187,13 +182,11 @@ bool IOService::addCPPClassFiles(const CPPClassDesc& desc)
 		return false;
 	}
 
-	// Common headers include
 	l_headerFile << "#pragma once" << std::endl;
 	l_headerFile << "#include \"Common/Enum.h\"" << std::endl;
 	l_headerFile << "#include \"Common/ClassTemplate.h\"" << std::endl;
 	l_headerFile << std::endl;
 
-	// Abstraction type
 	if (desc.isInterface)
 	{
 		l_headerFile << "class ";
@@ -205,7 +198,6 @@ bool IOService::addCPPClassFiles(const CPPClassDesc& desc)
 
 	l_headerFile << desc.className;
 
-	// Inheriance type
 	if (!desc.parentClass.empty())
 	{
 		l_headerFile << " : public " << desc.parentClass;
@@ -213,11 +205,9 @@ bool IOService::addCPPClassFiles(const CPPClassDesc& desc)
 
 	l_headerFile << std::endl;
 
-	// Class decl body
 	l_headerFile << "{" << std::endl;
 	l_headerFile << "public:" << std::endl;
 
-	// Ctor type
 	if (desc.isInterface)
 	{
 		if (desc.isNonMoveable && desc.isNonCopyable)
