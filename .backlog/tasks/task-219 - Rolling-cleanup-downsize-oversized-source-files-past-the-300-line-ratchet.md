@@ -1299,6 +1299,55 @@ Total new TU lines: 452 (vs. original 441 — delta is the second `#include` blo
 ### Out of scope (not done)
 
 - Other oversized files in the inventory still pending. Task stays open.
+
+## CL: WinWindowService.cpp split (2026-05-14)
+
+Split `Source/Engine/Platform/WinWindow/WinWindowService.cpp` (344 lines) into umbrella + 1 sibling TU. Same-class partial-TU pattern (`Foo_<Subsection>.cpp`). All `WinWindowService` member decls already in `WinWindowService.h`; no `_Internal.h` needed. No engine behavior change.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `WinWindowService.cpp` (umbrella) | 187 | Lifecycle + accessors: `Setup`, `Initialize`, `Update`, `Terminate`, `GetStatus`, `GetWindowSurface`, `GetApplicationName`, `GetApplicationInstance`, `GetWindowHandle`, `SetWindowHandle` |
+| `WinWindowService_Events.cpp` | 165 | Win32 message routing: `ConsumeEvents`, `SendEvent`, `AddEventCallback`, `WindowProcedure` + file-local `TranslateVKCode` helper |
+
+Total new TU lines: 352. Largest TU: 187 (umbrella). Both under the 300-line ratchet.
+
+### Seam choice
+
+Two responsibility clusters; the umbrella keeps engine-lifecycle bookkeeping while the events TU isolates Win32 message-pump plumbing:
+
+- **Lifecycle + accessors** (umbrella) — IWindowService overrides plus the four HWND/HINSTANCE accessors used by the Setup path itself (via `g_Engine->getWindowService()`). Owns the window-class registration, surface creation, and post-quit teardown.
+- **Events** (`_Events.cpp`) — the four event-related members (`ConsumeEvents`, `SendEvent`, `AddEventCallback`, static `WindowProcedure`) plus the file-local `TranslateVKCode` translation table. This cluster is the only consumer of `HIDService` (for `WindowResizeCallback`); moving it out drops that include from the umbrella TU.
+
+Sibling-file naming follows the existing `<Service>_<Subsection>.cpp` pattern used elsewhere in this rolling task.
+
+### Constraints that bit
+
+- **No header edit.** All 14 member declarations already in `WinWindowService.h`; `WindowProcedure` is `static private` in the class, still callable across TUs as long as the cpp includes the header. Header is untouched.
+- **No internal header introduced.** Original had no file-local statics, no anon-namespace, no file-level macros. `TranslateVKCode` is a free `static` function used only by `SendEvent` — moved into the events TU verbatim, still file-local.
+- **Includes are strict subset of original.** Umbrella keeps `LogService.h`, `RenderingConfigurationService.h`, both surface headers, `Engine.h`. Events TU keeps `LogService.h`, `HIDService.h`, `Engine.h`. The umbrella drops `HIDService.h`; events drops `RenderingConfigurationService.h` and both surface headers.
+- **CMake auto-glob picked up new file** — `Source/Engine/Platform/WinWindow/CMakeLists.txt` uses `file(GLOB SOURCES "*.cpp")`. Ran `cmake .` from `Build/` after adding the new sibling file; `.vcxproj` entries refreshed.
+- **Concurrent in-flight TASK-198 batch 2** (DX12 subtree) emitted real compile errors during the rolling-tracker retry attempts — `error C2871: 'DX12Helper': a namespace with this name does not exist` in `DX12GPUBufferResourceService_{Raytracing,Views}.cpp`. These are out-of-scope failures from another in-flight CL, unrelated to this split. The first build attempt that completed (before TASK-198 staged the breaking edit) showed `WinWindowService.cpp` and `WinWindowService_Events.cpp` compiling clean, `WinWindowService.lib` linking, and `Main.vcxproj -> Main.exe` emitting at 21:12.
+
+### Method bijection check
+
+Original cpp had 14 `WinWindowService::` definitions. Split reproduces all 14 exactly once across the two TUs:
+
+- Umbrella (10): `Setup`, `Initialize`, `Update`, `Terminate`, `GetStatus`, `GetWindowSurface`, `GetApplicationName`, `GetApplicationInstance`, `GetWindowHandle`, `SetWindowHandle`.
+- Events (4): `ConsumeEvents`, `SendEvent`, `AddEventCallback`, `WindowProcedure`.
+
+Plus the file-local `TranslateVKCode` helper, which moved with `SendEvent`.
+
+### Build + test
+
+- `cmake .` (from `Build/`) — green; new file picked up.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — `WinWindowService.lib` linked clean every attempt; `Engine.lib`/`Main.exe` linked on the first attempt before TASK-198 staged its DX12 namespace breakage. Concurrent msbuild PDB-lock collisions on subsequent retries are unrelated to this split (DX12 subtree, exclusion-list).
+- `Bin\RelWithDebInfo\Main.exe -mode 0 -renderer 0 -loglevel 0 -total_frames 30 -offscreen` — exit 0. Engine completed full init → 30 frames → graceful Terminate; all 16 worker threads released; zero error/fatal lines. WinWindowService.lib is linked into Main.exe but not exercised in `-offscreen` mode (HeadlessWindowService is selected instead).
+
+### Out of scope (not done)
+
+- Larger header offenders (`MathHelper.h` 1633, `Math.h` 1241) still pending; these need template-aware splits and are heavier than a typical iteration. Other oversized files in the inventory still pending. Task stays open.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
