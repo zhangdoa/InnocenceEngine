@@ -1,5 +1,6 @@
 #pragma once
 #include "../../Engine/Interface/IRenderPass.h"
+#include "LightCullingConstants.h"
 
 namespace Inno
 {
@@ -25,8 +26,8 @@ namespace Inno
 		ShaderProgramComponent *m_ShaderProgramComp;
 		GPUBufferComponent* m_TiledFrustum;
 		GPUBufferComponent* m_DispatchParamsGPUBufferComp;
-		const uint32_t m_tileSize = 16;
-		const uint32_t m_numThreadPerGroup = 16;
+		const uint32_t m_tileSize = LightCulling::TILE_SIZE;
+		const uint32_t m_numThreadPerGroup = LightCulling::TILE_SIZE;
 		Math::TVec4<uint32_t> m_numThreads;
 		Math::TVec4<uint32_t> m_numThreadGroups;
 

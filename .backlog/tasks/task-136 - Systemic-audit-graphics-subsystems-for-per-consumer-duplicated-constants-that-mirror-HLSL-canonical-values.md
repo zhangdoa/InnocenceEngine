@@ -53,7 +53,7 @@ Behavior-preserving consolidation only. Any value-change uncovered during the au
 <!-- AC:BEGIN -->
 - [ ] #1 Source/ExampleProject/RenderingClient/*.h grepped for `const uint32_t` / `static constexpr` member constants — inventory in final summary
 - [ ] #2 Each found constant cross-referenced against HLSL canonical (RayTracingTypes.hlsl / BRDF.hlsl / common/*.hlsl) — match or drift status quoted per constant
-- [~] #3 For each subsystem with the drift pattern: a `<Subsystem>Constants.h` header consolidates the constants with HLSL-canonical anchor comments — screen-tile 8×8 landed (2026-05-15); 5 follow-up subsystems remain (TASK-225 SSAO drift, light-culling 16×16, point/sphere light arrays, MaxTextureSlotCount, luminance histogram 256 + reduction 16×16, BRDF LUT 512)
+- [~] #3 For each subsystem with the drift pattern: a `<Subsystem>Constants.h` header consolidates the constants with HLSL-canonical anchor comments — screen-tile 8×8 landed (2026-05-15); light-culling 16×16 landed (2026-05-15); 4 follow-up subsystems remain (TASK-225 SSAO drift, point/sphere light arrays, MaxTextureSlotCount, luminance histogram 256 + reduction 16×16, BRDF LUT 512)
 - [ ] #4 Any live drift discovered (i.e. C++ value != current HLSL value) filed as its own task with symptom screenshot, NOT silently fixed in this CL
 - [ ] #5 Final summary lists subsystems audited AND subsystems explicitly skipped (with reason)
 <!-- AC:END -->
@@ -179,3 +179,32 @@ Each consumer also gained `#include "ScreenTileConstants.h"` immediately after i
 **File-size ratchet**: `LightPass.cpp` migration deferred (see above — gate blocks at 400 lines). All touched files in the landing set remain under 300.
 
 **ACs**: only AC #3 ticked, and only for this subsystem. AC #1, #2, #5 remain open for the follow-up consolidations queued in the priority list above (TASK-225 SSAO drift fix → light-culling 16×16 → point/sphere light arrays → MaxTextureSlotCount → luminance histogram + reduction → BRDF LUT 512). Task stays `In Progress`.
+
+### 2026-05-15 — Consolidation #2 (light-culling 16×16)
+
+Behaviour-preserving consolidation of the 16×16 light-culling tile literal across the two `LightCullingPass` / `TiledFrustumGenerationPass` consumer headers.
+
+**Header**: `Source/ExampleProject/RenderingClient/LightCullingConstants.h` — `Inno::LightCulling::TILE_SIZE = 16u`. Placement matches the `ScreenTileConstants.h` / `RadianceCacheConstants.h` precedent (every consumer is a `RenderingClient` pass; no Engine-side consumer exists today). Comment anchors the contract to the HLSL canonical `#define LIGHT_CULLING_BLOCK_SIZE 16` in `Source/Shaders/HLSL/common/common.hlsl:69`, plus its consumers: `[numthreads(LIGHT_CULLING_BLOCK_SIZE, LIGHT_CULLING_BLOCK_SIZE, 1)]` in `lightCulling.comp:62` and `tileFrustum.comp:27`, and the per-tile divisor in `lightPass.comp:137` and `common/lightPassDirectLighting.hlsl:92`.
+
+**C++ sites migrated** (3 initializers in 2 consumer headers):
+
+- `LightCullingPass.h:44` — `const uint32_t m_tileSize = 16` → `LightCulling::TILE_SIZE`
+- `TiledFrustumGenerationPass.h:28` — `const uint32_t m_tileSize = 16` → `LightCulling::TILE_SIZE`
+- `TiledFrustumGenerationPass.h:29` — `const uint32_t m_numThreadPerGroup = 16` → `LightCulling::TILE_SIZE` (`m_tileSize` and `m_numThreadPerGroup` are coupled by the HLSL `[numthreads(LIGHT_CULLING_BLOCK_SIZE, LIGHT_CULLING_BLOCK_SIZE, 1)]` contract — one group thread maps to one screen tile)
+
+Each consumer header gained `#include "LightCullingConstants.h"` after the `IRenderPass.h` include. The two `.cpp` files (`LightCullingPass.cpp`, `TiledFrustumGenerationPass.cpp`) are untouched: they reference the `m_tileSize` / `m_numThreadPerGroup` members, not the literal, so the consolidation lands purely in the headers. This sidesteps the `LightCullingPass.cpp` (309 lines, already over the 300 ratchet) gate trip.
+
+**Shadow-state observation (surfaced, NOT chased)**: post-consolidation the per-instance `m_tileSize` / `m_numThreadPerGroup` members shadow the constexpr `LightCulling::TILE_SIZE`. Per the `no-shadow-state` skill they should be replaced by direct references at every use site. Doing so requires touching both `.cpp` files (3 use sites in `LightCullingPass.cpp`, 4 in `TiledFrustumGenerationPass.cpp`) and `LightCullingPass.cpp` is already over the 300-line ratchet. Out of scope for this constants-consolidation CL; surfacing to dispatcher for follow-up.
+
+**HLSL untouched** — convention (matching `RadianceCacheConstants.h` and `ScreenTileConstants.h`) anchors C++ to HLSL via comment, not vice versa.
+
+**Bit-identical replacement**: `LightCulling::TILE_SIZE == 16u` exactly; both consumer-header member initializers compute the same `uint32_t` value as before. `TILE_SIZE` is `constexpr`.
+
+**Validation**:
+
+- Build: `Scripts/BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` → ExitCode 0; `Main.exe` and `RenderTest.exe` linked.
+- Smoke run: `Bin/RelWithDebInfo/Main.exe -mode 0 -renderer 0 -loglevel 0 -total_frames 30 -offscreen` (CWD = `Bin/RelWithDebInfo/`) → log `Bin/RelWithDebInfo/[2026-5-15-19-8-39-781].Log` line 2951 `Auto-test: 30 frames rendered, terminating.`; no `D3D12 ERROR` / `CORRUPTION` / `Validation Error` lines; tail `Engine has been terminated.`
+
+**File-size ratchet**: all touched files under 300 lines (`LightCullingPass.h` 49→50, `TiledFrustumGenerationPass.h` 35→36, new header 23 lines). The `LightCullingPass.cpp` 309-line ratchet trip was sidestepped by not touching the `.cpp`.
+
+**ACs**: AC #3 partially ticked for this subsystem alongside screen-tile. Follow-ups in priority order: TASK-225 SSAO drift → point/sphere light arrays → MaxTextureSlotCount → luminance histogram + reduction → BRDF LUT 512. Task stays `In Progress`.

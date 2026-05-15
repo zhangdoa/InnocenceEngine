@@ -1,5 +1,6 @@
 #pragma once
 #include "../../Engine/Interface/IRenderPass.h"
+#include "LightCullingConstants.h"
 
 namespace Inno
 {
@@ -41,7 +42,7 @@ namespace Inno
 		TextureComponent* m_lightGrid;
 		TextureComponent* m_heatMap;
 
-		const uint32_t m_tileSize = 16;
+		const uint32_t m_tileSize = LightCulling::TILE_SIZE;
 		Math::TVec4<uint32_t> m_numThreads;
 		Math::TVec4<uint32_t> m_numThreadGroups;
 
