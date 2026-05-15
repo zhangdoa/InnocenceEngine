@@ -1,15 +1,16 @@
 ---
 id: TASK-6.8
 title: 'GI noise-floor reduction roadmap (post-TASK-6.5 audit recommendations #2-#6)'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-26 13:01'
-updated_date: '2026-04-26 16:43'
+updated_date: '2026-05-15'
 labels:
   - rendering
   - GI
   - paper-faithful
   - noise-reduction
+  - superseded
 dependencies:
   - TASK-6.7
 references:
@@ -17,6 +18,12 @@ references:
 parent_task_id: TASK-6
 priority: medium
 ---
+
+## Closure (2026-05-15) — superseded by TASK-226
+
+Closed as superseded by the AMD GI 1.0 reference-port effort (TASK-226). The recommendations 2-6 from the TASK-6.5 self-audit are a roadmap for tuning the current broken impl. Direction (2026-05-15) abandons that path in favour of mirroring the reference implementation. Any noise-reduction recommendations the reference impl applies will land naturally during the port.
+
+If after the port the noise floor is still above the paper's quality bar, file a fresh task scoped against the post-port code paths and reference-impl noise levels.
 
 ## Description
 

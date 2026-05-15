@@ -3,14 +3,16 @@ id: TASK-6.4
 title: >-
   GI dispatch + probe-grid clamp: replace floor with ceil for paper-fidelity at
   non-multiple-of-TILE_SIZE resolutions
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-25 22:25'
+updated_date: '2026-05-15'
 labels:
   - rendering
   - GI
   - paper-fidelity
   - coordinates
+  - superseded
 dependencies: []
 references:
   - Source/Shaders/HLSL/common/RadianceCacheCommon.hlsl
@@ -18,6 +20,12 @@ references:
 parent_task_id: TASK-6
 priority: low
 ---
+
+## Closure (2026-05-15) — superseded by TASK-226
+
+Closed as superseded by the AMD GI 1.0 reference-port effort (TASK-226). A floor → ceil dispatch fix is a local bandaid on a broken implementation; the reference impl has the correct dispatch arithmetic and we'll mirror it directly. No need to fix the divergence twice.
+
+If after the port the dispatch is still wrong for the same reason this ticket flagged, file a fresh task scoped against the post-port file:line.
 
 ## Description
 

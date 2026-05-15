@@ -1,10 +1,12 @@
 ---
 id: TASK-6.1
 title: 'Radiance cache [W.3b-api] Encapsulate world-tile write/read in a helper header'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-23 12:17'
-labels: []
+updated_date: '2026-05-15'
+labels:
+  - superseded
 dependencies: []
 references:
   - Source/Shaders/HLSL/RayTracingTypes.hlsl
@@ -13,6 +15,12 @@ references:
 parent_task_id: TASK-6
 priority: low
 ---
+
+## Closure (2026-05-15) — superseded by TASK-226
+
+Closed as superseded by the AMD GI 1.0 reference-port effort (TASK-226). The world-tile API would mirror the reference implementation's API directly, not a helper-header abstraction over our existing struct exposure. The W.3b retrospective concern (consumers re-computing `ComputeTileHash` + `ComputeTileFingerprint` + `CellInTile` inline) survives in the new direction by being absorbed into whatever helper the reference impl uses.
+
+If the reference impl's hash/fingerprint/cell API turns out to leave the same exposure problem this ticket flagged, file a fresh task with the reference-impl symbol as the canonical site. Don't reopen this one — its framing (helper-header for our struct) is tied to a port we're abandoning.
 
 ## Description
 
