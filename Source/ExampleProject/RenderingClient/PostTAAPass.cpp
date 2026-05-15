@@ -1,4 +1,5 @@
 ﻿#include "PostTAAPass.h"
+#include "ScreenTileConstants.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 
@@ -122,7 +123,7 @@ bool PostTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 0);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 1);
 
-	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / static_cast<float>(ScreenTile::SCREEN_TILE_SIZE)), uint32_t(l_viewportSize.y / static_cast<float>(ScreenTile::SCREEN_TILE_SIZE)), 1);
 
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 

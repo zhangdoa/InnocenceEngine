@@ -53,7 +53,7 @@ Behavior-preserving consolidation only. Any value-change uncovered during the au
 <!-- AC:BEGIN -->
 - [ ] #1 Source/ExampleProject/RenderingClient/*.h grepped for `const uint32_t` / `static constexpr` member constants — inventory in final summary
 - [ ] #2 Each found constant cross-referenced against HLSL canonical (RayTracingTypes.hlsl / BRDF.hlsl / common/*.hlsl) — match or drift status quoted per constant
-- [ ] #3 For each subsystem with the drift pattern: a `<Subsystem>Constants.h` header consolidates the constants with HLSL-canonical anchor comments
+- [~] #3 For each subsystem with the drift pattern: a `<Subsystem>Constants.h` header consolidates the constants with HLSL-canonical anchor comments — screen-tile 8×8 landed (2026-05-15); 5 follow-up subsystems remain (TASK-225 SSAO drift, light-culling 16×16, point/sphere light arrays, MaxTextureSlotCount, luminance histogram 256 + reduction 16×16, BRDF LUT 512)
 - [ ] #4 Any live drift discovered (i.e. C++ value != current HLSL value) filed as its own task with symptom screenshot, NOT silently fixed in this CL
 - [ ] #5 Final summary lists subsystems audited AND subsystems explicitly skipped (with reason)
 <!-- AC:END -->
@@ -146,4 +146,36 @@ After 8×8 consolidation, secondary targets in priority order:
 
 The systemic ticket TASK-136 should reuse this priority list when scheduling per-subsystem consolidation CLs.
 
+### 2026-05-15 — Consolidation #1 (screen-tile 8×8)
 
+Behaviour-preserving consolidation of the 8×8 screen-tile dispatch literal across 9 RenderingClient passes.
+
+**Header**: `Source/ExampleProject/RenderingClient/ScreenTileConstants.h` — `Inno::ScreenTile::SCREEN_TILE_SIZE = 8u`. Placement matches the `RadianceCacheConstants.h` precedent (every consumer is a `RenderingClient` pass; no Engine-side consumer exists today). Comment anchors the contract to the HLSL canonical literal `[numthreads(8,8,1)]` in `Source/Shaders/HLSL/lightPass.comp:151` and lists the 15 sibling shaders sharing the same group size.
+
+**C++ sites migrated** (8, all `uint32_t(viewportSize.* / 8.0f)` → `uint32_t(viewportSize.* / static_cast<float>(ScreenTile::SCREEN_TILE_SIZE))`):
+
+- `SkyPass.cpp:116`
+- `FinalBlendPass.cpp:174`
+- `GIFilterHorizontalPass.cpp:143`
+- `GIFilterVerticalPass.cpp:147`
+- `PreTAAPass.cpp:140`
+- `PostTAAPass.cpp:126`
+- `TAAPass.cpp:155`
+- `SSAOPass.cpp:237`
+
+Each consumer also gained `#include "ScreenTileConstants.h"` immediately after its self-header include. `MotionBlurPass.cpp:119` left untouched — the dispatch is commented out (inactive WIP per the 2026-05-14 audit's subsystems-skipped list).
+
+**Deferred at commit time — `LightPass.cpp:344`**: the file is 399 lines, over the 300-line ratchet; adding the `#include "ScreenTileConstants.h"` would push it to 400. Commit-gate blocks. Same shape as TASK-198 batch 1's LightPass deferral. Defer to TASK-135 (LightPass shader refactor) or a separate split CL.
+
+**HLSL untouched** — the convention (matching `RadianceCacheConstants.h`) anchors C++ to HLSL via comment, not vice versa.
+
+**Bit-identical replacement**: `static_cast<float>(8u) == 8.0f` exactly; every consolidated site computes the same `uint32_t` dispatch extent as before. `SCREEN_TILE_SIZE` is `constexpr`; `static_cast<float>` is a compile-time constant.
+
+**Validation**:
+
+- Build: `Scripts/BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` → ExitCode 0; `Main.exe` and `RenderTest.exe` linked.
+- Smoke run: `Bin/RelWithDebInfo/Main.exe -mode 0 -renderer 0 -loglevel 1 -total_frames 30 -offscreen` (CWD = `Bin/`) → ExitCode 0; log `Bin/[2026-5-15-18-38-17-26].Log` line 300 `Auto-test: 30 frames rendered, terminating.`; no `D3D12 ERROR` / `CORRUPTION` / `Validation Error` lines; tail line `Engine has been terminated.`
+
+**File-size ratchet**: `LightPass.cpp` migration deferred (see above — gate blocks at 400 lines). All touched files in the landing set remain under 300.
+
+**ACs**: only AC #3 ticked, and only for this subsystem. AC #1, #2, #5 remain open for the follow-up consolidations queued in the priority list above (TASK-225 SSAO drift fix → light-culling 16×16 → point/sphere light arrays → MaxTextureSlotCount → luminance histogram + reduction → BRDF LUT 512). Task stays `In Progress`.

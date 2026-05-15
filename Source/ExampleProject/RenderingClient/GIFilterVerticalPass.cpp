@@ -1,4 +1,5 @@
 #include "GIFilterVerticalPass.h"
+#include "ScreenTileConstants.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -143,7 +144,7 @@ bool GIFilterVerticalPass::PrepareCommandList(IRenderingContext* renderingContex
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_BlurMask, 4);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 5);
 
-	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / static_cast<float>(ScreenTile::SCREEN_TILE_SIZE)), uint32_t(l_viewportSize.y / static_cast<float>(ScreenTile::SCREEN_TILE_SIZE)), 1);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
