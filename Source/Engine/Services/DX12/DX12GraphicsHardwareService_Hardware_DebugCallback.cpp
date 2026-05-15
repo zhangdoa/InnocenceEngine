@@ -1,4 +1,3 @@
-#include "DX12GraphicsHardwareService.h"
 #include "DX12Context.h"
 #include "../../Engine.h"
 #include "../../Common/LogService.h"

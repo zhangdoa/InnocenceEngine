@@ -3,7 +3,6 @@
 #include "DX12Helper_BindlessMesh.h"
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
-#include "../../Common/LogService.h"
 
 using namespace Inno;
 using namespace DX12Helper;

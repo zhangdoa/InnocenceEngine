@@ -2,7 +2,6 @@
 #include "DX12Context.h"
 #include "DX12Helper_Texture.h"
 #include "../FrameManagementService.h"
-#include "../../Common/LogService.h"
 #include "../../Engine.h"
 
 using namespace Inno;

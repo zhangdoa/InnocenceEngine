@@ -4,7 +4,6 @@
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
 #include "DX12Helper_Common.h"
-#include "DX12Helper_Texture.h"
 
 using namespace Inno;
 using namespace DX12Helper;

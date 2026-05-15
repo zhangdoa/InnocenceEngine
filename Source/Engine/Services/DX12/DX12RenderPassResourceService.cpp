@@ -1,7 +1,5 @@
 #include "DX12RenderPassResourceService.h"
 #include "DX12Context.h"
-#include "DX12Helper_Common.h"
-#include "DX12Helper_Pipeline.h"
 #include "DX12Helper_Texture.h"
 #include "DX12Helper_BindlessMesh.h"
 #include "../../Engine.h"

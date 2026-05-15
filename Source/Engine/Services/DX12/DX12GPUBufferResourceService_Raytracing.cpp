@@ -1,6 +1,5 @@
 #include "DX12GPUBufferResourceService.h"
 #include "DX12MeshResourceService.h"
-#include "DX12Context.h"
 #include "DX12Helper_Common.h"
 #include "../FrameManagementService.h"
 #include "../MeshResourceService.h"

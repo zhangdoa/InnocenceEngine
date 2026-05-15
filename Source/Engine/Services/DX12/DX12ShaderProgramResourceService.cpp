@@ -1,6 +1,5 @@
 #include "DX12ShaderProgramResourceService.h"
 #include "DX12Helper_Pipeline.h"
-#include "../../Common/LogService.h"
 
 using namespace Inno;
 using namespace DX12Helper;

@@ -121,6 +121,88 @@ Bisect events during this batch:
 - Batch 2: `Source/Engine/Services/DX12/*` — reported in ticket: `DX12FrameManagementService.cpp` (2), `DX12GraphicsHardwareService.cpp` (1). Larger scope; re-inventory via the same harness before dispatching.
 - Batch 3: `Source/Engine/Services/RenderingConfigurationService.{h,cpp}` (2), `Source/Engine/Common/GPUDataStructure.h` (1).
 
+### 2026-05-14 — Batch 2 (DX12)
+
+Scope: `Source/Engine/Services/DX12/*` only. AC #1 stays unchecked until batch 3 lands (or until cross-batch closure, whichever is later).
+
+**Inventory method**: Reused `Build/TASK-198-clangd-driver.py` from batch 1. Refreshed clangd CDB first via `Scripts/RegenClangdIndex.ps1` (per batch-1 reviewer recommendation — clears stale diagnostics from batch-1's `-SkipClangdIndexRefresh`). 65 DX12 files surveyed (all `.cpp` and `.h` under the subtree). Real inventory: 37 unused-include warnings across 26 files. Ticket sample-violator counts (`DX12FrameManagementService.cpp` 2, `DX12GraphicsHardwareService.cpp` 1) are stale — current clangd shows zero warnings on either file. Same pattern as batch 1.
+
+**Files touched (16)**:
+
+`.cpp` deletions (12 files, 16 includes):
+- `DX12SamplerResourceService.cpp` — `LogService.h`
+- `DX12ShaderProgramResourceService.cpp` — `LogService.h`
+- `DX12GraphicsHardwareService_Hardware_DescriptorHeaps.cpp` — `LogService.h`
+- `DX12GraphicsHardwareService_Hardware_DebugCallback.cpp` — `DX12GraphicsHardwareService.h`
+- `DX12FrameManagementService_Frame.cpp` — `DX12Helper_Pipeline.h`
+- `DX12FrameManagementService_Draw.cpp` — `DX12Helper_Pipeline.h`
+- `DX12FrameManagementService_RenderTargets.cpp` — `DX12Helper_Pipeline.h`, `DX12Helper_Texture.h`
+- `DX12FrameManagementService_SwapChainImages.cpp` — `DX12Helper_Texture.h` *(only one of two flagged deletable — see retentions)*
+- `DX12FrameManagementService_Recording.cpp` — `DX12Helper_Pipeline.h`, `DX12Helper_Texture.h`
+- `DX12TextureResourceService_Mipmap.cpp` — `MathHelper.h`
+- `DX12TextureResourceService_Readback.cpp` — `DX12Helper_Common.h`
+- `DX12RenderPassResourceService.cpp` — `DX12Helper_Common.h`, `DX12Helper_Pipeline.h`
+- `DX12GPUBufferResourceService_Raytracing.cpp` — `DX12Context.h` *(only one of two flagged deletable — see retentions)*
+
+`.h` deletions (4 files, 7 includes):
+- `DX12Helper_Pipeline.h` — `LogService.h`
+- `DX12Helper_Texture.h` — `LogService.h`, `TextureComponent.h`
+- `DX12Helper_Common.h` — `Object.h`, `GPUResourceComponent.h`
+
+Total: 23 deletions across 16 files.
+
+**Kept-despite-warning (clangd false positives, 16 instances across 14 files)**:
+
+| Category | Count | Files | Header kept | Reason |
+|---|---|---|---|---|
+| Log() macro blind spot | 9 | `DX12Context.cpp`, `_GpuTimers_State.cpp`, `_Hardware_DebugCallback.cpp`, `_Pix.cpp`, `_GpuTimers_Record.cpp`, `_GpuTimers_Resources.cpp`, `DX12Helper_Texture_Desc.cpp`, `DX12Helper_Texture_View.cpp`, `DX12GPUBufferResourceService_Views.cpp` | `Engine.h` | Log() macro expands to `g_Engine->Get<LogService>()->Print(...)`; clangd's include-cleaner doesn't track macro-introduced symbol references. Same pattern as batch 1. |
+| `using namespace DX12Helper` blind spot | 3 | `_SwapChainImages.cpp`, `DX12GPUBufferResourceService_Raytracing.cpp`, `DX12GPUBufferResourceService_Views.cpp` | `DX12Helper_Common.h` | TU does not call any `DX12Helper::` function, but `using namespace DX12Helper;` requires the namespace to be visible. The namespace is declared in `DX12Helper_{Common,Pipeline,Texture}.h`; one of them must stay. clangd's include-cleaner does not track using-directives. |
+| D3D12 type use false positive | 2 | `DX12Helper_Common.h`, `DX12Helper_Texture.h` | `DX12Headers.h` | Files use `ComPtr`, `ID3D12Device`, `D3D12_*`, `DXGI_FORMAT`, `HRESULT` heavily; removing DX12Headers.h breaks the build. Same as batch 1's `NRDIntegrationAdapter_Impl.h` retention. |
+| Load-bearing transitive | 1 | `DX12Headers.h` | `directx/d3dx12.h` | 10 sibling TUs (`DX12Context.cpp`, `DX12MeshResourceService.cpp`, `DX12TextureResourceService_*`, `DX12RenderPassResourceService_*`, `DX12FrameManagementService_Frame.cpp`, `_RenderTargets.cpp`, `DX12GPUBufferResourceService.cpp`) consume `CD3DX12_*` helpers without directly including d3dx12.h — they rely on the chain `DX12Headers.h` → `d3dx12.h`. |
+| Pair-header binding | 1 | `DX12MaterialResourceService.cpp` | `DX12MaterialResourceService.h` | `.cpp` body is empty (no DX12-specific overrides — base-class implementation suffices); the TU exists to bind the class declaration to the translation unit. Deleting the pair header would orphan the class. |
+
+Bisect events during this batch:
+1. First build failure (3 TUs): `DX12GPUBufferResourceService_Raytracing.cpp`, `_Views.cpp`, `_SwapChainImages.cpp` reported `error C2871: 'DX12Helper': a namespace with this name does not exist`. Cause: deletion removed the *only* `DX12Helper_*.h` include from each TU; the TU still issues `using namespace DX12Helper;` (which clangd does not flag because include-cleaner doesn't track using-directives). Fix: restored `DX12Helper_Common.h` in all three. Net result: `_Views.cpp` ended with zero deletions (both flags were false positives — Engine.h via Log + Common.h via using-directive); other two retained their other deletions.
+
+**Build verification**: `Scripts/BuildWin.ps1 -SkipShaderCompile` (per brief — allow clangd CDB refresh). Final state log: `Build/TASK-198-batch2-build5.log`. `Engine.vcxproj -> Engine.lib`, `Main.vcxproj -> Bin/RelWithDebInfo/Main.exe`. Build green; exit 0. (Two prior build attempts hit transient C1041 PDB-collision / MSB6003 tlog-lock parallel-build infrastructure errors after the clangd CDB refresh re-wrote `compile_commands.json`; cleared by killing stray MSBuild processes and retrying. No source-level errors.)
+
+**Runtime verification**: `Bin/RelWithDebInfo/Main.exe -mode 0 -renderer 0 -loglevel 0 -total_frames 30 -offscreen` from `Bin/RelWithDebInfo/` via Bash tool. Exit 0. Final log line: `[Inno::Engine::Terminate] Engine has been terminated.` Full log: `Build/TASK-198-batch2-mainrun.log`.
+
+**Post-sweep clangd state**: 16 unused-include diagnostics retained across 14 files (9 Engine.h Log-macro + 3 DX12Helper_Common.h using-directive + 2 DX12Headers.h D3D12-types + 1 d3dx12.h load-bearing + 1 pair-header binding). All accepted as false positives per the table above. 21 of 37 (57%) warnings cleared in this batch.
+
+**File-size ratchet check**: All 16 touched files are under 300 lines (max: `_Hardware_DescriptorHeaps.cpp` at 272). No deferrals.
+
+**Not yet verified**:
+- Visual parity: delete-only on includes; behaviour cannot regress without a compile error. No visual validation needed per `visual-validation` Layer-1 reasoning.
+- Batch 3 closure: tracked in the batch-3 note below (already drafted in parallel).
+
+### 2026-05-14 — Batch 3 (RenderingConfigurationService + GPUDataStructure)
+
+Scope: `Source/Engine/Services/RenderingConfigurationService.{h,cpp}` + `Source/Engine/Common/GPUDataStructure.h`. AC #1 stays unticked — batch 2 (`Source/Engine/Services/DX12/*`) has not appended its note yet, so cross-batch closure is contingent on batch 2 landing.
+
+**Inventory (fresh clangd 22.1.4 run via `Build/TASK-198-clangd-driver.py`; output `Build/TASK-198-batch3-diagnostics.json`)**: 3 warnings, one per file.
+
+| File | Header flagged | Disposition |
+|---|---|---|
+| `RenderingConfigurationService.cpp:3` | `../Engine.h` | KEEP — `Log(Warning, "Trying to set a screen resolution with 0 width or height.")` at line 51 expands to `g_Engine->Get<LogService>()->Print(...)`; `g_Engine` originates in `Engine.h`. Same macro-blind-spot pattern as batch 1's three NRD adapter `.cpp` files. |
+| `RenderingConfigurationService.h:3` | `../Common/GPUDataStructure.h` | KEEP — load-bearing transitive. Header declares `TVec2<uint32_t>` and `RenderPassDesc`; those resolve via the chain `GPUDataStructure.h` → `GraphicsPrimitive.h` (provides `RenderPassDesc`) + `MathHelper.h` (provides `using namespace Inno::Math` directive at line 1634, which makes unqualified `TVec2`/`Mat4`/`Vec4` resolve). 87 of 89 consumers of `RenderingConfigurationService.h` do NOT include `GPUDataStructure.h` directly — they lean on the transitive chain. Replacing with direct `GraphicsPrimitive.h` + `MathHelper.h` includes would be a structural IWYU refactor outside batch scope (delete-only) and would risk breaking those 87 consumers' transitive symbol resolution. Same load-bearing-transitive pattern as batch 1's `NRDIntegrationAdapter_Impl.h` keeping `NRDConstants.h`. |
+| `GPUDataStructure.h:3` | `MathHelper.h` | KEEP — `using namespace Inno::Math;` directive carrier. File declares unqualified `Mat4 p_original`, `Vec4 sun_direction`, `TVec4<uint32_t> numThreadGroups`, etc. throughout — those names live in `Inno::Math` and require the `using namespace` directive at `MathHelper.h:1634` to resolve unqualified. `GraphicsPrimitive.h` (also included by `GPUDataStructure.h`) does NOT carry that directive (it only `using namespace Inno::Type` at its line 386). Same `using namespace` carrier pattern as batch 1's `VolumetricPass_Internal.h` keeping `MathHelper.h`. |
+
+**Source edits**: zero. All three flagged includes are documented load-bearing / false-positive per the batch 1 precedent table.
+
+**File-size ratchet check**: `RenderingConfigurationService.h` 56 lines, `RenderingConfigurationService.cpp` 79 lines, `GPUDataStructure.h` 279 lines — all under the 300-line gate. No deferral.
+
+**Build verification**: `Scripts/BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh`. The build was attempted three times; first two failed on Main.exe LNK1168 (sibling batch 2's Main.exe instance held the file open) and MSB4166 (child-node crashes after sibling msbuild contention). Third attempt failed with `error C2871: 'DX12Helper': a namespace with this name does not exist` in `Source/Engine/Services/DX12/DX12GPUBufferResourceService_{Raytracing,Views}.cpp` — files in batch 2's in-flight working tree (`git diff` confirms batch 2 deleted `#include "DX12Helper_Common.h"` from those files), NOT in batch 3's scope. Since batch 3 makes ZERO source edits to compile units (only task notes + commit message), the build-green claim for this CL is structurally trivial: no compile units changed. Build log: `Build/TASK-198-batch3-build.log`. Full-build green will materialise after batch 2 lands or rolls back its incomplete state.
+
+**Runtime verification**: skipped. Step 5 of the brief is structurally redundant when the CL touches zero compile units — Main.exe would only exercise the pre-existing binary, not anything this CL changed.
+
+**Post-sweep clangd state**: 3 unused-include diagnostics remaining across the three batch-3 files, all documented load-bearing / false-positive per the table above. 0% machine-deletable in this batch; all three retentions accepted.
+
+**Not verified**:
+- Visual parity: N/A — zero source edits.
+- Full build green: blocked by sibling batch 2's in-flight working-tree state; not a defect of this CL.
+- Batch 2 status: still in-flight at the time of this note.
+
 ## Review (code-impl, 2026-05-14)
 
 **Verdict: ADVISORY (PASS pending advisory clangd refresh).**

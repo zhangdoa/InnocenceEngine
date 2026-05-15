@@ -1,8 +1,6 @@
 #pragma once
 #include "../../Engine.h"
 #include "../../Common/LogService.h"
-#include "../../Common/Object.h"
-#include "../../Component/GPUResourceComponent.h"
 #include "../../Component/CommandListComponent.h"
 
 #include "DX12Headers.h"

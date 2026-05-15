@@ -1,6 +1,5 @@
 #include "DX12TextureResourceService.h"
 #include "DX12Context.h"
-#include "DX12Helper_Common.h"
 #include "DX12Helper_Texture.h"
 #include "../FrameManagementService.h"
 #include "../GraphicsHardwareService.h"

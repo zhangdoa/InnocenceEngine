@@ -1,6 +1,4 @@
 ﻿#pragma once
-#include "../../Common/LogService.h"
-
 #include "../../Component/RenderPassComponent.h"
 
 #include "DX12Headers.h"
