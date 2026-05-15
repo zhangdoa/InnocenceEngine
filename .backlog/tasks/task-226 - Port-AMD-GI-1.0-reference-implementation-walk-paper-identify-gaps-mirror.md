@@ -1,9 +1,10 @@
 ---
 id: TASK-226
 title: 'Port AMD GI 1.0 reference implementation: walk paper, identify gaps, mirror'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-05-15'
+updated_date: '2026-05-15 20:25'
 labels:
   - rendering
   - GI
@@ -62,13 +63,13 @@ Closing as superseded by this umbrella:
 
 The five letter-tagged decomposition subtasks (TASK-114 F, TASK-115 S1, TASK-116 S2, TASK-117 I, TASK-118 W) are already closed; their landed work stays in `master` but the framing they established is replaced by this umbrella.
 
-## Acceptance criteria
-
-- [ ] #1 Paper + reference walked end-to-end; gap matrix produced
-- [ ] #2 Port strategy decided and documented
-- [ ] #3 Phase 1 sub-tasks filed with concrete file-level scope
-- [ ] #4 Rendered output of the ported impl visually matches the reference impl on a comparable scene (likely Sponza)
-- [ ] #5 60-FPS bar preserved on the autotest camera
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [x] #1 #1 Paper + reference walked end-to-end; gap matrix produced
+- [x] #2 #2 Port strategy decided and documented
+- [x] #3 #3 Phase 1 sub-tasks filed with concrete file-level scope
+- [ ] #4 #4 Rendered output of the ported impl visually matches the reference impl on a comparable scene (likely Sponza)
+- [ ] #5 #5 60-FPS bar preserved on the autotest camera
 
 ## Out of scope
 
@@ -80,6 +81,7 @@ The five letter-tagged decomposition subtasks (TASK-114 F, TASK-115 S1, TASK-116
 
 Visual quality is the top user-facing complaint about the GI subsystem. Eight iterations of partial porting have not closed the gap; the next iteration of the same approach has no reason to do better. The reference-mirror approach is the structural lever.
 <!-- SECTION:DESCRIPTION:END -->
+<!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
