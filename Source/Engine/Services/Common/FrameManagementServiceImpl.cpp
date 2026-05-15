@@ -45,9 +45,6 @@ bool FrameManagementService::Setup(IServiceConfig* systemConfig)
 	m_SwapChainShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SwapChain");
 	m_SwapChainSamplerComp = g_Engine->Get<SamplerResourceService>()->Add("SwapChain");
 
-	// m_GlobalSemaphore is created by the DX12 backend during CreateHardwareResources
-	// (CreateSyncPrimitives sets up fence events on it), so we don't create a new one here.
-
 	m_ObjectStatus = ObjectStatus::Created;
 	Log(Success, "FrameManagementService Setup finished.");
 	return true;
@@ -126,14 +123,11 @@ bool FrameManagementService::Update()
 {
 	auto l_currentFrame = m_CurrentFrame;
 
-	// Pre-frame hook — clients use this for debug/capture/instrumentation
-	// triggers that need to straddle the GPU frame boundary. FrameManagement
-	// owns frame pacing; it does NOT own RenderDoc or auto-test logic.
 	if (m_PreFrameCallback)
 		m_PreFrameCallback(m_FrameCountSinceLaunch);
 
-	// BeginFrame waits for the per-queue fences of this frame slot before resetting
-	// allocators, so HasGPUError below sees a GPU that has caught up to prior work.
+	// BeginFrame waits for this slot's per-queue fences before resetting
+	// allocators, so HasGPUError below observes a GPU caught up to prior work.
 	BeginFrame();
 
 	if (m_HardwareService->HasGPUError())
@@ -145,7 +139,8 @@ bool FrameManagementService::Update()
 			Log(Warning, "GPU device removed detected after frame wait — frame=", m_FrameCountSinceLaunch,
 				" swapIndex=", l_currentFrame, " — skipping GPU work from this point forward.");
 		}
-		// Still run CPU-side callbacks so the logic client can count frames and trigger auto-termination
+		// Run CPU-side callbacks even on GPU error so the logic client can still
+		// count frames and trigger auto-termination.
 		g_Engine->Get<SceneService>()->ClearLoadingFlag();
 		m_UploadHeapPreparationCallback();
 		m_FrameCountSinceLaunch++;
@@ -179,11 +174,9 @@ bool FrameManagementService::Update()
 
 		m_CommandExecutionCallback();
 
-		// Resolve this frame's GPU timer queries into the per-frame readback
-		// buffer (TASK-140). Runs AFTER the per-pass command lists have been
-		// submitted so the resolve sees the queries in-flight; the readback
-		// of an older frame from this same call is safe because BeginFrame's
-		// WaitOnCPU has already drained that older slot.
+		// Must run after per-pass command lists are submitted (so the resolve
+		// sees the queries in flight) and after BeginFrame drained the older
+		// slot (so the older frame's readback this call touches is safe).
 		m_HardwareService->ResolveGpuTimers();
 
 		m_HardwareService->WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics, GPUEngineType::Graphics);
@@ -210,9 +203,6 @@ bool FrameManagementService::Update()
 
 	Present();
 
-	// Post-frame hook — clients use this to finalize capture / readback /
-	// any work that needs to happen AFTER Present but within the same
-	// logical frame. Callback receives the frame index just completed.
 	if (m_PostFrameCallback)
 		m_PostFrameCallback(m_FrameCountSinceLaunch);
 
@@ -220,9 +210,8 @@ bool FrameManagementService::Update()
 
 	m_FrameCountSinceLaunch++;
 
-	// TASK-213 CL A: evaluate the readiness predicate every frame so the
-	// K=3 stability window advances and the first-true log marker fires.
-	// Result is intentionally discarded this CL — CL B/C/D consume it.
+	// Drive the steady-state window every frame; the boolean is consumed by
+	// IsSteadyState() callers and the first-true log marker fires from inside.
 	(void)IsSteadyState();
 
 	return true;
