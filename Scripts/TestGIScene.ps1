@@ -22,64 +22,31 @@ param(
     [string]$BinDir = "C:\GitRepo\InnocenceEngine\Bin\RelWithDebInfo"
 )
 
-$mainExe = Join-Path $BinDir "Main.exe"
-Set-Location (Split-Path $BinDir -Parent)
+Import-Module (Join-Path $PSScriptRoot 'Lib\Test-Engine.psm1') -Force
 
-Write-Host "Running: $mainExe -renderer 0 -loglevel 1 -total_frames $Frames"
+$run = Invoke-EngineMainRun -BinDir $BinDir `
+    -ArgList "-renderer 0 -loglevel 1 -total_frames $Frames"
 
-$proc = Start-Process `
-    -FilePath $mainExe `
-    -ArgumentList "-renderer 0 -loglevel 1 -total_frames $Frames" `
-    -Wait -PassThru
-
-Write-Host "Exit code: $($proc.ExitCode)"
-
-# Find the newest log file written during this run
-$logFile = Get-ChildItem "C:\GitRepo\InnocenceEngine\Bin\*.Log" |
-    Sort-Object LastWriteTime -Descending |
-    Select-Object -First 1
-
-if (-not $logFile) {
+if (-not $run.LogFile) {
     Write-Host "ERROR: No log file found."
     exit 1
 }
 
-Write-Host "Log: $($logFile.Name)"
+$outcome = Test-EngineRunOutcome -LogFile $run.LogFile `
+    -SceneTag 'GISponza.InnoScene'
 
-$d3dErrors = Select-String -LiteralPath $logFile.FullName `
-    -Pattern "D3D12 ERROR|CORRUPTION|Validation Error" -SimpleMatch
-
-$sceneLoaded = Select-String -LiteralPath $logFile.FullName `
-    -Pattern "GISponza.InnoScene has been loaded" -SimpleMatch
-
-$autoTerminated = Select-String -LiteralPath $logFile.FullName `
-    -Pattern "Auto-test:.*terminating"
-
-Write-Host "GISponza loaded: $($null -ne $sceneLoaded)"
-Write-Host "Auto-terminated:  $($null -ne $autoTerminated)"
-Write-Host "D3D12 errors:     $($d3dErrors.Count)"
-
-if ($d3dErrors) {
-    Write-Host "FAIL - D3D12 errors detected:"
-    $d3dErrors | ForEach-Object { Write-Host "  $_" }
-    exit 1
-}
-
-if (-not $sceneLoaded) {
-    Write-Host "FAIL - GISponza.InnoScene was not loaded."
-    Write-Host "       (auto-test path in World.inl loads it at frame 5; if the scene"
-    Write-Host "        was renamed, update both this script and World.inl together.)"
-    exit 1
-}
-
-if (-not $autoTerminated) {
-    Write-Host "FAIL - engine did not auto-terminate (crashed or hung?)."
+if (-not $outcome.Pass) {
+    # GISponza-specific diagnostic for the not-loaded branch.
+    if (-not $outcome.SceneLoaded) {
+        Write-Host "       (auto-test path in World.inl loads it at frame 5; if the scene"
+        Write-Host "        was renamed, update both this script and World.inl together.)"
+    }
     exit 1
 }
 
 # --- PNG comparison ---
-$gpuPng = Join-Path (Split-Path $BinDir -Parent) "gpu_output.png"
-$cpuPng = Join-Path (Split-Path $BinDir -Parent) "cpu_reference.png"
+$gpuPng = Join-Path $run.BinRoot "gpu_output.png"
+$cpuPng = Join-Path $run.BinRoot "cpu_reference.png"
 
 # Check ImageMagick
 if (-not (Get-Command "magick" -ErrorAction SilentlyContinue))
@@ -112,7 +79,7 @@ if (-not $maxVal.Success -or $maxVal.Groups[1].Value -match "infinity|undefined"
 }
 
 # Resize GPU output to match CPU reference dimensions before comparison
-$gpuResized = Join-Path (Split-Path $BinDir -Parent) "gpu_output_resized.png"
+$gpuResized = Join-Path $run.BinRoot "gpu_output_resized.png"
 $cpuDims    = (magick identify -format "%wx%h" $cpuPng 2>&1) | Out-String
 $cpuDims    = $cpuDims.Trim()
 magick $gpuPng -resize $cpuDims $gpuResized

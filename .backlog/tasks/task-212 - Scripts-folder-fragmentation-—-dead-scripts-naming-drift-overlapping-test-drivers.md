@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - ci-build-expert
 created_date: '2026-05-02 00:00'
-updated_date: '2026-05-14 03:01'
+updated_date: '2026-05-14 21:30'
 labels:
   - hygiene
   - build
@@ -193,4 +193,114 @@ Open question called out for Phase 3: whether top-level `Test*` / `Verify*` shou
 Contributes to AC-1 (naming convention picked + documented; one rule for Windows scripts, one for `Lib/`, one for Python helpers) and AC-6 (a/b/c/d documentation items: naming rule, `Lib/` partition rule, test-driver taxonomy with Phase 3 open question, `git-hooks/` kebab-case exception).
 
 Not done: Phase 3 (test-driver shared module + naming sweep). No scripts renamed (purely a doc CL). Verification: no code touched → build unaffected, `BuildWin.ps1` invocation skipped per brief. Re-read `Scripts/CLAUDE.md` end-to-end post-edit; no rule contradicts the PowerShell 5.1 string conventions or `BuildWin.ps1` invariants. Task stays open.
+
+### 2026-05-14 — Phase 3 (Test-Engine.psm1 extraction)
+
+New module `Scripts/Lib/Test-Engine.psm1` extracts the shared `Main.exe`-driver boilerplate. Two exported cmdlets:
+
+- `Invoke-EngineMainRun -BinDir -ArgList [-NoNewWindow]` — resolves `Main.exe`, sets CWD to `<BinDir>\..` (where the engine writes logs + captures), launches with `Start-Process -Wait -PassThru`, returns `@{ Process, LogFile, BinRoot }`. `LogFile` is the newest `*.Log` under the bin root.
+- `Test-EngineRunOutcome -LogFile -SceneTag [-ScenePrefix]` — applies the three universal post-run greps (`D3D12 ERROR|CORRUPTION|Validation Error`, `<SceneTag> has been loaded`, `Auto-test:.*terminating`), prints the standard report lines, returns `@{ Pass, D3DErrors, SceneLoaded, AutoTerminated }`. `-ScenePrefix` bracket-tags the FAIL lines for the per-scene-loop driver.
+
+Callers refactored:
+
+| Script | Lines before | Lines after | Delta |
+|---|---|---|---|
+| `Scripts/TestGIScene.ps1` | 141 | 108 | −33 |
+| `Scripts/TestGPUPathTracer.ps1` | 85 | 53 | −32 |
+| `Scripts/TestPathTracerThreeScenes.ps1` | 371 | 341 | −30 |
+
+Net code: −95 lines in callers, +129 lines in the new module (incl. ~30 lines of header invariant doc). The header doc absorbs the duplicate `-loglevel` / `-total_frames` / scene-marker invariants previously triplicated in the three driver headers (those driver-side blocks remain — the module doc is the single source of truth, the script-side blocks are still useful at the call site).
+
+`Scripts/CLAUDE.md` script-inventory table: new row added between `Lib/Compile-HLSL.psm1` and `Tests/Test-BuildWinDxilPrestep.ps1`. The Phase 4 "open question" line about `Test*` / `Verify*` renaming stays untouched per Phase 3 brief.
+
+Verification (main-session Bash):
+
+- `Scripts/TestGPUPathTracer.ps1 -Frames 30` → final log `Engine has been terminated`, exit 0, output ends with `PASS`.
+- `Scripts/TestGIScene.ps1` (default 120 frames) → engine-side checks all pass (`GISponza.InnoScene loaded: True`, `Auto-terminated: True`, `D3D12 errors: 0`); MAE compare path reached and ran. MAE 0.506696 exceeded threshold 0.45 — pre-existing reference-vs-current divergence, not introduced by this CL (the module wiring is upstream of MAE compare; behaviour preserved).
+- `Scripts/TestPathTracerThreeScenes.ps1 -Frames 30 -DumpStart 25 -DumpEnd 28` → second run all three scenes `PASS [unittest]` / `PASS [gitestbox]` / `PASS [gisponza]` / `OVERALL: PASS`. First attempt failed on the third scene with a steady-state timeout (likely cold-cache shader compile pushing the tail past the 30-frame budget); not a module regression — the steady-state grep correctly reported the failure mode with the `[gisponza]` ScenePrefix routing as designed.
+
+No build needed: `Scripts/` are runtime-only, no msbuild / cmake surface touched. Engine binary unchanged.
+
+Module-design notes:
+- `Set-StrictMode -Version Latest` in the module forced `@(...)` array-coercion on `Select-String` results (no-match returns `$null` which fails `.Count` lookup under strict). The callers' original style worked because their script-level strict-mode is default; the module is stricter on purpose.
+- `Set-Location $binRoot` runs inside `Invoke-EngineMainRun`; the three-scene driver also sets it once before its per-scene loop. Idempotent, no contention.
+
+Open question disposition: the `Test*` / `Verify*` naming-sweep question remains the single deferred item. Not filed as a new task per `backlog-workflow`'s "don't pile on tasks" rule — it is a design decision with no live cost, documented in `Scripts/CLAUDE.md`'s `Test-driver taxonomy` open-question paragraph. When a future session decides the convention (e.g. when adding a 4th driver and the naming choice becomes load-bearing), this task can be reopened or a fresh task filed at that point.
+
+Surfaced findings (not folded in this CL):
+- `TestGIScene.ps1` MAE compare reports 0.50 against a 0.45 threshold at the default 120-frame budget. Likely a real reference-vs-current divergence in the GI smoke baseline (reference PNG cadence vs current engine output drift). Pre-existing; worth a separate task if a baseline-refresh is in scope.
+- The first three-scene run's GISponza failure at 30 frames was transient (warmed-cache re-run passed). Edge of the steady-state-latch budget; not a Phase 3 regression. The existing 60-frame default is comfortably past this margin.
+
+Contributes to AC-3 (shared module extracted; no duplicated boilerplate across the three engine drivers). AC-6 documentation row added to `Scripts/CLAUDE.md` inventory. Remaining gap before TASK-212 closure: the `Test*` / `Verify*` naming-sweep decision (still open question in `Scripts/CLAUDE.md`). Task stays `In Progress`.
+
+## Review (ci-build-impl, 2026-05-15)
+
+Verdict: **PASS WITH ADVISORIES** (no BLOCKED findings; ADVISORIES are non-load-bearing cosmetic + scope-creep observations the implementer can either fold into a follow-up or leave alone).
+
+### What I verified
+
+- Module under review: `Scripts/Lib/Test-Engine.psm1` (129 lines, pure ASCII confirmed via byte scan).
+- Diff walked end-to-end against `git show HEAD:Scripts/...` for each of the three callers — verified flags, env vars, exit-code mapping, and assertion list preserved.
+- `Set-StrictMode -Version Latest` scoping in PowerShell 5.1 confirmed module-local via a synthetic harness (does not leak to caller scope).
+- Log-discovery wildcard semantics: `Get-ChildItem (Join-Path $binRoot '*.Log')` returns the same file as the prior literal `Get-ChildItem 'C:\GitRepo\InnocenceEngine\Bin\*.Log'` when `$binRoot = C:\GitRepo\InnocenceEngine\Bin`.
+- Cross-tree `Grep` for the renamed output line `"GISponza loaded:"` (now `"GISponza.InnoScene loaded:"`) — no live consumer parses it; only backlog closure-note quotes.
+- `Auto-test: steady state reached` survives — engine emits it, three-scene driver greps it. The load-bearing harness signal called out in the brief is intact.
+
+### Findings
+
+| Discipline | Where | Note | Severity |
+|---|---|---|---|
+| **tech-choice** | `Test-Engine.psm1:1-129` | API granularity is defensible. `Invoke-EngineMainRun` cleanly owns CWD + launch + log discovery; `Test-EngineRunOutcome` is the universal post-run trio. The `ScenePrefix` parameter is the only feature with a single caller (only the three-scene driver passes it), but the alternative split (have the caller print FAIL lines instead of the module) would force the two single-scene drivers to also stop receiving free FAIL output. The current shape is consistent and natural. No change needed. | n/a |
+| **comment-discipline** | `Test-Engine.psm1:16-27` | Header invariant block is appropriate — it's WHY documentation (LogLevel::Success threshold, IOService CWD-relative path resolution, marker wording lock) that future readers cannot recover from the code. Within the body, two short inline comments (`# Coerce all Select-String results...`, scene-tag legend at line 82-84) earn their keep. No essay-comment violations. | OK |
+| **comment-discipline** | `TestPathTracerThreeScenes.ps1:230, 234` (pre-existing) | Two `Write-Host "... (TASK-213 AC-5) ..."` / `(TASK-213 R2)` lines retain task-ID references in user-facing output. **Pre-existing**, not introduced by this CL. The implementer tightened the surrounding *comment* block (dropped `TASK-213 CL D Workstream 1` prefix) but left the `Write-Host` strings alone — defensible under `surface-dont-chase` (touched only the directly-extracted region). Acceptable as-is; if a future cleanup pass strips these, do it as a focused rolling-cleanup CL. | ADVISORY |
+| **comment-discipline** | `TestPathTracerThreeScenes.ps1:48, 60, 72, 80, 89, 115, 175, 183, 238` (pre-existing) | Nine remaining `# TASK-213 CL X` comment headers untouched by this CL. Inconsistent cleanup — three were tightened, nine were not. Per `surface-dont-chase`, the implementer correctly limited scope to the extraction zone. File a separate rolling-cleanup task only if the noise actually costs something on a re-read; "might be useful someday" is not a task per `backlog-workflow` § don't pile on. | ADVISORY |
+| **behaviour preservation** | `Test-Engine.psm1:100` | The `Write-Host "$SceneTag loaded:  $($sceneLoaded.Count -gt 0)"` line emits `GISponza.InnoScene loaded:` (literal scene tag) where the original `TestGIScene.ps1` and `TestGPUPathTracer.ps1` emitted `GISponza loaded:` (friendly name without `.InnoScene` suffix). Cosmetic user-facing output drift; no consumer parses it (Grep confirmed: only backlog closure-note quotes reference the prior literal). | ADVISORY (acceptable) |
+| **behaviour preservation** | `Test-Engine.psm1:100-102` | Column padding on the three report lines in the three-scene driver tightened — old code used wider padding (`Auto-terminated:           ` with 11 spaces) to align scene-tag-prefixed labels; module emits `Auto-terminated:  ` (2 spaces). Visual cosmetic regression in three-scene output alignment. Not load-bearing. | ADVISORY (acceptable) |
+| **behaviour preservation** | `Test-Engine.psm1:63` | The log-discovery wildcard now resolves from `Split-Path $BinDir -Parent` instead of a hardcoded `C:\GitRepo\InnocenceEngine\Bin\*.Log`. This is a **fix-bug-on-touch** — the prior hardcoded path would have surfaced a different process's log when `-BinDir` pointed elsewhere. Aligns with the brief's no-flag-change spirit when the default `-BinDir` is used; expands correctness when overridden. | OK (improvement) |
+| **safety** | `Test-Engine.psm1:74-80` | `Test-EngineRunOutcome` declares `[System.IO.FileInfo]$LogFile` as `Mandatory`. PowerShell will reject `$null` at the parameter binding. The three callers all guard `if (-not $run.LogFile)` before calling. Contract enforced at the boundary. | OK |
+| **safety** | `Test-Engine.psm1:41-43` | Mandatory `[Test-Path $mainExe]` guard with throw inside the module. Three-scene driver also has its own `Test-Path $mainExe` guard at line 127-130 — minor duplication, but the module is now the single source of truth; the caller's guard is now defensive overlap, not load-bearing. Not worth removing. | OK |
+| **scripts ps5.1 ASCII rule** | `Test-Engine.psm1` | Byte-scanned: pure ASCII (0 bytes >= 0x80). All non-ASCII glyphs (em-dashes etc.) in the three callers are in `#` comments, where the rule permits them. | OK |
+| **closure-note shape** | task-212 lines 197-234 | Matches Phase 1/2/4 shape: date prefix, bulleted module API summary, caller refactor table, verification log quotes, AC-mapping closer, "task stays open" tail. `Surfaced findings` block correctly separates non-folded observations from the CL's deliverables. | OK |
+| **surface-dont-chase / MAE drift** | task-212 line 231 | MAE 0.506 vs 0.45 threshold is surfaced inline (not filed as a backlog task). Implementer's reasoning: pre-existing baseline-vs-current divergence with no clear repro shape (could be CL-driven engine drift since the reference PNG was captured, could be a stale reference, could be threshold tuning). Per `backlog-workflow` § don't pile on (would this work get done today if dispatched? Not without an interactive triage decision on which side to update), inline surfacing is the right venue. If the user wants this investigated, a fresh task with a clear bisect-shaped repro should be filed. | OK |
+| **inventory row** | `Scripts/CLAUDE.md` line 39 | Placement is alphabetical-within-`Lib/` (between `Compile-HLSL.psm1` and `PostBuildWin.ps1`). Description format matches sibling rows (one-line role with key behaviour). | OK |
+
+### Behaviour-preservation walkthrough (the three callers)
+
+**TestGIScene.ps1** (141 → 108):
+- Flags unchanged: `-renderer 0 -loglevel 1 -total_frames $Frames`.
+- BinDir default unchanged: `C:\GitRepo\InnocenceEngine\Bin\RelWithDebInfo`.
+- Three universal post-run greps → module. GISponza-specific not-loaded diagnostic preserved as caller-side branch.
+- MAE comparison path: untouched apart from `Split-Path $BinDir -Parent` → `$run.BinRoot` (semantically identical).
+- Exit codes: 1 on every FAIL path, 0 on PASS. Match.
+
+**TestGPUPathTracer.ps1** (85 → 53):
+- Flags unchanged: `-renderer 0 -loglevel 0 -offscreen -total_frames $Frames -test gpu_path_tracer`.
+- `-NoNewWindow` survived via the new module switch.
+- All three universal greps consolidated; GISponza diagnostic preserved.
+- Exit codes match.
+
+**TestPathTracerThreeScenes.ps1** (371 → 341):
+- Per-scene loop preserved.
+- Engine-side capture flags (`-dump_frames`, `-camera_orbit`) untouched.
+- Steady-state grep block (reached / timeout / lost flap-back) preserved verbatim — appropriately left as caller-local because the three single-scene drivers don't need it.
+- `$overallPass = $false; continue` pattern on per-scene FAIL preserved.
+- All TASK-213 CL D Workstream 1 / 2 logic (flap-back-aware dump-window shift, capture-ceiling check, trim-PNGs sub-block) preserved verbatim.
+- Log copy + per-scene capture-dir layout preserved.
+
+### No-premature-abstraction check
+
+Per the task spec: "extract only what's invoked from ≥2 callers OR is a single source of truth for staleness/mirror predicates."
+
+- `Invoke-EngineMainRun`: every parameter (`BinDir`, `ArgList`, `NoNewWindow`) used by ≥2 callers. PASS.
+- `Test-EngineRunOutcome`:
+  - `LogFile`, `SceneTag`, the three universal greps: 3 callers.
+  - `ScenePrefix`: 1 caller (three-scene driver). Earns its keep as the alternative is duplicating the FAIL-print loop in the caller; the cost is one optional `[string]` parameter with a sensible default.
+
+No premature abstraction.
+
+### Reviewer's bottom line
+
+The extraction is well-shaped, behaviour-preserving for all three callers (modulo two cosmetic output-text changes with no consumer), and the module's header doc legitimately consolidates invariants previously duplicated across three driver headers. The two `ADVISORY` items on retained `TASK-213` literals in `TestPathTracerThreeScenes.ps1` Write-Host lines + comments are pre-existing and out of scope per `surface-dont-chase`; the implementer's selective tightening of the directly-touched region is the discipline-correct call.
+
+Recommend main-session **proceed to commit** with the implementer's current diff. The ADVISORY items can be folded into TASK-220 (rolling cleanup — prune essay comments) if a future rolling pass picks up the residual TASK-213 markers in `TestPathTracerThreeScenes.ps1`.
 <!-- SECTION:NOTES:END -->

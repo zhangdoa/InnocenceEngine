@@ -93,6 +93,8 @@ $DefaultCameraOrbit = "20,8,120"
 
 $ErrorActionPreference = "Stop"
 
+Import-Module (Join-Path $PSScriptRoot 'Lib\Test-Engine.psm1') -Force
+
 # Default the dump window to the back half of the run so accumulation has
 # settled before the PNG sequence begins. Overridable via -DumpStart/-DumpEnd.
 if ($DumpStart -lt 0) { $DumpStart = [int]($Frames / 2) }
@@ -193,69 +195,37 @@ foreach ($s in $scenes) {
         $argList += " -camera_orbit $effectiveOrbit"
     }
 
-    Write-Host "Running: $mainExe $argList"
-    $proc = Start-Process `
-        -FilePath $mainExe `
-        -ArgumentList $argList `
-        -Wait -PassThru -NoNewWindow
+    $run = Invoke-EngineMainRun -BinDir $BinDir -ArgList $argList -NoNewWindow
 
-    Write-Host "Exit code: $($proc.ExitCode)"
-
-    $logFile = Get-ChildItem "C:\GitRepo\InnocenceEngine\Bin\*.Log" |
-        Sort-Object LastWriteTime -Descending |
-        Select-Object -First 1
-
-    if (-not $logFile) {
+    if (-not $run.LogFile) {
         Write-Host "FAIL [$($s.Name)] - No log file found."
         $overallPass = $false
         continue
     }
 
-    Write-Host "Log: $($logFile.Name)"
+    $logFile = $run.LogFile
+    $outcome = Test-EngineRunOutcome -LogFile $logFile `
+        -SceneTag $s.SceneTag -ScenePrefix $s.Name
 
-    $d3dErrors = Select-String -LiteralPath $logFile.FullName `
-        -Pattern "D3D12 ERROR|CORRUPTION|Validation Error" -SimpleMatch
-
-    $sceneLoaded = Select-String -LiteralPath $logFile.FullName `
-        -Pattern "$($s.SceneTag) has been loaded" -SimpleMatch
-
-    $autoTerminated = Select-String -LiteralPath $logFile.FullName `
-        -Pattern "Auto-test:.*terminating"
-
-    # TASK-213 CL D Workstream 1: steady-state grep enforcement.
-    # The engine must log "Auto-test: steady state reached at frame=N" once
-    # per run (FrameManagementServiceImpl.cpp). Without it, CL B's gating
-    # never starts the dump counter and any captures are undefined.
+    # Steady-state grep enforcement: the engine must log
+    # "Auto-test: steady state reached at frame=N" once per run
+    # (FrameManagementServiceImpl.cpp). Without it the steady-state-relative
+    # dump counter never starts and any captures are undefined.
     $steadyStateReached = Select-String -LiteralPath $logFile.FullName `
         -Pattern "Auto-test: steady state reached at frame=(\d+)"
     $steadyStateTimeout = Select-String -LiteralPath $logFile.FullName `
         -Pattern "Auto-test: steady state NOT reached within"
-    # All flap-back markers (zero or more) — used by Workstream 2 below.
+    # All flap-back markers (zero or more) — used by the dump-window shift below.
     $steadyStateLost = Select-String -LiteralPath $logFile.FullName `
         -Pattern "Auto-test: steady state lost at frame=(\d+)"
 
-    Write-Host "$($s.SceneTag) loaded:  $($null -ne $sceneLoaded)"
-    Write-Host "Auto-terminated:           $($null -ne $autoTerminated)"
-    Write-Host "D3D12 errors:              $($d3dErrors.Count)"
     Write-Host "Steady-state reached:      $($null -ne $steadyStateReached)"
     Write-Host "Steady-state timeout:      $($null -ne $steadyStateTimeout)"
     Write-Host "Steady-state lost events:  $(@($steadyStateLost).Count)"
 
-    $scenePass = $true
-    if ($d3dErrors) {
-        Write-Host "FAIL [$($s.Name)] - D3D12 errors detected:"
-        $d3dErrors | ForEach-Object { Write-Host "  $_" }
-        $scenePass = $false
-    }
-    if (-not $sceneLoaded) {
-        Write-Host "FAIL [$($s.Name)] - $($s.SceneTag) was not loaded."
-        $scenePass = $false
-    }
-    if (-not $autoTerminated) {
-        Write-Host "FAIL [$($s.Name)] - engine did not auto-terminate."
-        $scenePass = $false
-    }
-    # Workstream 1 hard fails — capture is undefined without these.
+    $scenePass = $outcome.Pass
+    # Hard fails specific to the path-tracer capture contract — capture is
+    # undefined without these.
     if (-not $steadyStateReached) {
         Write-Host "FAIL [$($s.Name)] - missing 'Auto-test: steady state reached at frame=N' log marker (TASK-213 AC-5). The engine never reached the readiness predicate; m_autoCaptureFrameCount never advanced; any captures are undefined. Diagnostic targets: deferred-init queue drain, TLAS rebuild loop, SceneService::IsLoading."
         $scenePass = $false

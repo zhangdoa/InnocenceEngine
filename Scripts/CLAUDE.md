@@ -36,6 +36,7 @@ Applies until the project moves to PowerShell 7+ or commits to UTF-8-with-BOM so
 | `BuildWin.ps1`               | Build Main + RenderTest. HLSL pre-step + clangd post-step.            |
 | `HLSL2DXIL.ps1`              | Interactive HLSL → DXIL compile (use `-NoPause` for CI / automation invocations). |
 | `Lib/Compile-HLSL.psm1`      | Shared compile module — single source of truth for shader build policy. |
+| `Lib/Test-Engine.psm1`       | Shared engine-driver module — `Main.exe` launch + log discovery + standard D3D12 / scene-load / auto-terminate post-run checks for the three `Test*` smoke drivers. |
 | `PostBuildWin.ps1`           | Post-build deploy / cleanup hooks.                                    |
 | `StartEngineWin.ps1`         | Launch the runtime engine binary.                                     |
 | `StartEditorWin.ps1`         | Launch the editor binary.                                             |
