@@ -1,19 +1,36 @@
 ---
 id: TASK-174
 title: 'Extract ExampleRenderingClient PrepareCommands/ExecuteCommands to sibling .inl files'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-28 07:30'
+updated_date: '2026-05-15'
 labels:
   - rendering
   - refactor
   - file-size
+  - superseded
 dependencies: []
 priority: low
 references:
   - Source/ExampleProject/RenderingClient/ExampleRenderingClient.cpp
   - .claude/disciplines/split-before-grow.md
 ---
+
+## Closure (2026-05-15) — superseded
+
+Superseded by TASK-219 commit `af981c25` (2026-05-05), which split `ExampleRenderingClient.cpp` 1518 → 318 lines via partial-class `.cpp` peer files (`_PrepareCommands.cpp`, `_ExecuteCommands.cpp`, `_ExecuteCommands_GI.cpp`, `_ExecuteCommands_Rasterizer.cpp`, `_Bootstrap.cpp`, `_Setup.cpp`, `_Capture.cpp`, `_AuditDump.cpp`) plus `_Internal.h`. Largest resulting TU is 305 lines (under the 400-line ratchet).
+
+Shape divergence from this ticket's brief: TASK-219 chose `.cpp` (partial-class) over `.inl` (function-body include). Both are listed in `file-splitting` SKILL.md as valid C++ partial-split patterns; `.cpp` is the canonical pattern in that skill table. The only remaining `.inl` (`ExampleRenderingClient_Bypass.inl`) holds anonymous-namespace helper templates that legitimately need TU-scope replication.
+
+AC disposition:
+- AC #1 PrepareCommands / ExecuteCommands extracted to sibling files — Done as `.cpp` not `.inl`
+- AC #2 cpp shrunk below 1000 lines — Done (318 lines)
+- AC #3 Build clean — inherited from `af981c25` + subsequent CLs
+- AC #4 Smoke clean — inherited
+- AC #5 New files under 400 lines — Done (largest 305)
+
+No code action required by this closure; the work landed two weeks earlier under TASK-219.
 
 ## Description
 
