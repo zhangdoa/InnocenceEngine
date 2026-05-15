@@ -34,7 +34,6 @@ using namespace Inno;
 
 bool Engine::Terminate()
 {
-	// Only wait for rendering task if it was created
 	if (m_pImpl->m_RenderingExecutionTask) {
 		m_pImpl->m_RenderingExecutionTask->Wait();
 		m_pImpl->m_RenderingExecutionTask->Deactivate();
@@ -46,20 +45,14 @@ bool Engine::Terminate()
 		Get<FrameManagementService>()->WaitForGPUIdle();
 	}
 
-	// Phase 1 of shutdown — GPU-alive finalization. Anything that needs a
-	// working GPU (readback, final flush, capture save) runs here, before
-	// LogicClient::Terminate starts any long-running CPU work. This makes
-	// the "GPU alive during readback" invariant structural instead of
-	// depending on where a line happens to sit in Terminate (see TASK-42).
+	// GPU-alive finalization must run before LogicClient::Terminate; the next
+	// phase may stall the GPU long enough to trip TDR.
 	if (!m_pImpl->m_initConfig.isHeadless && m_pImpl->m_RenderingClient) {
 		if (!m_pImpl->m_RenderingClient->FinalizeGPUResults())
 			Log(Warning, "RenderingClient::FinalizeGPUResults reported failure; continuing shutdown.");
 	}
 
-	// Phase 2 — LogicClient CPU-heavy shutdown (CPU path tracer, physics
-	// teardown, etc.). GPU may become unresponsive mid-way (TDR) during
-	// this phase; nothing here may touch GPU resources. Skipped in bake
-	// mode (client was never Setup/Initialize'd).
+	// Bake mode skips LogicClient::Terminate — the client was never Setup/Initialize'd.
 	if (m_pImpl->m_LogicClient && !m_pImpl->m_initConfig.isBakeMode) {
 		if (!m_pImpl->m_LogicClient->Terminate())
 		{
@@ -68,7 +61,6 @@ bool Engine::Terminate()
 		}
 	}
 
-	// Only terminate rendering-related services if not headless
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		ITask::Desc taskDesc("Default Rendering Client Termination Task", ITask::Type::Once, 2);
 		auto l_ExampleRenderingClientTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
