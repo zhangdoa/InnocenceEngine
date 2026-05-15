@@ -25,7 +25,8 @@ namespace Inno
 		SamplerComponent *m_SamplerComp;
 		SamplerComponent *m_SamplerComp_RandomRot;
 
-		uint32_t m_kernelSize = 64;
+		// Mirrors the canonical kernel count in SSAONoisePass.comp (sampleCount).
+		uint32_t m_kernelSize = 32;
 		std::vector<Math::Vec4> m_Kernel;
 		std::vector<Math::Vec4> m_Noise;
 
