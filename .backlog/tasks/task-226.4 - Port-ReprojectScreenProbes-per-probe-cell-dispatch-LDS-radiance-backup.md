@@ -35,12 +35,14 @@ Design note: TASK-226.4's side-cache nuke assumes the LDS radiance-backup fully 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 #1 Reprojection dispatched per-probe-cell with LDS-backup parallel reduction matching gi1.comp:659–878
-- [ ] #2 #2 In-house side-cache textures + Halton-jitter/InterlockedMin scheme removed from shader + pass C++
+- [ ] #1 #1 Reprojection dispatched per-probe-cell with LDS-backup parallel reduction matching Capsaicin ReprojectScreenProbes (local snapshot `.alignments/_audit_refs/gi1.comp:293-499`)
+- [x] #2 #2 In-house side-cache textures + Halton-jitter/InterlockedMin scheme removed from shader + pass C++ (side cache landed at eca79947; Halton-jitter lives in RayGen, out of file scope)
 - [ ] #3 #3 Shader + engine build green
 - [ ] #4 #4 Sponza autotest renders without regression vs TASK-226.2 baseline on continuous-camera regions
 - [ ] #5 #5 Disocclusion regions (camera-cut test case) render with LDS-backup fill, no stale ghost cells
-- [ ] #6 #6 .alignments/TASK-226.4-port-audit.md cites Capsaicin line ranges + records the side-cache-nuke design call
+- [x] #6 #6 .alignments/TASK-226.4-port-audit.md cites Capsaicin line ranges + records the side-cache-nuke design call
+- [ ] #7 Per-cell octahedral-remap accumulation ported (audit Row #4 — `.alignments/_audit_refs/gi1.comp:367-404, 780-842`): each thread re-aims previous-frame radiance through `mapToHemiOctahedronInverse` and `InterlockedAdd`s into the remapped cell, replacing the current direct (i,j)→(i,j) copy
+- [ ] #8 3×3 cached-probe neighbour fallback ported (audit Row #9 — `.alignments/_audit_refs/gi1.comp:780-861`): on whole-probe reprojection failure, LDS seeds from 3×3 neighbour probes' remapped radiance so backup[0] is non-degenerate. Engine analog of `g_ScreenProbes_ProbeCachedTileBuffer` must be designed (likely reading `in_RadianceCacheResults_Prev` at neighbour probe screen positions) — record the design call in the alignment artifact
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -50,7 +52,9 @@ Design note: TASK-226.4's side-cache nuke assumes the LDS radiance-backup fully 
 
 Reprojection.comp 300 → 240 lines. Pass binding-layout 12 → 9 descriptors. C++ pass file 184 → 175 lines.
 
-**Second half PENDING**: port Capsaicin's LDS radiance-backup parallel reduction (gi1.comp:845-857) into the kernel scope. That's the structural replacement for the side cache — Capsaicin's canonical disocclusion-fill mechanism. Currently the fail-branch hard-invalidates instead. Substantial rewrite — re-dispatch this task with adequate session budget when ready.
+2026-05-16 (second-half audit): Audit-first per `paper-port` skill step 4. Finding: the LDS radiance-backup reduction at Capsaicin gi1.comp:407-428 is NOT a self-contained portable unit under the engine's current reprojection design. The mechanism feeds on per-cell sample sparsity within a probe (some cells visited from neighbour probes, others not), produced by Capsaicin's octahedral-remap accumulation pipeline at gi1.comp:367-404 + 780-861. The engine's reprojection does direct cell-(i,j)-of-prev → cell-(i,j)-of-current copy (lines 211-224, post-eca79947) with no octahedral remapping; reprojection is whole-probe-binary (all 64 cells succeed together or all 64 fail together). Under this design, the LDS-backup mechanism degenerates: on success the backup is unused (cells already have history), on failure backup[0] = (0/0, 0/0) because there is no source data to seed from.
+
+Full audit artifact: `.alignments/TASK-226.4-port-audit.md`. Audit recommended Option B; main-session adjudicated **Option A** (2026-05-16): expand TASK-226.4 scope to include Rows #4 + #9 as prerequisites so the LDS-backup port has the per-cell sparse-history substrate it feeds on. ACs #7 + #8 added to track the prerequisite work. Capsaicin line references throughout this task and the alignment artifact cite the local snapshot at `.alignments/_audit_refs/gi1.comp` (the original task description's `:845-857` / `:920` numbers reference a different/stale Capsaicin tree — corrected references attached to ACs #1, #7, #8).
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
