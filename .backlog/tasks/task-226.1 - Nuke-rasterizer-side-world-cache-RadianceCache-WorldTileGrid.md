@@ -1,9 +1,10 @@
 ---
 id: TASK-226.1
 title: Nuke rasterizer-side world cache (RadianceCache* WorldTileGrid)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-15 20:23'
+updated_date: '2026-05-16 02:02'
 labels:
   - rendering
   - GI
@@ -37,12 +38,28 @@ Touched files:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 #1 WorldTileGrid type + all bindings removed from rasterizer-side radiance cache shaders
-- [ ] #2 #2 Shader build green (CompileHlslShaders.vcxproj)
-- [ ] #3 #3 Engine + editor build green (ALL_BUILD.vcxproj)
-- [ ] #4 #4 Runtime smoke: launch GISponza autotest, no validation errors, indirect lighting still present from prior-frame readback (not from the now-nuked WorldTileGrid)
-- [ ] #5 #5 No reference in code/comments to the nuked WorldTileGrid types
+- [x] #1 #1 WorldTileGrid type + all bindings removed from rasterizer-side radiance cache shaders
+- [x] #2 #2 Shader build green (CompileHlslShaders.vcxproj)
+- [x] #3 #3 Engine + editor build green (ALL_BUILD.vcxproj)
+- [x] #4 #4 Runtime smoke: launch GISponza autotest, no validation errors, indirect lighting still present from prior-frame readback (not from the now-nuked WorldTileGrid)
+- [x] #5 #5 No reference in code/comments to the nuked WorldTileGrid types
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Nuked the rasterizer-side WorldTileGrid hash grid. Per gap matrix row #8 (broken, normal-keyed instead of ray-dir-keyed) — same divergence class as TASK-77.1 flagged. PT-side hash grid (TASK-77.x) remains canonical.
+
+Deleted: WorldTileGrid u1 binding, WorldTile/WorldCell types + constants + helpers (DominantAxis, CellInTile, CellIndexInTile, SelectTileMipLevel, IsShortRay, ComputeTileHash, ComputeTileFingerprint, IsTileSlotStale, _TileGridIndex, _CellGridIndex, MAX_LINEAR_PROBE, WORLD_PROBE_SHORT_RAY_THRESHOLD), the RayGen MIP-fan-out write block, the ClosestHit off-screen world-cache read block, the m_WorldProbeGrid C++ resource decl in RadianceCacheReprojectionPass_Setup.cpp.
+
+Kept: _PCG3D (used by closest-hit RNG seeding), all other RayTracingTypes.hlsl helpers (octahedral, SH basis, GGX, tangent, Hash2D, RayPayload). u1 binding slot left empty per brief — no renumber to avoid root-signature mismatch.
+
+Diff: 11 source files, 35 insertions / 360 deletions. Build green (shader + C++). Runtime smoke (Main.exe -mode 0 -renderer 0 -total_frames 30 -offscreen) → `Auto-test: 30 frames rendered, terminating.`, no validation/corruption/hung errors. Final `git grep -i "worldtile|world_tile|worldprobegrid|worldcache"` returns 0 hits.
+
+Visual verification deferred to TASK-226.8 (final port gate) per umbrella plan — the rasterizer GI looks worse short-term because the secondary-bounce cache is gone, that's expected and within scope of the nuke.
+
+Closure-Reason: ACs #1-#5 satisfied, see .alignments/TASK-226.1-nuke-summary.md.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->

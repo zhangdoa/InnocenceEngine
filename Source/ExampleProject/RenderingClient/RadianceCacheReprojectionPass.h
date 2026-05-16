@@ -18,7 +18,6 @@ namespace Inno
 
 		TextureComponent* GetCurrentFrameResult();
 		TextureComponent* GetPreviousFrameResult();
-		GPUBufferComponent* GetWorldProbeGrid();
 		TextureComponent* GetCurrentProbePosition();
 		TextureComponent* GetPreviousProbePosition();
 		TextureComponent* GetCurrentProbeNormal();
@@ -44,8 +43,6 @@ namespace Inno
 		TextureComponent* m_SideCache_Atlas;    // mirrors the radiance atlas layout; preserved on failed reprojection
 		TextureComponent* m_SideCache_PosFrame; // pos.xyz in RGB, asfloat(frameIndex) in A
 		TextureComponent* m_SideCache_Normal;   // normal.xyz in RGB
-
-		GPUBufferComponent* m_WorldProbeGrid;
 
 		ShaderStage m_ShaderStage;
 

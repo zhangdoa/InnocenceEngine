@@ -7,7 +7,6 @@
 #include "../../Engine/Services/ShaderProgramResourceService.h"
 #include "../../Engine/Services/RenderPassResourceService.h"
 #include "../../Engine/Services/TextureResourceService.h"
-#include "../../Engine/Services/GPUBufferResourceService.h"
 #include "../../Engine/Services/CommandListResourceService.h"
 
 using namespace Inno;
@@ -203,21 +202,6 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_ProbeNormal_Even);
 
-	if (m_WorldProbeGrid)
-		g_Engine->Get<GPUBufferResourceService>()->Delete(m_WorldProbeGrid);
-
-	m_WorldProbeGrid = g_Engine->Get<GPUBufferResourceService>()->Add("Radiance Cache World Tile Grid");
-	m_WorldProbeGrid->m_GPUAccessibility = Accessibility::ReadWrite;
-	// WORLD_TILE_HASH_SIZE (RayTracingTypes.hlsl) — tile-addressed hash.
-	m_WorldProbeGrid->m_ElementCount = 32 * 1024;
-	// WorldTile layout (RayTracingTypes.hlsl): fingerprint (uint) +
-	// lastTouchedFrame (uint) + 2× uint pad (float4 align for cells) +
-	// 85 × WorldCell (float3 radiance + float weight = 16 B). Total = 16 + 85·16 = 1376 B.
-	// Zero-init so fingerprint reads as "empty" and weight as "unwritten"
-	// until the first ray populates a cell.
-	m_WorldProbeGrid->m_ElementSize = sizeof(uint32_t) * 4 + (sizeof(float) * 3 + sizeof(float)) * 85;
-	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_WorldProbeGrid);
-
 	// GI-1.0 §2.1.5 probe_mask — one uint per tile. Source of truth for
 	// probe validity; single-buffered because writer (ray gen) and readers
 	// (filter) live in the same frame.
@@ -234,8 +218,9 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 	// of the radiance atlas + (pos, normal, frameIndex). Written on
 	// successful reprojection, read when the current frame's reprojection
 	// fails but the cached snapshot is still geometrically close and
-	// within WORLD_TILE_EVICTION_AGE frames fresh. Single-buffered — the
-	// Reprojection shader owns both reads and writes.
+	// within SIDE_CACHE_MAX_AGE frames fresh (constant lives in
+	// RadianceCacheReprojection.comp). Single-buffered — the Reprojection
+	// shader owns both reads and writes.
 	if (m_SideCache_Atlas)
 		g_Engine->Get<TextureResourceService>()->Delete(m_SideCache_Atlas);
 

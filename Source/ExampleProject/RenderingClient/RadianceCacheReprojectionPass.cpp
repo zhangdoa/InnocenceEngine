@@ -9,7 +9,6 @@
 #include "../../Engine/Services/ShaderProgramResourceService.h"
 #include "../../Engine/Services/RenderPassResourceService.h"
 #include "../../Engine/Services/TextureResourceService.h"
-#include "../../Engine/Services/GPUBufferResourceService.h"
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
@@ -31,7 +30,6 @@ bool RadianceCacheReprojectionPass::Initialize()
 bool RadianceCacheReprojectionPass::Terminate()
 {
 
-	g_Engine->Get<GPUBufferResourceService>()->Delete(m_WorldProbeGrid);
 	g_Engine->Get<TextureResourceService>()->Delete(m_ProbeMask);
 	g_Engine->Get<TextureResourceService>()->Delete(m_ProbePosition_Even);
 	g_Engine->Get<TextureResourceService>()->Delete(m_ProbePosition_Odd);
@@ -178,11 +176,6 @@ TextureComponent* Inno::RadianceCacheReprojectionPass::GetPreviousProbeNormal()
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
 	return l_isOddFrame ? m_ProbeNormal_Even : m_ProbeNormal_Odd;
-}
-
-GPUBufferComponent* RadianceCacheReprojectionPass::GetWorldProbeGrid()
-{
-	return m_WorldProbeGrid;
 }
 
 TextureComponent* RadianceCacheReprojectionPass::GetProbeMask()

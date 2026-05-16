@@ -35,23 +35,17 @@ Texture2D<float4> in_ProbeNormal : register(t5);
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> in_RadianceCacheResults : register(u0);
 
-// Under sparse spawning, Reprojection owns the "this tile has no usable
-// data" signal — it flags sky tiles and tiles where no previous probe
-// could be reused as PROBE_MASK_INVALID so downstream passes (filter,
-// interpolation, RayGen's 3x3 neighbourhood scatter) can skip them.
-// Successful-reprojection tiles leave the mask untouched; the mask then
-// reflects "the last time any RayGen spawn wrote here" — stale position
-// data up to ξ_x·ξ_y frames old, but radiance has been reprojected each
-// frame so this is paper-compliant hysteresis.
+// Under sparse spawning, Reprojection owns the "tile has no usable data"
+// signal — flags sky tiles + no-reuse tiles as PROBE_MASK_INVALID so
+// downstream passes skip them. Success leaves the mask untouched (stale
+// position up to ξ_x·ξ_y frames old; radiance reprojected each frame,
+// paper-compliant hysteresis).
 [[vk::binding(1, 2)]]
 RWTexture2D<uint> in_ProbeMask : register(u1);
 
-// GI-1.0 §2.1.8 side cache. Single-slot-per-tile snapshot that survives
-// reprojection invalidation. Written on successful reprojection (this
-// frame's probe data is known good); read when the current frame's
-// reprojection fails but the stored snapshot is still geometrically
-// close (plane_dist < adaptive_cell_size × 3, normal_similarity >
-// NORMAL_THRESHOLD) and within WORLD_TILE_EVICTION_AGE frames fresh.
+// GI-1.0 §2.1.8 side cache. Single-slot-per-tile snapshot read on a failed
+// reprojection when the stored snapshot is geometrically close (plane_dist
+// < cellSize×3, normal_dot > NORMAL_THRESHOLD) and < SIDE_CACHE_MAX_AGE.
 [[vk::binding(2, 2)]]
 RWTexture2D<float4> in_SideCache_Atlas : register(u2);
 [[vk::binding(3, 2)]]
@@ -59,19 +53,16 @@ RWTexture2D<float4> in_SideCache_PosFrame : register(u3);
 [[vk::binding(4, 2)]]
 RWTexture2D<float4> in_SideCache_Normal : register(u4);
 
-// Heuristics for temporal stability. NORMAL_THRESHOLD, DEPTH_THRESHOLD and
-// the confidence bounds are local to the reprojection's validity decision;
-// the spatial scale (plane / distance) comes from the unified Algorithm 6
-// AdaptiveCellSize so reprojection, sampling, and filter agree on what
-// counts as "same surface".
-// Capsaicin gi1.comp:4051 uses 0.95 for the denoiser-pass reprojection
-// validity test. Matching that here keeps the probe and per-pixel passes
-// agreeing on "same surface" under camera rotation, where 0.9 admitted
-// neighbours up to ~25.8° apart and let stale SH leak into rotated tiles.
+// Temporal-stability heuristics. NORMAL_THRESHOLD = 0.95 matches Capsaicin
+// gi1.comp:4051 (denoiser reprojection validity); 0.9 admitted ~25.8° apart
+// and leaked stale SH on camera rotation. Spatial scale comes from the
+// unified Algorithm 6 AdaptiveCellSize so all probe passes agree on "same
+// surface".
 static const float NORMAL_THRESHOLD = 0.95;
 static const float DEPTH_THRESHOLD = 0.1;
 static const float MIN_CONFIDENCE = 0.1;
 static const float MAX_CONFIDENCE = 0.95;
+static const uint SIDE_CACHE_MAX_AGE = 64u; // ~1 s at 60 fps
 
 float CalculateReprojectionConfidence(
     float3 currentPos, float3 currentNormal,
@@ -97,15 +88,13 @@ float CalculateReprojectionConfidence(
 
 float4 TemporalFilter(float4 currentSample, float4 historySample, float confidence)
 {
-    // High confidence = valid reprojection = weight history heavily to accumulate samples.
-    // Low confidence = disocclusion or fast motion = favor current frame.
+    // High confidence → weight history (accumulate); low → favor current.
     float blendRate = lerp(0.95, 0.1, confidence);
     float4 result = lerp(historySample, currentSample, blendRate);
     result.rgb = max(result.rgb, float3(0.0, 0.0, 0.0));
     return result;
 }
 
-// Use groupshared memory for atomic operations
 groupshared uint sharedReprojectionScore;
 groupshared float sharedConfidence;
 
@@ -115,7 +104,6 @@ void main(ComputeInputType input)
     uint2 screenCoord = input.dispatchThreadID.xy;
     uint2 screenCoord_Probe = (screenCoord / 8) * 8;
 
-    // --- Classify this thread (no early return before barriers) ---
     bool isSky = in_opaquePassRT0.Load(int3(screenCoord, 0)).w == 0.0f;
 
     float3 positionWS = float3(0, 0, 0);
@@ -145,16 +133,14 @@ void main(ComputeInputType input)
         }
     }
 
-    // --- Shared memory initialisation (ALL threads participate, no early return) ---
     if (input.groupIndex == 0)
     {
         sharedReprojectionScore = 0xFFFFFFFF; // Max uint = worst score
         sharedConfidence = 0.0;
     }
 
-    GroupMemoryBarrierWithGroupSync(); // Barrier 1: shared memory ready
+    GroupMemoryBarrierWithGroupSync();
 
-    // --- Compute per-thread reprojection score (only for non-exiting threads) ---
     if (!earlyExit)
     {
         uint2 prevScreenCoord_ProbeSpace = prevScreenCoord_Probe / 8;
@@ -169,17 +155,11 @@ void main(ComputeInputType input)
         float prevDepth = length(prevPositionWS_Probe - g_Frame.camera_posWS.xyz);
         float depthDiff = abs(currentDepth - prevDepth);
 
-        // Unified adaptive cell size (Algorithm 6). Threshold both the
-        // plane-distance acceptance and the confidence scoring by the same
-        // scale so the "can I reuse this probe?" decision here and the
-        // filter's "is this neighbor usable?" decision later are aligned.
+        // Unified adaptive cell size (Algorithm 6) — plane-distance gate
+        // and the filter's neighbour check share this scale.
         float cellSize = max(AdaptiveCellSize(currentDepth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
-        // Grazing-angle boost (Capsaicin gi1.comp:4026). At grazing view
-        // angles a tiny world-space difference projects to many screen
-        // pixels, so the same plane-distance check that's right at normal
-        // incidence over-rejects under rotation. Boost the gate by up to 5×
-        // as the view-vs-normal angle approaches 90°, matching the
-        // denoiser-pass reprojection cellSize.
+        // Grazing-angle boost (Capsaicin gi1.comp:4026): up to 5× as
+        // view·normal → 0; matches denoiser-pass reprojection.
         float3 viewDir = normalize(g_Frame.camera_posWS.xyz - positionWS);
         cellSize *= lerp(1.0, 5.0, pow(1.0 - max(dot(viewDir, normalWS), 0.0), 6.0));
 
@@ -202,18 +182,16 @@ void main(ComputeInputType input)
         }
     }
 
-    GroupMemoryBarrierWithGroupSync(); // Barrier 2: InterlockedMin complete
+    GroupMemoryBarrierWithGroupSync();
 
-    // Exactly one thread (the winner) writes confidence — race-free because each
-    // thread has a unique groupIndex and only one can match the stored lower 16 bits.
+    // Winner writes confidence — race-free via unique groupIndex match.
     if (!earlyExit && (sharedReprojectionScore & 0xFFFF) == input.groupIndex)
     {
         sharedConfidence = threadConfidence;
     }
 
-    GroupMemoryBarrierWithGroupSync(); // Barrier 3: sharedConfidence written
+    GroupMemoryBarrierWithGroupSync();
 
-    // --- Apply result (all barriers done; early exits are safe below) ---
     if (earlyExit)
     {
         // Sky or out-of-bounds: clear probe tile (thread 0 per group covers all 64 pixels)
@@ -226,9 +204,7 @@ void main(ComputeInputType input)
                     in_RadianceCacheResults[screenCoord_Probe + uint2(i, j)] = float4(0, 0, 0, 0);
                 }
             }
-            // Invalidate the mask so filter/interpolation skip this tile.
-            // RayGen may later write a fresh mask if this tile is its
-            // Halton-selected spawn tile for the current frame.
+            // Invalidate so filter/interpolation skip; RayGen may refresh.
             in_ProbeMask[screenCoord_Probe / 8] = PROBE_MASK_INVALID;
         }
         DeviceMemoryBarrier();
@@ -240,9 +216,7 @@ void main(ComputeInputType input)
 
     if (input.groupIndex == bestProbeGroupIndex && reprojectionConfidence > MIN_CONFIDENCE)
     {
-        // Successful reprojection: blend history into current atlas AND
-        // snapshot the filtered result into the side cache so it survives
-        // a future failed reprojection (paper §2.1.8).
+        // Success: blend history into atlas + snapshot to side cache (§2.1.8).
         for (uint i = 0; i < 8; i++)
         {
             for (uint j = 0; j < 8; j++)
@@ -259,9 +233,8 @@ void main(ComputeInputType input)
                 in_SideCache_Atlas[currentPixel] = filteredSample;
             }
         }
-        // Meta: winner thread stores its own positionWS + normalWS + frame
-        // as the tile's "last-good" probe pose. Frame index packed via
-        // asfloat(uint) so reader side compares with asuint().
+        // Meta: winner thread stores positionWS + normalWS + frame (packed
+        // via asfloat(uint); reader uses asuint()).
         float3 winnerNormalWS = normalize(in_opaquePassRT1.Load(int3(screenCoord, 0)).xyz);
         uint2 probeIndex = screenCoord_Probe / 8u;
         in_SideCache_PosFrame[probeIndex] = float4(positionWS, asfloat(g_Frame.frameIndex));
@@ -269,20 +242,17 @@ void main(ComputeInputType input)
     }
     else if (input.groupIndex == 0)
     {
-        // Reprojection failed this frame. Before the hard invalidate try
-        // the paper §2.1.8 side cache: if the stored snapshot is within
-        // WORLD_TILE_EVICTION_AGE frames and still geometrically close to
-        // the current tile's probe anchor, adopt it. Restores thin-geometry
-        // wobble and 1-frame reprojection misses without waiting up to
-        // ξ_x·ξ_y frames for the next Halton spawn to repopulate.
+        // Reprojection failed: before hard-invalidate, try the §2.1.8 side
+        // cache (within SIDE_CACHE_MAX_AGE frames + geometrically close to
+        // the tile's anchor). Restores thin-geometry wobble and 1-frame
+        // misses without waiting ξ_x·ξ_y frames for the next Halton spawn.
         uint2 probeIndex = screenCoord_Probe / 8u;
         float4 storedPosFrame = in_SideCache_PosFrame[probeIndex];
         float3 storedPos = storedPosFrame.xyz;
         uint storedFrame = asuint(storedPosFrame.w);
         float3 storedNormal = in_SideCache_Normal[probeIndex].xyz;
 
-        // Anchor pixel at tile centre; if it's sky there's no G-buffer
-        // reference for the "still close?" test — skip side cache.
+        // Tile-centre anchor; sky → no G-buffer ref → skip side cache.
         uint2 anchorPixel = screenCoord_Probe + uint2(4, 4);
         float4 anchorRT0 = in_opaquePassRT0.Load(int3(anchorPixel, 0));
         bool anchorValid = anchorRT0.w == 1.0;
@@ -294,16 +264,15 @@ void main(ComputeInputType input)
 
         bool sideCacheFresh = anchorValid &&
                               storedFrame > 0u &&
-                              (g_Frame.frameIndex - storedFrame) < WORLD_TILE_EVICTION_AGE;
+                              (g_Frame.frameIndex - storedFrame) < SIDE_CACHE_MAX_AGE;
         bool sideCacheClose = sideCacheFresh &&
                               distance(storedPos, anchorPos) < (cellSize * 3.0) &&
                               dot(storedNormal, anchorNormal) > NORMAL_THRESHOLD;
 
         if (sideCacheClose)
         {
-            // Restore atlas from side cache snapshot; leave mask untouched
-            // so downstream passes treat this tile as valid against its
-            // existing Halton-picked sub-pixel encoding.
+            // Restore atlas from snapshot; mask untouched (existing Halton
+            // sub-pixel encoding remains valid).
             for (uint i = 0; i < 8; i++)
             {
                 for (uint j = 0; j < 8; j++)
@@ -315,8 +284,7 @@ void main(ComputeInputType input)
         }
         else
         {
-            // No valid reprojection AND no usable side-cache snapshot.
-            // Clear and invalidate; RayGen or next frame will repopulate.
+            // No reprojection + no usable snapshot: clear + invalidate.
             for (uint i = 0; i < 8; i++)
             {
                 for (uint j = 0; j < 8; j++)

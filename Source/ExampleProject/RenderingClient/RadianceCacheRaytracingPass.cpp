@@ -44,7 +44,7 @@ bool RadianceCacheRaytracingPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(13);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(12);
 
 	m_ShaderStage = ShaderStage::RayGen | ShaderStage::ClosestHit | ShaderStage::AnyHit | ShaderStage::Miss;
 
@@ -114,40 +114,32 @@ bool RadianceCacheRaytracingPass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage = m_ShaderStage;
 
-	// u1 - world probe grid
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_GPUResourceType = GPUResourceType::Buffer;
+	// u2 - probe position (u1 slot intentionally unbound; was world probe grid, nuked per TASK-226.1 — descriptor index 1 in set 2 has no consumer in any radiance-cache shader)
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_TextureUsage = TextureUsage::ComputeOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_ShaderStage = m_ShaderStage;
 
-	// u2 - probe position
+	// u3 - probe normal
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_TextureUsage = TextureUsage::ComputeOnly;	
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex = 3;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_TextureUsage = TextureUsage::ComputeOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ShaderStage = m_ShaderStage;
 
-	// u3 - probe normal
+	// u4 - probe mask (GI-1.0 §2.1.5 — one uint per tile)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex = 3;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex = 4;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_TextureUsage = TextureUsage::ComputeOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_ShaderStage = m_ShaderStage;
-
-	// u4 - probe mask (GI-1.0 §2.1.5 — one uint per tile)
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_GPUResourceType = GPUResourceType::Image;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorIndex = 4;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_TextureUsage = TextureUsage::ComputeOnly;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_ShaderStage = m_ShaderStage;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
@@ -234,10 +226,9 @@ bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderin
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, LightPass::Get().GetIlluminanceResult(), 6);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetPreviousFrameResult(), 7);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_result, 8);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetWorldProbeGrid(), 9);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbePosition(), 10);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal(), 11);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetProbeMask(), 12);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbePosition(), 9);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal(), 10);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetProbeMask(), 11);
 
 	// Dispatch at spawn-tile granularity: viewport / (8·UPSCALE_X, 8·UPSCALE_Y).
 	// One thread per spawn tile spawns exactly one probe per frame at a
