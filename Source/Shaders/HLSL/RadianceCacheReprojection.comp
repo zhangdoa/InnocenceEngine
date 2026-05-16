@@ -43,26 +43,12 @@ RWTexture2D<float4> in_RadianceCacheResults : register(u0);
 [[vk::binding(1, 2)]]
 RWTexture2D<uint> in_ProbeMask : register(u1);
 
-// GI-1.0 §2.1.8 side cache. Single-slot-per-tile snapshot read on a failed
-// reprojection when the stored snapshot is geometrically close (plane_dist
-// < cellSize×3, normal_dot > NORMAL_THRESHOLD) and < SIDE_CACHE_MAX_AGE.
-[[vk::binding(2, 2)]]
-RWTexture2D<float4> in_SideCache_Atlas : register(u2);
-[[vk::binding(3, 2)]]
-RWTexture2D<float4> in_SideCache_PosFrame : register(u3);
-[[vk::binding(4, 2)]]
-RWTexture2D<float4> in_SideCache_Normal : register(u4);
-
 // Temporal-stability heuristics. NORMAL_THRESHOLD = 0.95 matches Capsaicin
-// gi1.comp:4051 (denoiser reprojection validity); 0.9 admitted ~25.8° apart
-// and leaked stale SH on camera rotation. Spatial scale comes from the
-// unified Algorithm 6 AdaptiveCellSize so all probe passes agree on "same
-// surface".
+// gi1.comp:4051; spatial scale comes from Algorithm 6 AdaptiveCellSize.
 static const float NORMAL_THRESHOLD = 0.95;
 static const float DEPTH_THRESHOLD = 0.1;
 static const float MIN_CONFIDENCE = 0.1;
 static const float MAX_CONFIDENCE = 0.95;
-static const uint SIDE_CACHE_MAX_AGE = 64u; // ~1 s at 60 fps
 
 float CalculateReprojectionConfidence(
     float3 currentPos, float3 currentNormal,
@@ -216,7 +202,12 @@ void main(ComputeInputType input)
 
     if (input.groupIndex == bestProbeGroupIndex && reprojectionConfidence > MIN_CONFIDENCE)
     {
-        // Success: blend history into atlas + snapshot to side cache (§2.1.8).
+        // Success: blend history into atlas. The side-cache snapshot
+        // mechanism (paper §2.1.8 in-house variant) was removed — Capsaicin's
+        // canonical reprojection uses an LDS radiance-backup parallel
+        // reduction at the kernel scope (gi1.comp:845-857) which TASK-226.4
+        // will port. Until then, disocclusion regions hard-invalidate via
+        // the else-branch and RayGen repopulates next frame.
         for (uint i = 0; i < 8; i++)
         {
             for (uint j = 0; j < 8; j++)
@@ -227,73 +218,22 @@ void main(ComputeInputType input)
                 float4 currentSample = in_RadianceCacheResults[currentPixel];
                 float4 historySample = in_RadianceCacheResults_Prev[prevPixel];
 
-                float4 filteredSample = TemporalFilter(currentSample, historySample, reprojectionConfidence);
-
-                in_RadianceCacheResults[currentPixel] = filteredSample;
-                in_SideCache_Atlas[currentPixel] = filteredSample;
+                in_RadianceCacheResults[currentPixel] =
+                    TemporalFilter(currentSample, historySample, reprojectionConfidence);
             }
         }
-        // Meta: winner thread stores positionWS + normalWS + frame (packed
-        // via asfloat(uint); reader uses asuint()).
-        float3 winnerNormalWS = normalize(in_opaquePassRT1.Load(int3(screenCoord, 0)).xyz);
-        uint2 probeIndex = screenCoord_Probe / 8u;
-        in_SideCache_PosFrame[probeIndex] = float4(positionWS, asfloat(g_Frame.frameIndex));
-        in_SideCache_Normal[probeIndex] = float4(winnerNormalWS, 0);
     }
     else if (input.groupIndex == 0)
     {
-        // Reprojection failed: before hard-invalidate, try the §2.1.8 side
-        // cache (within SIDE_CACHE_MAX_AGE frames + geometrically close to
-        // the tile's anchor). Restores thin-geometry wobble and 1-frame
-        // misses without waiting ξ_x·ξ_y frames for the next Halton spawn.
-        uint2 probeIndex = screenCoord_Probe / 8u;
-        float4 storedPosFrame = in_SideCache_PosFrame[probeIndex];
-        float3 storedPos = storedPosFrame.xyz;
-        uint storedFrame = asuint(storedPosFrame.w);
-        float3 storedNormal = in_SideCache_Normal[probeIndex].xyz;
-
-        // Tile-centre anchor; sky → no G-buffer ref → skip side cache.
-        uint2 anchorPixel = screenCoord_Probe + uint2(4, 4);
-        float4 anchorRT0 = in_opaquePassRT0.Load(int3(anchorPixel, 0));
-        bool anchorValid = anchorRT0.w == 1.0;
-        float3 anchorPos = anchorRT0.xyz;
-        float3 anchorNormal = normalize(in_opaquePassRT1.Load(int3(anchorPixel, 0)).xyz);
-
-        float anchorDepth = length(anchorPos - g_Frame.camera_posWS.xyz);
-        float cellSize = max(AdaptiveCellSize(anchorDepth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
-
-        bool sideCacheFresh = anchorValid &&
-                              storedFrame > 0u &&
-                              (g_Frame.frameIndex - storedFrame) < SIDE_CACHE_MAX_AGE;
-        bool sideCacheClose = sideCacheFresh &&
-                              distance(storedPos, anchorPos) < (cellSize * 3.0) &&
-                              dot(storedNormal, anchorNormal) > NORMAL_THRESHOLD;
-
-        if (sideCacheClose)
+        // Reprojection failed + no side-cache fallback: clear + invalidate.
+        for (uint i = 0; i < 8; i++)
         {
-            // Restore atlas from snapshot; mask untouched (existing Halton
-            // sub-pixel encoding remains valid).
-            for (uint i = 0; i < 8; i++)
+            for (uint j = 0; j < 8; j++)
             {
-                for (uint j = 0; j < 8; j++)
-                {
-                    uint2 pix = screenCoord_Probe + uint2(i, j);
-                    in_RadianceCacheResults[pix] = in_SideCache_Atlas[pix];
-                }
+                in_RadianceCacheResults[screenCoord_Probe + uint2(i, j)] = float4(0, 0, 0, 0);
             }
         }
-        else
-        {
-            // No reprojection + no usable snapshot: clear + invalidate.
-            for (uint i = 0; i < 8; i++)
-            {
-                for (uint j = 0; j < 8; j++)
-                {
-                    in_RadianceCacheResults[screenCoord_Probe + uint2(i, j)] = float4(0, 0, 0, 0);
-                }
-            }
-            in_ProbeMask[screenCoord_Probe / 8] = PROBE_MASK_INVALID;
-        }
+        in_ProbeMask[screenCoord_Probe / 8] = PROBE_MASK_INVALID;
     }
 
     DeviceMemoryBarrier();

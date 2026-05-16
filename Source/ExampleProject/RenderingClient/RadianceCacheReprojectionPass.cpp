@@ -37,9 +37,6 @@ bool RadianceCacheReprojectionPass::Terminate()
 	g_Engine->Get<TextureResourceService>()->Delete(m_ProbeNormal_Odd);
 	g_Engine->Get<TextureResourceService>()->Delete(m_RadianceCache_Even);
 	g_Engine->Get<TextureResourceService>()->Delete(m_RadianceCache_Odd);
-	g_Engine->Get<TextureResourceService>()->Delete(m_SideCache_Atlas);
-	g_Engine->Get<TextureResourceService>()->Delete(m_SideCache_PosFrame);
-	g_Engine->Get<TextureResourceService>()->Delete(m_SideCache_Normal);
 
 	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
 	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
@@ -84,10 +81,6 @@ bool RadianceCacheReprojectionPass::PrepareCommandList(IRenderingContext* render
 	l_fmService->TryToTransitState(l_probeNormal, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(l_writeTexture, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	l_fmService->TryToTransitState(m_ProbeMask, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
-	// Side cache is single-buffered read/write from the Reprojection shader.
-	l_fmService->TryToTransitState(m_SideCache_Atlas, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
-	l_fmService->TryToTransitState(m_SideCache_PosFrame, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
-	l_fmService->TryToTransitState(m_SideCache_Normal, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	g_Engine->Get<TextureResourceService>()->Clear(m_CommandListComp_Graphics, l_writeTexture);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
@@ -103,9 +96,6 @@ bool RadianceCacheReprojectionPass::PrepareCommandList(IRenderingContext* render
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_probeNormal, 6);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_writeTexture, 7);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_ProbeMask, 8);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_SideCache_Atlas, 9);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_SideCache_PosFrame, 10);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_SideCache_Normal, 11);
 
 	auto dispatch_x = RadianceCache::TileCount(l_writeTexture->m_TextureDesc.Width);
 	auto dispatch_y = RadianceCache::TileCount(l_writeTexture->m_TextureDesc.Height);

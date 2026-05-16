@@ -1,9 +1,10 @@
 ---
 id: TASK-226.4
 title: Port ReprojectScreenProbes (per-probe-cell dispatch + LDS radiance-backup)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-05-15 20:24'
+updated_date: '2026-05-16 19:33'
 labels:
   - rendering
   - GI
@@ -41,6 +42,16 @@ Design note: TASK-226.4's side-cache nuke assumes the LDS radiance-backup fully 
 - [ ] #5 #5 Disocclusion regions (camera-cut test case) render with LDS-backup fill, no stale ghost cells
 - [ ] #6 #6 .alignments/TASK-226.4-port-audit.md cites Capsaicin line ranges + records the side-cache-nuke design call
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-05-16: First half landed — in-house side-cache scheme (in_SideCache_Atlas/PosFrame/Normal bindings + the §2.1.8 in-house variant in the reprojection fail branch + 3 C++ resources + 4 binding-layout entries) NUKED per gap-matrix row #2 authorization ("side cache is functionally redundant" / "in-house heuristics not in the reference"). Disocclusion regions now hard-invalidate via the else-branch and RayGen repopulates next frame — temporary regression on long disocclusions until the LDS-backup port lands.
+
+Reprojection.comp 300 → 240 lines. Pass binding-layout 12 → 9 descriptors. C++ pass file 184 → 175 lines.
+
+**Second half PENDING**: port Capsaicin's LDS radiance-backup parallel reduction (gi1.comp:845-857) into the kernel scope. That's the structural replacement for the side cache — Capsaicin's canonical disocclusion-fill mechanism. Currently the fail-branch hard-invalidates instead. Substantial rewrite — re-dispatch this task with adequate session budget when ready.
+<!-- SECTION:NOTES:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->

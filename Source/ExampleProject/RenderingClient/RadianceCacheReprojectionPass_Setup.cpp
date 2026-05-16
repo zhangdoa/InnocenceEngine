@@ -29,7 +29,7 @@ bool RadianceCacheReprojectionPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(12);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(9);
 
 	m_ShaderStage = ShaderStage::Compute;
 
@@ -104,33 +104,6 @@ bool RadianceCacheReprojectionPass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage = m_ShaderStage;
-
-	// u2 - side cache atlas (GI-1.0 §2.1.8); mirrors atlas layout, preserved on failed reprojection
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_GPUResourceType = GPUResourceType::Image;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_TextureUsage = TextureUsage::ComputeOnly;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_ShaderStage = m_ShaderStage;
-
-	// u3 - side cache pos+frame
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_GPUResourceType = GPUResourceType::Image;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex = 3;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_TextureUsage = TextureUsage::ComputeOnly;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ShaderStage = m_ShaderStage;
-
-	// u4 - side cache normal
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_GPUResourceType = GPUResourceType::Image;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex = 4;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_TextureUsage = TextureUsage::ComputeOnly;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_ShaderStage = m_ShaderStage;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
@@ -213,34 +186,6 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 	m_ProbeMask->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::R;
 	m_ProbeMask->m_TextureDesc.PixelDataType = TexturePixelDataType::UInt32;
 	g_Engine->Get<TextureResourceService>()->Initialize(m_ProbeMask);
-
-	// GI-1.0 §2.1.8 side cache. Single-slot-per-tile "last-good" snapshot
-	// of the radiance atlas + (pos, normal, frameIndex). Written on
-	// successful reprojection, read when the current frame's reprojection
-	// fails but the cached snapshot is still geometrically close and
-	// within SIDE_CACHE_MAX_AGE frames fresh (constant lives in
-	// RadianceCacheReprojection.comp). Single-buffered — the Reprojection
-	// shader owns both reads and writes.
-	if (m_SideCache_Atlas)
-		g_Engine->Get<TextureResourceService>()->Delete(m_SideCache_Atlas);
-
-	m_SideCache_Atlas = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Side Cache Atlas");
-	m_SideCache_Atlas->m_TextureDesc = m_RadianceCache_Even->m_TextureDesc;
-	g_Engine->Get<TextureResourceService>()->Initialize(m_SideCache_Atlas);
-
-	if (m_SideCache_PosFrame)
-		g_Engine->Get<TextureResourceService>()->Delete(m_SideCache_PosFrame);
-
-	m_SideCache_PosFrame = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Side Cache PosFrame");
-	m_SideCache_PosFrame->m_TextureDesc = m_ProbePosition_Odd->m_TextureDesc;
-	g_Engine->Get<TextureResourceService>()->Initialize(m_SideCache_PosFrame);
-
-	if (m_SideCache_Normal)
-		g_Engine->Get<TextureResourceService>()->Delete(m_SideCache_Normal);
-
-	m_SideCache_Normal = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Side Cache Normal");
-	m_SideCache_Normal->m_TextureDesc = m_ProbePosition_Odd->m_TextureDesc;
-	g_Engine->Get<TextureResourceService>()->Initialize(m_SideCache_Normal);
 
 	return true;
 }
