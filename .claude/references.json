@@ -13,6 +13,11 @@
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp"
     },
     {
+      "glob": "Source/Shaders/HLSL/common/RadianceCacheReprojection.hlsl",
+      "paper": "GI-1.0 §2.1.1 (Screen probes reprojection) — per-cell octahedral-remap accumulator + LDS radiance-backup parallel reduction. Hosts the shared LDS state and helpers (quantization, RemapHistoryCell, SeedRadianceBackup, ReduceRadianceBackup, FinalizeRadianceBackup) used by RadianceCacheReprojection.comp's per-probe-cell dispatch.",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L293"
+    },
+    {
       "glob": "Source/Shaders/HLSL/RadianceCacheIntegration.comp",
       "paper": "GI-1.0 §2.4.2 (SH projection) + §2.1.4 (radiance blending)",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp"

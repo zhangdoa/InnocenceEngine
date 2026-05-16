@@ -119,3 +119,47 @@ Three options for main-session adjudication:
 **Option C — Keep the side-cache nuke and accept the long-disocclusion regression as a known limitation** until TASK-226.5/.6 land (which change neighbour search and spawn density, possibly making a richer LDS-backup viable later). Update AC #5 to acknowledge the regression is intentional pending further port work.
 
 Recommendation: Option B. The audit's structural finding is that the LDS-backup port is not a self-contained unit under the engine's current reprojection design — it depends on prior octahedral-remap accumulation infrastructure the engine doesn't have. Forcing a literal port now produces a degenerate mechanism that doesn't deliver the disocclusion-fill the task description targets.
+
+## Post-implementation update — Option A landed
+
+Main session adjudicated Option A (scope expansion: port Rows #4, #7, #8, #9 together). Implementation landed at TASK-226.4 dispatch 2026-05-16.
+
+### Rows closed
+
+| # | Row | Resolution |
+|---|---|---|
+| 4 | Per-cell octahedral-remap accumulation | PORTED. Each of the 64 threads (= one cell of the current probe) now reads the winner's previous-frame radiance at the same cell index, computes the world-space hit point, re-projects it onto the current probe's surface, encodes the new direction back to an octahedral cell, and `InterlockedAdd`s quantized RGBA + sample count into a per-cell LDS accumulator. See `Source/Shaders/HLSL/RadianceCacheReprojection.comp:176-200` (winner path) and `Source/Shaders/HLSL/common/RadianceCacheReprojection.hlsl:62-95` (`RemapHistoryCell` + `AccumulateRemappedRadiance`). |
+| 5 | LDS-radiance-backup seed | PORTED. `SeedRadianceBackup` in the new header (`common/RadianceCacheReprojection.hlsl:117-126`) packs `(recoveredRGB, hasSample ? 1 : 0)` per cell after the accumulation barrier. |
+| 6 | Hillis-Steele up-sweep parallel scan | PORTED. `ReduceRadianceBackup` (`common/RadianceCacheReprojection.hlsl:131-145`) runs 6 strides (1→2→4→8→16→32) with a barrier per iteration; all 64 threads participate in every barrier (shader-standards uniformity rule). |
+| 7 | Backup finalize | PORTED. `FinalizeRadianceBackup` (`common/RadianceCacheReprojection.hlsl:147-155`) computes `avgRadiance / emptyCount` at slot [0] per Capsaicin gi1.comp:421-428. |
+| 8 | Per-cell unvisited write | PORTED. `RadianceCacheReprojection.comp:245-260` writes per-cell: cells with samples get their averaged remap radiance; cells without get `sharedRadianceBackup[0]`. Whole-probe failure (no cell got any sample) still invalidates the probe mask via the gate at `comp:263-269`. |
+| 9 | 3×3 neighbour-probe fallback | PORTED with engine-faithful divergence (see below). |
+
+### Engine-specific design calls — divergences from Capsaicin
+
+Each divergence is acknowledged here as required by `paper-port` skill (commit footer carries `[divergence-acknowledged]`).
+
+**(a) Atlas convention: full-sphere octahedral of world-space directions.** The engine's `EncodeOctahedral` / `DecodeOctahedral` (`RayTracingTypes.hlsl:79-114`) is full-sphere — both hemispheres of the unit sphere map to the [0,1]² atlas quad. Capsaicin's `mapToHemiOctahedron` is hemi-octahedral and uses only the upper hemisphere of a probe's local tangent frame. The engine's `RadianceCacheRayGen.hlsl:172` writes world-space ray directions directly to the atlas, so the cell already encodes a world-space direction and no TBN(probe_normal) transform is needed during reprojection. Trade-off: half the engine atlas (below-hemisphere cells) carries no useful data; the consumer filters (`RadianceCacheFilterVertical.comp:59`) already skip such cells via `dot(direction, normal) <= 0`. The port adopts the engine convention rather than re-architecting the atlas — out of TASK-226.4 scope.
+
+**(b) Row #9 neighbour-fallback source data.** Capsaicin's analog (gi1.comp:780-861, hosted in `SampleScreenProbes`) scans a separate age-tracked `g_ScreenProbes_ProbeCachedTileBuffer`. The engine has no such structure; the dispatch explicitly forbade reintroducing the side-cache scheme. The port reads previous-frame radiance from `in_RadianceCacheResults_Prev` at neighbour probe positions, with previous-frame probe pos/normal from `in_ProbePosition` / `in_ProbeNormal` (already bound via the existing ping-pong). Validity proxy: `prev_radiance.w > 0` distinguishes valid cells from filter-zeroed invalid probes (`RadianceCacheFilterVertical.comp:48`). This source is **locked to last-frame spawn positions, not aged across multiple frames**, so disocclusion fill quality is lower than Capsaicin's when the disoccluded region has been uncovered for many frames. Engine-faithful within the binding constraint.
+
+**(c) Row #9 hosted in Reprojection, not Sample.** Capsaicin runs the neighbour scan inside `SampleScreenProbes`, which executes after Reprojection. The engine consolidates the fallback into Reprojection's failure branch (when InterlockedMin yielded no winner). Reasoning: the engine's `SampleScreenProbes`-equivalent doesn't exist yet (TASK-226.6 scope), and waiting for it would leave disocclusions un-filled in the interim. The fallback runs per-thread (= per cell) at gi1.comp's matching call-site shape, so the host-kernel choice is mechanical — no semantic divergence.
+
+**(d) Winner broadcast via LDS, not re-load from depth/normal buffers.** Capsaicin (gi1.comp:369-371) re-loads the winner's depth + normal from the buffers using the winner's pixel coord. The engine port broadcasts the winner thread's already-computed `positionWS`, `normalWS`, `prevPositionWS_Probe`, `prevScreenCoord_Probe / 8` via four `groupshared` slots written by the unique winner-matching thread. Equivalent semantics, fewer texture loads.
+
+**(e) Quantization scales.** Capsaicin's `ScreenProbes_QuantizeRadiance` definition is not in the audit snapshot. The engine port uses `RADIANCE_QUANT_SCALE = 65536.0` and `HIT_DIST_QUANT_SCALE = 65536.0` (`common/RadianceCacheReprojection.hlsl:34-36`), picked to fit the engine's HDR radiance range and `ray.TMax = 1000` hit-distance ceiling without overflow under 64 accumulations. Capsaicin may pick different scales — bit-equivalent fidelity is not a goal.
+
+**(f) Score precision.** Engine's `(uint)(saturate(dist/cellSize) * 65535.0)` vs Capsaicin's `f32tof16(distance(...))`. Per audit Row #3 (already FAITHFUL): equivalent ordering, minor precision divergence acceptable. Unchanged in this port.
+
+### What is NOT verified
+
+- **AC #4 / AC #5 visual + disocclusion comparison vs TASK-226.2 baseline.** Implementer's launch budget covered build + 30-frame smoke (offscreen, no frame capture). Visual comparison + Sponza-disocclusion gate belong to TASK-226.8 (perf + visual regression). Flagged honest per `visual-validation` layer-1 (Visual Read) — smoke confirms no crashes / D3D12 errors, but I have not seen the rendered frame myself.
+- **Long-disocclusion behaviour.** The Row #9 fallback reads from the previous-frame atlas which is locked to last-frame spawn positions. Over multi-frame disocclusions, the source becomes increasingly stale. Quality vs Capsaicin's aged-cache approach is untested here — peer review + TASK-226.8 own this.
+- **Partial-tile earlyExit behaviour (mixed sky / non-sky pixels in same 8x8 tile).** The current code's per-thread `earlyExit` flag means sky cells in a partially-sky tile fall back to the LDS-backup average computed from non-sky cells; tile-mask invalidation only fires when thread 0 is the sky thread. This preserves pre-edit behavior in spirit but may produce soft-fill artifacts at silhouettes. Out of TASK-226.4 scope; surface, don't chase.
+
+### Files changed
+
+- `Source/Shaders/HLSL/RadianceCacheReprojection.comp` — kernel orchestration: winner pick (unchanged), broadcast, per-cell remap (winner path), 3×3 neighbour fallback (failure path), per-cell write. Net 240→274 lines.
+- `Source/Shaders/HLSL/common/RadianceCacheReprojection.hlsl` (new) — LDS arrays, quantization, `RemapHistoryCell`, reduction helpers, confidence + cellSize helpers. 199 lines.
+- `Source/Shaders/HLSL/common/RadianceCacheCommon.hlsl` — no net change (the new file took the helpers I'd briefly added here).
+- No C++ pass changes — all required bindings (`in_RadianceCacheResults_Prev`, `in_ProbePosition`, `in_ProbeNormal` previous-frame ping-pong slots) were already in place per `RadianceCacheReprojectionPass.cpp:94-98`.

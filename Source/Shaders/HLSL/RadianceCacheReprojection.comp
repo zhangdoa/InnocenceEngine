@@ -37,62 +37,24 @@ RWTexture2D<float4> in_RadianceCacheResults : register(u0);
 
 // Under sparse spawning, Reprojection owns the "tile has no usable data"
 // signal — flags sky tiles + no-reuse tiles as PROBE_MASK_INVALID so
-// downstream passes skip them. Success leaves the mask untouched (stale
-// position up to ξ_x·ξ_y frames old; radiance reprojected each frame,
-// paper-compliant hysteresis).
+// downstream passes skip them.
 [[vk::binding(1, 2)]]
 RWTexture2D<uint> in_ProbeMask : register(u1);
 
-// Temporal-stability heuristics. NORMAL_THRESHOLD = 0.95 matches Capsaicin
-// gi1.comp:4051; spatial scale comes from Algorithm 6 AdaptiveCellSize.
-static const float NORMAL_THRESHOLD = 0.95;
-static const float DEPTH_THRESHOLD = 0.1;
-static const float MIN_CONFIDENCE = 0.1;
-static const float MAX_CONFIDENCE = 0.95;
-
-float CalculateReprojectionConfidence(
-    float3 currentPos, float3 currentNormal,
-    float3 prevPos, float3 prevNormal,
-    float2 motionVector, float depthDiff,
-    float cellSize)
-{
-    float confidence = 1.0;
-
-    float distancePenalty = distance(currentPos, prevPos) / max(cellSize, EPSILON);
-    confidence *= exp(-distancePenalty * distancePenalty);
-
-    float normalSimilarity = max(0.0, dot(currentNormal, prevNormal));
-    confidence *= normalSimilarity;
-
-    float motionMagnitude = length(motionVector) / g_Frame.viewportSize.x;
-    confidence *= exp(-motionMagnitude * 10.0);
-
-    confidence *= exp(-depthDiff * depthDiff / (DEPTH_THRESHOLD * DEPTH_THRESHOLD));
-
-    return clamp(confidence, MIN_CONFIDENCE, MAX_CONFIDENCE);
-}
-
-float4 TemporalFilter(float4 currentSample, float4 historySample, float confidence)
-{
-    // High confidence → weight history (accumulate); low → favor current.
-    float blendRate = lerp(0.95, 0.1, confidence);
-    float4 result = lerp(historySample, currentSample, blendRate);
-    result.rgb = max(result.rgb, float3(0.0, 0.0, 0.0));
-    return result;
-}
-
-groupshared uint sharedReprojectionScore;
-groupshared float sharedConfidence;
+#include "common/RadianceCacheReprojection.hlsl"
 
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
 {
     uint2 screenCoord = input.dispatchThreadID.xy;
     uint2 screenCoord_Probe = (screenCoord / 8) * 8;
+    uint2 cell = input.groupThreadID.xy;
+    uint cellIndex = input.groupIndex;
 
     bool isSky = in_opaquePassRT0.Load(int3(screenCoord, 0)).w == 0.0f;
 
     float3 positionWS = float3(0, 0, 0);
+    float3 normalWS = float3(0, 0, 0);
     float2 motionVector = float2(0, 0);
     int2 prevScreenCoord = int2(0, 0);
     uint2 prevScreenCoord_Probe = uint2(0, 0);
@@ -103,6 +65,7 @@ void main(ComputeInputType input)
     if (!isSky)
     {
         positionWS = in_opaquePassRT0.Load(int3(screenCoord, 0)).xyz;
+        normalWS = normalize(in_opaquePassRT1.Load(int3(screenCoord, 0)).xyz);
         motionVector = in_opaquePassRT3.Load(int3(screenCoord, 0)).xy;
         prevScreenCoord = int2(screenCoord) + int2(motionVector);
         withinBounds = all(prevScreenCoord >= int2(0, 0)) && all(prevScreenCoord < int2(g_Frame.viewportSize.xy));
@@ -119,20 +82,16 @@ void main(ComputeInputType input)
         }
     }
 
-    if (input.groupIndex == 0)
-    {
-        sharedReprojectionScore = 0xFFFFFFFF; // Max uint = worst score
-        sharedConfidence = 0.0;
-    }
-
+    ResetReprojectionLDS(cellIndex);
     GroupMemoryBarrierWithGroupSync();
 
+    float3 prevPositionWS_Probe = float3(0, 0, 0);
+    float3 prevNormal_Probe = float3(0, 0, 0);
     if (!earlyExit)
     {
-        uint2 prevScreenCoord_ProbeSpace = prevScreenCoord_Probe / 8;
-        float3 prevPositionWS_Probe = in_ProbePosition.Load(int3(prevScreenCoord_ProbeSpace, 0)).xyz;
-        float3 prevNormal_Probe = normalize(in_ProbeNormal.Load(int3(prevScreenCoord_ProbeSpace, 0)).xyz);
-        float3 normalWS = normalize(in_opaquePassRT1.Load(int3(screenCoord, 0)).xyz);
+        uint2 prevProbeTile = prevScreenCoord_Probe / 8;
+        prevPositionWS_Probe = in_ProbePosition.Load(int3(prevProbeTile, 0)).xyz;
+        prevNormal_Probe = normalize(in_ProbeNormal.Load(int3(prevProbeTile, 0)).xyz);
 
         float plane_dist = abs(dot(prevPositionWS_Probe - positionWS, normalWS));
         float normal_check = dot(prevNormal_Probe, normalWS);
@@ -141,13 +100,7 @@ void main(ComputeInputType input)
         float prevDepth = length(prevPositionWS_Probe - g_Frame.camera_posWS.xyz);
         float depthDiff = abs(currentDepth - prevDepth);
 
-        // Unified adaptive cell size (Algorithm 6) — plane-distance gate
-        // and the filter's neighbour check share this scale.
-        float cellSize = max(AdaptiveCellSize(currentDepth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
-        // Grazing-angle boost (Capsaicin gi1.comp:4026): up to 5× as
-        // view·normal → 0; matches denoiser-pass reprojection.
-        float3 viewDir = normalize(g_Frame.camera_posWS.xyz - positionWS);
-        cellSize *= lerp(1.0, 5.0, pow(1.0 - max(dot(viewDir, normalWS), 0.0), 6.0));
+        float cellSize = ComputeReprojectionCellSize(positionWS, normalWS, g_Frame.camera_posWS.xyz, g_Frame.viewportSize.xy, g_Frame.p_original);
 
         if (plane_dist < cellSize &&
             normal_check > NORMAL_THRESHOLD &&
@@ -158,29 +111,120 @@ void main(ComputeInputType input)
             threadConfidence = CalculateReprojectionConfidence(
                 positionWS, normalWS,
                 prevPositionWS_Probe, prevNormal_Probe,
-                motionVector, depthDiff, cellSize);
+                motionVector, depthDiff, cellSize, g_Frame.viewportSize.x);
 
-            // Score by distance; lower 16 bits carry groupIndex for winner identification
             uint distScore = (uint)(saturate(dist / cellSize) * 65535.0);
             uint candidateScore = (distScore << 16) | input.groupIndex;
-
             InterlockedMin(sharedReprojectionScore, candidateScore);
         }
     }
 
     GroupMemoryBarrierWithGroupSync();
 
-    // Winner writes confidence — race-free via unique groupIndex match.
-    if (!earlyExit && (sharedReprojectionScore & 0xFFFF) == input.groupIndex)
+    uint winnerLane = sharedReprojectionScore & 0xFFFFu;
+    bool winnerFound = winnerLane != 0xFFFFu;
+    if (!earlyExit && winnerFound && winnerLane == input.groupIndex)
     {
         sharedConfidence = threadConfidence;
+        sharedWinnerPositionWS = positionWS;
+        sharedWinnerNormalWS = normalWS;
+        sharedWinnerPrevProbePos = prevPositionWS_Probe;
+        sharedWinnerPrevProbeTileCoord = int2(prevScreenCoord_Probe / 8);
     }
 
     GroupMemoryBarrierWithGroupSync();
 
+    // Per-cell octahedral-remap (Capsaicin gi1.comp:367-404). Engine atlas
+    // uses full-sphere EncodeOctahedral of world-space directions (no TBN
+    // transform needed — audit Row #2 documents the divergence).
+    if (!earlyExit && winnerFound)
+    {
+        float3 winnerPos = sharedWinnerPositionWS;
+        float3 winnerNormal = sharedWinnerNormalWS;
+        float3 winnerPrevProbePos = sharedWinnerPrevProbePos;
+        int2 winnerPrevTile = sharedWinnerPrevProbeTileCoord;
+
+        float2 cellCenterUV = (float2(cell) + 0.5) / float(RADIANCE_CACHE_TILE_SIZE);
+        float3 cellDirWS = DecodeOctahedral(cellCenterUV);
+
+        int2 prevCellCoord = winnerPrevTile * int(RADIANCE_CACHE_TILE_SIZE) + int2(cell);
+        float4 prevCellRadiance = in_RadianceCacheResults_Prev.Load(int3(prevCellCoord, 0));
+
+        if (dot(cellDirWS, prevNormal_Probe) > 0.0 && prevCellRadiance.w > 0.0)
+        {
+            uint remapCellIndex;
+            float remapHitDist;
+            if (RemapHistoryCell(winnerPrevProbePos, prevCellRadiance, cellDirWS,
+                                 winnerPos, winnerNormal, remapCellIndex, remapHitDist))
+            {
+                AccumulateRemappedRadiance(remapCellIndex, prevCellRadiance.xyz, remapHitDist);
+            }
+        }
+    }
+
+    // 3×3 neighbour fallback (Capsaicin gi1.comp:780-861, hosted in their
+    // SampleScreenProbes kernel — the engine consolidates it into
+    // Reprojection's failure branch). No motion vector applied: reprojection
+    // failed → motion is unreliable; spatial neighbours of THIS tile in the
+    // previous-frame atlas are the closest source without reintroducing
+    // side-cache state. Audit Row #9.
+    if (!earlyExit && !winnerFound)
+    {
+        int2 selfTile = int2(screenCoord_Probe / 8);
+        int2 gridSize = int2(g_Frame.viewportSize.xy) / int(RADIANCE_CACHE_TILE_SIZE);
+        float cellSize = ComputeReprojectionCellSize(positionWS, normalWS, g_Frame.camera_posWS.xyz, g_Frame.viewportSize.xy, g_Frame.p_original);
+
+        float2 cellCenterUV = (float2(cell) + 0.5) / float(RADIANCE_CACHE_TILE_SIZE);
+        float3 cellDirWS = DecodeOctahedral(cellCenterUV);
+
+        for (int dy = -1; dy <= 1; dy++)
+        {
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                int2 neighbourTile = selfTile + int2(dx, dy);
+                if (any(neighbourTile < int2(0, 0)) || any(neighbourTile >= gridSize))
+                    continue;
+
+                float3 nProbePos = in_ProbePosition.Load(int3(neighbourTile, 0)).xyz;
+                float3 nProbeNormalRaw = in_ProbeNormal.Load(int3(neighbourTile, 0)).xyz;
+                if (dot(nProbeNormalRaw, nProbeNormalRaw) < EPSILON)
+                    continue;
+                float3 nProbeNormal = normalize(nProbeNormalRaw);
+
+                if (abs(dot(nProbePos - positionWS, normalWS)) > cellSize)
+                    continue;
+                if (dot(normalWS, nProbeNormal) <= NORMAL_THRESHOLD)
+                    continue;
+                if (dot(cellDirWS, nProbeNormal) <= 0.0)
+                    continue;
+
+                int2 nCellCoord = neighbourTile * int(RADIANCE_CACHE_TILE_SIZE) + int2(cell);
+                float4 nCellRadiance = in_RadianceCacheResults_Prev.Load(int3(nCellCoord, 0));
+                if (nCellRadiance.w <= 0.0)
+                    continue;
+
+                uint remapCellIndex;
+                float remapHitDist;
+                if (RemapHistoryCell(nProbePos, nCellRadiance, cellDirWS,
+                                     positionWS, normalWS, remapCellIndex, remapHitDist))
+                {
+                    AccumulateRemappedRadiance(remapCellIndex, nCellRadiance.xyz, remapHitDist);
+                }
+            }
+        }
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+
+    SeedRadianceBackup(cellIndex);
+    GroupMemoryBarrierWithGroupSync();
+
+    ReduceRadianceBackup(cellIndex);
+    FinalizeRadianceBackup(cellIndex);
+    GroupMemoryBarrierWithGroupSync();
+
     if (earlyExit)
     {
-        // Sky or out-of-bounds: clear probe tile (thread 0 per group covers all 64 pixels)
         if (input.groupIndex == 0)
         {
             for (uint i = 0; i < 8; i++)
@@ -190,50 +234,40 @@ void main(ComputeInputType input)
                     in_RadianceCacheResults[screenCoord_Probe + uint2(i, j)] = float4(0, 0, 0, 0);
                 }
             }
-            // Invalidate so filter/interpolation skip; RayGen may refresh.
             in_ProbeMask[screenCoord_Probe / 8] = PROBE_MASK_INVALID;
         }
         DeviceMemoryBarrier();
         return;
     }
 
-    uint bestProbeGroupIndex = sharedReprojectionScore & 0xFFFF;
-    float reprojectionConfidence = sharedConfidence;
-
-    if (input.groupIndex == bestProbeGroupIndex && reprojectionConfidence > MIN_CONFIDENCE)
+    // Per-cell write (Capsaicin gi1.comp:482-498). Visited cells get their
+    // averaged remapped radiance; unvisited cells get the LDS-backup average.
+    uint cellSampleCount = sharedRadianceSampleCounts[cellIndex];
+    uint2 outPixel = screenCoord_Probe + cell;
+    float4 result;
+    if (cellSampleCount > 0)
     {
-        // Success: blend history into atlas. The side-cache snapshot
-        // mechanism (paper §2.1.8 in-house variant) was removed — Capsaicin's
-        // canonical reprojection uses an LDS radiance-backup parallel
-        // reduction at the kernel scope (gi1.comp:845-857) which TASK-226.4
-        // will port. Until then, disocclusion regions hard-invalidate via
-        // the else-branch and RayGen repopulates next frame.
-        for (uint i = 0; i < 8; i++)
-        {
-            for (uint j = 0; j < 8; j++)
-            {
-                uint2 currentPixel = screenCoord_Probe + uint2(i, j);
-                uint2 prevPixel = prevScreenCoord_Probe + uint2(i, j);
-
-                float4 currentSample = in_RadianceCacheResults[currentPixel];
-                float4 historySample = in_RadianceCacheResults_Prev[prevPixel];
-
-                in_RadianceCacheResults[currentPixel] =
-                    TemporalFilter(currentSample, historySample, reprojectionConfidence);
-            }
-        }
+        float3 radianceRGB = RecoverRadianceRGB(uint3(
+            sharedRadianceValues[(cellIndex << 2) + 0],
+            sharedRadianceValues[(cellIndex << 2) + 1],
+            sharedRadianceValues[(cellIndex << 2) + 2])) / float(cellSampleCount);
+        float hitDist = RecoverHitDist(sharedRadianceValues[(cellIndex << 2) + 3]) / float(cellSampleCount);
+        result = float4(radianceRGB, hitDist);
     }
-    else if (input.groupIndex == 0)
+    else
     {
-        // Reprojection failed + no side-cache fallback: clear + invalidate.
-        for (uint i = 0; i < 8; i++)
+        result = sharedRadianceBackup[0];
+    }
+    in_RadianceCacheResults[outPixel] = result;
+
+    // Whole-probe failure (no cell got any sample): invalidate the tile so
+    // downstream Filter/Denoise skip it and RayGen refills next frame.
+    if (cellIndex == 0)
+    {
+        if (sharedRadianceBackup[63].w <= 0.0)
         {
-            for (uint j = 0; j < 8; j++)
-            {
-                in_RadianceCacheResults[screenCoord_Probe + uint2(i, j)] = float4(0, 0, 0, 0);
-            }
+            in_ProbeMask[screenCoord_Probe / 8] = PROBE_MASK_INVALID;
         }
-        in_ProbeMask[screenCoord_Probe / 8] = PROBE_MASK_INVALID;
     }
 
     DeviceMemoryBarrier();
