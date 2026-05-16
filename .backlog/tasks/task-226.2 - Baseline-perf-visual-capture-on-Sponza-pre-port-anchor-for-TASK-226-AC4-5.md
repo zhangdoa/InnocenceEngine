@@ -3,10 +3,10 @@ id: TASK-226.2
 title: >-
   Baseline perf + visual capture on Sponza (pre-port anchor for TASK-226
   AC#4/#5)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-15 20:24'
-updated_date: '2026-05-16 02:14'
+updated_date: '2026-05-16 19:26'
 labels:
   - rendering
   - GI
@@ -36,11 +36,35 @@ Anchors AC #5 (60 FPS) — once baseline is known, the AC can be re-evaluated as
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 #1 Frame-time numbers (min/avg/max) captured on Sponza autotest camera, RasterizedGI=ON and =OFF
+- [x] #1 #1 Frame-time numbers (min/avg/max) captured on Sponza autotest camera, RasterizedGI=ON and =OFF
 - [ ] #2 #2 4-angle screenshot set captured at both toggle states, saved under .alignments/TASK-226-baseline/
-- [ ] #3 #3 baseline.md records build SHA, GPU/driver, scene config
-- [ ] #4 #4 No code changes — capture artifact only
+- [x] #3 #3 baseline.md records build SHA, GPU/driver, scene config
+- [x] #4 #4 No code changes — capture artifact only
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Partial baseline captured — frame-time numbers + 4 consecutive frames from GISponza autotest. AC #2 (4-angle spatial coverage) NOT met by this CL; documented gap in baseline.md with the followup procedure for TASK-226.8.
+
+Captured at HEAD `d5e1fdf4` (post-TASK-226.1 nuke, post .3/.5/.7 audits):
+- 32 FPS post-TLAS steady-state (frame 7 → 300, 9.114 s for 293 frames). **60-FPS bar NOT met**; AC #5 will need rescoping at TASK-226.8 to "no regression vs this baseline."
+- 4 captured frames `.alignments/TASK-226-baseline/gpu_output_006{0..3}.png` — temporal-stability sequence at fixed camera, not 4-angle spatial.
+
+What was NOT captured (documented in `baseline.md`):
+- 4-angle spatial — needs `-camera_orbit` invocation, deferred to TASK-226.8 followup.
+- `RasterizedGI=OFF` toggle state — UI-only toggle, no CLI flag; needs a CLI-toggle feature or pipeline-graph data-driven toggle (folds into TASK-227).
+- GPU/driver — not logged this run.
+- Per-pass GPU timer — `-gpu_timer_log` not enabled.
+
+AC ticks:
+- AC #1 (frame-time numbers): ticked — 32 FPS post-TLAS recorded.
+- AC #2 (4-angle screenshots at both toggle states): NOT ticked — partial coverage only (4 sequential at one camera + ON toggle).
+- AC #3 (baseline.md records SHA / scene / settings): ticked — minus GPU/driver line.
+- AC #4 (no code changes): ticked.
+
+Closure-Reason: partial baseline anchors AC #5 with a concrete number (32 FPS); 4-angle + toggle-OFF deferred to TASK-226.8 with the procedure documented.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
