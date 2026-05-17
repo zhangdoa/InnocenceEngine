@@ -3,9 +3,11 @@ id: TASK-236
 title: >-
   Stale audit-mode log message at Engine_ParseInitConfig.cpp:145 — "frame 5" no
   longer meaningful under event-driven trigger
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - zhangdoa
 created_date: '2026-05-17 16:56'
+updated_date: '2026-05-17 17:47'
 labels:
   - rendering
   - logging
@@ -30,9 +32,17 @@ Fix shape: update the log text to match the new behaviour, e.g. "Audit mode: wil
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Log message at Engine_ParseInitConfig.cpp:145 updated to reflect event-driven trigger behaviour (no "frame 5" magic number)
-- [ ] #2 Build green
+- [x] #1 Log message at Engine_ParseInitConfig.cpp:145 updated to reflect event-driven trigger behaviour (no "frame 5" magic number)
+- [x] #2 Build green
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+`Source/Engine/Engine_ParseInitConfig.cpp:145` log message updated from "Audit mode: will dump all pass outputs on frame 5." (stale since TASK-233 event-driven trigger landed) to "Audit mode: will dump all pass outputs after scene-load completes + settle frames." (matches actual behaviour without hard-coding the K=25 constant in two places).
+
+Build green. Audit autotest re-run confirmed the new message appears at engine config parse: `[Success] [Inno::Engine::ParseInitConfig] Audit mode: will dump all pass outputs after scene-load completes + settle frames.`
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->

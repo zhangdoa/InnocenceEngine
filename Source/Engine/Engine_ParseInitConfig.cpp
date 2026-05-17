@@ -142,7 +142,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 	if (arg.find("audit") != std::string::npos)
 	{
 		l_result.isAudit = true;
-		Log(Success, "Audit mode: will dump all pass outputs on frame 5.");
+		Log(Success, "Audit mode: will dump all pass outputs after scene-load completes + settle frames.");
 	}
 
 	auto l_testArgPos = arg.find("-test");

@@ -136,19 +136,20 @@ namespace Inno
 		// TLAS build, and first-frame upload command-list drain — the
 		// headroom the magic-30 fence bought minus the 5-frame pre-load
 		// gap. Tighten later with capture-diff evidence.
-		static constexpr uint32_t kAuditPostLoadSettleFrames = 25;
+		static constexpr uint32_t AuditPostLoadSettleFrames = 25;
 
 		if (m_AuditSceneLoadEvent.exchange(false, std::memory_order_acquire))
 		{
 			m_AuditCountingStarted = true;
 			m_AuditPostLoadFrameCount = 0;
+			Log(Success, "Audit: post-load settle counter armed; will dump in ", AuditPostLoadSettleFrames, " frames.");
 		}
 
 		if (!m_AuditCountingStarted)
 			return;
 
 		++m_AuditPostLoadFrameCount;
-		if (m_AuditPostLoadFrameCount >= kAuditPostLoadSettleFrames)
+		if (m_AuditPostLoadFrameCount >= AuditPostLoadSettleFrames)
 			AuditDump();
 	}
 }
