@@ -12,6 +12,7 @@
 #include "../../Engine/Services/AssetService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
+#include "../../Engine/Services/SceneService.h"
 #include "../../Engine/Services/TextureResourceService.h"
 
 #include "../../Engine/Engine.h"
@@ -99,5 +100,55 @@ namespace Inno
 
 		Log(Success, "AuditDump complete. Check Bin/*.hdr");
 		std::exit(0);
+	}
+
+	void ExampleRenderingClientImpl::RegisterAuditCallback()
+	{
+		if (!g_Engine->getInitConfig().isAudit)
+			return;
+
+		// SceneService keeps a raw pointer to the functor; store it as a
+		// member so its lifetime matches the client (see EditorService.h
+		// for the same convention). The callback only flips an atomic edge
+		// flag — heavy work (frame counting, AuditDump invocation) runs
+		// on the render thread in HandleAuditTrigger.
+		m_AuditSceneLoadedCallback = [this]()
+		{
+			m_AuditSceneLoadEvent.store(true, std::memory_order_release);
+		};
+		g_Engine->Get<SceneService>()->AddSceneLoadedCallback(&m_AuditSceneLoadedCallback);
+	}
+
+	void ExampleRenderingClientImpl::HandleAuditTrigger()
+	{
+		if (!g_Engine->getInitConfig().isAudit)
+			return;
+
+		// Two-phase event-driven trigger (replaces the prior
+		// `s_AuditFrame == 30` absolute-frame fence which assumed scene-load
+		// latency would stay within the first 5 frames):
+		//   1. SceneService callback flips the cross-thread event flag after
+		//      LoadSync completes (assets loaded, components initialised,
+		//      GPU idle).
+		//   2. Render thread observes the edge, resets the post-load
+		//      counter, then dumps after K settle frames.
+		// K=25 is an empirical settling budget covering GI cache fill,
+		// TLAS build, and first-frame upload command-list drain — the
+		// headroom the magic-30 fence bought minus the 5-frame pre-load
+		// gap. Tighten later with capture-diff evidence.
+		static constexpr uint32_t kAuditPostLoadSettleFrames = 25;
+
+		if (m_AuditSceneLoadEvent.exchange(false, std::memory_order_acquire))
+		{
+			m_AuditCountingStarted = true;
+			m_AuditPostLoadFrameCount = 0;
+		}
+
+		if (!m_AuditCountingStarted)
+			return;
+
+		++m_AuditPostLoadFrameCount;
+		if (m_AuditPostLoadFrameCount >= kAuditPostLoadSettleFrames)
+			AuditDump();
 	}
 }

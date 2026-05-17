@@ -11,6 +11,9 @@
 
 #include "../../Engine/Interface/IRenderingClient.h"
 
+#include <atomic>
+#include <functional>
+
 namespace Inno
 {
 	class GPUResourceComponent;
@@ -64,6 +67,24 @@ namespace Inno
 		bool m_ExecuteOneShotCommands = true;
 
 		void AuditDump();
+
+		// Audit-mode trigger seams — call sites in Setup / ExecuteCommands;
+		// bodies live in _AuditDump.cpp alongside AuditDump itself. Each is
+		// a no-op when -audit is off.
+		void RegisterAuditCallback();
+		void HandleAuditTrigger();
+
+		// Audit-mode trigger state (-audit only). Per
+		// .claude/state/engine-invariants.md the SceneService callback fires
+		// on the render thread (LoadSync runs only from SceneService::Update
+		// inside the FMS upload-heap callback). The event flag is atomic so
+		// a future async-load path cannot silently break the contract;
+		// m_AuditPostLoadFrameCount + m_AuditCountingStarted are render-
+		// thread-local — read and written only from HandleAuditTrigger.
+		std::function<void()> m_AuditSceneLoadedCallback;
+		std::atomic<bool>     m_AuditSceneLoadEvent{false};
+		uint32_t              m_AuditPostLoadFrameCount = 0;
+		bool                  m_AuditCountingStarted = false;
 
 	private:
 		// Setup helpers — extracted to keep _Setup.cpp under the file-size

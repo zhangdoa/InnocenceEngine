@@ -290,6 +290,8 @@ namespace Inno
 
 		l_fmService->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
 
+		RegisterAuditCallback();
+
 		m_ObjectStatus = ObjectStatus::Created;
 
 		return true;

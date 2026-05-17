@@ -281,13 +281,7 @@ namespace Inno
 
 		HandleScreenCapture();
 		HandleAutoCaptureTriggers();
-
-		if (g_Engine->getInitConfig().isAudit)
-		{
-			static uint32_t s_AuditFrame = 0;
-			if (++s_AuditFrame == 30)
-				AuditDump();
-		}
+		HandleAuditTrigger();
 
 		return true;
 	}
