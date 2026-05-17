@@ -61,6 +61,23 @@ Downstream catch (reviewer visual inspection in commit record): `visual-review` 
 
 Reaching for the sentinel on every dispatch → the planning gap is the thing to fix.
 
+## Sub-agents cannot dispatch sub-agents
+
+When granting an implementer agent commit-authority on a non-trivial dispatch, peer-review is main-session's responsibility AFTER the implementer returns. The implementer does not have access to the `Agent` / `Task` tool from within its own dispatch — it cannot spin up a fresh code-review on its own diff. Brief shape:
+
+- Tell the implementer to validate (build green, smoke green, capture A/B) but STOP at the commit step.
+- Main-session receives the implementer's report, dispatches a fresh code-review on the diff, fills the commit-message footer with the verdict, then commits.
+
+Failure mode if the brief asks the implementer to "self-dispatch peer-review": the implementer either hangs trying to invoke an unavailable tool, or commits without review. Either way the `peer-review-required` discipline is silently bypassed.
+
+## Broaden scope after multiple narrow-probe dispatches
+
+Narrow-bisect dispatches that successively falsify candidate carriers (skip-feature probes, RT-dumps at each stage) are the right shape early in an investigation — each cheap dispatch narrows the bracket. After N > ~5 such dispatches without root cause, granting a broader scope ("bisect AND attempt fix within bounds, with explicit anti-scope") often cracks the bug in one dispatch. The implementer with broader authority can pivot in-flight when a probe inverts the brief's hypothesis (the prior brief's assumed carrier turns out to be innocent and the real bug is one layer further).
+
+Apply when: 5+ diagnostic dispatches have landed on the same task; the brackets are narrowing but still excluding the real bug; the implementer is repeatedly hitting "this layer is innocent, surface and stop." At that point switch from "diagnose only" to "diagnose + attempt fix within scope X / Y / Z; stop and surface if scope is exceeded."
+
+Anti-scope is critical — without it, broadened authority becomes overreach. The scope list should name the files / passes / subsystems the fix can touch and explicitly forbid the ones it cannot.
+
 ## task-mgmt-specific override
 
 The `task-mgmt` agent's `Agent`-tool chain-dispatch is **background-only**. The `[foreground-required]` sentinel does not apply to task-mgmt; task-mgmt must not emit it.

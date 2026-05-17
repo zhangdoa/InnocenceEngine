@@ -23,6 +23,14 @@ Visual Read assessment
 
 Block is descriptive, not numeric. "p50 dropped 5.5×" is layer 2/3; layer 1 is "the floor has a checkerboard of color squares not present in the reference." Decline / unable to `Read` → verdict `uncertain` → layer 4 fires.
 
+### Sub-rule: inspect raw HDR before boost-amplifying
+
+When investigating an artifact at low- or zero-illumination (a "void", "mirror seam", "pillar", any framing of geometric structure in a dim region), inspect raw HDR pixel values at the suspect coordinates BEFORE applying any `magick -auto-level` / `-evaluate Multiply N` boost or auto-level operation. Boost amplification on uint8-decoded HDRs can invent spatial patterns by stretching the high-contrast boundary between lit and zero regions across the displayable range, producing an illusory "mirror", "pillar", or "asymmetry" that has no analog in the underlying data.
+
+Recipe: `magick identify -verbose <hdr>` to confirm zero-pixel count / min-max / mean; or read a specific pixel via `magick <hdr>[10x10+X+Y] -format "%[fx:r] %[fx:g] %[fx:b]\n" info:` for per-pixel HDR values. A `LightPass(300, 640) = (0, 0, 0)` finding while `GIFilterV(300, 640) = (1.47, 1.57, 1.80)` ends a misinterpretation chain faster than another visual-Read of the boosted PNG.
+
+Apply when: the visible artifact framing seems geometric (mirror, pillar, void, asymmetry, partition); multiple boost-Read bisects haven't narrowed scope; the carrier chain crosses passes whose outputs are HDR (radiance, irradiance, accumulation buffers).
+
 ## Layer 2 — Frame sequence + multi-angle
 
 - Frame sequence long enough to see temporal behaviour.
