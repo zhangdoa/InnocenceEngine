@@ -211,6 +211,63 @@ Result: the captured GIDenoise output shows a **smooth, continuous 2D gradient**
 **Recommended next dispatch:** probe-data dump. Add an audit-roster entry that dumps `in_RadianceCache` (the SH-coefficient texture written by `RadianceCacheIntegration.comp` and consumed by `LoadIrradiance`). Inspect the band-0 (Y00) coefficient channel across probes — if the SH itself shows pillar-vs-surrounding contrast, the bug is upstream of GIDenoise's consumption; bisect among `RadianceCacheIntegration` (SH write) vs `RadianceCacheReprojection` (temporal SH carryover) vs `FilterScreenProbes` (radiance feeding the integration). Note: `RadianceCacheReprojection` was substantially reworked in this session (TASK-226.4 Option A port at `e0e68900`) but the artifact predates that work by 10+ days, so 226.4 is unlikely to be the cause — it may instead be a longer-standing carrier the 226.4 port faithfully preserved.
 
 Capture: `Build/captures/TASK-228/per-pass/probe-id/audit_06c_GIDenoise_raw.png` (gamma-only — the diagnostic image; boosted version is saturated by auto-level on [0,1] values).
+
+2026-05-17 (post-`5f24a923`, probe-data dispatch): **CARRIER CHAIN FALSIFIED. Artifact root cause is NOT in the GI/radiance-cache chain — it's in the GBuffer metallic channel sourced from Sponza material assets.**
+
+Probe sequence:
+1. Extended `AuditDump` to dump the entire GI chain (Reprojection→FilterH→FilterV→Integration SH→GIDenoise→GIFilterH→GIFilterV). Reverted before close.
+2. Read raw HDR pixel values (RGBE decode) at sample pixels across the framebuffer. Discovery: GBuffer is valid (worldPos, normal, albedo all non-zero) AND GIFilterV irradiance is non-zero (e.g. (1.5, 1.6, 1.8) at pixel (300, 640) — the "black void" center), but LightPass RT0 is exactly zero there.
+3. Probe `ComposeIndirectLighting` to bypass the `albedo * (1-metallic) * irradiance / PI` multiply, returning raw irradiance instead. Re-ran audit: **LightPass RT0 zero-pixel count dropped from 598,196 to 0.** The "black void" disappeared; the full Sponza scene became visible.
+4. Probe again with `float3(metallic, albedoLuma, 1.0)` encoding. Visual Read of the resulting LightPass dump shows a clean binary mask: 90% of pixels have metallic=0 (the dark regions in this mask), 10% have metallic=1 (the white regions). The metallic=1 regions are exactly the central column, decorative ornaments, and curtain/floor strips — and exactly the regions that ended up as the LightPass "black void."
+
+**Root cause:** Every Sponza material in `Data/Generated/Components/NewSponza*.MaterialComponent.json` has `"Metallic": 1.0` AND has a combined Roughness+Metallic texture assigned to both the metallic-texture slot (`m_TextureIndices_2`) and the roughness-texture slot (`m_TextureIndices_3`). `opaqueGeometryProcessPass.frag:86-87` samples `.r` of the metallic texture, but glTF MetallicRoughness textures store metallic in `.b` (and roughness in `.g`). The `.r` channel is unused / occlusion / whatever the source authored — for the affected Sponza textures it samples to non-zero values (often 1), producing `metallic = 1` per pixel.
+
+LightPass `ComposeIndirectLighting` computes `albedo * (1 - metallic) * irradiance / PI`. With metallic=1, `(1-metallic) = 0`, so the indirect term is zeroed regardless of how good the GI is. Since direct lighting in GISponza autotest is also zero (no sun visibility, no point-light contribution per prior dispatch's findings), LightPass RT0 = 0 wherever metallic=1.
+
+**Why prior bisects missed this:**
+- "Skip-GI → black framebuffer" was correctly observed but mis-interpreted as "GI shape is the artifact." In fact: `LightPass = albedo * (1-metallic) * GI / π`, so zeroing GI gives black everywhere, but a non-zero GI multiplied by `(1-metallic) = 0` ALSO gives black. The skip-GI experiment didn't distinguish these cases.
+- The pillar-collapse pattern visible in the GI-chain captures (06a Integration boosted, 06c GIDenoise boosted) was a **boost-amplification artifact** of the imageio uint8 HDR decoder. With proper RGBE decode and per-pixel reading, the GIFilterV output is well-distributed across the framebuffer (1-30 mean range, smooth); the apparent "pillar" was just brighter regions saturating the boost level differently from dimmer ones.
+- The probe-id viz (audit_06c at `3c0fc537`) correctly showed the lookup is smooth. The SH atlas data is correct. GIDenoise output is correct. GIFilterV output is correct. The GI chain works.
+
+**Fix shape (OUT OF TASK-228 SCOPE per brief — surface for separate dispatch):**
+
+Two independent issues to triage:
+
+1. **`Metallic: 1.0` in every Sponza material JSON.** Either the glTF import code is setting this incorrectly (writing `metallicFactor` from the glTF spec but ignoring that the texture will override it — and the spec default IS 1.0), or the materials were authored this way. Need to inspect the import code (glTF → InnoMaterialComponent.json conversion) and either set `"Metallic": 0.0` for these materials or audit the import logic to honour the metallic texture's `.b` channel correctly. Material data lives in `Data/Generated/`, which is gitignored derived runtime output, so the upstream fix is in the import pipeline (probably `Source/External/.../AssimpWrapper` or similar) and a re-run of asset generation.
+
+2. **`opaqueGeometryProcessPass.frag:87` samples `.r` of the metallic texture.** Per glTF 2.0 spec (KHR_materials_pbrMetallicRoughness), metallicRoughnessTexture stores metallic in `.b` and roughness in `.g`. The shader should sample `.b` for metallic, `.g` for roughness — and ideally the same texture binding pointer for both, so only one descriptor slot is consumed per metallic-roughness pair. Current code samples `.r` of the metallic-slot texture AND `.r` of the roughness-slot texture — wrong channels for glTF. The wrong channel might happen to return a reasonable roughness value if the source textures coincidentally have R≈G, but it ABSOLUTELY produces wrong metallic.
+
+The Sponza renderer has been producing visibly-wrong shading for any frame that depends on `metallic` correctness (any indirect-lit pixel of a Sponza non-metallic material). This is a long-standing rendering bug unrelated to TASK-226.x GI work — it predates the radiance-cache work entirely. Whether to file as two separate tasks (asset audit + shader fix) or one umbrella is a main-session call.
+
+**Recommended next dispatch shape:**
+- Sub-task 1: audit glTF → InnoMaterialComponent.json conversion. Either at import time set `"Metallic": 0.0` (texture overrides) OR add a "use texture channel B" flag to the material schema.
+- Sub-task 2: `opaqueGeometryProcessPass.frag` fix — sample `.b` of MetallicRoughness texture for metallic, `.g` for roughness. Verify against glTF spec. Test in Sponza autotest: the "central black void" disappears entirely; full GI-lit Sponza interior renders.
+- After sub-task 2 fix, re-run TASK-228 audit. Expected result: no black void, scene renders as a normally-lit Sponza interior. AC #2 ("renders correctly — no upper-half inversion, no central black void") satisfied. The "upper-half inversion" framing was a misreading of the contrast between lit non-metallic regions and zero metallic regions — it never was a Y-fold.
+
+**Captures archived (gitignored under Build/captures/TASK-228/probe-data/):**
+- `baseline_08a_Light_boosted.png`, `baseline_08a_Light_raw.png` — fresh baseline reproduce of the artifact.
+- `probe-raw-gi_08a_Light_boosted.png` — LightPass with `ComposeIndirectLighting` returning raw GI. **No black void.**
+- `probe-material_raw.png`, `probe-material_boosted.png` — material probe encoding (early version: R=albedo.x, G=1-metallic, B=albedo*1-metallic — kept the metallic-zero areas dark in G).
+- `probe-metallic_only.png` — the smoking gun: clean binary mask of metallic showing the artifact regions exactly.
+- `audit_06{a,b,c,d,e,f,g}_*.png` (raw + boosted) — full GI chain dumps for record.
+
+**AC mapping:**
+- AC #1 (Root cause identified): satisfied — metallic=1 from misimported Sponza materials + wrong texture channel sampled by `opaqueGeometryProcessPass.frag`.
+- AC #2 (Renders correctly): NOT satisfied here — out of TASK-228 scope per the brief (touches material assets + geometry pass, not the GI chain). Hand off to follow-up dispatch.
+- AC #3 (Bisect range): N/A — not a regression; long-standing material data + shader channel issue.
+- AC #4 (Fix landed): NOT landed in this dispatch.
+
+**TASK-228 recommended disposition:** close as "diagnosed; routed to follow-up." The original framing (TAA Y-fold, then GI carrier) was a chain of mis-localizations. The actual bug is unrelated to GI and unrelated to TAA — it's GBuffer-side, and the GI chain was a downstream amplifier the prior dispatches kept zooming into.
+
+**What was NOT verified in this dispatch:**
+- The import-side fix (glTF→Inno material conversion). I haven't read the import code; the "metallicFactor inherited from glTF spec default" is the most likely culprit but is unconfirmed.
+- Whether `.b`-sampling fix alone (without changing the JSON) restores correct rendering. Both the JSON's `"Metallic": 1.0` AND the shader's `.r` sample contribute; fixing one without the other may still leave the bug if the JSON's static fallback takes precedence in some path.
+- The 10% of pixels that DID have metallic=1 in my probe (e.g. the central column, ornaments) — whether their material is supposed to be metallic in some sense (e.g. lion ornament could plausibly be a gilt-bronze finish in some interpretations of Sponza). Likely just incorrectly-imported; not metallic in the original glTF source.
+
+**Files NOT modified (all diagnostic edits reverted):**
+- `Source/Shaders/HLSL/common/lightPassIndirectCompose.hlsl` — back to baseline.
+- `Source/ExampleProject/RenderingClient/ExampleRenderingClient_AuditDump.cpp` — back to baseline (no GI-chain dumps).
+- Tree is clean except for the pre-existing untracked submodule modification in `Source/External/GitSubmodules/ixwebsocket`.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
