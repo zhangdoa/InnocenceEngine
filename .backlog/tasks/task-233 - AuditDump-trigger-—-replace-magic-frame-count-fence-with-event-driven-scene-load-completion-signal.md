@@ -3,11 +3,11 @@ id: TASK-233
 title: >-
   AuditDump trigger — replace magic frame-count fence with event-driven
   scene-load completion signal
-status: In Progress
+status: Done
 assignee:
   - zhangdoa
 created_date: '2026-05-17 15:50'
-updated_date: '2026-05-17 16:40'
+updated_date: '2026-05-17 17:15'
 labels:
   - rendering
   - test-infra
@@ -155,7 +155,64 @@ Captured legacy code (git stash) vs new code under identical invocation flags + 
 **Surfaced (NOT folded in — per `surface-dont-chase`):**
 1. `Source/Engine/Engine_ParseInitConfig.cpp:145` log message "Audit mode: will dump all pass outputs on frame 5." is stale (frame 5 was wrong since `216de0e0`'s 5→30 bump; now meaningless under event-driven trigger). Worth a one-line message-correction CL.
 2. The audit invocation pattern `-audit` without `-total_frames N` silently captures UnitTest instead of GISponza. No documentation surfaces this. Worth a `Scripts/AuditCapture.ps1` wrapper script that bundles the correct flags.
+
+## Peer Review — 2026-05-17 (code-review agent, fresh dispatch)
+
+**Verdict: PASS with two ADVISORY items, no blockers.**
+
+Reviewer confirmed AC#1, AC#3, AC#4 met. AC#2 honestly N-V (no hardware for >30s soak); structural argument accepted — the counter is reset by the callback, the callback fires only after `LoadSync` completes (assets loaded + components init drained + `WaitForGPUIdle`), so any load duration is tolerated.
+
+Reviewer did direct Visual Read of `audit_11_FinalBlend.png` from both `Build/captures/task-233-legacy/` and `task-233-new-final/`: scene structure, lion ornament, brick texture, pre-existing TASK-228 upper-half mirror artifact all identical between legacy and new. No regression.
+
+### Move-ctor regression (alleged blocker) — NOT a blocker
+
+The `-Wdefaulted-function-deleted` warning on `_Internal.h` is real but pre-existing engine-wide: `INNO_CLASS_CONCRETE_NON_COPYABLE` (`Source/Engine/Common/ClassTemplate.h:11-17`) defaults move ops; any non-movable member silently deletes them. `ExampleRenderingClientImpl` is heap-allocated and never moved (`ExampleRenderingClient.h:31` holds it via raw pointer), so the deleted moves are functionally fine. Filed as TASK-237 (macro foot-gun, engine-wide).
+
+### Followups filed
+
+- **TASK-235** — cpp-style rename (`kAuditPostLoadSettleFrames` → `AuditPostLoadSettleFrames`) + state-transition Log on first-trigger.
+- **TASK-236** — stale `Engine_ParseInitConfig.cpp:145` log message ("frame 5" no longer meaningful).
+- **TASK-237** — `INNO_CLASS_CONCRETE_NON_COPYABLE` macro foot-gun (engine-wide).
+- **TASK-238** — optional `Scripts/AuditCapture.ps1` wrapper (tooling, low priority).
+
+### AC checklist after review
+
+- AC#1 ✓ (event-driven, no magic frame count — K=25 is a documented post-load settling budget, not a fence)
+- AC#2 ✗→N-V (worst-case soak unverified; structural argument accepted)
+- AC#3 ✓ (no race window — traced `Engine_RenderingCallbacks.cpp:23-49` runs SceneService::Update → RenderingClient::Update → ExecuteCommands all on the same render thread; atomic acquire/release explicit per `threading-contracts`)
+- AC#4 ✓ (byte-shape unchanged modulo noise — visual diff confirmed)
+
+Ready for closure flip pending user direction.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Landed as commit `8355775a` (refactor(audit): event-driven trigger), peer-reviewed PASS (commit `0d4bf444` filed adjacent TASK-234; followups TASK-235/236/237/238 filed for ADVISORY items and surfaced findings).
+
+**Outcome:** `s_AuditFrame == 30` absolute-frame fence replaced with a two-phase event-driven trigger: `SceneService::AddSceneLoadedCallback` flips an atomic edge flag; `HandleAuditTrigger()` counts K=25 post-load render frames before calling `AuditDump()`. Counter resets on every scene-load event, so the K-budget always measures from the most recent load. Race-free regardless of load duration.
+
+**Files touched (4):** `ExampleRenderingClient_{Internal.h, Setup.cpp, ExecuteCommands.cpp, AuditDump.cpp}`. `_ExecuteCommands.cpp` net −7 lines; all sibling TUs under the 300-line ratchet (Setup=299, ExecuteCommands=288, Internal.h=121, AuditDump=154).
+
+**ACs:**
+- #1 ✓ event-driven, no magic frame count (K=25 documented as empirical settling budget, not a fence).
+- #2 N-V worst-case >30s soak: no hardware to simulate slow scene-load. Structural argument accepted by reviewer — counter is reset by the callback; the callback fires only after `LoadSync` completes (assets loaded + components init drained + `WaitForGPUIdle` per `SceneService.cpp:60-71`); any load duration is tolerated.
+- #3 ✓ no race window — traced `Engine_RenderingCallbacks.cpp:23-49`: `SceneService::Update` → `RenderingClient::Update` → `ExecuteCommands` all on render thread within one frame. Atomic acquire/release documented at `_Internal.h:77-83`.
+- #4 ✓ build green; capture byte-shape unchanged — deterministic outputs byte-identical, temporal within ±0.7% file-size noise band, visual Read of `audit_11_FinalBlend.png` legacy-vs-new identical.
+
+**Verification:** `Scripts/BuildWin.ps1 -SkipShaderCompile` green. End-to-end audit run `Main.exe -mode 0 -renderer 0 -loglevel 1 -total_frames 60 -offscreen audit` wrote all 12 expected HDRs (`audit_01_BRDFLUTPass.hdr` … `audit_11_FinalBlend.hdr`); clean `std::exit(0)`. Captures preserved at `Build/captures/task-233-{legacy,new-final}/`. Implementer Visual Read + reviewer independent Visual Read both confirmed no regression.
+
+**Followups filed:**
+- TASK-235 — cpp-style rename `kAuditPostLoadSettleFrames → AuditPostLoadSettleFrames` + state-transition Log on first-trigger.
+- TASK-236 — stale `Engine_ParseInitConfig.cpp:145` "frame 5" log message.
+- TASK-237 — `INNO_CLASS_CONCRETE_NON_COPYABLE` macro foot-gun (engine-wide latent, exposed by adding atomics to any user).
+- TASK-238 — optional `Scripts/AuditCapture.ps1` wrapper (tooling).
+
+**Unverified (DOD #6):**
+- AC#2 worst-case >30s soak — no hardware.
+- K=25 against future GI-cache redesigns — if convergence latency grows, K may need re-evaluation.
+- `-audit` without `-total_frames N` captures UnitTest, not GISponza — unchanged from legacy behaviour, not a regression.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
