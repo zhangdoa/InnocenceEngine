@@ -17,7 +17,7 @@ description: Use when creating files, scratch output, or new docs. Enforces no-s
 
 Do not create new `*.md`, `README`, design doc, roadmap, spec, or architecture note under any tracked directory without explicit user request. The only AI-authored `*.md` files allowed:
 
-- `.claude/agents/`, `.claude/disciplines/` — agent manifests and disciplines.
+- `.claude/agents/`, `.claude/skills/` — agent manifests and skills.
 - `.backlog/tasks/` — backlog tasks.
 - Subtree `CLAUDE.md` — the venue for **all** subtree-level conventions: ownership, scope, policies, build-tool quirks, naming rules, inventory tables. Anything a future agent entering the subtree needs to know.
 - `.alignments/` — paper-alignment audits.

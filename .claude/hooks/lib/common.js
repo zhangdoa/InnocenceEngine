@@ -33,7 +33,7 @@ const PLAYWRIGHT_RE = /npx\s+playwright\s+test(?:\b|$)([^|&;\n]*)/
 // lines out so an unchanged neighbouring `status:` can't match.
 const STATUS_DONE_ADDED_RE = /^\+status:\s*Done\b/mi
 
-const DOCS_ONLY_PATH = /^\.backlog\/|^Documents\/|\.md$|^\.claude\/|^\.alignments\/|\.gitignore$/
+const DOCS_ONLY_PATH = /^\.backlog\/|\.md$|^\.claude\/|^\.alignments\/|\.gitignore$/
 
 // Staged-file paths that require live-engine validation.
 const EDITOR_CODE_PATH = /^Source\/(Editor-Next\/src\/|Engine\/Services\/EditorService\.)/
