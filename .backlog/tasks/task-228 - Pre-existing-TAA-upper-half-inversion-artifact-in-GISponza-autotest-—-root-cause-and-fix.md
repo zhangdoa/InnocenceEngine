@@ -133,6 +133,28 @@ Anchor pass set bounded to: `lightPass.comp`, `lightPassIndirectCompose.hlsl`, `
 
 Captures archived (gitignored under Build/captures/TASK-228/per-pass/):
 `audit_04a..04d_Opaque_RT*` (boosted), `audit_03c_SunShadowRT`, `audit_05_SSAO_boosted`, `audit_06a_RadianceCacheIntegration_boosted`, `audit_06b_GIFilterVertical_perceptual`, `audit_08a_Light_Luminance_boosted` (the carrier), `audit_08b_Light_Illuminance_boosted`, `audit_09_Sky`, `audit_09b_PreTAA_boosted`, `audit_10_TAAPass_boosted`, `audit_11_FinalBlend_boosted`.
+
+2026-05-17 (post-`216de0e0`): skip-GI bisect dispatch — **GI INPUT IS THE CARRIER.**
+
+Probe: temporary edit at `lightPass.comp:198` zeroing `l_IndirectLuminance` immediately after `ComposeIndirectLighting`. Reverted after capture.
+
+Result: with GI compose zeroed, `audit_08a_Light_Luminance.hdr` is **literally all-zero** across all 921,600 pixels (`magick identify` min=max=mean=0.0). Boosted PNG = uniform black. 100% of the artifact (central rectangular void + brightness asymmetry) is sourced upstream of `ComposeIndirectLighting` in the GI pipeline.
+
+Stronger-than-expected: direct lighting in GISponza autotest contributes zero. `audit_03c_SunShadowRT` is all-zero; tiled point lighting also zero by elimination. The scene's "lighting" in `LightPass RT0` is 100% indirect-GI-driven. LightPass with GI zeroed yields a black framebuffer (no direct lighting to fall back on).
+
+Capture: `Build/captures/TASK-228/per-pass/skip-GI/audit_08a_Light_Luminance_boosted_v2.png` (the `_v2` distinguishes from the pre-`216de0e0` unusable capture that hit UnitTest pre-load). GBuffer cross-check `audit_04a_Opaque_RT0_boosted_v2.png` confirms GISponza geometry.
+
+**Surfaced as separate concerns (NOT bundled into TASK-228 fix):**
+- Sun-shadow all-zero in GISponza autotest. Could be intentional interior-scene state, could be a regression. Worth a separate triage task — low priority unless the GI-chain bisect finds it's connected.
+- AuditDump roster gap — 12 HDRs dumped, expected 13. Missing `03a` / `03b` entries. Audit-infra hygiene; not blocking. Surface to backlog if it bites again.
+
+**Anchor pass set narrows to the GI chain feeding `in_GIIrradiance` (SRV `t10` in lightPass):**
+- `RadianceCacheIntegration.comp` — SH-encoded irradiance projection (audit-dumped as `06a`, but it's packed-coefficient layout, not screen-space; the prior dispatch noted reading-it-as-2D-image is misleading).
+- `GIDenoise.comp` — temporal accumulator that consumes RadianceCacheIntegration output.
+- `GIFilterHorizontal.comp` — separable spatial filter, first pass.
+- `GIFilterVertical.comp` — separable spatial filter, second pass; the carrier-into-LightPass per the SRV binding chain.
+
+**Recommended next dispatch:** GI-chain RT-dump bisect. Extend AuditDump roster to include `RadianceCacheIntegration` decoded form + `GIDenoise` output + `GIFilterHorizontal` output (vertical is already dumped at `06b`). Re-run audit; visual Read each. First GI-chain pass showing the central-void + asymmetry pattern is the bug origin. Narrows to a specific compute pass + dispatch site.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
