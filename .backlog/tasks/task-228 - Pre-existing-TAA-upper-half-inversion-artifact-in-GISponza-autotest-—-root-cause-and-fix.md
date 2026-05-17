@@ -155,6 +155,28 @@ Capture: `Build/captures/TASK-228/per-pass/skip-GI/audit_08a_Light_Luminance_boo
 - `GIFilterVertical.comp` — separable spatial filter, second pass; the carrier-into-LightPass per the SRV binding chain.
 
 **Recommended next dispatch:** GI-chain RT-dump bisect. Extend AuditDump roster to include `RadianceCacheIntegration` decoded form + `GIDenoise` output + `GIFilterHorizontal` output (vertical is already dumped at `06b`). Re-run audit; visual Read each. First GI-chain pass showing the central-void + asymmetry pattern is the bug origin. Narrows to a specific compute pass + dispatch site.
+
+2026-05-17 (post-`c1397c76`): GI-chain RT bisect — **GIDenoisePass is the first introducing pass.**
+
+Roster extended (temporary, reverted): added `06a_RadianceCacheIntegration`, `06c_GIDenoise`, `06d_GIFilterHorizontal` alongside the existing `06b_GIFilterVertical`.
+
+| Pass | Pattern present? | Notes |
+|---|---|---|
+| 06a RadianceCacheIntegration | N/A | 480×270 packed SH coefficients; not screen-space, visual inspection inconclusive |
+| **06c GIDenoise (output)** | **YES** | Bright central vertical pillar + dim bottom band + attenuated sides — first screen-space carrier |
+| 06d GIFilterHorizontal | YES (propagates) | Near-identical to 06c |
+| 06b GIFilterVertical | YES (intensified) | Pattern tightens into central blob; bottom fades further |
+
+**Symptom reinterpretation (refined):** what looked like "central black void + brightness asymmetry" in LightPass RT0 is actually GI input where energy collapses into a bright central vertical pillar. The "void" is the unilluminated surroundings where GI dropped to zero. The LightPass framebuffer faithfully reflects GI energy: lit where pillar is bright, dark where surroundings have zero GI.
+
+**Bug-shape candidates inside GIDenoise (per the agent's static-audit inference):**
+1. **Temporal-accumulation reprojection** driven by non-uniform world-position / motion-vector source — history reprojects to wrong screen coords, energy collapses toward one converged location.
+2. **Half-res → full-res upsample misalignment** in the cache-lookup tap (`upscaleFactor=(2,2)` ring walk in `FindClosestProbe` — audited correct at `af52b67e`, but worth re-checking the GIDenoise-side consumption coordinate).
+3. **Sample-count denominator never decaying** — ΣLᵢ accumulator unbounded, early-converged pixels (central column with stable motion) accumulate unboundedly while edge pixels (high motion) reset.
+
+**Captures archived (gitignored):** `Build/captures/TASK-228/per-pass/gi-chain/audit_06{a,b,c,d}_*_boosted.png`.
+
+**Recommended next dispatch:** skip-temporal probe on GIDenoise (same shape as the LightPass skip-GI probe that worked). Edit `GIDenoise.comp` to zero the history-blend contribution (force current-frame-only). Re-run audit, Read `06c_GIDenoise`. If central-pillar pattern disappears → temporal accumulation is the carrier; further bisect among candidates (1) and (3). If it persists → bug is in the per-frame raw GI compute, candidate (2) is the lead.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
