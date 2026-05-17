@@ -81,6 +81,29 @@ Artifact is at minimum 28+ commits / 10+ days old. Older bisect window worth exp
 - TASK-223's "camera-on-axis bilateral" content explanation may partially apply to a horizontal pattern that's separate from this vertical mirror; not verified.
 
 Main session housekeeping after the bug-fix dispatch ended: sub-agent operated in main repo (NOT a worktree as the brief instructed) — left HEAD detached at `21d0e058`. Restored via `git checkout ecs-overhaul`; 3 session commits (`471a0804`, `e0e68900`, `90750a1e`) preserved via reflog.
+
+2026-05-17: hypothesis-validation dispatch — **HYPOTHESIS FALSIFIED.** No fix landed; tree restored to HEAD (`7115d286`).
+
+| Variant | Edit | Frame-25 artifact | Verdict |
+|---|---|---|---|
+| Baseline (no edit) | — | Upper-half upside-down mirror + central black void | reproduce confirmed |
+| A | Drop `screenPos_orig.y` flip; keep `screenPos_prev.y` flip | Artifact persists, slightly different texture coverage | falsified |
+| B | Drop BOTH `screenPos_{orig,prev}.y` flips | Artifact persists | falsified |
+| Step-4 | Drop `skyPass.comp:43` write-flip (with both MV flips restored) | Artifact persists | falsified |
+
+All three captures archived under `Build/captures/TASK-228/` (`baseline-frame25-26afbc2c.png`, `variantA-frame25.png`, `variantB-frame25.png`, `skyPass-noflip-frame25.png`). Visual Read on each confirmed the upper-half upside-down geometry + central black void remain.
+
+**Why the hypothesis was wrong (static-audit-after-the-fact):**
+- The convention is internally consistent. `(input.posCS_orig.xy / w_orig) * 0.5 + 0.5` produces D3D NDC-Y-up → UV-Y-up. The two `y = 1.0 - y` lines convert both inputs to UV-Y-down (engine pixel-Y convention, matching how `uv = l_ScreenCoord / viewportSize` is used in GIDenoise.comp:183 and how `pixelPos` is used in TAAPass.comp). Both inputs are in the same Y space, so the delta `motionVec = prev - orig` is also in pixel-Y. The flips on both inputs do NOT sign-invert the delta; they coordinate-transform it.
+- On a converged static camera, screenPos_orig ≈ screenPos_prev → motionVec ≈ 0 regardless of any Y-sign convention. A "Y-sign-inverted MV smearing history across the horizontal centerline" cannot happen on a static camera — `pixelPos + round(0)` = `pixelPos`. The artifact mechanism in the hypothesis is logically inconsistent with the observed static-camera setup.
+- PTDenoiseShared.hlsl:34-35 + GIDenoise.comp:184-186 pin the convention as `motionVec_px = screenPos_prev - screenPos_curr` in pixel-Y, which is what the current code produces. The engine has multiple consumers that depend on this convention; removing the flips would silently mis-reproject the GIDenoiser too.
+
+**Artifact is NOT in TAA-motion-vector OR sky-pass write-flip.** Deeper bisect needed. Likely candidates not yet examined:
+- preTAAPass / lightPass composition: the artifact shows scene geometry mirrored. preTAAPass.comp:22 has an unused `flipYTexCoord` that hints at a Y-convention conflict that may have been partially un-wired. The fact that the mirror shows scene content (not just sky) rules out the sky-pass-only path.
+- Final-blend / read-back: `WriteCaptureToFile` reads `FinalBlendPass.GetResult()` via `ReadTextureBackToCPU`. If the read-back layout differs from what FinalBlend wrote, the captured image could be Y-folded — but the artifact is a half-fold, not a full flip, which doesn't match a simple readback inversion.
+- LightPass write coordinate transformation: looks correct on inspection (`out_lightPassRT0[l_ScreenCoord]` at line 219), but the artifact pattern (lower half is correct scene, upper half is upside-down version of lower half) could also be explained by some pass clearing only the lower half of a render target while leaving upper-half stale UAV data from a previous frame, OR by a write that fills both halves with a Y-folded distribution.
+- Recommended next experiment: targeted RT dump of `lightPassRT0`, `preTAAPassRT0`, `TAAPassRT0`, `postTAAPassRT0`, and `finalBlendPassRT0` at frame 25 to isolate WHICH pass first introduces the mirror. The `-dump_frames` flag + per-pass debug-view should give that.
+- Secondary hypothesis worth filing: TASK-77.x denoise stack (May 6-10) per the prior diagnostic's bisect window — still untested.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
