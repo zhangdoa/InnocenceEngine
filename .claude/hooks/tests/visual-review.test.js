@@ -20,7 +20,7 @@ function register({ assert, group }) {
       '',
       'Body without any capture path reference.',
       '',
-      'Reviewed-By: ai-expert',
+      'Reviewed-By: code-review',
       'Code-AI-Generated-By: Claude',
       '',
     ].join('\n')))
@@ -32,7 +32,7 @@ function register({ assert, group }) {
       '',
       'Renames the captures helper. No path references.',
       '',
-      'Reviewed-By: ai-expert',
+      'Reviewed-By: code-review',
       '',
     ].join('\n')))
     assert(r2.ok === true, 'word "captures" without path → pass')
@@ -46,8 +46,8 @@ function register({ assert, group }) {
       '- Build/captures/TASK-77/toggle0/gisponza/',
       '- Build/captures/TASK-77/toggle1/gisponza/',
       '',
-      'Reviewed-By: graphics-api-expert',
-      'Reviewed-Visually: graphics-api-expert — improvement',
+      'Reviewed-By: code-review',
+      'Reviewed-Visually: code-review — improvement',
       'Code-AI-Generated-By: Claude',
       '',
     ].join('\n')))
@@ -59,7 +59,7 @@ function register({ assert, group }) {
       '',
       'See Build/captures/TASK-X/toggle1/.',
       '',
-      'Reviewed-Visually: graphics-api-expert — per-scene-mixed',
+      'Reviewed-Visually: code-review — per-scene-mixed',
       '',
     ].join('\n')))
     assert(r2.ok === true, 'per-scene-mixed verdict → pass')
@@ -70,8 +70,8 @@ function register({ assert, group }) {
       '',
       'Build/captures/foo/',
       '',
-      'Reviewed-Visually: graphics-api-expert — improvement',
-      'Reviewed-Visually: software-architect — improvement',
+      'Reviewed-Visually: code-review — improvement',
+      'Reviewed-Visually: code-review — improvement',
       '',
     ].join('\n')))
     assert(r3.ok === true, 'multiple Reviewed-Visually: lines → pass')
@@ -84,7 +84,7 @@ function register({ assert, group }) {
       '',
       'Dumps into Build/captures/<RunTag>/{unittest,gitestbox,gisponza}/.',
       '',
-      'Reviewed-By: ci-build-expert',
+      'Reviewed-By: ci-build-impl',
       'Review-Skipped-Visual: test-infra — produces captures, does not claim visual quality',
       '',
     ].join('\n')))
@@ -102,7 +102,7 @@ function register({ assert, group }) {
       '- Build/captures/TASK-77/toggle0/',
       '- Build/captures/TASK-77/toggle1/',
       '',
-      'Reviewed-By: graphics-api-expert',
+      'Reviewed-By: code-review',
       'Code-AI-Generated-By: Claude',
       '',
     ].join('\n')))
@@ -115,7 +115,7 @@ function register({ assert, group }) {
       '',
       'Build/captures/foo/',
       '',
-      'Reviewed-Visually graphics-api-expert improvement',
+      'Reviewed-Visually code-review improvement',
       '',
     ].join('\n')))
     assert(r2.ok === false, 'Reviewed-Visually without colon → block')
@@ -128,7 +128,7 @@ function register({ assert, group }) {
       '',
       'Build/captures/foo/',
       '',
-      'Reviewed-By: graphics-api-expert',
+      'Reviewed-By: code-review',
       '',
     ].join('\n')))
     assert(r3.ok === false, 'peer-review present, visual-review absent → still block')

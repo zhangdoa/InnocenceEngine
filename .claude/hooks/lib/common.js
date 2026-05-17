@@ -70,9 +70,7 @@ function isRealUserPrompt(content) {
 // tool; older / future variants may use `Task`. Accept either.
 function isTaskMgmtAgentCall(toolName, toolInput) {
   if (toolName !== 'Agent' && toolName !== 'Task') return false
-  const t = toolInput?.subagent_type || ''
-  // Accept legacy `producer` during the rename transition. Drop after one stable session cycle.
-  return t === 'task-mgmt' || t === 'producer'
+  return (toolInput?.subagent_type || '') === 'task-mgmt'
 }
 
 // Scan a transcript JSONL for (1) any prior Agent(subagent_type=task-mgmt)

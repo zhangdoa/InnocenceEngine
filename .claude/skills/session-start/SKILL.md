@@ -1,11 +1,11 @@
 ---
 name: session-start
-description: Use at the start of every new session before substantive work. Producer reads state snapshots, in-progress tasks, recent commits, runs the drift audit, surfaces priorities to the user.
+description: Use at the start of every new session before substantive work. task-mgmt reads state snapshots, in-progress tasks, recent commits, runs the drift audit, surfaces priorities to the user.
 ---
 
 # Skill: session-start
 
-The producer agent runs at the start of every new session, before any substantive work. No code edits, captures, or task closures begin until the user confirms direction.
+The task-mgmt agent runs at the start of every new session, before any substantive work. No code edits, captures, or task closures begin until the user confirms direction.
 
 ## Procedure
 
@@ -19,4 +19,4 @@ The producer agent runs at the start of every new session, before any substantiv
 ## Cross-references
 
 - `backlog-workflow` — Implementation Notes are the cross-session medium this discipline reads.
-- `agent-dispatch` (user level) — main-session dispatches the producer in foreground at session start (legitimate two-condition match).
+- `agent-dispatch` (user level) — main-session dispatches task-mgmt in foreground at session start (legitimate two-condition match).

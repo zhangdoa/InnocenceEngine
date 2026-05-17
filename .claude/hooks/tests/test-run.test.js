@@ -23,7 +23,7 @@ function register({ assert, group }) {
         'docs(backlog): TASK-189 close as non-reproducible',
         '',
         'Closure-Reason: non-reproducible observation, never validated',
-        'Reviewed-By: ai-expert',
+        'Reviewed-By: code-review',
         'Code-AI-Generated-By: Claude',
         '',
       ].join('\n'),
@@ -37,7 +37,7 @@ function register({ assert, group }) {
       messageText: [
         'docs(backlog): TASK-189 close',
         '',
-        'Reviewed-By: ai-expert',
+        'Reviewed-By: code-review',
         'Code-AI-Generated-By: Claude',
         '',
       ].join('\n'),

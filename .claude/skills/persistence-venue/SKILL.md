@@ -19,7 +19,7 @@ The Claude default auto-memory venue (`~/.claude/projects/<slug>/memory/`) is **
 | Rule every agent must follow | `.claude/skills/<topic>/SKILL.md` (and add to root `CLAUDE.md` universal preamble) | every agent | yes (commit) |
 | Rule one specific role must follow | section in `.claude/agents/<role>.md` | only that role | yes (commit) |
 | Generic rule applicable across all your projects | `~/.claude/skills/<topic>/SKILL.md` | every agent on every project | not project-reviewed |
-| Project-state snapshot (direction, sync, engine invariants) | `.claude/state/<topic>.md` | main-session + producer at session start | yes (commit) |
+| Project-state snapshot (direction, sync, engine invariants) | `.claude/state/<topic>.md` | main-session + task-mgmt at session start | yes (commit) |
 | Cross-session continuity for an in-flight task | `## Implementation Notes` in `.backlog/tasks/<task>.md` | every agent that reads the task | yes (commit) |
 | Cost-of-one-slip-is-high enforcement | new gate under `.claude/hooks/gates/<name>.js` with explicit escape sentinel | every tool call | yes (commit) |
 | Ephemeral conversation context | do not persist; let it scroll | none | n/a |

@@ -17,7 +17,7 @@ function ctxOf(text) { return { messageText: text } }
 
 function register({ assert, group }) {
   group('peer-review gate — pass forms', () => {
-    const r1 = peerReview.run(ctxOf('Subject\n\nBody.\n\nReviewed-By: ai-expert\nCode-AI-Generated-By: Claude\n'))
+    const r1 = peerReview.run(ctxOf('Subject\n\nBody.\n\nReviewed-By: code-review\nCode-AI-Generated-By: Claude\n'))
     assert(r1.ok === true, 'Reviewed-By: present → pass')
 
     const r2 = peerReview.run(ctxOf('Subject\n\nBody.\n\nReview-Skipped: hook-internal\nCode-AI-Generated-By: Claude\n'))
@@ -28,8 +28,8 @@ function register({ assert, group }) {
       '',
       'Body.',
       '',
-      'Reviewed-By: ai-expert',
-      'Reviewed-By: software-architect',
+      'Reviewed-By: code-review',
+      'Reviewed-By: harness-impl',
       'Code-AI-Generated-By: Claude',
       '',
     ].join('\n')))
@@ -56,7 +56,7 @@ function register({ assert, group }) {
 
     // Bare "Reviewed-By" without colon at all — mirrors attribution gate's
     // colon-required shape.
-    const r3 = peerReview.run(ctxOf('Subject\n\nReviewed-By ai-expert\n\nCode-AI-Generated-By: Claude\n'))
+    const r3 = peerReview.run(ctxOf('Subject\n\nReviewed-By code-review\n\nCode-AI-Generated-By: Claude\n'))
     assert(r3.ok === false, 'Reviewed-By without colon → block')
   })
 
@@ -70,7 +70,7 @@ function register({ assert, group }) {
       '',
       'Body.',
       '',
-      'Reviewed-By: ai-expert',
+      'Reviewed-By: code-review',
       'Code-AI-Generated-By: Claude',
       '',
     ].join('\n'), 'utf8')
