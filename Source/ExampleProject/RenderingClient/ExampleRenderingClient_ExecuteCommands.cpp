@@ -62,23 +62,12 @@ namespace Inno
 			}
 		}
 
-		// PurgeTiles → UpdateTiles → MipCascadeBuild → PathTracer chain.
-		// PurgeTiles must complete before UpdateTiles (the latter's
-		// HashBuffer == 0 early-out must see freed slots, otherwise stale-
-		// tile scratch contributes to running-mean) and before the path
-		// tracer (so InsertCell can claim freed slots). UpdateTiles must
-		// complete before MipCascadeBuild (the cascade reads the mip-0
-		// values UpdateTiles just resolved). MipCascadeBuild is a UAV
-		// writer of both ValueBuffers at mips 1-3; the path tracer's
-		// Site-3 read consumes mip 0 only, so the Wait on UpdateTiles
-		// before the path tracer is sufficient for correctness — but we
-		// still serialise MipCascadeBuild against the path tracer to keep
-		// the chain order intact for any future mip-aware read at the
-		// same site. All four run on the Compute queue, so same-queue
-		// Signal/Wait pairs are sufficient — no graphics-side fence.
-		// Toggle-off keeps the entire block elided at compile time (each
-		// pass stays Terminated, the inner gates short-circuit
-		// regardless), preserving the bit-identical bypass.
+		// PurgeTiles → UpdateTiles → MipCascadeBuild → PathTracer chain;
+		// per-block Waits enforce ordering. All four on Compute queue
+		// (same-queue Signal/Wait, no graphics-side fence). The PT Wait
+		// on MipCascadeBuild is reserved for future mip-aware Site-3
+		// reads; today only mip 0 is consumed. Toggle-off elides the
+		// block (passes stay Terminated, gates short-circuit).
 		if constexpr (Inno::PTHashGridCache::ENABLED)
 		{
 			if (m_GPUPathTracerActive
@@ -296,7 +285,7 @@ namespace Inno
 		if (g_Engine->getInitConfig().isAudit)
 		{
 			static uint32_t s_AuditFrame = 0;
-			if (++s_AuditFrame == 5)
+			if (++s_AuditFrame == 30)
 				AuditDump();
 		}
 
