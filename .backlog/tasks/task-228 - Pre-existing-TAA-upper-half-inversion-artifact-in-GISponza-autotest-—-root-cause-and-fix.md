@@ -177,6 +177,18 @@ Roster extended (temporary, reverted): added `06a_RadianceCacheIntegration`, `06
 **Captures archived (gitignored):** `Build/captures/TASK-228/per-pass/gi-chain/audit_06{a,b,c,d}_*_boosted.png`.
 
 **Recommended next dispatch:** skip-temporal probe on GIDenoise (same shape as the LightPass skip-GI probe that worked). Edit `GIDenoise.comp` to zero the history-blend contribution (force current-frame-only). Re-run audit, Read `06c_GIDenoise`. If central-pillar pattern disappears → temporal accumulation is the carrier; further bisect among candidates (1) and (3). If it persists → bug is in the per-frame raw GI compute, candidate (2) is the lead.
+
+2026-05-17 (post-`904c2af5`): skip-temporal probe — **pattern PERSISTS without temporal. Candidates (1) + (3) falsified; (2) leads.**
+
+Probe: `GIDenoise.comp:322` overwritten with `out_GIHistory[l_ScreenCoord] = float4(color.xyz, 1.0)` where `color = l_IrradianceFromCache` from `:170` (current-frame raw, no history blend). Reverted.
+
+Result: skip-temporal capture shows the **same** central-pillar overexposure, **same** brighter-pillar-vs-dim-surroundings distribution, **same** horizontal mid-frame band. Difference: noisier / blockier (N=1 single sample vs N≤16 weighted sum), but the **macro pattern is unchanged**. The pillar/dim-surroundings carrier is upstream of GIDenoise's temporal block — bug is in the per-frame raw GI compute that feeds `l_IrradianceFromCache = SampleRadianceCache(...)` at `GIDenoise.comp:170`.
+
+**Remaining candidate (the lead):** half-res → full-res upsample misalignment in the cache-lookup tap. Target: `SampleRadianceCache` in `Source/Shaders/HLSL/common/RadianceCacheCommon.hlsl`. Hypothesis: the coordinate transform feeding `FindClosestProbe` / `ComputeProbeWeight` produces a single dominant probe weight at the screen-centre region (the pillar) while collapsing to background-only weight elsewhere — consistent with a stuck/misaligned half-res lookup. The `FindClosestProbe` ring walk was audited correct at `af52b67e` under `upscaleFactor=(2,2)`, but that audit verified the ring algorithm in isolation; the GIDenoise-side consumption coordinate transform is the not-yet-audited site.
+
+Capture archived (gitignored): `Build/captures/TASK-228/per-pass/skip-temporal/audit_06c_GIDenoise_boosted.png`.
+
+**Recommended next dispatch:** probe-id visualisation on `SampleRadianceCache`. Temporary edit to return either (a) a constant pseudo-colour keyed on the winning probe index, or (b) the raw pre-blend ring-walk index, so the LightPass framebuffer shows per-pixel which probe is being sampled. Read the visualisation: if all pillar pixels resolve to one probe vs distinct neighbours, the half-res lookup is the carrier confirmed.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
