@@ -15,11 +15,7 @@
  *   3. agent-dispatch        — blocks `Agent` calls dispatched foreground
  *                              without `[foreground-required]` in the prompt.
  *                              Enforces .claude/skills/agent-dispatch/SKILL.md.
- *   4. cross-subtree-stash   — blocks `git stash` Bash calls that would
- *                              sweep dirty files spanning multiple agent-
- *                              owned subtrees (TASK-196 / 2026-04-28
- *                              cross-agent collision incident).
- *   5. no-auto-memory        — blocks Write/Edit/MultiEdit/NotebookEdit
+ *   4. no-auto-memory        — blocks Write/Edit/MultiEdit/NotebookEdit
  *                              targeting the Claude default auto-memory
  *                              directory. The block message routes to the
  *                              new venues so a future Claude does not stall.
@@ -35,7 +31,6 @@ const GATES = [
   require('./gates/task-mgmt-brief'),
   require('./gates/skill-evidence'),
   require('./gates/agent-dispatch'),
-  require('./gates/cross-subtree-stash'),
   require('./gates/no-auto-memory'),
 ]
 

@@ -92,6 +92,6 @@ gpu_test*.txt
 .worktrees/
 
 # Alignment auxiliary snapshots (third-party reference source, capture dumps, etc.).
-# Owned by harness-impl; conventions in .alignments/CLAUDE.md.
+# Conventions in .alignments/CLAUDE.md.
 /.alignments/_*/
 

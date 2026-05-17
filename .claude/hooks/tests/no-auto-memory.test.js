@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 // Standalone tests for the no-auto-memory gate.
 //
-// Runner: `node .claude/hooks/tests/no-auto-memory.test.js`. Zero deps —
-// same shape as cross-subtree-stash.test.js. Each test prints PASS/FAIL
-// and the process exits non-zero on any failure.
+// Runner: `node .claude/hooks/tests/no-auto-memory.test.js`. Zero deps.
+// Each test prints PASS/FAIL and the process exits non-zero on any failure.
 //
 // Three concerns covered:
 //   1. autoMemoryDir slug computation — Claude Code's project slug
