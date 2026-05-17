@@ -16,4 +16,4 @@ Boundary:
 - Conditional on staged paths or task labels → a project skill scoped to that condition.
 - Hook file already over the size gate → split before grow.
 
-Outputs: hook changes, agent manifest changes, skill edits, `.claude/state/*.md` updates, `.claude/team.md` updates, Implementation Notes on harness-labelled tasks.
+Outputs: hook changes, agent manifest changes, skill edits, `.claude/state/*.md` updates, Implementation Notes on harness-labelled tasks.

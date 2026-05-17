@@ -36,7 +36,7 @@ Generic, project-agnostic skills live at user level (`~/.claude/skills/`). Proje
 | `perf-frame-budget`, `regression-build-chain` | Engine perf measurement; engine regression bisects. |
 | `comment-discipline`, `fundamentals` | Editing harness files; engine-specific quality bar. |
 
-Roster: `.claude/team.md`. Project-state snapshots: `.claude/state/*.md` (direction, remote-sync, engine invariants) — update in the same CL that lands a directional change.
+Project-state snapshots: `.claude/state/*.md` (direction, remote-sync, engine invariants) — update in the same CL that lands a directional change.
 
 ## Session start
 
