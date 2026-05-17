@@ -268,6 +268,59 @@ The Sponza renderer has been producing visibly-wrong shading for any frame that 
 - `Source/Shaders/HLSL/common/lightPassIndirectCompose.hlsl` — back to baseline.
 - `Source/ExampleProject/RenderingClient/ExampleRenderingClient_AuditDump.cpp` — back to baseline (no GI-chain dumps).
 - Tree is clean except for the pre-existing untracked submodule modification in `Source/External/GitSubmodules/ixwebsocket`.
+
+2026-05-17 (shader-impl validation dispatch): **Shader fix RULED OUT. Bug is in the asset importer's BC compressor.** No code changed.
+
+**Validation procedure followed:** brief instructed the shader fix `t2d_metallic.Sample(...).r` → `.b` and `t2d_roughness.Sample(...).r` → `.g`, conditional on the source textures being packed glTF metallicRoughness. The fix-precondition probe inverted the conclusion.
+
+**Probe data (no shader edit applied):**
+
+1. **Material JSON** (`Data/Generated/Components/NewSponza_Main_glTF_003.floor_01.MaterialComponent.json`): slots [2] (metallic) and [3] (roughness) BOTH reference the same texture name `NewSponza_Main_glTF_003.floor_tiles_01_Roughnessfloor_tiles_01_Metalness`. This is the glTF KHR_materials_pbrMetallicRoughness packing convention preserved by Assimp. Consistent with the brief's "packed MR texture" path.
+
+2. **Stored texture descriptor** (`...floor_tiles_01_Roughnessfloor_tiles_01_Metalness.json`): `PixelDataFormat: 10` = `BC4` (single-channel block compression), `PixelDataType: 14` = `Compressed`. Binary size `8,388,608` bytes = `4096 × 4096 × 8 bytes / 16` = BC4 fits exactly. **The on-disk texture is single-channel, not four-channel.**
+
+3. **Importer compressor** (`Source/Engine/Common/BCCompression.cpp:78-80`):
+   ```cpp
+   else if (bcFormat == TexturePixelDataFormat::BC4)
+   {
+       uint8_t r[16];
+       for (uint32_t i = 0; i < 16; i++) r[i] = block[i * 4];   // ALWAYS RED CHANNEL
+       stb_compress_bc4_block(dest, r);
+   }
+   ```
+   `slotIndex` selects the BC FORMAT (`BC5` for normals, `BC1` for albedo, `BC4` for everything else), but the BC4 branch unconditionally extracts `pixel[0]` (R) regardless of which slot is being compressed. Source RGBA→BC4 is hard-coded to the R channel.
+
+**Conclusion:** for the packed glTF MR texture (R=unused/AO, G=roughness, B=metallic), the importer compresses the **R channel** of the source RGBA into the BC4 stored in slot 2 (metallic) AND into the BC4 stored in slot 3 (roughness). Both stored textures carry the wrong data — the source's R channel, which for Sponza is non-zero on ~10% of pixels.
+
+**The shader is innocent.** Sampling `.r` of a BC4 is correct (BC4 is single-channel; G/B/A return 0/0/1 per DX spec). Changing the shader to sample `.b` would read the BC4 alpha (always 1.0) → metallic = 1.0 everywhere → breaks all PBR materials. The brief's contingency rule fires here: **"If single-channel metallic / separate textures: the shader is right; the bug is upstream in the asset importer. Surface and stop — that's a code-impl scope, not shader-impl."**
+
+**Fix shape (code-impl scope, NOT landed here):**
+
+Two coupled changes needed in the asset import pipeline. The right fix is to teach `BCCompression::CompressRGBAToBC` (or its caller) which source-channel to extract per slot:
+- Slot 2 (metallic) → extract source `.b` into the BC4 single channel.
+- Slot 3 (roughness) → extract source `.g` into the BC4 single channel.
+- Slot 4 (AO) → extract source `.r` (current behaviour; matches ORM-packed and glTF KHR_materials_specular AO convention).
+
+Approach options:
+- **A. Per-slot channel-source table in the compressor.** Add a `srcChannelForBC4` lookup `{slot 2 → B, slot 3 → G, slot 4 → R}` in `BCCompression::CompressRGBAToBC`. Tiny, localized.
+- **B. Caller pre-swizzles the source RGBA before calling the compressor.** Keeps `BCCompression` generic but spreads the channel knowledge across `AssetService::ImportTexture` and any other future caller.
+
+Option A is the simpler. The convention map already lives in the same file's comment header (`// Slot convention: 0 normal → BC5, 1 albedo → BC1, 2 metallic → BC4, ...`), so the per-slot channel source belongs adjacent.
+
+**After the importer fix:** delete `Data/Generated/Components/NewSponza*_Roughness*_Metalness.innobin` and re-import (re-run the engine; the import path will regenerate via assimp). The on-disk BC4 will then carry the correct channel. Then re-run the GISponza audit; `audit_08a_Light_Luminance` should show fully-lit interior, no central black void. This is `task-228` AC #2 + #4.
+
+**Why the brief's shader fix was tempting but wrong:** the brief framed the bug as "shader reads wrong channel of a packed MR texture." That's the correct mental model IF the texture were stored RGBA8 / BC7 (preserving all four channels) and the shader sampled it. The engine instead stores BC4 (single channel) and the channel-selection decision happens at import time, not sample time. The brief's contingency clause caught this correctly — the validation probe inverted the conclusion from "shader-impl" to "code-impl."
+
+**Code-impl scope (new task):** importer-side fix to extract the correct channel per slot when compressing packed glTF MR textures to BC4. Touches `Source/Engine/Common/BCCompression.cpp` (~5 lines) + a re-import of the generated Sponza textures.
+
+**Files NOT modified in this dispatch:**
+- `Source/Shaders/HLSL/opaqueGeometryProcessPass.frag` — untouched, the brief's proposed `.r`→`.b/.g` edit was NOT applied.
+- Tree is clean (only pre-existing untracked submodule modification in `Source/External/GitSubmodules/ixwebsocket`).
+
+**ACs:**
+- AC #1 (Root cause): refined — `Source/Engine/Common/BCCompression.cpp:78-80` hard-codes the R channel for all BC4 slots; for packed glTF MR textures this stores the wrong channel for metallic (slot 2) and roughness (slot 3). The prior dispatch's "shader samples wrong channel" framing was slightly off — the channel was already lost at import.
+- AC #2 / #4: NOT satisfied here. Blocked on the importer fix landing.
+- AC #3: N/A (not a regression; long-standing import-pipeline bug).
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
