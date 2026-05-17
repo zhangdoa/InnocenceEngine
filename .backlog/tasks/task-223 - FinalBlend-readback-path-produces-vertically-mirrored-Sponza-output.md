@@ -1,9 +1,10 @@
 ---
 id: TASK-223
 title: FinalBlend / readback path produces vertically-mirrored Sponza output
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-13 22:28'
+updated_date: '2026-05-17'
 labels:
   - rendering
   - bug
@@ -201,3 +202,11 @@ If the user wants to keep the camera at `(0,2,0)` for symmetric framing (some te
 - No alternate camera transform tested in-engine — proposed fix is on paper only.
 - No grep for `RowPitch` arithmetic in `VK`/`MT` graphics backends (DX12 is the active backend for this repro per `-renderer 0`).
 - The "mirror" hypothesis cannot be 100% disproved by static analysis if a downstream consumer (display present, OS compositor) is doing something exotic, but the captured PNG comes straight from `STBWrapper::Save` over the readback buffer — no display compositor is in that path.
+
+### 2026-05-17 — Superseded by TASK-228
+
+The 2026-05-14 audit above checked left/right bilateral pixel symmetry and concluded the artifact was content (camera on the atrium's bilateral axis). That audit was right that the symptom is content/symmetry-shaped but wrong on which specific content — and missed that the visible "mirror" framing in the captured PNG was actually a contrast artifact between fully-lit non-metallic regions and zero-output metallic regions.
+
+TASK-228's diagnostic chain re-localized the artifact to `Source/Engine/Common/BCCompression.cpp:78-80`: BC4 compression unconditionally extracted the source `.r` channel for every BC4 slot, so the packed glTF MetallicRoughness textures stored the wrong channel for both metallic (slot 2) and roughness (slot 3) `.innobin` files. With `metallic=1` on ~10% of Sponza pixels, `albedo * (1-metallic) * irradiance = 0` produced the central dark region the PNG showed.
+
+The TASK-228 structural fix lands the per-slot channel-source hint through the importer chain plus a re-bake of the Sponza assets. Close TASK-223 as duplicate of TASK-228 once that commit lands. See TASK-228 Implementation Notes for the fix shape + visual A/B.

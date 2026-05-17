@@ -74,12 +74,13 @@ TextureAssetHandle AssetService::FindTextureAsset(const char* name)
 	return TextureAssetHandle{};
 }
 
-std::string AssetService::ImportTexture(const char*    absolutePath,
-                                        TextureSampler sampler,
-                                        TextureUsage   usage,
-                                        bool           isSRGB,
-                                        uint32_t       slotIndex,
-                                        const char*    instanceName)
+std::string AssetService::ImportTexture(const char*          absolutePath,
+                                        TextureSampler       sampler,
+                                        TextureUsage         usage,
+                                        bool                 isSRGB,
+                                        uint32_t             slotIndex,
+                                        const char*          instanceName,
+                                        TextureChannelSource bc4Source)
 {
 	if (!absolutePath || !instanceName || !*instanceName)
 	{
@@ -116,7 +117,7 @@ std::string AssetService::ImportTexture(const char*    absolutePath,
 	}
 
 	TextureDesc l_CompressedDesc = {};
-	void* l_TextureData = BCCompression::CompressRGBAToBC(l_Texture.m_TextureDesc, l_RawData, slotIndex, l_CompressedDesc);
+	void* l_TextureData = BCCompression::CompressRGBAToBC(l_Texture.m_TextureDesc, l_RawData, slotIndex, bc4Source, l_CompressedDesc);
 	if (!l_TextureData)
 	{
 		Log(Error, "AssetService::ImportTexture: BC compress failed: ", absolutePath);

@@ -181,6 +181,13 @@ void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material
 			TextureUsage l_usage = TextureUsage::Sample;
 			bool l_isSRGB = false;
 			uint32_t l_textureSlotIndex = 0;
+			// Default: STB broadcasts single-channel PNGs to RGBA (R=G=B=L), so R is
+			// safe for separate / legacy textures. glTF KHR_materials_pbrMetallicRoughness
+			// packs a single RGBA: R unused, G=roughness, B=metallic. Assimp reports the
+			// SAME packed texture twice — once as aiTextureType_METALNESS, once as
+			// aiTextureType_DIFFUSE_ROUGHNESS — so the channel-source per Assimp tag is
+			// the cleanest signal for the BC4 import branch.
+			TextureChannelSource l_bc4Source = TextureChannelSource::R;
 
 			if (l_aiTextureType == aiTextureType::aiTextureType_HEIGHT ||
 				l_aiTextureType == aiTextureType::aiTextureType_NORMALS ||
@@ -197,15 +204,27 @@ void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material
 				l_isSRGB = true;
 				l_textureSlotIndex = 1;
 			}
-			else if (l_aiTextureType == aiTextureType::aiTextureType_SPECULAR ||
-				l_aiTextureType == aiTextureType::aiTextureType_METALNESS)
+			else if (l_aiTextureType == aiTextureType::aiTextureType_METALNESS)
+			{
+				l_usage = TextureUsage::Sample;
+				l_isSRGB = false;
+				l_textureSlotIndex = 2;
+				l_bc4Source = TextureChannelSource::B;
+			}
+			else if (l_aiTextureType == aiTextureType::aiTextureType_SPECULAR)
 			{
 				l_usage = TextureUsage::Sample;
 				l_isSRGB = false;
 				l_textureSlotIndex = 2;
 			}
-			else if (l_aiTextureType == aiTextureType::aiTextureType_SHININESS ||
-				l_aiTextureType == aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS)
+			else if (l_aiTextureType == aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS)
+			{
+				l_usage = TextureUsage::Sample;
+				l_isSRGB = false;
+				l_textureSlotIndex = 3;
+				l_bc4Source = TextureChannelSource::G;
+			}
+			else if (l_aiTextureType == aiTextureType::aiTextureType_SHININESS)
 			{
 				l_usage = TextureUsage::Sample;
 				l_isSRGB = false;
@@ -223,7 +242,7 @@ void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material
 				continue;
 			}
 
-			auto l_textureName = AssimpTextureProcessor::CreateTextureComponent(l_localPath, modelBaseDir, l_sampler, l_usage, l_isSRGB, l_textureSlotIndex, baseName);
+			auto l_textureName = AssimpTextureProcessor::CreateTextureComponent(l_localPath, modelBaseDir, l_sampler, l_usage, l_isSRGB, l_textureSlotIndex, baseName, l_bc4Source);
 			if (!l_textureName.empty())
 				assetData->m_TextureNames[l_textureSlotIndex] = l_textureName;
 		}

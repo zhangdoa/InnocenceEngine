@@ -12,10 +12,11 @@ namespace Inno
 {
     namespace BCCompression
     {
-        void* CompressRGBAToBC(const TextureDesc& srcDesc,
-                               void*              srcRGBA,
-                               uint32_t           slotIndex,
-                               TextureDesc&       outDesc)
+        void* CompressRGBAToBC(const TextureDesc&   srcDesc,
+                               void*                srcRGBA,
+                               uint32_t             slotIndex,
+                               TextureChannelSource bc4Source,
+                               TextureDesc&         outDesc)
         {
             uint32_t w = srcDesc.Width;
             uint32_t h = srcDesc.Height;
@@ -23,9 +24,9 @@ namespace Inno
             // Slot convention:
             //   0 normal map  → BC5 (RG)
             //   1 albedo      → BC1 (RGB; sRGB stays sRGB on the SRV side)
-            //   2 metallic    → BC4 (R)
-            //   3 roughness   → BC4 (R)
-            //   4 AO          → BC4 (R)
+            //   2 metallic    → BC4 (single channel — bc4Source picks which)
+            //   3 roughness   → BC4 (single channel — bc4Source picks which)
+            //   4 AO          → BC4 (single channel — bc4Source picks which)
             TexturePixelDataFormat bcFormat;
             switch (slotIndex)
             {
@@ -33,6 +34,8 @@ namespace Inno
             case 1:  bcFormat = TexturePixelDataFormat::BC1; break;
             default: bcFormat = TexturePixelDataFormat::BC4; break;
             }
+
+            const uint32_t l_BC4SourceOffset = static_cast<uint32_t>(bc4Source);
 
             uint32_t blockBytes = (bcFormat == TexturePixelDataFormat::BC1 || bcFormat == TexturePixelDataFormat::BC4) ? 8u : 16u;
             uint32_t blocksX    = (w + 3) / 4;
@@ -75,9 +78,9 @@ namespace Inno
                     }
                     else if (bcFormat == TexturePixelDataFormat::BC4)
                     {
-                        uint8_t r[16];
-                        for (uint32_t i = 0; i < 16; i++) r[i] = block[i * 4];
-                        stb_compress_bc4_block(dest, r);
+                        uint8_t l_SingleChannel[16];
+                        for (uint32_t i = 0; i < 16; i++) l_SingleChannel[i] = block[i * 4 + l_BC4SourceOffset];
+                        stb_compress_bc4_block(dest, l_SingleChannel);
                     }
                     else if (bcFormat == TexturePixelDataFormat::BC5)
                     {

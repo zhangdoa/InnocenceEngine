@@ -3,6 +3,7 @@
 #include "../Common/ComponentHeaders.h"
 #include "../Common/AssetData.h"
 #include "../Common/AssetImportData.h"
+#include "../Common/BCCompression.h"
 
 namespace Inno
 {
@@ -75,11 +76,16 @@ namespace Inno
 		// Load a standalone PNG/etc, BC-compress it for the given material
 		// slot, write {Generated/Components/<instanceName>.json + .innobin}.
 		// Returns the saved instance name on success, empty on failure.
-		static std::string ImportTexture(const char*    absolutePath,
-		                                 TextureSampler sampler,
-		                                 TextureUsage   usage,
-		                                 bool           isSRGB,
-		                                 uint32_t       slotIndex,
-		                                 const char*    instanceName);
+		// bc4Source picks which RGBA channel is packed into BC4 (slot 2/3/4);
+		// default R matches separate single-channel PNGs that STB broadcasts
+		// to RGBA on load. glTF MetallicRoughness packing needs B for metallic
+		// (slot 2) and G for roughness (slot 3).
+		static std::string ImportTexture(const char*          absolutePath,
+		                                 TextureSampler       sampler,
+		                                 TextureUsage         usage,
+		                                 bool                 isSRGB,
+		                                 uint32_t             slotIndex,
+		                                 const char*          instanceName,
+		                                 TextureChannelSource bc4Source = TextureChannelSource::R);
 	};
 }
