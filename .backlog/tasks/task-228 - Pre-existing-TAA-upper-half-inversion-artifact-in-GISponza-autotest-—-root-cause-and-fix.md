@@ -189,6 +189,28 @@ Result: skip-temporal capture shows the **same** central-pillar overexposure, **
 Capture archived (gitignored): `Build/captures/TASK-228/per-pass/skip-temporal/audit_06c_GIDenoise_boosted.png`.
 
 **Recommended next dispatch:** probe-id visualisation on `SampleRadianceCache`. Temporary edit to return either (a) a constant pseudo-colour keyed on the winning probe index, or (b) the raw pre-blend ring-walk index, so the LightPass framebuffer shows per-pixel which probe is being sampled. Read the visualisation: if all pillar pixels resolve to one probe vs distinct neighbours, the half-res lookup is the carrier confirmed.
+
+2026-05-17 (post-`3c0fc537`): probe-id visualisation — **coord-transform hypothesis FALSIFIED. Bug is in probe-side data, not in lookup geometry.**
+
+Probe: `RadianceCacheCommon.hlsl:314` (inside `SampleRadianceCache`) overridden to return `float4(lookupTL.tileCoord.xy / gridSize, 0, 1)` — each pixel encodes which TL probe it sampled. Plus `GIDenoise.comp:322` set to write current-frame raw (skip-temporal carried forward from prior dispatch). Both reverted.
+
+Result: the captured GIDenoise output shows a **smooth, continuous 2D gradient** across the entire framebuffer — black (top-left) → red (top-right) → green (bottom-left) → yellow (bottom-right). NO uniform pillar region, NO partition boundary, NO clustering. Every pixel's TL probe-tile coord tracks its screen position smoothly. A small dark patch at the very top-left corner (~5-tile region) showed minor ring-walk substitution; treated as ring-walk noise, not pathology.
+
+**Implication:** the half-res → full-res lookup is correct. Pillar pixels resolve to per-tile distinct probes, identical to surroundings. The lookup geometry is innocent. The bug lives in the **data stored per probe** — the SH radiance coefficients themselves carry the pillar/dim-surroundings shape.
+
+**Caveat (NOT verified by the probe):** the visualisation encoded only the TL probe; if TR/BL/BR dominate the weighted blend in some regions and disagree with TL, the cluster size could be understated. Cheap follow-up if the upstream-data probe doesn't pin it down: re-run with the highest-weight corner encoded.
+
+**Surfaced (not chased):** small dark patch ~5 tiles at top-left = ring-walk substitution behaviour. Probably benign; file as a low-priority observation if it bites later.
+
+**Carrier chain so far:**
+- LightPass RT0 (visible artifact)
+- ← GI compose `l_IrradianceFromCache`
+- ← `SampleRadianceCache` lookup (geometry correct — falsified `3c0fc537` lead)
+- ← probe-side stored data (NEW LEAD)
+
+**Recommended next dispatch:** probe-data dump. Add an audit-roster entry that dumps `in_RadianceCache` (the SH-coefficient texture written by `RadianceCacheIntegration.comp` and consumed by `LoadIrradiance`). Inspect the band-0 (Y00) coefficient channel across probes — if the SH itself shows pillar-vs-surrounding contrast, the bug is upstream of GIDenoise's consumption; bisect among `RadianceCacheIntegration` (SH write) vs `RadianceCacheReprojection` (temporal SH carryover) vs `FilterScreenProbes` (radiance feeding the integration). Note: `RadianceCacheReprojection` was substantially reworked in this session (TASK-226.4 Option A port at `e0e68900`) but the artifact predates that work by 10+ days, so 226.4 is unlikely to be the cause — it may instead be a longer-standing carrier the 226.4 port faithfully preserved.
+
+Capture: `Build/captures/TASK-228/per-pass/probe-id/audit_06c_GIDenoise_raw.png` (gamma-only — the diagnostic image; boosted version is saturated by auto-level on [0,1] values).
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
