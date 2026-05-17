@@ -104,6 +104,35 @@ All three captures archived under `Build/captures/TASK-228/` (`baseline-frame25-
 - LightPass write coordinate transformation: looks correct on inspection (`out_lightPassRT0[l_ScreenCoord]` at line 219), but the artifact pattern (lower half is correct scene, upper half is upside-down version of lower half) could also be explained by some pass clearing only the lower half of a render target while leaving upper-half stale UAV data from a previous frame, OR by a write that fills both halves with a Y-folded distribution.
 - Recommended next experiment: targeted RT dump of `lightPassRT0`, `preTAAPassRT0`, `TAAPassRT0`, `postTAAPassRT0`, and `finalBlendPassRT0` at frame 25 to isolate WHICH pass first introduces the mirror. The `-dump_frames` flag + per-pass debug-view should give that.
 - Secondary hypothesis worth filing: TASK-77.x denoise stack (May 6-10) per the prior diagnostic's bisect window — still untested.
+
+2026-05-17: bug-fix per-pass localization dispatch — **artifact localized to LightPass; "upper-half mirror" framing was a visual misinterpretation.**
+
+Capture mechanism: existing `-audit` mode (`ExampleRenderingClient_AuditDump.cpp` + dispatch trigger), extended with per-pass dumps for OpaquePass RT3 / RadianceCacheIntegration / GIFilterVertical / PreTAA. Diagnostic edits reverted.
+
+| Pass | RT | Artifact present? |
+|---|---|---|
+| OpaquePass RT0/1/2/3 | posWS / normal / albedo / MV | NO |
+| SunShadowRTPass visibility | R8 | NO |
+| SSAOPass | output | NO |
+| RadianceCacheIntegrationPass | packed SH 480×270 | N/A (not framebuffer) |
+| GIFilterVerticalPass | irradiance | partial — non-zero top + horizontal zero-band middle |
+| **LightPass RT0 (Luminance)** | **first carrier** | **YES** |
+| LightPass RT1 (Illuminance seed) | all-zero at frame 25 | not informative |
+| SkyPass | sky gradient | NO |
+| PreTAA / TAA / postTAA / FinalBlend | propagate | YES (downstream) |
+
+**Anti-anchor:** SSAOPass is the LAST clean pass. Artifact originates inside LightPass.
+
+**Symptom reinterpretation (important):** the "upper-half upside-down mirror" reading was wrong. At low exposure, the boosted LightPass RT0 shows the FULL Sponza scene across the framebuffer, but with (a) a rectangular zero-output region in the centre, and (b) brightness asymmetry top vs bottom. Two distinct signal regions resembling a mirror at low exposure, not an actual Y-fold. AC #1 ("Root cause identified") and AC #2 ("renders correctly — no upper-half inversion, no central black void") still apply but the underlying bug is a LightPass GI-compose / GI-input issue, not a TAA / readback / sky-flip issue.
+
+**TASK-223 reconciliation:** TASK-223's "vertically-mirrored Sponza output" framing describes the same artifact under the same visual misinterpretation. Both tasks point at the same LightPass-internal bug. TASK-223 should still close-as-duplicate of TASK-228 once 228 lands a fix.
+
+**Recommended next dispatch:** shader-impl probe at `lightPass.comp:197` `ComposeIndirectLighting(in_GIIrradiance, ...)`. Temporary edit: set `l_IndirectLuminance = 0` (skip GI compose). Rebuild + re-run audit. If the black-void + asymmetry disappear → GI input (`in_GIIrradiance` SRV from `GIFilterVerticalPass`) is the carrier. If they remain → bug is in direct lighting (sun shadow / tiled point lighting). ~5-min experiment.
+
+Anchor pass set bounded to: `lightPass.comp`, `lightPassIndirectCompose.hlsl`, `GIFilterVertical.comp` + `GIFilterVerticalPass.cpp` dispatch site, and the SRV-binding chain that ties LightPass `t10` to `GIFilterVerticalPass::GetResult()`.
+
+Captures archived (gitignored under Build/captures/TASK-228/per-pass/):
+`audit_04a..04d_Opaque_RT*` (boosted), `audit_03c_SunShadowRT`, `audit_05_SSAO_boosted`, `audit_06a_RadianceCacheIntegration_boosted`, `audit_06b_GIFilterVertical_perceptual`, `audit_08a_Light_Luminance_boosted` (the carrier), `audit_08b_Light_Illuminance_boosted`, `audit_09_Sky`, `audit_09b_PreTAA_boosted`, `audit_10_TAAPass_boosted`, `audit_11_FinalBlend_boosted`.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
