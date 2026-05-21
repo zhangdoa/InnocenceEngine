@@ -143,10 +143,9 @@ void Thread::Worker(uint32_t ThreadIndex)
 	m_ID = std::make_pair(ThreadIndex, l_ID);
 	Log(Success, "Thread ", m_ID, " has been created.");
 
-	// TASK-31: outer try wraps the entire loop body, not just ExecuteTask. A truly
-	// unexpected exception escaping something other than a task (m_TaskList iteration,
-	// the state machine, allocators) must not kill the worker silently — we log it,
-	// transition to Failed, and exit the loop so GetState() surfaces the condition.
+	// Outer try wraps the entire loop body (not just ExecuteTask) so an exception
+	// escaping anything other than a task — list iteration, state machine, allocators —
+	// transitions the thread to Failed instead of dying silently.
 	try
 	{
 		while (!m_Done.load(std::memory_order_acquire))

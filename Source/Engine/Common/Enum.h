@@ -12,7 +12,6 @@
 
 namespace Inno {
 	namespace Enum {
-		// Helper: Trim leading and trailing whitespace from a string_view.
 		constexpr std::string_view Trim(std::string_view sv) {
 			while (!sv.empty() && (sv.front() == ' ' || sv.front() == '\t'))
 				sv.remove_prefix(1);
@@ -21,7 +20,6 @@ namespace Inno {
 			return sv;
 		}
 
-		// Splits a string_view by a delimiter (default: comma) and returns trimmed tokens.
 		inline std::vector<std::string_view> SplitNames(std::string_view s, char delimiter = ',') {
 			std::vector<std::string_view> result;
 			size_t pos = 0;
@@ -38,16 +36,12 @@ namespace Inno {
 			return result;
 		}
 
-		// Default: an enum is not registered.
 		template<typename T>
 		struct IsRegisteredEnum : std::false_type {};
 
-
-		// Traits to allow our generic ToString conversion.
 		template <typename EnumT>
 		struct InnoEnumTraits;
 
-		// Helper that calls the traits.
 		template <typename EnumT>
 		inline const char* ToString(EnumT value) {
 			const auto& names = InnoEnumTraits<EnumT>::FullNames();
@@ -58,15 +52,10 @@ namespace Inno {
 	} // namespace Enum
 } // namespace Inno
 
-// The macro to declare an enum and specialize its traits.
-// This macro declares the enum (in the Inno::Enum namespace) and creates a specialization
-// of InnoEnumTraits so that ToString returns "EnumName::Enumerator".
-// Declare an enum class at Inno:: scope, register it with the Inno::Enum
-// traits machinery, and make it loggable directly via `Log(..., value, ...)`.
-// The underlying `enum class` lives in `Inno::Enum::EnumName` because the
-// traits specializations must too; a `using` alias in `Inno::` gives the
-// natural `Inno::EnumName` spelling at call sites (including unqualified use
-// inside `namespace Inno`).
+// The underlying `enum class` lives in `Inno::Enum::EnumName` so traits
+// specializations can see it; the `using` alias re-exports as `Inno::EnumName`
+// for the natural spelling at call sites (including unqualified use inside
+// `namespace Inno`).
 #define INNO_ENUM(EnumName, ...)                                              \
 namespace Inno { namespace Enum {                                             \
     enum class EnumName { __VA_ARGS__ };                                       \
@@ -89,7 +78,6 @@ namespace Inno { namespace Enum {                                             \
             return fullNames;                                                 \
         }                                                                     \
     };                                                                        \
-	/* Mark this enum as registered */                                       \
     template <>                                                               \
     struct IsRegisteredEnum<EnumName> : std::true_type {};                   \
     inline const char* ToString(EnumName value) {                             \
@@ -98,7 +86,6 @@ namespace Inno { namespace Enum {                                             \
 } }                                                                           \
 namespace Inno { using EnumName = Enum::EnumName; }
 
-// Optional bitwise operators if needed.
 #define INNO_ENUM_OPERATORS(enumTypeName)                                   \
 inline enumTypeName operator&(enumTypeName a, enumTypeName b) {               \
     return static_cast<enumTypeName>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b)); \

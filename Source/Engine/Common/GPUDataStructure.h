@@ -4,7 +4,6 @@
 
 namespace Inno
 {
-	// Texture indexing constants - shared between CPU and GPU
 	static constexpr uint32_t INVALID_TEXTURE_INDEX = 0xFFFFFFFF;
 
 	class MeshComponent;
@@ -17,16 +16,6 @@ namespace Inno
 
 	INNO_ENUM_OPERATORS(VisibilityMask)
 
-	// Runtime debug visualization mode (TASK-183). Mirrors the HLSL
-	// DEBUG_VIEW_* enum in common/common.hlsl; lightPass.comp branches on
-	// PerFrame_CB.debugViewMode to write a debug channel to RT0 instead of
-	// the lit composite. 0 = off (normal lighting). Same shape as the
-	// data-driven exposureMode field below (TASK-144 precedent).
-	//
-	// TASK-205 trimmed the GBuffer modes (raw-RT inspection moved to
-	// RenderTargetDebuggerPanel which already enumerates OpaquePass's RTs).
-	// Survivors are the modes that need shader-side math (lit-composite term
-	// zeroing, RT-shadow visualization, tile-light heatmap synthesis).
 	enum class DebugViewMode : uint32_t
 	{
 		None                    = 0u,
@@ -55,7 +44,7 @@ namespace Inno
 		float aperture;
 		float shutterTime;
 		float ISO;
-		uint32_t debugViewMode; // TASK-183: matches DebugViewMode enum; 0 = None (normal lighting). Reused from former padding_a slot (TASK-138/157).
+		uint32_t debugViewMode;
 		Vec2 radianceCacheHaltonJitter;
 		uint32_t frameIndex;
 		uint32_t modelCount;
@@ -63,37 +52,32 @@ namespace Inno
 		float autoExposureKey;
 		float autoExposureCompensation; // EV stops applied on top of auto-exposure result
 		float exposurePadding;
-		uint32_t pointShadowBypass; // TASK-195: 1 forces inline-RT visibility=1 in EvaluateTiledPointLighting (A/B toggle, formerly #define DEBUG_POINT_SHADOW_BYPASS). Reused from padding[0]; binary feature-bypass orthogonal to debugViewMode.
-		uint32_t padding[11]; // Remaining tail padding to keep PerFrameConstantBuffer at the same total size after carving pointShadowBypass out of padding[0].
+		uint32_t pointShadowBypass; // 1 forces inline-RT visibility=1 in EvaluateTiledPointLighting (A/B toggle).
+		uint32_t padding[11];
 	};
 
-	// w component of luminance is attenuationRadius
-	// TASK-176: m_CastShadow gates the inline-RT shadow trace in
-	// lightPass.comp::EvaluateTiledPointLighting. Stored as a 16-byte slot
-	// for HLSL std140 array-element alignment (each cbuffer element of an
-	// array must be 16-byte-aligned regardless of struct content).
+	// w component of luminance is attenuationRadius.
+	// m_CastShadow + padding[3] keep the struct 16-byte-aligned for HLSL std140
+	// cbuffer-array element alignment.
 	struct alignas(16) PointLightConstantBuffer
 	{
 		Vec4 pos;
 		Vec4 luminance;
 		uint32_t m_CastShadow = 1;
 		uint32_t padding[3] = { 0, 0, 0 };
-		//float attenuationRadius;
 	};
 
-	// w component of luminance is sphereRadius
+	// w component of luminance is sphereRadius.
 	struct alignas(16) SphereLightConstantBuffer
 	{
 		Vec4 pos;
 		Vec4 luminance;
-		//float sphereRadius;
 	};
 
-	// Minimal transform constant buffer for GPU-driven rendering (replaces PerObjectConstantBuffer where only transforms are needed)
 	struct alignas(16) TransformConstantBuffer
 	{
-		Mat4 m;         // Model transformation matrix
-		Mat4 normalMat; // Normal transformation matrix
+		Mat4 m;
+		Mat4 normalMat;
 	};
 
 	enum class ShaderModel { Invalid, Opaque, Transparent, Emissive, Volumetric, Debug };
@@ -177,38 +161,31 @@ namespace Inno
 		MeshUsage meshUsage = MeshUsage::Invalid;
 	};
 
-	// GPU-resident model data for GPU-driven rendering
 	struct alignas(16) GPUModelData
 	{
-		// Vertex and index buffer GPU addresses
 		uint64_t m_VertexBufferAddress = 0;
 		uint64_t m_IndexBufferAddress = 0;
-		
-		// Buffer metadata
+
 		uint32_t m_VertexCount = 0;
 		uint32_t m_IndexCount = 0;
 		uint32_t m_VertexStride = 0;
 		uint32_t m_IndexStride = 0;
-		
-		// Material and shader identification
+
 		uint32_t m_MaterialIndex = 0;
 		uint32_t m_ShaderProgramIndex = 0;
 		float m_UUID = 0.0f;
 		uint32_t m_RenderPassIndex = 0;
-		
-		// Visibility and culling data
+
 		uint32_t m_VisibilityMask = 0;
 		uint32_t m_MeshUsage = 0;
-		
-		// Bounding box for GPU culling
+
 		Vec4 m_BoundingBoxMin;
 		Vec4 m_BoundingBoxMax;
-		
-		// Additional data for GPU-driven rendering
+
 		uint32_t m_InstanceCount = 1;
 		uint32_t m_FirstInstance = 0;
-		
-		float padding[16]; // Adjusted padding after adding shader fields
+
+		float padding[16];
 	};
 
 	struct BillboardPassDrawCallInfo

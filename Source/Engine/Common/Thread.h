@@ -29,9 +29,9 @@ namespace Inno
 			, Waiting
 			, Busy
 			, Released
-			// TASK-31: thread terminated due to an unhandled exception escaping the Worker
-			// body itself (not a per-task exception — those are caught and logged per task).
-			// A Failed thread stops accepting new tasks and is visible through GetState().
+			// Worker body itself threw an unhandled exception (not a per-task exception —
+			// those are caught and logged inside the Worker loop). Failed threads stop
+			// accepting new tasks.
 			, Failed
 		};
 
@@ -50,9 +50,7 @@ namespace Inno
 
 		void AddTask(Handle<ITask> task);
 
-		// TASK-31: cumulative count of per-task exceptions caught inside the Worker loop.
-		// Non-zero means a task threw; the thread itself kept running. Exposed so a
-		// TaskScheduler-level health check can trend or alarm on it.
+		// Non-zero means at least one task threw; the thread itself kept running.
 		uint64_t GetCaughtExceptionCount() const;
 
 	private:
