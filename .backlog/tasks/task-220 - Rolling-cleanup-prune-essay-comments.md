@@ -4,7 +4,7 @@ title: 'Rolling cleanup: prune essay comments'
 status: In Progress
 assignee: []
 created_date: '2026-05-05 20:26'
-updated_date: '2026-05-21 19:14'
+updated_date: '2026-05-21 19:22'
 labels:
   - tech-debt
   - code-quality
@@ -171,6 +171,27 @@ Iteration #9 (continued) — held-back files and surfaced findings.
 - Nullptr-binding pattern in `GPUPathTracerPass_Dispatch.cpp:69-70` now lacks the WHY comment (intentional, but invisible after the sweep — candidate for future iteration to add a hidden-invariant comment).
 
 AC #3 keeps the task open as a rolling tracker.
+
+## Review (code-review, 2026-05-21) — iteration #9 (parallel sweep, commit `395c00fa`)
+
+**Verdict: PASS.** Ship as-is. Three non-blocking observations.
+
+### Coverage
+
+Reviewer sampled ≈22 of 113 files in detail (≈19%) plus a 158-line non-comment filtered diff across all 113. Sub-scope sampling (≥2 files each): A — Engine.h / LightComponent.h / RayTracer.cpp / WinMain.cpp / WinWindowService.cpp; B — DX12GraphicsHardwareService.h / _Internal.h; C — AssetService.h / EditorService.cpp / EditorService.h / EditorService_Introspection.cpp / RenderPassResourceServiceImpl.cpp / VKGraphicsService.cpp / _CommandList.cpp / _EngineComponent.cpp / LinuxWindowService.cpp; D — GPUPathTracerPass_BindingLayout.cpp / _Dispatch.cpp / NRDIntegrationAdapter.h / NRDConstants.h / TaskSystemTests.cpp / AtomicTests.cpp / FixedSizeStringTests.cpp / Reflector.cpp; tightener — DoubleBuffer.h.
+
+Stealth-pattern scan exhaustive: every non-comment non-whitespace diff line accounted for as intentional brace restoration, removal of empty loop/branch body (Reflector.cpp, VKGraphicsService_CommandList.cpp), or removal of commented-out dead-code block. File-size ratchet clean (all 113 files ≤300). Build artifacts on disk match cited times (Main.exe + RenderTest.exe 21:09:34/59 PM; 11 audit HDRs at 21:10:40–41 PM — commit cited 19:10 in UTC offset). Surfaced findings spot-checked: MTGraphicsService.h missing-include bit-rot, Engine.h::testCase / extraHook / ResolveDependencies still in tree, Engine_CreateServices.cpp ad-hoc singletons_[type_index]=ptr writes still in tree, VKGraphicsService.cpp PresentImpl still non-functional. All honest — NOT folded in.
+
+### Non-blocking observations
+
+1. **WinWindowService.cpp:73-78** — inline WIN32 CreateWindow arg annotations deleted. Clean call (WHAT-paraphrases of the signature; MSDN is the source of truth for `CW_USEDEFAULT` semantics).
+2. **DX12GraphicsHardwareService.h:11-13** — asymmetric kept-WHY on `DX12GpuTimerSlot`. `m_SlotIndex` kept the slot-arithmetic invariant; `m_BeginRecorded` lost "Set by BeginGpuTimer; cleared by EndGpuTimer. Detects unmatched calls." (state-machine invariant; non-obvious). Inconsistent application but not blocking — candidate for restore in a future iteration touching this file.
+3. **Bookkeeping discrepancy in commit body** — body says "458 ins / 1793 del" but actual numstat is `494 ins / 1793 del`. The 36-line difference is the backlog .md note (71 ins) minus an apparent re-count after PerFrameDataService.cpp revert. Trivial; not worth an amend.
+4. **GPUPathTracerPass_Dispatch.cpp:64-65,70** — three `nullptr` binding-slot args without inline WHY. Pre-existing (the pre-image had only an above-block essay, no per-slot comment). Implementer surfaced as a follow-up candidate. Honest.
+
+### Resolution
+
+No re-spin. Observation 2 (m_BeginRecorded hidden-invariant restore) and observation 4 (nullptr binding-slot WHY) folded into next iteration touching those files. Bookkeeping discrepancy not worth amending.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
