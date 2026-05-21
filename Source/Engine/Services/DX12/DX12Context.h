@@ -5,7 +5,6 @@ namespace Inno
 {
 	struct DX12Context
 	{
-		// Device / Adapter
 		int32_t m_videoCardMemory = 0;
 		char m_videoCardDescription[128] = {};
 
@@ -20,22 +19,18 @@ namespace Inno
 
 		ComPtr<ID3D12Device9> m_device = nullptr;
 
-		// Command queues
 		ComPtr<ID3D12CommandQueue> m_directCommandQueue = nullptr;
 		ComPtr<ID3D12CommandQueue> m_computeCommandQueue = nullptr;
 		ComPtr<ID3D12CommandQueue> m_copyCommandQueue = nullptr;
 
-		// Command queue fences
 		ComPtr<ID3D12Fence> m_directCommandQueueFence = nullptr;
 		ComPtr<ID3D12Fence> m_computeCommandQueueFence = nullptr;
 		ComPtr<ID3D12Fence> m_copyCommandQueueFence = nullptr;
 
-		// Per-frame command allocators
 		std::vector<ComPtr<ID3D12CommandAllocator>> m_directCommandAllocators;
 		std::vector<ComPtr<ID3D12CommandAllocator>> m_computeCommandAllocators;
 		std::vector<ComPtr<ID3D12CommandAllocator>> m_copyCommandAllocators;
 
-		// Descriptor heaps: CBV/SRV/UAV (shader-visible)
 		ComPtr<ID3D12DescriptorHeap> m_CSUDescHeap = nullptr;
 		DX12DescriptorHeapAccessor m_GPUBuffer_CBV_DescHeapAccessor;
 		DX12DescriptorHeapAccessor m_GPUBuffer_SRV_DescHeapAccessor;
@@ -47,13 +42,11 @@ namespace Inno
 		DX12DescriptorHeapAccessor m_BindlessMeshVertex_SRV_DescHeapAccessor;
 		DX12DescriptorHeapAccessor m_BindlessMeshIndex_SRV_DescHeapAccessor;
 
-		// Descriptor heaps: CBV/SRV/UAV (shader-non-visible)
 		ComPtr<ID3D12DescriptorHeap> m_CSUDescHeap_ShaderNonVisible = nullptr;
 		DX12DescriptorHeapAccessor m_GPUBuffer_UAV_DescHeapAccessor_ShaderNonVisible;
 		DX12DescriptorHeapAccessor m_MaterialTexture_UAV_DescHeapAccessor_ShaderNonVisible;
 		DX12DescriptorHeapAccessor m_RenderTarget_UAV_DescHeapAccessor_ShaderNonVisible;
 
-		// Descriptor heaps: RTV, DSV, Sampler
 		ComPtr<ID3D12DescriptorHeap> m_RTVDescHeap = nullptr;
 		DX12DescriptorHeapAccessor m_RTVDescHeapAccessor;
 		ComPtr<ID3D12DescriptorHeap> m_DSVDescHeap = nullptr;
@@ -61,25 +54,19 @@ namespace Inno
 		ComPtr<ID3D12DescriptorHeap> m_SamplerDescHeap = nullptr;
 		DX12DescriptorHeapAccessor m_SamplerDescHeapAccessor;
 
-		// GPU error detection (set by debug callback or device health check, read by HasGPUError)
 		mutable std::atomic<bool> m_GPUErrorDetected{false};
 
-		// GPU timestamp queries — owned by DX12GraphicsHardwareService::CreateGpuTimerResources;
-		// stored on the context so DX12FrameManagementService and other DX12 services can
-		// reach them without a back-pointer to the hardware service.
 		ComPtr<ID3D12QueryHeap> m_TimestampHeap_Graphics = nullptr;
 		ComPtr<ID3D12QueryHeap> m_TimestampHeap_Compute = nullptr;
 		ComPtr<ID3D12QueryHeap> m_TimestampHeap_Copy = nullptr;
-		// Per-frame readback buffers: one per swapchain image, sized for
-		// 2 * GPU_TIMER_MAX_NAMED_TIMERS UINT64s per queue (begin+end).
+		// One per swapchain image, sized for 2 * GPU_TIMER_MAX_NAMED_TIMERS
+		// UINT64s per queue (begin + end).
 		std::vector<ComPtr<ID3D12Resource>> m_TimestampReadback_Graphics;
 		std::vector<ComPtr<ID3D12Resource>> m_TimestampReadback_Compute;
 		std::vector<ComPtr<ID3D12Resource>> m_TimestampReadback_Copy;
-		// Dedicated allocators + lists for ResolveQueryData. Per-frame so reset
-		// of frame N's allocator only happens after the prior submission of
-		// frame N has retired (BeginFrame waits for the matching fence). Sharing
-		// the global per-frame allocator would race with the in-flight pass
-		// command list that is still recording when ResolveGpuTimers fires.
+		// Dedicated per-frame allocators/lists for ResolveQueryData; sharing the
+		// global pass allocator would race with the in-flight pass list still
+		// recording when ResolveGpuTimers fires.
 		std::vector<ComPtr<ID3D12CommandAllocator>> m_TimestampResolveAllocators_Graphics;
 		std::vector<ComPtr<ID3D12CommandAllocator>> m_TimestampResolveAllocators_Compute;
 		std::vector<ComPtr<ID3D12CommandAllocator>> m_TimestampResolveAllocators_Copy;
@@ -93,13 +80,11 @@ namespace Inno
 		static constexpr bool m_enableValidationLayers = false;
 #endif
 
-		// Accessors
 		ComPtr<ID3D12CommandAllocator> GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, uint32_t frameIndex);
 		ComPtr<ID3D12CommandQueue> GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType);
 		DX12DescriptorHeapAccessor& GetDescriptorHeapAccessor(GPUResourceType type, Accessibility bindingAccessibility = Accessibility::ReadOnly,
 			Accessibility resourceAccessibility = Accessibility::ReadOnly, TextureUsage textureUsage = TextureUsage::Invalid, bool isShaderVisible = true);
 
-		// DX12 object creation helpers
 		ComPtr<ID3D12Resource> CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, const char* name = "");
 		ComPtr<ID3D12Resource> CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, D3D12_CLEAR_VALUE* clearValue = nullptr, bool isShared = false, const char* name = "");
 		ComPtr<ID3D12Resource> CreateReadBackHeapBuffer(UINT64 size, const char* name = "");

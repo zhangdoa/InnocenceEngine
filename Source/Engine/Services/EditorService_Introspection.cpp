@@ -18,10 +18,6 @@ void EditorService::RegisterIntrospectionHandlers()
 	};
 
 	reg("HELLO", [](const json& /*payload*/, ix::WebSocket& /*ws*/) -> json {
-		// Aliveness handshake. The editor (Electron main.js) sends this
-		// after the WS opens; the reply just confirms the dispatcher is
-		// running. No payload to share — the editor does not embed the
-		// engine's frames, so no shared-texture handle is exchanged.
 		return json{ {"ok", true} };
 	});
 

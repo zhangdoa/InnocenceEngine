@@ -1,13 +1,3 @@
-// FixedSizeString unit and regression tests.
-//
-// Rewritten for the 2026-04-17 cleanup that removed the "sacrificial
-// trailing character" off-by-one. The class now:
-//   - Always null-terminates (including default construction).
-//   - Stores exactly what was passed (up to capacity N-1 chars + NUL).
-//   - Is nullptr-safe on const char* assignment.
-//   - Rejects implicit int -> string via deleted integer constructors;
-//     use ToString(int32_t) / ToString(int64_t) instead.
-
 #include "../Common/TestRunner.h"
 #include "../../Engine/Common/FixedSizeString.h"
 #include <unordered_map>
@@ -16,9 +6,6 @@
 
 using namespace Inno;
 
-// ---------------------------------------------------------------------------
-// Default construction yields an empty, null-terminated string.
-// ---------------------------------------------------------------------------
 static void TestFSSDefaultConstruction()
 {
     TestRunner::StartTest("FixedSizeString: default-construct is empty and null-terminated");
@@ -28,9 +15,6 @@ static void TestFSSDefaultConstruction()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Construction from non-empty const char* preserves the full string.
-// ---------------------------------------------------------------------------
 static void TestFSSConstructFromCStr()
 {
     TestRunner::StartTest("FixedSizeString: construct from non-empty const char* preserves all chars");
@@ -40,9 +24,6 @@ static void TestFSSConstructFromCStr()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Trailing slash is now preserved (was previously eaten as sacrificial char).
-// ---------------------------------------------------------------------------
 static void TestFSSTrailingSlashPreserved()
 {
     TestRunner::StartTest("FixedSizeString: trailing slash is preserved (no sacrificial-char truncation)");
@@ -52,9 +33,6 @@ static void TestFSSTrailingSlashPreserved()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Construction from empty string yields empty, null-terminated string.
-// ---------------------------------------------------------------------------
 static void TestFSSConstructFromEmptyString()
 {
     TestRunner::StartTest("FixedSizeString: construct from empty string is safe");
@@ -64,9 +42,6 @@ static void TestFSSConstructFromEmptyString()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Null pointer input is handled gracefully.
-// ---------------------------------------------------------------------------
 static void TestFSSConstructFromNullPtr()
 {
     TestRunner::StartTest("FixedSizeString: construct from nullptr yields empty string");
@@ -77,9 +52,6 @@ static void TestFSSConstructFromNullPtr()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Assignment from non-empty const char* preserves the full string.
-// ---------------------------------------------------------------------------
 static void TestFSSAssignFromCStr()
 {
     TestRunner::StartTest("FixedSizeString: operator= from non-empty const char* preserves all chars");
@@ -90,9 +62,6 @@ static void TestFSSAssignFromCStr()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Assignment from empty string resets cleanly.
-// ---------------------------------------------------------------------------
 static void TestFSSAssignFromEmptyString()
 {
     TestRunner::StartTest("FixedSizeString: operator= from empty string resets to empty");
@@ -103,9 +72,6 @@ static void TestFSSAssignFromEmptyString()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Copy construction and copy assignment.
-// ---------------------------------------------------------------------------
 static void TestFSSCopy()
 {
     TestRunner::StartTest("FixedSizeString: copy construction and copy assignment preserve content");
@@ -123,9 +89,6 @@ static void TestFSSCopy()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Equality and inequality with const char* and with other FixedSizeStrings.
-// ---------------------------------------------------------------------------
 static void TestFSSEqualityOperators()
 {
     TestRunner::StartTest("FixedSizeString: equality and inequality operators");
@@ -138,38 +101,28 @@ static void TestFSSEqualityOperators()
         (a == b) && !(a != b) &&
         (a != c) && !(a == c) &&
         (a == "alpha") && (a != "beta") &&
-        !(a == static_cast<const char*>(nullptr));  // nullptr rhs is never equal
+        !(a == static_cast<const char*>(nullptr));
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Boundary: input exactly fills the buffer (capacity = S-1 chars).
-// ---------------------------------------------------------------------------
 static void TestFSSCapacityBoundary()
 {
     TestRunner::StartTest("FixedSizeString<8>: input of exactly capacity (7 chars) stored intact");
 
-    FixedSizeString<8> s("1234567");  // 7 chars = capacity
+    FixedSizeString<8> s("1234567");
     bool passed = (s.size() == 7) && (std::string(s.c_str()) == "1234567");
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Boundary: input longer than capacity is truncated, not overflowed.
-// ---------------------------------------------------------------------------
 static void TestFSSOverflowClamping()
 {
     TestRunner::StartTest("FixedSizeString<8>: input longer than capacity is truncated to capacity");
 
-    // S=8 → capacity=7. Input is 20 chars. Must truncate to 7 chars + NUL.
     FixedSizeString<8> s("12345678901234567890");
     bool passed = (s.size() == 7) && (std::string(s.c_str()) == "1234567");
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// find() returns non-null for present substring, null for absent.
-// ---------------------------------------------------------------------------
 static void TestFSSFind()
 {
     TestRunner::StartTest("FixedSizeString: find() present and absent substrings");
@@ -183,9 +136,6 @@ static void TestFSSFind()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Usable as unordered_map key via the hash specialisation.
-// ---------------------------------------------------------------------------
 static void TestFSSHashUsability()
 {
     TestRunner::StartTest("FixedSizeString: usable as unordered_map key");
@@ -201,9 +151,6 @@ static void TestFSSHashUsability()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Integer -> string via explicit ToString helpers.
-// ---------------------------------------------------------------------------
 static void TestFSSIntegerToString()
 {
     TestRunner::StartTest("FixedSizeString: integer -> string via ToString helpers");
@@ -217,9 +164,6 @@ static void TestFSSIntegerToString()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Entry point
-// ---------------------------------------------------------------------------
 void RunFixedSizeStringUnitTests()
 {
     TestRunner::StartTestSuite("FixedSizeString Unit Tests");

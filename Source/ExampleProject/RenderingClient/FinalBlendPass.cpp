@@ -47,8 +47,6 @@ bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_TextureUsage = TextureUsage::ColorAttachment;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = ShaderStage::Compute;
-	// @TODO: need to figure out a proper way to pass it through
-	//m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessFunc = std::bind(&FinalBlendPass::GetContext, this);
 
 	// t1 - BillboardPass
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
@@ -56,7 +54,6 @@ bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_TextureUsage = TextureUsage::ColorAttachment;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage = ShaderStage::Compute;
-	//m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessFunc = std::bind(&BillboardPass::GetResult, BillboardPass::Get());
 
 	// t2 - DebugPass
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
@@ -64,7 +61,6 @@ bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_TextureUsage = TextureUsage::ColorAttachment;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Compute;
-	//m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ResourceAccessFunc = std::bind(&DebugPass::GetResult, DebugPass::Get());
 
 	// u0 - LuminanceAveragePass
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
@@ -73,7 +69,6 @@ bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Compute;
-	//m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ResourceAccessFunc = std::bind(&LuminanceAveragePass::GetResult, LuminanceAveragePass::Get());
 
 	// u1 - Result
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Image;

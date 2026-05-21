@@ -14,10 +14,6 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-// ---------------------------------------------------------------------------
-// GenerateMipmap
-// ---------------------------------------------------------------------------
-
 bool DX12TextureResourceService::GenerateMipmap(TextureComponent* texture, CommandListComponent* commandList)
 {
     if (!commandList)
@@ -150,10 +146,6 @@ bool DX12TextureResourceService::GenerateMipmap(TextureComponent* texture, Comma
     Log(Verbose, texture->m_InstanceName, " Successfully recorded mipmap generation commands for ", l_mipLevels, " mip levels for ", memoryCount, " device memory/memories");
     return true;
 }
-
-// ---------------------------------------------------------------------------
-// CreateMipmapGenerator / ReleaseMipmapGenerator
-// ---------------------------------------------------------------------------
 
 bool DX12TextureResourceService::CreateMipmapGenerator()
 {

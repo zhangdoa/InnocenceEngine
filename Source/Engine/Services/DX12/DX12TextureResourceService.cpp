@@ -10,10 +10,6 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-// ---------------------------------------------------------------------------
-// Delete
-// ---------------------------------------------------------------------------
-
 bool DX12TextureResourceService::Delete(TextureComponent* texture)
 {
 	auto componentUUID = reinterpret_cast<uint64_t>(texture);
@@ -37,10 +33,6 @@ bool DX12TextureResourceService::Delete(TextureComponent* texture)
 	TextureResourceService::Delete(texture);
 	return true;
 }
-
-// ---------------------------------------------------------------------------
-// Clear
-// ---------------------------------------------------------------------------
 
 bool DX12TextureResourceService::Clear(CommandListComponent* commandList, TextureComponent* texture)
 {
@@ -82,10 +74,6 @@ bool DX12TextureResourceService::Clear(CommandListComponent* commandList, Textur
 	return true;
 }
 
-// ---------------------------------------------------------------------------
-// Copy
-// ---------------------------------------------------------------------------
-
 bool DX12TextureResourceService::Copy(CommandListComponent* commandList, TextureComponent* sourceTexture, TextureComponent* destinationTexture)
 {
 	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
@@ -104,10 +92,6 @@ bool DX12TextureResourceService::Copy(CommandListComponent* commandList, Texture
 
 	return true;
 }
-
-// ---------------------------------------------------------------------------
-// SRV / UAV creation
-// ---------------------------------------------------------------------------
 
 bool DX12TextureResourceService::CreateSRV(TextureComponent* texture, uint32_t mipSlice)
 {
@@ -172,10 +156,6 @@ bool DX12TextureResourceService::CreateUAV(TextureComponent* texture, uint32_t m
 
 	return true;
 }
-
-// ---------------------------------------------------------------------------
-// GetIndex
-// ---------------------------------------------------------------------------
 
 std::optional<uint32_t> DX12TextureResourceService::GetIndex(TextureComponent* texture, Accessibility bindingAccessibility)
 {

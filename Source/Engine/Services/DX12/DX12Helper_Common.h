@@ -9,11 +9,8 @@ namespace Inno
 {
 	namespace DX12Helper
 	{
-		// Centralised typed access to DX12 command lists. CommandListComponent stores the COM
-		// pointer as a uint64_t for API-agnostic abstraction; callers reinterpret_cast it back.
-		// This helper does that cast in one place with a non-null guard, so every call site
-		// sees either a valid list or nullptr (and a logged error) — no silent UB on a zero
-		// handle.
+		// Single venue for the uint64_t → ID3D12GraphicsCommandList7* cast; the
+		// null guard prevents silent UB on a zero handle at every call site.
 		inline ID3D12GraphicsCommandList7* AsDX12CommandList(CommandListComponent* commandList)
 		{
 			if (commandList == nullptr || commandList->m_CommandList == 0)
@@ -56,10 +53,9 @@ namespace Inno
 			return SetObjectName(l_NameW.c_str(), rhs, objectType);
 		}
 
-		// Consistent failure logging for DX12 resource/PSO/root-signature creation paths (TASK-34).
-		// Always logs HRESULT; includes DeviceRemovedReason when the device is present.
-		// Calls LogService::Print directly because the Log(level, ...) macro token-pastes
-		// `level` into `LogLevel::level` and only accepts a literal enumerator name.
+		// Calls LogService::Print directly because the Log(level, ...) macro
+		// token-pastes `level` into `LogLevel::level` and only accepts a literal
+		// enumerator name.
 		inline void LogD3D12CreateFailure(ID3D12Device* device, const char* what, const char* contextName, HRESULT hr)
 		{
 			HRESULT l_drr = device ? device->GetDeviceRemovedReason() : S_OK;
@@ -78,9 +74,6 @@ namespace Inno
 				" DeviceRemovedReason=", static_cast<int32_t>(l_drr));
 		}
 
-		// Post-mortem dump of DRED (Device Removed Extended Data) state.
-		// Safe to call with or without a removed device; emits nothing if the DRED interface is unavailable.
-		// Single implementation shared by every DX12 failure path that wants breadcrumb/page-fault context.
 		inline void DumpDRED(ID3D12Device* device)
 		{
 			if (!device)
@@ -132,8 +125,7 @@ namespace Inno
 						g_Engine->Get<LogService>()->Print(LogLevel::Warning, __FUNCTION__,
 							"DRED Page Fault at VA=0x", l_pageFault.PageFaultVA);
 
-						// Walk the existing-allocations list — resources still live at fault time that
-						// cover the faulting VA. Helps attribute the fault to a named D3D12 resource.
+						// DRED ExistingAllocation: live at fault time, covers the faulting VA.
 						int l_existingIdx = 0;
 						for (const D3D12_DRED_ALLOCATION_NODE* l_n = l_pageFault.pHeadExistingAllocationNode;
 							l_n != nullptr && l_existingIdx < 32; l_n = l_n->pNext, ++l_existingIdx)
@@ -144,8 +136,7 @@ namespace Inno
 								"' type=", static_cast<int>(l_n->AllocationType));
 						}
 
-						// Walk the recently-freed-allocations list — resources whose VA range
-						// overlaps the faulting VA. This typically identifies a use-after-free.
+						// DRED RecentFreedAllocation: VA overlaps the fault — use-after-free signal.
 						int l_freedIdx = 0;
 						for (const D3D12_DRED_ALLOCATION_NODE* l_n = l_pageFault.pHeadRecentFreedAllocationNode;
 							l_n != nullptr && l_freedIdx < 32; l_n = l_n->pNext, ++l_freedIdx)

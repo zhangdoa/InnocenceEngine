@@ -75,7 +75,6 @@ void EntityRegistry::Destroy(EntityID Entity)
     if (!IsValid(Entity))
         return;
 
-    // Remove all components for this entity before freeing the slot
     for (auto& [l_Key, l_Wrapper] : m_Storages)
         l_Wrapper->Remove(Entity);
 
@@ -137,16 +136,14 @@ ObjectLifespan EntityRegistry::GetLifespan(EntityID Entity) const
 
 void EntityRegistry::CleanUp(ObjectLifespan Lifespan)
 {
-    // Step 1: Remove all components for matching entities (before freeing slots)
-    // TASK-52: log storages + their post-cleanup sizes so mismatched-lifespan leaks
-    // (components not removed because they were added with the wrong lifespan, or
-    // because a storage was never registered) become immediately visible.
+    // Log storage count + per-storage before/after so mismatched-lifespan leaks
+    // (components added with the wrong lifespan, or storages never registered)
+    // are visible in the trace.
     Log(Verbose, "EntityRegistry::CleanUp(Lifespan=", Lifespan,
         ") — iterating ", m_Storages.size(), " storages.");
     for (auto& [l_Key, l_Wrapper] : m_Storages)
         l_Wrapper->CleanUp(Lifespan);
 
-    // Step 2: Free entity slots
     uint32_t l_freed = 0;
     for (EntityID l_Id = 1; l_Id < m_NextID; ++l_Id)
     {

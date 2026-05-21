@@ -11,22 +11,18 @@ void TestRingBufferBasicOperations()
 	RingBuffer<float> l_RingBuffer;
 	bool l_TestPassed = true;
 
-	// Test reservation and basic operations
 	l_RingBuffer.reserve(16);
-	
-	// Fill buffer
+
 	for (size_t i = 0; i < 8; i++)
 	{
 		l_RingBuffer.emplace_back(static_cast<float>(i));
 	}
 
-	// Test size
 	if (l_RingBuffer.size() != 8)
 	{
 		l_TestPassed = false;
 	}
 
-	// Test element access
 	for (size_t i = 0; i < 8; i++)
 	{
 		if (l_RingBuffer[i] != static_cast<float>(i))
@@ -46,16 +42,14 @@ void TestRingBufferWraparound()
 	RingBuffer<int32_t> l_RingBuffer;
 	bool l_TestPassed = true;
 
-	// Test with small buffer size
 	l_RingBuffer.reserve(8);
-	
-	// Fill buffer beyond capacity to test wraparound
+
 	for (size_t i = 0; i < 16; i++)
 	{
 		l_RingBuffer.emplace_back(static_cast<int32_t>(i));
 	}
 
-	// Buffer should contain the last 8 elements
+	// Wraparound: only the last 8 of 16 inserted elements survive.
 	if (l_RingBuffer.size() != 8)
 	{
 		l_TestPassed = false;

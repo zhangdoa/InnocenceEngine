@@ -94,7 +94,6 @@ uint32_t DX12Helper::GetTextureMipLevels(TextureDesc textureDesc)
 		return 1;
 	}
 
-	// Calculate mip levels based on texture dimensions
 	uint32_t maxDimension = std::max(textureDesc.Width, textureDesc.Height);
 	if (textureDesc.Sampler == TextureSampler::Sampler3D)
 	{
@@ -107,10 +106,9 @@ uint32_t DX12Helper::GetTextureMipLevels(TextureDesc textureDesc)
 		return 1;
 	}
 
-	// Standard mip level calculation: 1 + floor(log2(max_dimension))
 	uint32_t mipLevels = 1 + static_cast<uint32_t>(std::floor(std::log2(static_cast<float>(maxDimension))));
 
-	// Limit to maximum 5 mip levels - we don't need to go down to 1x1
+	// Cap at 5 — finer mips are wasted on the engine's sampling distance.
 	const uint32_t MAX_MIP_LEVELS = 5;
 	mipLevels = std::min(mipLevels, MAX_MIP_LEVELS);
 

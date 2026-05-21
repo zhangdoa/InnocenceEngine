@@ -13,7 +13,6 @@ void TestArrayPerformance()
 
 	const size_t l_TestCount = TestConfig::MediumDataSize;
 
-	// Test custom Array implementation
 	auto l_CustomTime = TestTimer::MeasureFunction([&]()
 	{
 		Array<float> l_Array;
@@ -34,7 +33,6 @@ void TestArrayPerformance()
 		}
 	});
 
-	// Test STL vector implementation
 	auto l_STLTime = TestTimer::MeasureFunction([&]()
 	{
 		std::vector<float> l_STLArray;

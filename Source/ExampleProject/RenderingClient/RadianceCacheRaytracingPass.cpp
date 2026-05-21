@@ -114,7 +114,7 @@ bool RadianceCacheRaytracingPass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage = m_ShaderStage;
 
-	// u2 - probe position (u1 slot intentionally unbound; was world probe grid, nuked per TASK-226.1 — descriptor index 1 in set 2 has no consumer in any radiance-cache shader)
+	// u2 - probe position; descriptor index 1 in set 2 is intentionally unbound (no consumer).
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 2;
@@ -207,10 +207,7 @@ bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderin
 
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
 	l_fmService->TryToTransitState(LightPass::Get().GetIlluminanceResult(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
-	
-	// Transition previous frame result from its current state to ReadOnly
 	l_fmService->TryToTransitState(RadianceCacheReprojectionPass::Get().GetPreviousFrameResult(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
-	
 	l_fmService->TryToTransitState(l_result, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
@@ -238,9 +235,6 @@ bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderin
 	auto dispatch_x = (l_result->m_TextureDesc.Width + RadianceCache::SPAWN_TILE_SIZE_X - 1u) / RadianceCache::SPAWN_TILE_SIZE_X;
 	auto dispatch_y = (l_result->m_TextureDesc.Height + RadianceCache::SPAWN_TILE_SIZE_Y - 1u) / RadianceCache::SPAWN_TILE_SIZE_Y;
 
-	// TASK-140 sample integration: same pattern as LightPass — gives PIX a
-	// "RadianceCacheRT" timeline event and lets GetGpuTimings() report the
-	// per-frame ms cost of the RT dispatch (ray budget tuning lever).
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	l_hwService->BeginGpuPass(m_CommandListComp_Compute, "RadianceCacheRT", GPUEngineType::Compute);
 

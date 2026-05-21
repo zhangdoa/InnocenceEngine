@@ -6,17 +6,14 @@ using namespace Inno;
 
 int main(int argc, char* argv[])
 {
-	// Create engine instance for headless testing
 	std::unique_ptr<Engine> l_pEngine = std::make_unique<Engine>();
-	
-	// Setup engine for headless operation (no window handles needed)
+
 	if (!l_pEngine->Setup(nullptr, nullptr, "headless", nullptr, nullptr))
 	{
 		Log(Error, "Failed to setup engine for testing");
 		return 1;
 	}
-	
-	// Initialize engine for tests that require it
+
 	if (!l_pEngine->Initialize())
 	{
 		Log(Error, "Failed to initialize engine for testing");
@@ -69,11 +66,9 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		// Run all tests by default
 		TestRunner::RunAllTests();
 	}
 
-	// Terminate engine
 	l_pEngine->Terminate();
 	return 0;
 }

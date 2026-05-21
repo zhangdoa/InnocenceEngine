@@ -4,15 +4,14 @@
 
 namespace Inno
 {
-	// One per-queue book-keeping slot for an in-flight GPU timer. The slot index is
-	// stable for the lifetime of the named timer so begin / end / resolve / readback
-	// all address the same two query slots.
+	// Slot index is stable for the lifetime of the named timer so begin / end /
+	// resolve / readback all address the same query pair.
 	struct DX12GpuTimerSlot
 	{
 		std::string m_Name;
-		uint32_t m_SlotIndex = 0;          // 0..GPU_TIMER_MAX_NAMED_TIMERS-1; queries live at slot*2 (begin) and slot*2+1 (end).
-		bool m_BeginRecorded = false;       // Set by BeginGpuTimer; cleared by EndGpuTimer. Detects unmatched calls.
-		bool m_EndRecordedThisFrame = false; // Set by EndGpuTimer; cleared by ResolveGpuTimers. Distinguishes "fully recorded this frame" from "begun but never ended".
+		uint32_t m_SlotIndex = 0;          // queries live at slot*2 (begin) and slot*2+1 (end).
+		bool m_BeginRecorded = false;
+		bool m_EndRecordedThisFrame = false; // Distinguishes "fully recorded this frame" from "begun but never ended".
 	};
 
 	class DX12GraphicsHardwareService : public GraphicsHardwareService
@@ -28,23 +27,19 @@ namespace Inno
 		uint64_t GetSemaphoreValue(GPUEngineType queueType) override;
 		bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) override;
 
-		// Debug/capture
 		bool BeginCapture() override;
 		bool EndCapture() override;
 		bool HasGPUError() const override;
 		void DumpGPUDiagnostics() override;
 
-		// GPU timestamp queries
 		bool BeginGpuTimer(CommandListComponent* commandList, const char* name, GPUEngineType queueType) override;
 		bool EndGpuTimer(CommandListComponent* commandList, const char* name, GPUEngineType queueType) override;
 		bool ResolveGpuTimers() override;
 		std::vector<GpuTimingResult> GetGpuTimings() const override;
 
-		// PIX event markers (dynamic-loaded WinPixEventRuntime)
 		bool BeginGpuEvent(CommandListComponent* commandList, const char* name, uint32_t color = 0) override;
 		bool EndGpuEvent(CommandListComponent* commandList) override;
 
-		// DX12-specific public accessors (for ImGui, window surfaces, etc.)
 		ComPtr<ID3D12Device8> GetDevice();
 		ComPtr<ID3D12CommandAllocator> GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType);
 		ComPtr<ID3D12CommandQueue> GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType);
@@ -56,7 +51,6 @@ namespace Inno
 		bool ReleaseHardwareResources() override;
 
 	private:
-		// DX12 hardware initialization functions
 		bool CreateDebugCallback();
 		bool CreatePhysicalDevices();
 		bool CreateGlobalCommandQueues();
@@ -72,21 +66,17 @@ namespace Inno
 		bool TryLoadRenderDocAPI();
 		void TryLoadPIXEventRuntime();
 
-		// Fence wait with rich diagnostics on timeout/failure (TASK-34).
 		bool WaitOnFenceWithDiagnostics(const char* fenceName, ID3D12Fence* fence, HANDLE fenceEvent, uint64_t semaphoreValue);
 
-		// Per-queue timer state. Vectors are pre-sized at startup; FindOrAllocateTimer
-		// consults / mutates only the matching queue's vector. Caller (frame thread)
-		// serialises Begin/End/Resolve so there's no internal lock.
+		// Caller (frame thread) serialises Begin/End/Resolve, so the per-queue state
+		// carries no internal lock.
 		struct DX12GpuTimerQueueState
 		{
-			std::vector<DX12GpuTimerSlot> m_Slots;             // Indexed by slot; m_Slots.size() == nextFree allocator.
-			std::vector<GpuTimingResult> m_LatestTimings;      // Filled by ResolveGpuTimers from the readback buffer N frames behind.
+			std::vector<DX12GpuTimerSlot> m_Slots;
+			std::vector<GpuTimingResult> m_LatestTimings;
 			D3D12_COMMAND_LIST_TYPE m_CommandListType = D3D12_COMMAND_LIST_TYPE_DIRECT;
-			// Highest slot index for which BOTH Begin and End queries have been
-			// recorded at least once across the run. Resolve range is bounded by
-			// this because D3D12 errors on ResolveQueryData for never-performed
-			// queries (validated by GBV).
+			// D3D12 GBV rejects ResolveQueryData over queries that were never
+			// performed, so the resolve range is bounded by this watermark.
 			int32_t m_MaxEverFullyRecordedSlot = -1;
 		};
 
@@ -99,26 +89,22 @@ namespace Inno
 		// Returns slot index for an existing name, or UINT32_MAX if not found (logged loudly).
 		uint32_t FindTimerSlot(GPUEngineType queueType, const char* name) const;
 
-		// DX12 context (owned by this service, shared with other DX12 services)
 		DX12Context m_DX12Context;
 
 		void* m_RenderDocAPI = nullptr;
 
-		// PIX event runtime — function pointers resolved at startup from
-		// WinPixEventRuntime.dll. Null when the runtime is not loaded; all
-		// BeginGpuEvent/EndGpuEvent calls become cheap no-ops in that case.
+		// Null when WinPixEventRuntime.dll did not load; BeginGpuEvent / EndGpuEvent
+		// become no-ops in that case.
 		void* m_PIXModule = nullptr;
 		using PIXBeginEventOnCommandListFn = void(*)(void*, uint64_t, const char*);
 		using PIXEndEventOnCommandListFn   = void(*)(void*);
 		PIXBeginEventOnCommandListFn m_PIXBeginEventOnCommandList = nullptr;
 		PIXEndEventOnCommandListFn   m_PIXEndEventOnCommandList   = nullptr;
 
-		// GPU timer state, one entry per queue type (Graphics, Compute, Copy).
 		DX12GpuTimerQueueState m_TimerState_Graphics;
 		DX12GpuTimerQueueState m_TimerState_Compute;
 		DX12GpuTimerQueueState m_TimerState_Copy;
-		// Tracks which swapchain frame slot the next ResolveGpuTimers call should
-		// resolve INTO. Readback is GPU_TIMER_READBACK_FRAME_LATENCY frames behind.
+		// Readback is GPU_TIMER_READBACK_FRAME_LATENCY frames behind the resolve.
 		uint64_t m_TimerResolveFrameCounter = 0;
 	};
 }

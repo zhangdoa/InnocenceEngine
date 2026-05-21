@@ -43,11 +43,6 @@ namespace Inno
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 		}
 
-		// TASK-138 phase 1: RT sun-shadow dispatch. Same wait/signal pattern
-		// as RadianceCacheRaytracingPass — graphics CL transitions resources,
-		// signals the renderpass; compute CL waits on that fence + on
-		// OpaquePass (needs GBuffer position/normal), executes ray dispatch,
-		// signals own renderpass for LightPass to wait on.
 		if (SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(SunShadowRTPass::Get()))
 		{
 			WaitIfActive(OpaquePass::Get(), GPUEngineType::Graphics, GPUEngineType::Graphics);
@@ -64,10 +59,6 @@ namespace Inno
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		// RadianceCache + GI denoise/filter chain — pulled into _ExecuteCommands_GI.cpp
-		// so this TU stays under the 300-line file-size ratchet. Original
-		// dispatch order preserved: GI block sits between SunShadowRT and
-		// SSAO, before TiledFrustum / LightCulling / LightPass.
 		ExecuteGIPasses();
 
 		if (SSAOPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(SSAOPass::Get()))
@@ -101,13 +92,11 @@ namespace Inno
 
 			auto l_renderPass = LightCullingPass::Get().GetRenderPassComp();
 
-			// Execute graphics command list for resource transitions
 			auto l_graphicsCommandList = LightCullingPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-			// Execute compute command list for actual work
 			auto l_computeCommandList = LightCullingPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
@@ -115,10 +104,8 @@ namespace Inno
 
 		if (LightPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(LightPass::Get()))
 		{
-			// TASK-138: wait on RT sun-shadow dispatch so the visibility texture
-			// is consumable when LightPass binds slot t13. Suspended (e.g. early
-			// frames before TLAS build) means LightPass binds nullptr and the
-			// sun is treated as fully shadowed for that frame.
+			// Suspended SunShadowRT (e.g. early frames before TLAS build) → LightPass binds
+			// nullptr at slot t13 and the sun is treated as fully shadowed for that frame.
 			WaitIfActive(SunShadowRTPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			WaitIfActive(OpaquePass::Get(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 			WaitIfActive(SSAOPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);

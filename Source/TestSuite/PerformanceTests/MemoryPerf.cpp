@@ -18,7 +18,6 @@ void TestObjectPoolPerformance()
 
 	auto l_ObjectPool = TObjectPool<uint32_t>::Create(l_TestCount);
 
-	// Test ObjectPool allocation
 	auto l_PoolAllocTime = TestTimer::MeasureFunction([&]()
 	{
 		for (size_t i = 0; i < l_TestCount; i++)
@@ -28,7 +27,6 @@ void TestObjectPoolPerformance()
 		}
 	});
 
-	// Test malloc allocation
 	auto l_MallocTime = TestTimer::MeasureFunction([&]()
 	{
 		for (size_t i = 0; i < l_TestCount; i++)
@@ -41,7 +39,6 @@ void TestObjectPoolPerformance()
 	auto l_AllocSpeedRatio = l_PoolAllocTime / l_MallocTime;
 	Log(Success, "ObjectPool allocation vs malloc speed ratio: ", l_AllocSpeedRatio);
 
-	// Test ObjectPool deallocation
 	auto l_PoolDeallocTime = TestTimer::MeasureFunction([&]()
 	{
 		for (size_t i = 0; i < l_TestCount; i++)
@@ -50,7 +47,6 @@ void TestObjectPoolPerformance()
 		}
 	});
 
-	// Test free deallocation
 	auto l_FreeTime = TestTimer::MeasureFunction([&]()
 	{
 		for (size_t i = 0; i < l_TestCount; i++)

@@ -1,7 +1,4 @@
-// Asset conversion integration tests.
-// Exercises AssetService::ImportSync() end-to-end: parses source files via Assimp,
-// converts geometry and materials, and writes engine-format outputs to Data/Generated/.
-// All tests are CPU-only; no GPU or window services are required.
+// CPU-only end-to-end exercise of AssetService::ImportSync(). No GPU or window services needed.
 #include "../Common/TestRunner.h"
 #include "../../Engine/Services/AssetService.h"
 #include "../../Engine/Common/IOService.h"
@@ -12,10 +9,6 @@
 
 using namespace Inno;
 namespace fs = std::filesystem;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 static std::string GetTempAssetDir()
 {
@@ -35,19 +28,16 @@ static void WriteMiniOBJ(const std::string& path)
 
 static void CleanupTempAssets(const std::string& stemName)
 {
-	// Remove the temp source file directory
 	fs::remove_all(GetTempAssetDir());
 
-	// Remove generated outputs for this asset
 	auto l_dataDir = g_Engine->Get<IOService>()->getDataDirectory();
 	auto l_componentsDir = fs::path(l_dataDir + "Generated/Components/");
 	auto l_scenesDir = fs::path(l_dataDir + "Generated/Scenes/");
 
-	// Scene file is a single file
 	fs::remove(l_scenesDir / (stemName + ".InnoScene"));
 
-	// Components are in a subdirectory named after the mesh component instance
-	// e.g. Data/Generated/Components/test_triangle.0.MeshComponent/
+	// Components live in subdirectories named after the mesh component instance
+	// (e.g. Data/Generated/Components/test_triangle.0.MeshComponent/).
 	for (auto& entry : fs::directory_iterator(l_componentsDir))
 	{
 		if (entry.path().filename().string().find(stemName) != std::string::npos)
@@ -76,8 +66,7 @@ static bool AnyComponentFileExists(const std::string& stemName)
 	return false;
 }
 
-// Returns true if at least one TextureComponent JSON file was produced for this stem.
-// Texture files are named like "<stem>.<textureName>.json" and live under Components/.
+// Texture files: "<stem>.<textureName>.json" under Components/.
 static bool AnyTextureComponentExists(const std::string& stemName)
 {
 	auto l_dataDir = g_Engine->Get<IOService>()->getDataDirectory();
@@ -97,9 +86,6 @@ static bool AnyTextureComponentExists(const std::string& stemName)
 	return false;
 }
 
-// ---------------------------------------------------------------------------
-// Test: unsupported extension returns false immediately
-// ---------------------------------------------------------------------------
 static void TestImportUnsupportedExtension()
 {
 	TestRunner::StartTest("Import: unsupported extension returns false");
@@ -109,9 +95,6 @@ static void TestImportUnsupportedExtension()
 	TestRunner::EndTest(!l_result);
 }
 
-// ---------------------------------------------------------------------------
-// Test: nonexistent file returns false (Assimp rejects missing file)
-// ---------------------------------------------------------------------------
 static void TestImportNonexistentFile()
 {
 	TestRunner::StartTest("Import: nonexistent file returns false");
@@ -121,9 +104,6 @@ static void TestImportNonexistentFile()
 	TestRunner::EndTest(!l_result);
 }
 
-// ---------------------------------------------------------------------------
-// Test: minimal OBJ roundtrip — write fixture, import, verify outputs exist
-// ---------------------------------------------------------------------------
 static void TestImportMinimalOBJ()
 {
 	TestRunner::StartTest("Import: minimal OBJ produces scene and component outputs");
@@ -132,7 +112,6 @@ static void TestImportMinimalOBJ()
 	const std::string l_tempPath = GetTempAssetDir() + l_stemName + ".obj";
 	const std::string l_relPath = "../Build/asset_test_tmp/" + l_stemName + ".obj";
 
-	// Remove any stale outputs from a previous run, then write a fresh fixture
 	CleanupTempAssets(l_stemName);
 	WriteMiniOBJ(l_tempPath);
 
@@ -149,15 +128,11 @@ static void TestImportMinimalOBJ()
 	if (!l_componentExists)
 		Log(Error, "AssetConversionTests: No generated component files found for: ", l_stemName.c_str());
 
-	// Cleanup temp files (keep Data/ generated files — they are gitignored)
 	CleanupTempAssets(l_stemName);
 
 	TestRunner::EndTest(l_passed);
 }
 
-// ---------------------------------------------------------------------------
-// Test: PLY import (conditional on OriginalAssets being present)
-// ---------------------------------------------------------------------------
 static void TestImportPLYConditional()
 {
 	const char* l_relPath = "../OriginalAssets/Models/bunny/bunny.ply";
@@ -187,12 +162,7 @@ static void TestImportPLYConditional()
 	TestRunner::EndTest(l_passed);
 }
 
-// ---------------------------------------------------------------------------
-// Test: FBX with PBR textures (ShaderBall) — exercises the full pipeline:
-// mesh → material → texture load → BC compression → disk write.
-// This is one of the assets triggered by pressing Y in the running engine.
-// Skipped if OriginalAssets are not present.
-// ---------------------------------------------------------------------------
+// Full pipeline: mesh → material → texture load → BC compression → disk write.
 static void TestImportTexturedFBXConditional()
 {
 	const char* l_relPath = "../OriginalAssets/Models/orb/ShaderBall.fbx";
@@ -226,9 +196,6 @@ static void TestImportTexturedFBXConditional()
 	TestRunner::EndTest(l_passed);
 }
 
-// ---------------------------------------------------------------------------
-// Entry point called by TestRunner
-// ---------------------------------------------------------------------------
 void RunAssetConversionTests()
 {
 	TestRunner::StartTestSuite("Asset Conversion (Integration)");

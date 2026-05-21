@@ -1,16 +1,9 @@
-// TaskScheduler stress tests.
-// These tests push the scheduler harder than the functional suite:
-//   1. Memory ordering — proves Wait() provides happens-before for written data.
-//   2. High-concurrency submission — 8 threads × 2000 tasks (16 000 total).
-//   3. Recurrent-under-load — Recurrent task survives a flood of Once tasks.
-//   4. Freeze/Unfreeze stress — 100 rapid Freeze→Unfreeze cycles; deadlock detection.
-//
-// Design rules (derived from reading TaskScheduler/Thread/Task internals):
+// TaskScheduler invariants exercised here (not visible from the call site):
 //   - Tasks need explicit Activate() after Submit().
 //   - Reset() destroys thread objects; do not resubmit on the same scheduler after Reset().
-//   - GenerateThreadIndex with default (max_uint32) picks a random thread each call.
-//   - Wait() returns when: state==Released (Once done), state==Idle (Recurrent
-//     deactivated), or executionCount>0 (at least one execution completed).
+//   - GenerateThreadIndex default (max_uint32) picks a random thread each call.
+//   - Wait() returns when state==Released (Once done), state==Idle (Recurrent deactivated),
+//     or executionCount>0.
 //   - Recurrent tasks are not auto-removed; caller must Deactivate() them.
 
 #include "../../Engine/Common/TaskScheduler.h"
@@ -25,12 +18,7 @@
 
 using namespace Inno;
 
-// ---------------------------------------------------------------------------
-// 1. Memory ordering
-//    Producer task writes a payload. Main thread calls Wait(). Consumer verifies
-//    the payload is visible — this exercises the acquire/release pair on
-//    m_ExecutionCount and m_State in TryToExecute() / Wait().
-// ---------------------------------------------------------------------------
+// Exercises the acquire/release pair on m_ExecutionCount and m_State in TryToExecute()/Wait().
 static void StressMemoryOrdering()
 {
     TestRunner::StartTest("Stress: memory ordering across Wait()");
@@ -41,14 +29,13 @@ static void StressMemoryOrdering()
     TaskScheduler scheduler;
     bool passed = true;
 
-    // Shared payload; no atomic needed — Wait() provides the happens-before.
+    // No atomic needed — Wait() provides the happens-before edge being tested here.
     uint64_t payload[PAYLOAD_WORDS] = {};
 
     for (int iter = 0; iter < ITERATIONS && passed; ++iter)
     {
         const uint64_t sentinel = static_cast<uint64_t>(iter) ^ 0xDEADBEEFCAFEBABEULL;
 
-        // Producer: write sentinel into every word.
         auto producer = scheduler.Submit(
             ITask::Desc("MemOrd_Producer", ITask::Type::Once),
             [&payload, sentinel, PAYLOAD_WORDS]()
@@ -59,7 +46,6 @@ static void StressMemoryOrdering()
         producer->Activate();
         producer->Wait();
 
-        // After Wait() the payload writes are visible on this thread.
         for (int w = 0; w < PAYLOAD_WORDS; ++w)
         {
             if (payload[w] != sentinel)
@@ -73,12 +59,6 @@ static void StressMemoryOrdering()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// 2. High-concurrency submission
-//    8 submitter threads each submit 2000 Once tasks. A shared atomic counter
-//    is incremented once per task body. After all Wait() calls, counter must
-//    equal 16 000.
-// ---------------------------------------------------------------------------
 static void StressHighConcurrencySubmission()
 {
     TestRunner::StartTest("Stress: high-concurrency submission (8 threads × 2000 tasks)");
@@ -128,13 +108,6 @@ static void StressHighConcurrencySubmission()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// 3. Recurrent-under-load
-//    One Recurrent task increments recurrentCount on every tick. Then 1000
-//    Once tasks are submitted (incrementing onceCount). After all Once tasks
-//    complete, we deactivate the Recurrent task and verify onceCount == 1000.
-//    This proves the scheduler handles mixed task types without dropping work.
-// ---------------------------------------------------------------------------
 static void StressRecurrentUnderLoad()
 {
     TestRunner::StartTest("Stress: Recurrent task survives Once-task flood");
@@ -146,13 +119,11 @@ static void StressRecurrentUnderLoad()
     std::atomic<int> onceCount{0};
     bool passed = true;
 
-    // Submit and activate the recurrent task.
     auto recurrent = scheduler.Submit(
         ITask::Desc("Recurrent_Flood", ITask::Type::Recurrent),
         [&recurrentCount]() { recurrentCount.fetch_add(1, std::memory_order_relaxed); });
     recurrent->Activate();
 
-    // Flood Once tasks.
     std::vector<Handle<ITask>> onceTasks;
     onceTasks.reserve(ONCE_COUNT);
     for (int i = 0; i < ONCE_COUNT; ++i)
@@ -167,7 +138,6 @@ static void StressRecurrentUnderLoad()
     for (auto& h : onceTasks)
         h->Wait();
 
-    // Stop the recurrent task.
     recurrent->Deactivate();
     recurrent->Wait();
 
@@ -177,13 +147,8 @@ static void StressRecurrentUnderLoad()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// 4. Freeze/Unfreeze stress
-//    100 iterations of Freeze→Unfreeze with Recurrent tasks in flight.
-//    Each iteration is wrapped in a std::future with a 10-second timeout to
-//    detect deadlocks. Once tasks submitted between freeze cycles must all
-//    complete after unfreeze.
-// ---------------------------------------------------------------------------
+// Each iteration runs under a 10-second std::future timeout — that's how the test detects a
+// freeze/unfreeze deadlock without itself hanging the suite.
 static void StressFreezeUnfreeze()
 {
     TestRunner::StartTest("Stress: 100 Freeze/Unfreeze cycles (deadlock detection)");
@@ -196,7 +161,6 @@ static void StressFreezeUnfreeze()
     std::atomic<int> onceTotal{0};
     bool passed = true;
 
-    // Recurrent task — runs throughout.
     auto recurrent = scheduler.Submit(
         ITask::Desc("FU_Recurrent", ITask::Type::Recurrent),
         [&recurrentCount]() { recurrentCount.fetch_add(1, std::memory_order_relaxed); });
@@ -204,13 +168,11 @@ static void StressFreezeUnfreeze()
 
     for (int cycle = 0; cycle < CYCLES && passed; ++cycle)
     {
-        // Run the freeze→submit→unfreeze→wait sequence in a future so we can
-        // detect a deadlock via timed_wait.
         auto fut = std::async(std::launch::async, [&]()
         {
             scheduler.Freeze();
 
-            // Submit Once tasks while frozen; they queue up but don't execute.
+            // Tasks submitted while frozen queue up and don't execute until Unfreeze.
             std::vector<Handle<ITask>> cycle_tasks;
             cycle_tasks.reserve(ONCE_PER_CYCLE);
             for (int i = 0; i < ONCE_PER_CYCLE; ++i)
@@ -231,7 +193,7 @@ static void StressFreezeUnfreeze()
         auto status = fut.wait_for(std::chrono::seconds(10));
         if (status != std::future_status::ready)
         {
-            passed = false; // deadlock detected
+            passed = false;
             break;
         }
     }
@@ -246,9 +208,6 @@ static void StressFreezeUnfreeze()
     TestRunner::EndTest(passed);
 }
 
-// ---------------------------------------------------------------------------
-// Entry point
-// ---------------------------------------------------------------------------
 void RunTaskSystemStressTests()
 {
     TestRunner::StartTestSuite("Task System Stress Tests");

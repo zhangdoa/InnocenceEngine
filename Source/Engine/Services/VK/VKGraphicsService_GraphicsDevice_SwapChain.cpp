@@ -25,7 +25,6 @@ using namespace VKHelper;
 
 bool VKGraphicsService::GetSwapChainImages()
 {
-    // Currently handled in CreateSwapChain
     return true;
 }
 
@@ -42,8 +41,7 @@ bool VKGraphicsService::AssignSwapChainImages()
 	}
 
 	auto l_VKTextureComp = reinterpret_cast<VKTextureComponent*>(l_outputMergerTarget->m_ColorOutputs[0]);
-	
-	// @TODO: Create image views for different back buffers
+
 	for (size_t i = 0; i < m_swapChainImageCount; i++)
 	{
 		l_VKTextureComp->m_TextureDesc = m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
@@ -67,7 +65,6 @@ bool VKGraphicsService::ReleaseSwapChainImages()
 
 bool VKGraphicsService::CreateSwapChain()
 {
-	// choose device supported formats, modes and maximum back buffers
 	auto l_swapChainSupport = QuerySwapChainSupport(m_physicalDevice, m_windowSurface);
 	auto l_windowSurfaceExtent = ChooseSwapExtent(l_swapChainSupport.m_capabilities);
 	auto l_windowSurfaceFormat = ChooseSwapSurfaceFormat(l_swapChainSupport.m_formats);
@@ -121,8 +118,6 @@ bool VKGraphicsService::CreateSwapChain()
 
 	Log(Success, "VkSwapChainKHR has been created.");
 
-	// get swap chain VkImages
-	// get count
 	if (vkGetSwapchainImagesKHR(m_device, m_swapChain, &l_imageCount, nullptr) != VK_SUCCESS)
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
@@ -138,7 +133,6 @@ bool VKGraphicsService::CreateSwapChain()
 		m_swapChainImages.emplace_back();
 	}
 
-	// get real VkImages
 	if (vkGetSwapchainImagesKHR(m_device, m_swapChain, &l_imageCount, m_swapChainImages.data()) != VK_SUCCESS)
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;

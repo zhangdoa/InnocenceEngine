@@ -20,7 +20,6 @@ bool DebugPass::Setup(IServiceConfig *systemConfig)
 	{
 		m_debugCameraFrustumMeshComps[i] = g_Engine->Get<MeshResourceService>()->Add(("DebugCameraFrustumMesh_" + std::to_string(i)).c_str());
 		g_Engine->Get<TemplateAssetService>()->GenerateMesh(MeshShape::Cube, m_debugCameraFrustumMeshComps[i]);
-		//m_debugCameraFrustumMeshComps[i]->m_MeshShape = MeshShape::Cube;
 		}
 	
 	m_debugSphereMeshGPUBufferComp = g_Engine->Get<GPUBufferResourceService>()->Add("DebugSphereMeshGPUBuffer");
@@ -97,11 +96,6 @@ bool DebugPass::Setup(IServiceConfig *systemConfig)
 bool DebugPass::Initialize()
 {
 
-	for (size_t i = 0; i < m_debugCameraFrustumMeshComps.size(); i++)
-	{
-		//l_rsService->Initialize(m_debugCameraFrustumMeshComps[i]);
-	}
-
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_debugSphereMeshGPUBufferComp);
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_debugCubeMeshGPUBufferComp);
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_debugCameraFrustumGPUBufferComp);
@@ -139,8 +133,6 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 
 	auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
-	
-	// @TODO: Use indirect draw command
 
 	return false;
 }

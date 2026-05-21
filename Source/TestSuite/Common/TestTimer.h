@@ -16,9 +16,8 @@ namespace Inno
 		double GetDurationMs() const;
 		uint64_t GetDurationMicroseconds() const;
 
-		// Static utility functions
 		static double MeasureFunction(const std::function<void()>& func);
-		
+
 		template<typename Func>
 		static double MeasurePerformance(size_t iterations, Func&& func);
 
@@ -27,7 +26,6 @@ namespace Inno
 		uint64_t m_EndTime = 0;
 	};
 
-	// Template implementation (no engine APIs used)
 	template<typename Func>
 	double TestTimer::MeasurePerformance(size_t iterations, Func&& func)
 	{

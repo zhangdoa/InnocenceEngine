@@ -8,7 +8,6 @@ namespace Inno
 	class TestRunner
 	{
 	public:
-		// Static interface - implementations in .cpp file (v1.1 standard)
 		static void RunAllTests();
 		static void RunUnitTests();
 		static void RunPerformanceTests();
@@ -23,7 +22,6 @@ namespace Inno
 		static void ReportResults();
 
 	private:
-		// Static member variables
 		static size_t m_TotalTests;
 		static size_t m_PassedTests;
 		static size_t m_FailedTests;

@@ -22,7 +22,6 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12Helper::GetSRVDesc(TextureDesc textureDesc, 
 		l_result.Format = D3D12TextureDesc.Format;
 	}
 
-	// Calculate remaining mip levels from mostDetailedMip to end
 	uint32_t totalMipLevels = GetTextureMipLevels(textureDesc);
 	uint32_t remainingMipLevels = (mostDetailedMip < totalMipLevels) ? (totalMipLevels - mostDetailedMip) : 1;
 

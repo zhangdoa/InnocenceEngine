@@ -25,7 +25,6 @@ using namespace VKHelper;
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/TemplateAssetService.h"
 
-// @TODO: Maybe store the function pointers rather than querying them every time.
 VkResult VKGraphicsService::CreateDebugUtilsMessengerEXT(const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback)
 {
 	auto l_func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugUtilsMessengerEXT");

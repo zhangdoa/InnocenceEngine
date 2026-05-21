@@ -11,10 +11,6 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-// ---------------------------------------------------------------------------
-// ReadTextureBackToCPU
-// ---------------------------------------------------------------------------
-
 std::vector<Vec4> DX12TextureResourceService::ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp)
 {
     auto textureDesc = TextureComp->m_TextureDesc;

@@ -188,7 +188,6 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 	}
 
 #if defined(INNO_DEBUG)
-	// Enable better shader debugging with the graphics debugging tools.
 	UINT l_compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #else
 	UINT l_compileFlags = 0;

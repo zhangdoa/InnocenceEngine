@@ -103,8 +103,6 @@ bool LightDataServiceImpl::UpdateLightData()
 				l_data.pos = l_Transform->m_LocalPos;
 			l_data.luminance = l_Light.m_RGBColor * l_Light.m_LuminousFlux;
 			l_data.luminance.w = l_Light.m_Shape.x;
-			// TASK-176: inline-RT shadow trace gate consumed by
-			// lightPass.comp::EvaluateTiledPointLighting.
 			l_data.m_CastShadow = l_Light.m_CastShadow ? 1u : 0u;
 			m_PointLightCBVector.emplace_back(l_data);
 		}

@@ -23,7 +23,6 @@ namespace Inno
         bool Terminate() override;
         ObjectStatus GetStatus() override;
 
-        // Entity lifecycle
         EntityID    Spawn(ObjectLifespan Lifespan, const char* Name = nullptr);
         void        Destroy(EntityID Entity);
         bool        Rename(EntityID Entity, const char* Name);
@@ -33,7 +32,6 @@ namespace Inno
         std::vector<EntityID> GetAllEntityIDs(ObjectLifespan Lifespan) const;
         ObjectLifespan GetLifespan(EntityID Entity) const;
 
-        // Component operations (inline templates — no engine API calls here)
         template<typename T>
         T& Emplace(EntityID Entity, T Data = {})
         {
@@ -104,7 +102,7 @@ namespace Inno
             TComponentStorage<T> m_Storage;
             void CleanUp(ObjectLifespan Lifespan) override
             {
-                // TASK-52: log per-storage before/after so a type-specific lifespan mismatch
+                // Log per-storage before/after so a type-specific lifespan mismatch
                 // (component registered with wrong lifespan) is visible by name.
                 auto l_before = m_Storage.Size();
                 m_Storage.CleanUp(Lifespan);
@@ -124,16 +122,13 @@ namespace Inno
             return &static_cast<TStorageWrapper<T>*>(l_It->second.get())->m_Storage;
         }
 
-        // Entity metadata arrays, indexed by EntityID
         std::vector<bool>            m_Valid;
         std::vector<ObjectLifespan>  m_Lifespans;
         std::vector<std::string>     m_Names;
 
-        // Free list for entity slot recycling
         std::vector<EntityID>        m_FreeList;
         EntityID                     m_NextID = 1;   // 0 = INVALID_ENTITY
 
-        // Type-erased component storages keyed by type hash
         std::unordered_map<size_t, std::unique_ptr<IStorageWrapper>> m_Storages;
 
         ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;

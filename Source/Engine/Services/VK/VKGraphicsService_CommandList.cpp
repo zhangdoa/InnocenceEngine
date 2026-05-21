@@ -18,14 +18,12 @@ using namespace VKHelper;
 bool VKGraphicsService::CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex)
 {
 	auto l_rhs = reinterpret_cast<VKRenderPassComponent*>(renderPass);
-	
+
 	if (!commandList)
 		return false;
 
-	// Set the command list type based on render pass GPU engine type
 	commandList->m_Type = l_rhs->m_RenderPassDesc.m_GPUEngineType;
-	
-	// Use the appropriate command pool based on GPU engine type
+
 	VkCommandPool l_commandPool;
 	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
 	{
@@ -36,7 +34,6 @@ bool VKGraphicsService::CommandListBegin(RenderPassComponent* renderPass, Comman
 		l_commandPool = l_rhs->m_GraphicsCommandPool;
 	}
 
-	// Allocate command buffer from the appropriate pool
 	VkCommandBufferAllocateInfo l_allocInfo = {};
 	l_allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	l_allocInfo.commandPool = l_commandPool;
@@ -50,7 +47,6 @@ bool VKGraphicsService::CommandListBegin(RenderPassComponent* renderPass, Comman
 		return false;
 	}
 
-	// Store the command buffer in the component
 	commandList->m_CommandList = reinterpret_cast<uint64_t>(l_vkCommandBuffer);
 
 	VkCommandBufferBeginInfo l_beginInfo = {};
@@ -83,7 +79,6 @@ bool VKGraphicsService::BindRenderPassComponent(RenderPassComponent* renderPass,
 		l_renderPassBeginInfo.renderArea.offset = {0, 0};
 		l_renderPassBeginInfo.renderArea.extent = l_PSO->m_Scissor.extent;
 
-		// @TODO: do not clear the buffers here
 		VkClearValue l_clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
 		std::vector<VkClearValue> l_clearValues;
@@ -194,37 +189,16 @@ bool VKGraphicsService::BindGPUResource(RenderPassComponent* renderPass, Command
 		}
 		else
 		{
-			// if (accessibility != Accessibility::ReadOnly)
-			//{
 			VkDescriptorBufferInfo l_descriptorBufferInfo = {};
 			l_descriptorBufferInfo.buffer = reinterpret_cast<VKGPUBufferComponent *>(resource)->m_DeviceLocalBuffer;
 			l_descriptorBufferInfo.offset = startOffset;
 			l_descriptorBufferInfo.range = elementCount;
 			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorBufferInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
 			UpdateDescriptorSet(&l_writeDescriptorSet, 1);
-			// }
-			// else
-			// {
-			// }
 		}
 		break;
 	default:
 		break;
-	}
-
-	if (resource->m_GPUResourceType == GPUResourceType::Image)
-	{
-		auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(resource);
-
-		l_descriptorImageInfo.imageView = l_VKTextureComp->m_imageView;
-		if (accessibility != Accessibility::ReadOnly)
-		{
-			//TryToTransitImageLayout(l_VKTextureComp, l_commandBuffer, VK_IMAGE_LAYOUT_GENERAL, shaderStage);
-		}
-		else
-		{
-			//TryToTransitImageLayout(l_VKTextureComp, l_commandBuffer, l_VKTextureComp->m_ReadImageLayout, shaderStage);
-		}
 	}
 
 	vkCmdBindDescriptorSets(l_commandBuffer,
@@ -263,7 +237,5 @@ bool VKGraphicsService::CommandListEnd(RenderPassComponent* renderPass, CommandL
 
 bool VKGraphicsService::GenerateMipmap(TextureComponent *rhs, CommandListComponent* commandList)
 {
-	// Currently Vulkan GenerateMipmap is not implemented but accepts command list parameter
-	// for API compatibility with DX12 implementation
 	return true;
 }

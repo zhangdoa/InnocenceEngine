@@ -38,7 +38,6 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 	std::unique_ptr<IRenderingClient> renderingClient,
 	std::unique_ptr<ILogicClient> logicClient)
 {
-	// Create all services (Essential + Additional Systems)
 	if (!CreateServices(appHook, extraHook, pScmdline))
 		return false;
 
@@ -148,12 +147,10 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		}
 	}
 
-	// Only setup rendering-related services if not headless
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		WireRenderingCallbacks();
 	}
 
-	// Only setup rendering-related services if not headless
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		SystemSetup(PerFrameDataService);
 		SystemSetup(LightDataService);
@@ -184,12 +181,8 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		l_ExampleRenderingClientSetupTask->Wait();
 	}
 
-	// Only setup LogicClient if it exists and we're not in bake mode.
-	// Bake is a one-shot asset-import-then-exit flow; LogicClient loads
-	// scenes / spawns players / runs physics — none of which the import
-	// pipeline touches, and scene loading would call WaitForGPUIdle on a
-	// FrameManagementService that has no GraphicsHardwareService wired up
-	// (headless). Skip the whole subsystem.
+	// Bake mode skips LogicClient: scene loads would call WaitForGPUIdle on a
+	// FrameManagementService that has no GraphicsHardwareService wired up.
 	if (m_pImpl->m_LogicClient && !m_pImpl->m_initConfig.isBakeMode) {
 		if (!m_pImpl->m_LogicClient->Setup())
 		{

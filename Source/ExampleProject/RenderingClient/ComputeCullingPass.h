@@ -3,13 +3,8 @@
 
 namespace Inno
 {
-	// Shared implementation for "compute culling pass that writes an indirect
-	// draw-command buffer": per-frame CB in, GPUModelData + Material SRVs in,
-	// Dispatch, RWStructuredBuffer<DX12IndirectDrawCommand> out. Subclasses
-	// only supply an identity (name prefix + compute shader path); the full
-	// resource binding layout and command-list lifecycle live here so a fix
-	// applied once (TASK-44's SetCurrentState, TASK-61's clip-space frustum
-	// test, etc.) can't drift between siblings.
+	// Compute-culling base: per-frame CB + GPUModelData/Material SRVs in,
+	// RWStructuredBuffer<DX12IndirectDrawCommand> out. Subclasses supply only name + shader path.
 	class ComputeCullingPass : public IRenderPass
 	{
 	public:
@@ -24,8 +19,7 @@ namespace Inno
 		GPUResourceComponent* GetResult();
 
 	protected:
-		// Subclass identity. Return pointer-to-static-literal; lifetime must
-		// outlive the pass (simplest: return a string literal).
+		// Returned pointer must outlive the pass — simplest is a string literal.
 		virtual const char* GetPassName() const = 0;
 		virtual const char* GetComputeShaderPath() const = 0;
 

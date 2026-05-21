@@ -107,9 +107,8 @@ bool EditorService::Initialize()
 				return;
 			}
 
-			// Enforce the envelope contract. Clients that send bare {type:...}
-			// messages pre-TASK-86 are silently dropped rather than routed —
-			// the editor rewrite deletes the Gemini-era compat path.
+			// Drop non-request envelopes. Bare {type:...} messages without the request
+			// envelope are intentionally not routed.
 			const std::string l_envelope = l_json.value("envelope", std::string());
 			if (l_envelope != "request")
 			{
@@ -169,9 +168,6 @@ bool EditorService::Initialize()
 
 	l_server->start();
 
-	// Every scene load (editor-initiated or engine-initiated) ends by running
-	// the registered callbacks; ours broadcasts SCENE_UPDATED so connected
-	// editors refresh their hierarchy without the client having to poll.
 	m_sceneLoadedCallback = [this]() { BroadcastSceneUpdated(); };
 	g_Engine->Get<SceneService>()->AddSceneLoadedCallback(&m_sceneLoadedCallback);
 
@@ -192,14 +188,8 @@ void EditorService::BroadcastSceneUpdated()
 	Log(Verbose, "EditorService: Broadcast SCENE_UPDATED event.");
 }
 
-// SCREENSHOT_SAVED payload schema (consumed by Source/Editor-Next/src/composables/useIpc.js):
-//   { "ok": <bool>, "path": <string>, "error": <string> }
-// Both "path" and "error" are always present so the editor doesn't need to
-// branch on key existence; one of them is empty depending on "ok". On
-// success: "path" is the absolute path AssetService::Save resolved to,
-// "error" is "". On failure: "path" is "" if the save aborted before
-// resolving a destination (or carries the intended path if the failure
-// happened during write), "error" carries the failure reason.
+// SCREENSHOT_SAVED payload schema: { "ok": bool, "path": string, "error": string }.
+// Both "path" and "error" are always present; the side opposite to "ok" is "".
 bool EditorService::BroadcastScreenshotSaved(bool in_Ok, const std::string& in_AbsolutePath, const std::string& in_ErrorReason)
 {
 	if (!m_Server)
@@ -221,16 +211,11 @@ bool EditorService::BroadcastScreenshotSaved(bool in_Ok, const std::string& in_A
 
 void EditorService::RegisterBuiltinHandlers()
 {
-	// Setter-reply contract (SET_* and any other mutating handler whose reply
-	// the client commits as authoritative state): the reply MUST carry the
-	// post-mutation state read back from the authoritative source — never the
-	// payload the client submitted. Read-back is the only way to confirm the
-	// engine actually applied the mutation; echoing the payload masks
-	// rejection, clamping, and async-deferral bugs (the client commits its
-	// own guess as truth, then drifts from the engine on every silent
-	// divergence). Prior-art fixes: SET_DEV_TOGGLE (commit 2586477b) and
-	// SET_VIEWPORT_SOURCE (commit d4fe5462) both regressed under the
-	// payload-echo pattern before being switched to read-back.
+	// Setter-reply contract: SET_* (and any mutating handler whose reply the client
+	// commits as authoritative state) MUST reply with the post-mutation state read
+	// back from the authoritative source — never the payload the client submitted.
+	// Payload-echo replies mask rejection, clamping, and async-deferral, drifting
+	// the client's state from the engine's on every silent divergence.
 
 	RegisterIntrospectionHandlers();
 	RegisterDevAndSceneHandlers();

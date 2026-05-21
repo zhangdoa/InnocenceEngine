@@ -27,11 +27,9 @@ namespace Inno
 		bool InitializeComponents();
 		bool OnSceneUnloading();
 
-		// TASK-213 CL A: deferred-activation drain status. Read-only signal
-		// consumed by FrameManagementService::IsSteadyState() to gate auto-
-		// test capture frame-counting on a fully-loaded scene. Activation-only
-		// tasks re-queue inside InitializeComponents() and drain over N
-		// subsequent frames; "queue empty" means no pending mesh activations.
+		// True when no mesh-activation tasks remain in the deferred queue. The drain
+		// can span multiple frames because activation-only tasks re-queue inside
+		// InitializeComponents() — callers gating on a fully-loaded scene must poll.
 		bool IsDeferredQueueEmpty() const { return m_DeferredQueue.empty(); }
 
 		GPUMeshResource* GetMeshResource(GPUMeshResourceHandle handle);

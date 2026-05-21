@@ -24,11 +24,9 @@ namespace Inno
 		static MeshAssetHandle FindMeshAsset(const char* name);
 		static uint32_t DebugGetMeshGeneration(uint32_t index);
 
-		// TASK-27: AllocateMaterialAsset returns `{handle, wasNewlyCreated}`. Callers that
-		// need a clean slate (load paths populating the asset from a source-of-truth)
-		// must branch on `wasNewlyCreated == false` and reset the existing data
-		// themselves — the allocator itself is `get-or-create`, not `replace`, because
-		// material assets are shared by name across components.
+		// AllocateMaterialAsset is get-or-create (material assets are shared by name
+		// across components). Callers that need a clean slate must branch on
+		// m_WasNewlyCreated == false and reset the existing data themselves.
 		struct MaterialAssetAllocation
 		{
 			MaterialAssetHandle m_Handle;
@@ -60,8 +58,6 @@ namespace Inno
 		static bool Load(const char* fileName, MeshComponent& component, EntityID owner);
 		static bool Load(const char* fileName, MaterialComponent& component, EntityID owner);
 		static bool Load(const char* fileName, TextureComponent& component, EntityID owner);
-		// static bool Load(const char* fileName, SkeletonComponent& component);
-		// static bool Load(const char* fileName, AnimationComponent& component);
 		static bool Load(const char* fileName, CameraComponent& component);
 		static bool Load(const char* fileName, LightComponent& component);
 
@@ -73,13 +69,9 @@ namespace Inno
 
 		static bool Save(const char* fileName, const TextureDesc& textureDesc, void* textureData);
 
-		// Load a standalone PNG/etc, BC-compress it for the given material
-		// slot, write {Generated/Components/<instanceName>.json + .innobin}.
-		// Returns the saved instance name on success, empty on failure.
-		// bc4Source picks which RGBA channel is packed into BC4 (slot 2/3/4);
-		// default R matches separate single-channel PNGs that STB broadcasts
-		// to RGBA on load. glTF MetallicRoughness packing needs B for metallic
-		// (slot 2) and G for roughness (slot 3).
+		// bc4Source picks which RGBA channel is packed into BC4 (slots 2/3/4). Default R
+		// matches separate single-channel PNGs (STB broadcasts to RGBA on load). glTF
+		// MetallicRoughness packing needs B for metallic (slot 2) and G for roughness (slot 3).
 		static std::string ImportTexture(const char*          absolutePath,
 		                                 TextureSampler       sampler,
 		                                 TextureUsage         usage,

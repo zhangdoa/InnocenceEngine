@@ -41,8 +41,6 @@ bool DX12GraphicsHardwareService::WaitOnFenceWithDiagnostics(const char* fenceNa
 	return false;
 }
 
-// --- Public accessors ---
-
 ComPtr<ID3D12Device8> DX12GraphicsHardwareService::GetDevice()
 {
 	return m_DX12Context.m_device.Get();

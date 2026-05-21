@@ -28,10 +28,8 @@ namespace Inno
 		float m_ShutterTime = 1.0f / 2000.0f;
 		float m_ISO = 100.0f;
 
-		// Exposure-mode toggle and auto-exposure controls. Defaults preserve
-		// TASK-142 behavior: Auto with K=6.0 (canonical AgX-Default mid-grey
-		// target) and zero EV bias. Manual mode falls back to the
-		// aperture/shutter/ISO triple above.
+		// Auto-exposure key K=6.0 is the canonical AgX-Default mid-grey target;
+		// Manual mode falls back to the aperture/shutter/ISO triple above.
 		ExposureMode m_ExposureMode = ExposureMode::Auto;
 		float m_AutoExposureKey = 6.0f;
 		float m_AutoExposureCompensation = 0.0f;

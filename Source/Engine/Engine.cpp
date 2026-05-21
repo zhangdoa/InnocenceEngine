@@ -1,7 +1,6 @@
 #include "Engine_Internal.h"
 #include "Common/LogService.h"
 
-// Platform-specific systems
 #if defined INNO_PLATFORM_WIN
 #include "Platform/WinWindow/WinWindowService.h"
 #endif
@@ -12,7 +11,6 @@
 #include "Platform/LinuxWindow/LinuxWindowService.h"
 #endif
 
-// Headless window stub
 #include "Platform/HeadlessWindow/HeadlessWindowService.h"
 
 #include "Services/HIDService.h"
@@ -45,9 +43,6 @@ IWindowService* Engine::CreateWindowSystem(bool isHeadless)
 
 void Engine::ResolveDependencies(const std::vector<std::type_index>& dependencies)
 {
-	// For now, simple dependency resolution
-	// Dependencies are assumed to be resolved by the order of Get<T>() calls
-	// More sophisticated topological sorting can be added later if needed
 }
 
 Engine::Engine()
@@ -60,7 +55,6 @@ Engine::~Engine()
 {
 	delete m_pImpl;
 
-	// Clean up all singletons
 	for (auto& pair : singletons_)
 	{
 		delete static_cast<char*>(pair.second);

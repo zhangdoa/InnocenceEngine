@@ -74,8 +74,6 @@ bool DX12GraphicsHardwareService::CreateGpuTimerResources()
 			// the first ResolveGpuTimers Reset call sees the expected state.
 			outLists[i]->Close();
 		}
-		// Reserve slot vector capacity once; growth would be cheap but reserving
-		// also documents the per-queue bound at allocation time.
 		auto* l_state = GetTimerState(queueType);
 		if (l_state)
 		{
@@ -96,9 +94,8 @@ bool DX12GraphicsHardwareService::CreateGpuTimerResources()
 		m_DX12Context.m_TimestampResolveAllocators_Compute, m_DX12Context.m_TimestampResolveLists_Compute,
 		L"GpuTimer_TimestampHeap_Compute", "GpuTimer_TimestampReadback_Compute",
 		L"GpuTimer_ResolveAllocator_Compute_", L"GpuTimer_ResolveList_Compute_");
-	// Copy queues only support a different heap type: D3D12_QUERY_HEAP_TYPE_COPY_QUEUE_TIMESTAMP.
-	// (The DIRECT/COMPUTE TIMESTAMP heap binds to those queues only — submitting a copy queue
-	// EndQuery into a regular timestamp heap fails GBV.)
+	// Copy queues require D3D12_QUERY_HEAP_TYPE_COPY_QUEUE_TIMESTAMP; submitting
+	// a copy-queue EndQuery into the regular TIMESTAMP heap fails GBV.
 	l_ok &= l_createForQueue(GPUEngineType::Copy, D3D12_QUERY_HEAP_TYPE_COPY_QUEUE_TIMESTAMP, D3D12_COMMAND_LIST_TYPE_COPY,
 		m_DX12Context.m_TimestampHeap_Copy, m_DX12Context.m_TimestampReadback_Copy,
 		m_DX12Context.m_TimestampResolveAllocators_Copy, m_DX12Context.m_TimestampResolveLists_Copy,

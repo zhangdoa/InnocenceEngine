@@ -3,11 +3,8 @@
 
 namespace Inno
 {
-	// GI-1.0 §2.4.3 paper-faithful spatial filter — vertical axis of the
-	// separable variable-radius bilateral blur. Reads the horizontal
-	// pass's scratch + the per-pixel blur mask; writes the final
-	// per-pixel irradiance (rgb / max(N, 1), 1) consumed by LightPass.
-	// Replaces GIATrous4Pass as LightPass's GI source.
+	// GI-1.0 §2.4.3 paper-faithful spatial filter — vertical axis of the separable
+	// variable-radius bilateral blur. Writes per-pixel irradiance (rgb / max(N, 1), 1).
 	class GIFilterVerticalPass : public IRenderPass
 	{
 	public:
@@ -19,10 +16,8 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
-		// TASK-182: when RasterizedGI is toggled OFF the dispatch site routes
-		// here instead of PrepareCommandList. Clears m_Result (LightPass's GI
-		// input) to zero so LightPass reads no GI contribution, eliminating
-		// the "frozen GI" stale-output artifact reported on the toggle.
+		// Clears m_Result to zero so LightPass reads no GI when RasterizedGI toggles OFF
+		// (avoids the stale-output artifact a plain bypass would leave).
 		bool RecordClearCommandList(IRenderingContext* renderingContext = nullptr) override;
 		RenderPassComponent* GetRenderPassComp() override;
 

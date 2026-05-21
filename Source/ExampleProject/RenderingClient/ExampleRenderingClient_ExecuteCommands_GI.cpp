@@ -29,13 +29,11 @@ namespace Inno
 
 			auto l_renderPass = RadianceCacheReprojectionPass::Get().GetRenderPassComp();
 
-			// Execute graphics command list for resource transitions
 			auto l_graphicsCommandList = RadianceCacheReprojectionPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-			// Execute compute command list for actual work
 			auto l_computeCommandList = RadianceCacheReprojectionPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
@@ -47,13 +45,11 @@ namespace Inno
 
 			auto l_renderPass = RadianceCacheRaytracingPass::Get().GetRenderPassComp();
 
-			// Execute graphics command list for resource transitions
 			auto l_graphicsCommandList = RadianceCacheRaytracingPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-			// Execute compute command list for actual work
 			WaitIfActive(OpaquePass::Get(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 			auto l_computeCommandList = RadianceCacheRaytracingPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
@@ -66,13 +62,11 @@ namespace Inno
 
 			auto l_renderPass = RadianceCacheFilterHorizontalPass::Get().GetRenderPassComp();
 
-			// Execute graphics command list for resource transitions
 			auto l_graphicsCommandList = RadianceCacheFilterHorizontalPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-			// Execute compute command list for actual work
 			auto l_computeCommandList = RadianceCacheFilterHorizontalPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
@@ -84,13 +78,11 @@ namespace Inno
 
 			auto l_renderPass = RadianceCacheFilterVerticalPass::Get().GetRenderPassComp();
 
-			// Execute graphics command list for resource transitions
 			auto l_graphicsCommandList = RadianceCacheFilterVerticalPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-			// Execute compute command list for actual work
 			auto l_computeCommandList = RadianceCacheFilterVerticalPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
@@ -102,13 +94,11 @@ namespace Inno
 
 			auto l_renderPass = RadianceCacheIntegrationPass::Get().GetRenderPassComp();
 
-			// Execute graphics command list for resource transitions
 			auto l_graphicsCommandList = RadianceCacheIntegrationPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-			// Execute compute command list for actual work
 			auto l_computeCommandList = RadianceCacheIntegrationPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);

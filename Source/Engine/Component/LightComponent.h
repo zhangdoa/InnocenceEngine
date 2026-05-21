@@ -10,38 +10,30 @@ namespace Inno
 		static uint32_t GetTypeID() { return 3; };
 		static const char* GetTypeName() { return "LightComponent"; };
 
-		// Unitless: use clamped range from 0.0 to 1.0
-		// CIE 1931 RGB color space
+		// CIE 1931 RGB, clamped [0, 1].
 		Vec4 m_RGBColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-		// Unit: Meter (m)
-		// For Directional light it's useless
-		// For Point light, x is the auto-calculated attenuation radius
-		// For Spot light, x is the cut-off angle
-		// For Sphere light, x is the sphere radius
-		// For Disk light, x is the disk radius
-		// For Tube light, x is the tube length, y is the tube radius
-		// For Rectangle light, x is the width, y is the height
+		// Per-LightType shape parameters, units in meters (unused for Directional):
+		//   Point      x = attenuation radius (auto-calculated)
+		//   Spot       x = cut-off angle
+		//   Sphere     x = sphere radius
+		//   Disk       x = disk radius
+		//   Tube       x = length, y = radius
+		//   Rectangle  x = width,  y = height
 		Vec4 m_Shape = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 		LightType m_LightType = LightType::Directional;
 
-		// Unit: Kelvin (K)
+		// Kelvin
 		float m_ColorTemperature = 5780.0f;
 
-		// Unit: Lumen (lm)
+		// Lumen
 		float m_LuminousFlux = 1.0f;
 
 		bool m_UseColorTemperature = true;
 
-		// Default true: legacy point/sphere lights authored before TASK-66
-		// were written with the implicit assumption that any positional light
-		// might cast a shadow (the rasterizer just never honored it). Defaulting
-		// true means TASK-148 begins shadowing existing scenes immediately;
-		// authors opt out per-light for decorative fills. Directional lights
-		// always shadow via SunShadowRTPass (TASK-138 hardware-RT) and ignore
-		// this field — the cube-atlas allocator (TASK-147) only reads it for
-		// LightType::Point and LightType::Sphere.
+		// Honoured only for LightType::Point and LightType::Sphere; Directional
+		// always shadows via SunShadowRTPass and ignores this field.
 		bool m_CastShadow = true;
 	};
 }

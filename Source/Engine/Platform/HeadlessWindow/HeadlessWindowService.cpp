@@ -21,7 +21,6 @@ bool HeadlessWindowService::Initialize()
 
 bool HeadlessWindowService::Update()
 {
-    // No window events to process in headless mode
     return true;
 }
 
@@ -39,29 +38,26 @@ ObjectStatus HeadlessWindowService::GetStatus()
 
 std::vector<std::type_index> HeadlessWindowService::GetDependencies()
 {
-    return {}; // No dependencies
+    return {};
 }
 
 IWindowSurface* HeadlessWindowService::GetWindowSurface()
 {
-    return m_dummySurface; // Returns null, headless mode has no surface
+    return m_dummySurface;
 }
 
 bool HeadlessWindowService::SendEvent(void* windowHook, uint32_t uMsg, uint32_t wParam, int32_t lParam)
 {
-    // No events to send in headless mode
     return true;
 }
 
 void HeadlessWindowService::ConsumeEvents(const WindowEventProcessCallback& p_Callback)
 {
-    // No events to consume in headless mode
     std::vector<IWindowEvent*> emptyEvents;
     p_Callback(emptyEvents);
 }
 
 bool HeadlessWindowService::AddEventCallback(WindowEventCallback* callback)
 {
-    // No events to callback in headless mode
     return true;
 }

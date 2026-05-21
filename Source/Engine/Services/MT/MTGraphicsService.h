@@ -7,7 +7,6 @@ namespace Inno
 	class MTGraphicsService : public IGraphicsService
 	{
 	public:
-		// Inherited via IGraphicsService
 		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Terminate() override;

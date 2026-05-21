@@ -4,7 +4,7 @@ title: 'Rolling cleanup: prune essay comments'
 status: In Progress
 assignee: []
 created_date: '2026-05-05 20:26'
-updated_date: '2026-05-15 18:40'
+updated_date: '2026-05-21 19:14'
 labels:
   - tech-debt
   - code-quality
@@ -101,6 +101,76 @@ Disciplines consulted: `comment-discipline`, `workspace-hygiene`, `fundamentals`
 2026-05-14 — Iteration #4 CL: prune essay comments in `Source/Engine/Common/IOService.cpp`. 11 lines removed, 1 inserted (one trimmed WHY one-liner replaces a 5-line essay). Surveyed candidates: EditorService.cpp (33 comments / 268 lines, 12.3% — confirmed iteration #2's flag, comments are load-bearing WHY about wire-protocol contract, setter-reply contract, screenshot-saved payload schema; near-zero net deletions available), EditorService_Entity.cpp (15/189, 7.9% — load-bearing WHY about K-mode invariant, READ_ONLY discriminated reply, persistent-entity delete refusal), AssetService_Path.cpp (12/128, 9.4% — load-bearing WHY about AmbientCG suffix convention, project-vs-generated search order, concurrent-import safety), HIDService.cpp (9/225 — load-bearing WHY about MSVC SRW shared_lock-then-unique_lock deadlock, offscreen-mode defensive guard), IOService.cpp (11/275 — mostly essay violations). Picked IOService.cpp for essay-violation concentration despite lower raw density. Deleted: 5-line TASK-30 essay above `ResolvePath` with "callers historically pass", "old unconditional", "produced a doubly-rooted garbage path" design-history narration; six WHAT-restatement banner comments inside `addCPPClassFiles` (`// Build header file`, `// Common headers include`, `// Abstraction type`, `// Inheriance type` (misspelled), `// Class decl body`, `// Ctor type`) — each paraphrasing the immediately following `<<` write. Kept (trimmed to one-liner): WHY for ResolvePath's absolute-vs-relative branching (one-liner captures the invariant without the incident narrative). No #include orphaned (all five headers still referenced). Build green (`Scripts/BuildWin.ps1 -SkipShaderCompile`) — Engine.lib, Main.exe, RenderTest.exe all linked. `Main.exe -mode 0 -renderer 0 -loglevel 0 -total_frames 30 -offscreen` (run from `Bin/RelWithDebInfo`) ran to `Engine has been terminated.`. AC #3 keeps the task open as a rolling tracker.
 
 2026-05-14 — Iteration #3 CL: prune essay comments in `Source/Engine/Services/SceneService.cpp`. 34 lines removed, 10 inserted (two trimmed WHY one-liners replace multi-paragraph essays). Picked over `EditorService.cpp` for higher essay density. Deleted: numbered-phase WHAT-restatement banners (`// 0. Flush all GPU work...`, `// 2. Free GPU resources...`, `// 3. Destroy scene-scoped components`, `// 4. Clear transform hierarchy...`, `// 5. Clear physics simulation state...`, `// Load the new scene`, `// Loaded phase: // 6. Refresh...`, `// 7. Client loaded callbacks (GIDataLoader, VXGIRenderer, WorldSystem, Editor)` — cross-reference list of consumers); 5-line callback-ordering essay narrating "the previous order" history; 7-line `// 2b.` essay with `TASK-52` tombstone narrating page-fault symptom; 10-line `// 5b.` essay with `TASK-109` tombstone + "shader-ball-varies-every-launch" incident narrative. Kept (trimmed to one-liner): WHY for client-callback ordering vs resource destruction (non-obvious lifecycle invariant); WHY for asset-table generation bump (non-obvious correctness consequence of name collisions); WHY for synchronous drain + GPU-idle before resuming rendering (non-obvious data hazard). No #include orphaned (every service header still invoked by live code). Build green (`Scripts/BuildWin.ps1 -SkipShaderCompile`) — `Engine.lib` and `RenderTest.exe` linked; `Main.exe -mode 0 -renderer 0 -loglevel 0 -total_frames 30 -offscreen` ran clean to `Engine has been terminated.`. AC #3 keeps the task open as a rolling tracker.
+
+## Review (code-review, 2026-05-21) — iteration #8 (Engine/Common sweep, commit `dfc9553c`)
+
+**Verdict: ADVISORY** (one non-blocking finding + four surface observations). Ship as-is.
+
+### Per-file accuracy: OK
+
+6 touched files, kept-vs-deleted walks all check against `comment-discipline`. BCCompression.h (side-effect WHY only), DoubleBuffer.h (single-producer threading contract only — see Finding 1), Enum.h (using-alias WHY only), GPUDataStructure.h (luminance.w semantics, exposureMode legend, autoExposure unit, pointShadowBypass toggle, trimmed alignment WHY), Thread.h (Failed-state semantic, GetCaughtExceptionCount semantic), Thread.cpp (outer-try scope choice + Failed-transition consequence).
+
+File-size ratchet clean (all 6 files under 300). Numstat matches commit (29 ins / 105 del). Commit-message policy clean (type+scope, [task-stays-open], attribution footers). Pattern continuity vs iteration #2 commit `c0d068d2`.
+
+### Finding 1 (ADVISORY, non-blocking) — `DoubleBuffer.h:Flip()` stealth brace removal
+
+Deleting the `// Busy-wait spin` comment incidentally dropped the Allman braces around the single-statement `std::this_thread::yield()` body. Behaviour-equivalent, but `cpp-style` convention favours braces (other `Thread.cpp` busy-wait loops use `{ ... }` even for single statements). Commit message subtly overclaims "comment-only." Resolution: restore braces in the next iteration touching `DoubleBuffer.h`, or accept as-is.
+
+### Observation 1 — `DoubleBuffer.h` Write→Flip publishing contract undocumented
+
+Single-producer contract on `Write` is documented; the Write→Flip ordering invariant (readers see new buffer only after Flip returns) is not. Pre-existing gap; surface for the next iteration.
+
+### Observation 2 — `GPUDataStructure.h:188` `padding[16]` magic without alignment hint
+
+The deleted "Adjusted padding after adding shader fields" essay was discipline-correct (design history) but its trim removed the only hint that the value is contract-dependent. Pre-existing concern; the gap is the lack of a hidden-invariant comment, not a violation of the discipline trim.
+
+### Observation 3 — `GPUDataStructure.h:204/218` retained `Surfel` / `SurfelGrid` one-liners
+
+Arguably WHAT-paraphrases of the type names; not in iteration #8's stated essay-violation scope. Surface for future iteration.
+
+### Observation 4 — `Thread.h:32-34` Failed-state contract is inaccurate (pre-existing)
+
+Kept comment says "Failed threads stop accepting new tasks." `Thread::AddTask` (`Source/Engine/Common/Thread.cpp:60-107`) has no `Failed` check; the CAS at line 74 (`expected = Idle`) and line 87 (`expected = Waiting`) will fail when the actual state is `Failed`, causing AddTask to spin-loop until the 5000ms timeout warning. Pre-image carried the same inaccuracy; this CL inherited it. Worth filing as a separate code-correctness task against `Thread::AddTask`.
+
+### Resolution
+
+No re-spin. Finding 1 (brace restore) folded into next iteration touching `DoubleBuffer.h`. Observation 4 worth filing as a separate `Thread::AddTask` Failed-state task. Observations 1–3 surface-only.
+
+2026-05-21 — Iteration #9 (parallel fan-out): swept four non-overlapping scopes simultaneously via background code-impl agents. Plus a `DoubleBuffer::Flip` Allman-brace restore tightener from iteration #8 peer review (Finding 1 against commit `dfc9553c`). 113 files edited, 458 ins / 1793 del, net −1335 lines.
+
+**Sub-scope A** (Engine root + Component + Interface + Export + RayTracer + Platform): 18 files, −163 lines. Excluded `Engine_Run.cpp` / `Engine_Terminate.cpp` / `Engine_ParseInitConfig.cpp` (iterations #5/#7/TASK-236).
+**Sub-scope B** (Services/DX12 + Services/MT): 29 files, −195 lines.
+**Sub-scope C** (Services top-level + Services/Common + Services/VK): 20 files, −234 lines. Excluded `SceneService.cpp` / `FrameManagementServiceImpl.cpp` / `FrameManagementServiceImpl_FrameQueries.cpp` (iterations #3/#6/#2). `PerFrameDataService.cpp` sub-scope-C trim **reverted** — file still at 306 lines after −16 trim, over the 300-line ratchet; folds into TASK-219 when split.
+**Sub-scope D** (ExampleProject + TestSuite + TestClient + Tool): 45 files, −795 lines. Excluded `ExampleRenderingClient_{AuditDump, Setup, ExecuteCommands}.cpp` + `ExampleRenderingClient_Internal.h` (just touched this session for TASK-233/235/236) and `TestSuite/Removed/`.
+**Brace restore**: `DoubleBuffer.h::Flip()` loop body wrapped in `{}` per cpp-style Allman convention (iteration #8 peer-review Finding 1).
+
+Deletion themes: TASK-N tombstones (~25 distinct task IDs); incident-narrative essays; WHAT-restatement banners; cross-file footnotes pointing to DX12/VK/HLSL contracts that belong at the source-of-truth; signature paraphrases; commented-out dead-code (Reflector helper stubs, VK timeline-semaphore Present path, JSON serializer skeleton helpers); stale `@TODO` graveyard with no tracked task.
+
+Kept-as-distilled-WHY themes: hidden invariants (MSVC SRW re-entry, m_Bypassed cross-thread dispatch contract, m_pImpl macro-expansion site requirement, DX12 GBV ResolveQueryData reject reason, raygen binding-count vs HLSL register decl mirror, NRD raw-D3D12 passthrough rationale); paper citations (Capsaicin GI-1.0 §2.4.2/2.4.3/2.1.5, Ramamoorthi–Hanrahan SH, AgX K=6.0); load-bearing magic-number rationales (K=25 audit settle, K=3 TLAS stability window, 256-per-queue GPU timer ceiling); cross-queue / cross-thread contracts; ownership/lifetime invariants; paper-port site-mirror constraints.
+
+**Build green** (`Scripts/BuildWin.ps1 -SkipShaderCompile`, 21:09 timestamp on relinked `Main.exe` + `RenderTest.exe`). **Audit autotest green** (`Main.exe -mode 0 -renderer 0 -loglevel 1 -total_frames 60 -offscreen audit`, 19:10:35–19:10:41 transcript): UnitTest scene-load + GISponza scene-load callbacks fire, AuditDump complete, all 11 HDRs written.
+
+Iteration #9 (continued) — held-back files and surfaced findings.
+
+**Files held back (over 300 lines, TASK-219 territory)**: `DrawCallService.cpp` (316), `DX12Context.cpp` (305), `Player.inl` (417), `World.inl` (406), `TweakRegistry.inl` (322), `GIDenoisePass.cpp` (405), `LightPass.cpp` (399), `ExampleRenderingClient.cpp` (318), `LightCullingPass.cpp` (309), `TestRenderingClient.cpp` (320), `PerFrameDataService.cpp` (306 post-trim, 322 pre-trim — revert kept the file out of this CL). `GraphicsPrimitive.h` (381) also remains held back from iteration #8.
+
+**Surfaced findings (NOT folded in)**:
+- VK backend Present path is non-functional (entire submit-and-present logic was dead-code-commented out).
+- VK `GetIndex` unconditionally returns `std::nullopt` (texture bindless not implemented).
+- VK `UploadToGPU` ignores `commandList` parameter (cross-frame upload ordering undefined).
+- DX12 `CaptureCallstack` uses raw `malloc`/`free` instead of engine Memory service (`cpp-style` § no-raw-equivalents).
+- DX12 `m_BeginCapture`/`m_EndCapture` members appear dead (no writers found).
+- `Thread.h:32-34` `Failed`-state comment claims AddTask refuses, but AddTask spin-loops on Failed (iter #8 peer-review Observation 4 — worth filing as separate task against `Thread::AddTask`).
+- Empty `Engine::ResolveDependencies` body (function deletion candidate).
+- Ad-hoc `singletons_[type_index]=ptr` writes in `Engine_CreateServices.cpp` bypass the documented thread-safe insert path.
+- Broken Linux platform stub at `LinuxWindowService.cpp:89`.
+- Declared-but-unused `Engine.h::testCase` field and `CreateServices(extraHook)` parameter.
+- `MTGraphicsService.h` missing-`../IGraphicsService.h` include (Metal backend bit-rot, pre-existing).
+- Stale TODOs deleted in DX12 + ExampleProject mask real incomplete features: swap-effect FLIP_SEQUENTIAL, blend-op separate-alpha-vs-RGB, NRDDenoisePass shader-stage selection in VK `TryToTransitState`.
+- Naming-suffix inconsistency in `RadianceCacheRaytracingPass.cpp:148` (no `/Compute` qualifier where peers use it).
+- Nullptr-binding pattern in `GPUPathTracerPass_Dispatch.cpp:69-70` now lacks the WHY comment (intentional, but invisible after the sweep — candidate for future iteration to add a hidden-invariant comment).
+
+AC #3 keeps the task open as a rolling tracker.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done

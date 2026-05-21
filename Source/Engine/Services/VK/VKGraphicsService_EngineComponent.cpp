@@ -43,7 +43,6 @@ bool VKGraphicsService::SetObjectName(U* owner, const T& rhs, VkObjectType objec
 
 bool VKGraphicsService::InitializeImpl(MeshAssetHandle handle, std::vector<Vertex> &vertices, std::vector<Index> &indices)
 {
-	// @TODO: Reimplement VK mesh resource initialization using MeshAssetData
 	return true;
 }
 
@@ -186,23 +185,18 @@ bool VKGraphicsService::InitializeImpl(GPUBufferComponent *rhs)
 		}
 	}
 
-	// @TODO: Fix it.
-	//vkMapMemory(m_device, l_rhs->m_HostStagingMemory, 0, l_rhs->m_TotalSize, 0, &l_rhs->m_MappedMemory);
-
 	l_rhs->m_GPUResourceType = GPUResourceType::Buffer;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
 
-// @TODO: The command list should be passed as a parameter.
 bool VKGraphicsService::UploadToGPU(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer)
 {
 	auto l_rhs = reinterpret_cast<VKGPUBufferComponent*>(gpuBuffer);
 	if (!l_rhs->m_DeviceLocalMemory)
 		return true;
 
-	// @TODO: Only copy the data that has been changed.
 	CopyBuffer(m_globalCommandPool, m_graphicsQueue, l_rhs->m_HostStagingBuffer, l_rhs->m_DeviceLocalBuffer, l_rhs->m_TotalSize);
 
 	return true;

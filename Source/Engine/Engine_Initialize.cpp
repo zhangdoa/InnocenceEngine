@@ -42,7 +42,6 @@ bool Engine::Initialize()
 		SystemInit(EditorService);
 	}
 
-	// Only initialize rendering-related services if not headless
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		Get<FrameManagementService>()->Initialize();
 		SystemInit(TemplateAssetService);
@@ -74,7 +73,6 @@ bool Engine::Initialize()
 		l_ExampleRenderingClientInitializationTask->Activate();
 		l_ExampleRenderingClientInitializationTask->Wait();
 
-		// Check if m_RenderingExecutionTask exists before activating
 		if (m_pImpl->m_RenderingExecutionTask)
 		{
 			Log(Verbose, "Activating rendering execution task...");
@@ -86,8 +84,6 @@ bool Engine::Initialize()
 		}
 	}
 
-	// Only initialize LogicClient if it exists and we're not in bake mode
-	// (see Setup for rationale — bake skips the game layer entirely).
 	if (m_pImpl->m_LogicClient && !m_pImpl->m_initConfig.isBakeMode) {
 		m_pImpl->m_LogicClient->Initialize();
 	}

@@ -108,8 +108,6 @@ bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_BillboardGPUBufferComp = g_Engine->Get<BillboardDrawCallService>()->GetBillboardBuffer();
 
-	// @TODO: Use indirect draw command
-
 	return false;
 }
 

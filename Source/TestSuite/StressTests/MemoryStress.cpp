@@ -18,7 +18,6 @@ void TestObjectPoolMassiveAllocations()
 	std::vector<TestStruct*> l_Objects;
 	l_Objects.reserve(l_PoolSize);
 
-	// Allocate all objects
 	for (size_t i = 0; i < l_PoolSize; i++)
 	{
 		auto l_Object = l_ObjectPool->Spawn();
@@ -30,20 +29,17 @@ void TestObjectPoolMassiveAllocations()
 		l_Objects.push_back(l_Object);
 	}
 
-	// Verify pool exhaustion
 	auto l_ExtraObject = l_ObjectPool->Spawn();
 	if (l_ExtraObject != nullptr)
 	{
 		l_TestPassed = false;
 	}
 
-	// Deallocate all objects
 	for (auto l_Object : l_Objects)
 	{
 		l_ObjectPool->Destroy(l_Object);
 	}
 
-	// Test reallocation after deallocation
 	for (size_t i = 0; i < l_PoolSize / 2; i++)
 	{
 		auto l_Object = l_ObjectPool->Spawn();
@@ -72,7 +68,6 @@ void TestMemoryFragmentationStress()
 		auto l_ObjectPool = TObjectPool<uint32_t>::Create(l_ObjectsPerIteration);
 		std::vector<uint32_t*> l_Objects;
 
-		// Allocate objects
 		for (size_t j = 0; j < l_ObjectsPerIteration; j++)
 		{
 			auto l_Object = l_ObjectPool->Spawn();
@@ -84,7 +79,7 @@ void TestMemoryFragmentationStress()
 			l_Objects.push_back(l_Object);
 		}
 
-		// Deallocate random objects to create fragmentation
+		// Randomized deallocation to create fragmentation before re-allocating.
 		std::default_random_engine l_Generator;
 		std::uniform_int_distribution<size_t> l_RandomIndex(0, l_Objects.size() - 1);
 		
@@ -98,7 +93,6 @@ void TestMemoryFragmentationStress()
 			}
 		}
 
-		// Try to allocate new objects in fragmented pool
 		for (size_t j = 0; j < l_ObjectsPerIteration / 4; j++)
 		{
 			auto l_Object = l_ObjectPool->Spawn();

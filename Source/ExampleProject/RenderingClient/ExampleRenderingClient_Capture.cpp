@@ -25,15 +25,9 @@ namespace Inno
 		if (!m_saveScreenCapture)
 			return;
 
-		// TASK-211: editor Screenshot action consumer. Writes a uniquely-
-		// named capture under Bin/Captures/Screenshots/ (engine CWD-relative)
-		// and broadcasts SCREENSHOT_SAVED via EditorService so the editor
-		// can surface a toast naming the absolute path. Best-effort
-		// broadcast — the engine-side log line is the durable record.
 		auto l_srcTextureComp = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
 		auto* l_editorService = g_Engine->Get<EditorService>();
 
-		// Step 1: ensure output directory exists.
 		const std::filesystem::path l_outputDir = std::filesystem::path("Captures") / "Screenshots";
 		std::error_code l_dirEc;
 		std::filesystem::create_directories(l_outputDir, l_dirEc);
@@ -48,8 +42,7 @@ namespace Inno
 			return;
 		}
 
-		// Step 2: timestamped filename. Millisecond precision avoids
-		// collisions when the user clicks twice within the same second.
+		// Millisecond precision avoids collisions when the user clicks twice in the same second.
 		const auto l_now = std::chrono::system_clock::now();
 		const auto l_nowTimeT = std::chrono::system_clock::to_time_t(l_now);
 		const auto l_nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -65,9 +58,7 @@ namespace Inno
 			<< std::put_time(&l_tm, "%Y-%m-%d_%H-%M-%S")
 			<< "-" << std::setw(3) << std::setfill('0') << l_nowMs.count();
 
-		// Step 3: extension by pixel-format branch — matches
-		// STBWrapper::Save (UByte -> stbi_write_png; Float16/Float32
-		// -> stbi_write_hdr).
+		// Extension matches STBWrapper::Save dispatch: UByte->png, Float16/Float32->hdr.
 		const TexturePixelDataType l_pixelType = l_srcTextureComp->m_TextureDesc.PixelDataType;
 		const char* l_extension = (l_pixelType == TexturePixelDataType::Float16
 			|| l_pixelType == TexturePixelDataType::Float32) ? ".hdr" : ".png";
@@ -81,7 +72,6 @@ namespace Inno
 			? std::filesystem::path(l_relativePath).make_preferred().string()
 			: l_absolutePath.string();
 
-		// Step 4: GPU readback.
 		auto l_textureData = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(
 			FinalBlendPass::Get().GetRenderPassComp(), l_srcTextureComp);
 		if (l_textureData.empty())
@@ -114,42 +104,20 @@ namespace Inno
 		auto l_totalFrames = g_Engine->getInitConfig().totalFrames;
 		const bool l_isPathTracerTestMode =
 			strcmp(g_Engine->getInitConfig().testCase, "gpu_path_tracer") == 0 && m_GPUPathTracerActive;
-		// Serialize-test mode sets totalFrames=1 for the parse's auto-terminate
-		// path, but the render pipeline (FinalBlendPass, et al.) is intentionally
-		// not activated in that mode — the test's whole work is scene load +
-		// save + compare, no rendering. Skip the auto-capture trigger so
-		// ReadTextureBackToCPU doesn't run against a texture with empty GPU
-		// resources and hit the fatal-on-error log path.
+		// Serialize-test mode sets totalFrames=1 but never activates FinalBlendPass; skipping the
+		// trigger avoids ReadTextureBackToCPU on an unactivated texture (fatal log path).
 		const bool l_isSerializeTest = g_Engine->getInitConfig().serializeTest[0] != '\0';
 		const uint32_t l_triggerAtFrame = l_isSerializeTest ? 0u
 			: (l_totalFrames > 0
 				? static_cast<uint32_t>(l_totalFrames)
 				: (l_isPathTracerTestMode ? 30u : 0u));
 
-		// Unified per-frame counter. Previously lived inside the one-shot
-		// trigger's conditional; moved out so the `-dump_frames` path can
-		// share it. Runs that don't use either feature increment the
-		// counter harmlessly — nothing else reads it.
-		// TASK-213 CL B: gated on FrameManagementService's steady-state latch
-		// so the counter is steady-state-relative, not absolute. Frozen at 0
-		// until IsSteadyState() first goes true; from that frame on, advances
-		// 1-per-rendered-frame. Cross-launch the load-frame count varies
-		// (deferred-init drain timing) so the absolute counter at the dump
-		// frame would differ; the latch gates that variability out. Flap-back
-		// (TLAS rebuild after first-true, e.g. GISponza frame=16 / 30) does
-		// NOT reset the counter — once accumulation has begun, resetting would
-		// corrupt the running mean. See CL A's reviewer carry-forward.
+		// Steady-state gate makes the counter cross-launch reproducible (deferred-init drain timing
+		// varies the absolute load frame). Once accumulation begins, flap-back (TLAS rebuild after
+		// first-true) does NOT reset — resetting would corrupt the running mean.
 		if (g_Engine->Get<FrameManagementService>()->HasReachedSteadyState())
 			m_autoCaptureFrameCount++;
 
-		// Frame-sequence dump for temporal validation. When
-		// `-dump_frames START-END` is set, write `gpu_output_NNNN.png` for
-		// every frame N in [START, END] inclusive. Lets a reviewer scrub /
-		// diff consecutive frames to catch flickering, probe-spawn
-		// oscillation, or denoiser instability that a single-frame capture
-		// can't expose. Skipped when the serialize-test or an un-activated
-		// FinalBlendPass would make the readback meaningless (same guard
-		// shape as the one-shot trigger).
 		const auto& l_initCfg = g_Engine->getInitConfig();
 		if (!l_isSerializeTest
 			&& l_initCfg.dumpFramesStart >= 0
@@ -164,10 +132,6 @@ namespace Inno
 			WriteCaptureToFile(l_buf);
 		}
 
-		// Per-frame trigger: mid-session snapshot (e.g. path tracer frame 30).
-		// The structural fallback is FinalizeGPUResults, which runs at shutdown
-		// after WaitForGPUIdle and catches any case the per-frame trigger missed
-		// (e.g. the user exited before the trigger frame). TASK-42.
 		if (l_triggerAtFrame > 0 && !m_autoCaptureWritten)
 		{
 			if (m_autoCaptureFrameCount >= l_triggerAtFrame)
@@ -206,7 +170,7 @@ namespace Inno
 
 		std::vector<uint8_t> l_uint8Pixels;
 		l_uint8Pixels.reserve(l_floatPixels.size() * 4);
-		// TASK-139: FinalBlendPass already writes gamma-encoded sRGB (AGX tonemap); no extra encode here.
+		// FinalBlendPass already writes gamma-encoded sRGB (AGX tonemap); no extra encode here.
 		for (const auto& px : l_floatPixels)
 		{
 			l_uint8Pixels.push_back(uint8_t(255.99f * std::min(std::max(px.x, 0.0f), 1.0f)));
@@ -235,10 +199,7 @@ namespace Inno
 			return;
 		m_autoCaptureWritten = true;
 
-		// PathTracerReadback stats: zero/non-zero pixel split, mean, max.
-		// Originally added for path-tracer convergence diagnosis; kept here
-		// (one-shot path) rather than in the per-frame dump path so a
-		// 100-frame `-dump_frames` run doesn't spam the log.
+		// One-shot stats only — per-frame dump path would spam these on long `-dump_frames` runs.
 		auto l_srcTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
 		auto l_floatPixels = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(
 			FinalBlendPass::Get().GetRenderPassComp(), l_srcTex);

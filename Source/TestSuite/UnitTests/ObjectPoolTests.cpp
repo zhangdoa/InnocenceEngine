@@ -13,7 +13,6 @@ void TestObjectPoolBasicOperations()
 	auto l_ObjectPool = TObjectPool<uint32_t>::Create(100);
 	bool l_TestPassed = true;
 
-	// Test spawning objects
 	std::vector<uint32_t*> l_Objects;
 	for (size_t i = 0; i < 50; i++)
 	{
@@ -27,13 +26,11 @@ void TestObjectPoolBasicOperations()
 		l_Objects.push_back(l_Object);
 	}
 
-	// Test destroying objects
 	for (auto l_Object : l_Objects)
 	{
 		l_ObjectPool->Destroy(l_Object);
 	}
 
-	// Test reusing destroyed objects
 	for (size_t i = 0; i < 25; i++)
 	{
 		auto l_Object = l_ObjectPool->Spawn();
@@ -58,7 +55,6 @@ void TestObjectPoolExhaustion()
 
 	std::vector<uint32_t*> l_Objects;
 
-	// Exhaust the pool
 	for (size_t i = 0; i < 10; i++)
 	{
 		auto l_Object = l_ObjectPool->Spawn();
@@ -68,14 +64,12 @@ void TestObjectPoolExhaustion()
 		}
 	}
 
-	// Next spawn should return nullptr
 	auto l_ExtraObject = l_ObjectPool->Spawn();
 	if (l_ExtraObject != nullptr)
 	{
 		l_TestPassed = false;
 	}
 
-	// Clean up
 	for (auto l_Object : l_Objects)
 	{
 		l_ObjectPool->Destroy(l_Object);

@@ -8,7 +8,6 @@
 
 using namespace Inno;
 
-// Defined in DX12GraphicsHardwareService_Hardware_DebugCallback.cpp.
 extern void CALLBACK D3D12DebugMessageCallback(
     D3D12_MESSAGE_CATEGORY Category,
     D3D12_MESSAGE_SEVERITY Severity,
@@ -144,7 +143,8 @@ bool DX12GraphicsHardwareService::CreatePhysicalDevices()
         return false;
     }
 
-    // Enable DRED (Device Removed Extended Data) BEFORE device creation
+    // DRED settings must be enabled before device creation; the device snapshots
+    // them at construction time.
     try
     {
         ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> l_pDredSettings;
@@ -193,13 +193,12 @@ bool DX12GraphicsHardwareService::CreatePhysicalDevices()
 
         if (SUCCEEDED(l_HResult) && l_pInfoQueue)
         {
-            // CORRUPTION is always unrecoverable; break helps a debugger catch it at the site.
+            // CORRUPTION is unrecoverable; break helps a debugger catch it at the site.
             l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
-            // ERROR is handled by D3D12DebugMessageCallback below — it classifies the GBV
-            // Release-shader sentinel (TASK-37/TASK-120) and routes real errors through
-            // LogService(Error) + g_GPUErrorDetected. SetBreakOnSeverity(ERROR) would
-            // fire RaiseException on every D3D12 ERROR before the callback runs, which
-            // turns the sentinel false-positive into an unrecoverable crash.
+            // SetBreakOnSeverity(ERROR, TRUE) would RaiseException before
+            // D3D12DebugMessageCallback runs, turning Release-shader GBV
+            // false-positives into unrecoverable crashes — keep it FALSE so the
+            // callback's classifier sees them first.
             l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, FALSE);
             Log(Success, "Debug report severity has been set.");
 

@@ -14,20 +14,17 @@
 
 using namespace Inno;
 
-// TU-local error sentinel: written by the callback, read indirectly via the
-// per-context flag (m_GPUErrorDetected) — the callback also propagates onto
-// the context pointer it receives, so cross-TU code never reads this directly.
+// TU-local; the callback also writes the per-context m_GPUErrorDetected flag,
+// so cross-TU code never reads this directly.
 static std::atomic<bool> g_GPUErrorDetected{false};
 
 // GPU-based validation on Release shaders runs in "Shader Patch Mode NONE":
-// DXC has stripped the metadata GBV relies on to correlate resource state
-// and root-binding info with shader accesses. The result is a family of
-// false-positive GBV errors that only surface under -gpu_validation against
-// Release shaders. Without this classifier the callback would log them at
-// [Error] level, which LogService::SetFatalOnError (active whenever
-// InitConfig::totalFrames > 0) upgrades to a fatal exit-1, blocking every
-// -gpu_validation integration run. Real GBV errors — corruption-class, or
-// any diagnostic from non-Release builds — still fall through to [Error].
+// DXC has stripped the metadata GBV relies on, producing false-positive errors
+// that only surface under -gpu_validation against Release shaders. Without this
+// classifier, LogService::SetFatalOnError (active whenever totalFrames > 0)
+// upgrades them to fatal exit-1 and blocks every -gpu_validation integration
+// run. Real GBV errors (corruption-class, or diagnostics from non-Release
+// builds) still fall through to [Error].
 //
 // Observed categories (extend as new ones surface):
 //  1. "Incompatible texture barrier layout" with "Layout: UNKNOWN (N)"
@@ -35,8 +32,6 @@ static std::atomic<bool> g_GPUErrorDetected{false};
 //     enum value) — GBV can't recover the real layout from a patched shader.
 //  2. "Uninitialized root argument accessed" — GBV can't resolve root
 //     parameter bindings without the debug-shader metadata.
-//
-// See CLAUDE.md "Known imprecision", TASK-37, TASK-120.
 static bool IsReleaseShaderGBVFalsePositive(LPCSTR pDescription)
 {
     if (pDescription == nullptr)
@@ -103,9 +98,8 @@ static std::string CaptureCallstack(UINT framesToSkip = 1, UINT maxFrames = 10)
 }
 #endif
 
-// Defined here, forward-declared in DX12GraphicsHardwareService_Hardware_Devices.cpp.
-// Linkage is external (no `static`) so the device-creation TU can pass its address
-// to ID3D12InfoQueue1::RegisterMessageCallback.
+// External linkage so the device-creation TU can pass its address to
+// ID3D12InfoQueue1::RegisterMessageCallback.
 void CALLBACK D3D12DebugMessageCallback(
     D3D12_MESSAGE_CATEGORY Category,
     D3D12_MESSAGE_SEVERITY Severity,

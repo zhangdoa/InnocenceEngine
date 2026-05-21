@@ -34,13 +34,8 @@ namespace Inno
 	};
 }
 
-// Sibling-TU service-lifecycle macros. Hoisted out of Engine.cpp because
-// Engine_Setup.cpp / Engine_Initialize.cpp / Engine_Terminate.cpp all expand
-// these — keeping them TU-local would force per-file redefinitions.
-//
-// `m_pImpl` is a member of `Engine`, so each macro must expand inside an
-// `Engine::` member fn body. `Get<##className>()` is also a member-template
-// call — the `##` token-paste form is preserved verbatim from the original.
+// Service-lifecycle macros — must expand inside an Engine:: member fn body
+// (m_pImpl and Get<>() are both members).
 
 #define SystemSetup( className ) \
 if (!Get<##className>()->Setup(nullptr)) \

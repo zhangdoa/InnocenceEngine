@@ -7,8 +7,6 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-// --- Command recording ---
-
 bool DX12FrameManagementService::CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex)
 {
 	if (!commandList || !renderPass)
@@ -185,11 +183,8 @@ bool DX12FrameManagementService::CommandListEnd(RenderPassComponent* renderPass,
 		return false;
 	}
 
-	// TASK-155 F2 cross-queue exit: when the producer pass declares its render targets
-	// will next be read by a different queue type, drop them to COMMON at the end of the
-	// producer CL (record-order = execute-order on a single queue, so the engine-side
-	// m_CurrentState mutation matches what the GPU will see). Consumers on the receiving
-	// queue then implicitly promote from COMMON without recording a barrier of their own.
+	// Producer dropping render targets to COMMON at end-of-CL lets consumers on a
+	// different queue implicitly promote without recording their own barrier.
 	if (renderPass->m_RenderPassDesc.m_PostCLState == CrossQueueExit::ToCommon
 		&& renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{

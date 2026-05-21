@@ -18,11 +18,6 @@ bool DX12GraphicsHardwareService::ResolveGpuTimers()
 	if (l_swapChainCount == 0)
 		return false;
 
-	// 1) Resolve THIS frame's queries into THIS frame's readback buffer.
-	//    Uses dedicated per-frame allocator + list so it doesn't share state
-	//    with the engine's pass-recording allocators. The per-frame allocator
-	//    is safe to Reset because BeginFrame waited on the matching fence
-	//    for this slot before we got here.
 	const GPUEngineType l_queues[] = { GPUEngineType::Graphics, GPUEngineType::Compute, GPUEngineType::Copy };
 	for (auto l_queue : l_queues)
 	{
@@ -32,8 +27,7 @@ bool DX12GraphicsHardwareService::ResolveGpuTimers()
 		if (!l_state || !l_heap || !l_readback)
 			continue;
 
-		// Skip queues with no recorded timers this frame — avoids submitting
-		// a no-op command list and the per-queue execute cost.
+		// Skip queues with no timers recorded this frame to avoid a no-op submit.
 		bool l_anyRecorded = false;
 		for (auto& l_slot : l_state->m_Slots)
 		{
@@ -45,7 +39,6 @@ bool DX12GraphicsHardwareService::ResolveGpuTimers()
 		}
 		if (!l_anyRecorded)
 			continue;
-		// No slot has ever been fully recorded — nothing safe to resolve.
 		if (l_state->m_MaxEverFullyRecordedSlot < 0)
 			continue;
 
@@ -74,12 +67,8 @@ bool DX12GraphicsHardwareService::ResolveGpuTimers()
 			continue;
 		}
 
-		// Resolve only up through the highest slot ever fully recorded.
-		// D3D12 GBV rejects ResolveQueryData for queries that have never been
-		// performed (TASK-140 validation discovery), so we cannot blindly
-		// resolve the entire heap. Slots covered by this range whose End was
-		// not recorded *this* frame still resolve cleanly because their
-		// timestamp memory holds the previous successful pair.
+		// D3D12 GBV rejects ResolveQueryData over queries that were never performed,
+		// so bound the resolve range by the highest slot ever fully recorded.
 		const uint32_t l_resolveCount = static_cast<uint32_t>(l_state->m_MaxEverFullyRecordedSlot + 1) * GPU_TIMER_QUERIES_PER_TIMER;
 		l_list->ResolveQueryData(l_heap.Get(), D3D12_QUERY_TYPE_TIMESTAMP,
 			0, l_resolveCount,
@@ -92,8 +81,8 @@ bool DX12GraphicsHardwareService::ResolveGpuTimers()
 			l_queue_d3d->ExecuteCommandLists(1, l_listsToExec);
 	}
 
-	// 2) Read back the readback buffer from N frames ago — by then the GPU
-	//    has caught up and the data is safe to map without a sync stall.
+	// Map the readback buffer from N frames ago — by then the GPU has caught up
+	// so the data is safe to read without a sync stall.
 	if (m_TimerResolveFrameCounter >= GPU_TIMER_READBACK_FRAME_LATENCY)
 	{
 		uint32_t l_readbackFrame = static_cast<uint32_t>(
@@ -147,8 +136,6 @@ bool DX12GraphicsHardwareService::ResolveGpuTimers()
 		}
 	}
 
-	// 3) Advance frame counter and clear "recorded this frame" flags so the
-	//    next frame's Begin/End run cleanly.
 	for (auto l_queue : l_queues)
 	{
 		auto* l_state = GetTimerState(l_queue);
@@ -159,14 +146,9 @@ bool DX12GraphicsHardwareService::ResolveGpuTimers()
 	}
 	++m_TimerResolveFrameCounter;
 
-	// Periodic Verbose dump for validation / "is the timer infra wired" checks.
-	// First dump fires the moment readback becomes live (cf. FRAME_LATENCY)
-	// so short -total_frames smoke runs still get a baseline; subsequent
-	// dumps respect GPU_TIMER_LOG_PERIOD_FRAMES so long runs aren't spammed.
-	// Silent by default — opt in with -gpu_timer_log on the command line
-	// (mirrors -gpu_validation). Per-frame, per-pass log lines drown the
-	// signal at any non-default loglevel; the gate keeps the timer
-	// collection live but suppresses the readout unless explicitly asked.
+	// Opt-in periodic dump: first fires the moment readback is live (smoke runs see
+	// a baseline), then every GPU_TIMER_LOG_PERIOD_FRAMES. Per-pass-per-frame logs
+	// would drown the signal at any non-default loglevel.
 	if (g_Engine->getInitConfig().enableGpuTimerLog)
 	{
 		static constexpr uint32_t GPU_TIMER_LOG_PERIOD_FRAMES = 30;

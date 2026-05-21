@@ -62,7 +62,6 @@ D3D12_BLEND_OP DX12Helper::GetBlendOperation(BlendOperation blendOperation)
 
 bool DX12Helper::GenerateBlendStateDesc(BlendDesc blendDesc, DX12PipelineStateObject* PSO)
 {
-	// @TODO: Separate alpha and RGB blend operation
 	for (size_t i = 0; i < 8; i++)
 	{
 		PSO->m_BlendDesc.RenderTarget[i].BlendEnable = blendDesc.m_UseBlend;

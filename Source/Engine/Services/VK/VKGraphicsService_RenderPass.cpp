@@ -20,7 +20,6 @@ using namespace VKHelper;
 
 bool VKGraphicsService::ReserveFramebuffer(VKRenderPassComponent* VKRenderPassComp)
 {
-	// @TODO: reconsider how to implement multi-frame support properly
 	auto l_framebufferCount = GetSwapChainImageCount();
 	VKRenderPassComp->m_Framebuffers.reserve(l_framebufferCount);
 	for (size_t i = 0; i < l_framebufferCount; i++)
@@ -69,7 +68,6 @@ bool VKGraphicsService::CreateRenderPass(VKRenderPassComponent *VKRenderPassComp
 			l_PSO->m_AttachmentDescs.emplace_back(l_colorAttachmentDesc);
 		}
 
-		// last attachment is depth attachment
 		if (VKRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 		{
 			l_PSO->m_DepthAttachmentRef.attachment = (uint32_t)colorAttachmentCount;
@@ -200,7 +198,6 @@ bool VKGraphicsService::CreateFramebuffers(VKRenderPassComponent *VKRenderPassCo
 	auto l_outputMergerTarget = VKRenderPassComp->m_OutputMergerTarget;
 	auto l_attachmentCount = l_outputMergerTarget->m_ColorOutputs.size();
 
-	// The depth-stencil attachment
 	if (VKRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 		l_attachmentCount += 1;
 
@@ -215,7 +212,6 @@ bool VKGraphicsService::CreateFramebuffers(VKRenderPassComponent *VKRenderPassCo
 			{
 				auto l_VKTextureComp = reinterpret_cast<VKTextureComponent*>(l_outputMergerTarget->m_ColorOutputs[j]);
 
-				// @TODO: Use the image view from textures of different frames
 				l_attachments[j] = l_VKTextureComp->m_imageView;
 			}
 		}

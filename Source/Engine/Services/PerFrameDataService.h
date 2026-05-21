@@ -22,18 +22,11 @@ namespace Inno
 		GPUBufferComponent* GetCurrentFrameBuffer();
 		GPUBufferComponent* GetPreviousFrameBuffer();
 
-		// TASK-183 runtime debug-view mode. Set from any thread (DevToggleRegistry
-		// callbacks fire on the editor IPC thread); read on the render thread
-		// during UpdatePerFrameConstantBuffer. Atomic to keep the cross-thread
-		// write tear-free without taking the impl mutex.
+		// Setters callable from any thread; getters snapshot on the render thread.
+		// Atomic-backed so the cross-thread write is tear-free without the impl mutex.
 		void SetDebugViewMode(DebugViewMode in_Mode);
 		DebugViewMode GetDebugViewMode() const;
 
-		// TASK-195 runtime point-shadow bypass (A/B toggle for inline-RT shadow
-		// trace in lightPassDirectLighting.hlsl::EvaluateTiledPointLighting).
-		// Same threading shape as the debug-view mode above — atomic bool set
-		// on the editor IPC thread, snapshotted into PerFrame_CB on the render
-		// thread. Replaces the former compile-time #define DEBUG_POINT_SHADOW_BYPASS.
 		void SetPointShadowBypass(bool in_Bypass);
 		bool GetPointShadowBypass() const;
 

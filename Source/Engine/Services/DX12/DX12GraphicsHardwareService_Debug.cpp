@@ -22,15 +22,8 @@ bool DX12GraphicsHardwareService::TryLoadRenderDocAPI()
 	if (l_initConfig.captureFrame < 0)
 		return false;
 
-	// Load order:
-	// 1. Already in-process (e.g. `renderdoccmd capture -w` wrapped the launch, or
-	//    the user pre-injected the DLL). This is the common path.
-	// 2. INNO_RENDERDOC_DLL env var override — lets users with non-default installs
-	//    point us at their renderdoc.dll without recompiling.
-	// 3. System PATH lookup ("renderdoc.dll" with no explicit path).
-	// 4. The Windows default install location as a last-resort fallback.
-	// We deliberately don't ship this as a hard-coded-only path: the engine is
-	// not supposed to assume where a third-party SDK lives on the user's box.
+	// Load order: in-process → INNO_RENDERDOC_DLL env override → PATH → default
+	// install path.
 	static constexpr const char* k_DefaultInstallPath = "C:/Program Files/RenderDoc/renderdoc.dll";
 	HMODULE l_RenderDocModule = GetModuleHandleA("renderdoc.dll");
 	const char* l_LoadedFrom = nullptr;
@@ -80,10 +73,8 @@ bool DX12GraphicsHardwareService::TryLoadRenderDocAPI()
 
 	m_RenderDocAPI = l_API;
 
-	// Template is "<file-prefix>"; RenderDoc appends a frame index and `.rdc`.
-	// Derived from the working directory (`Bin/`) so the capture output follows
-	// the repo wherever it lives, and stays adjacent to the build outputs.
-	// Dir existence is not guaranteed — create it if missing.
+	// Template is a "<file-prefix>"; RenderDoc appends frame index and `.rdc`.
+	// Capture dir may not exist on first run, hence create_directories.
 	auto l_workingDir  = g_Engine->Get<IOService>()->getWorkingDirectory();
 	auto l_captureDir  = l_workingDir + "../Build/captures";
 	std::filesystem::create_directories(l_captureDir);

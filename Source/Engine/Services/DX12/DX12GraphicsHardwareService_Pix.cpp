@@ -13,15 +13,7 @@ using namespace DX12Helper;
 void DX12GraphicsHardwareService::TryLoadPIXEventRuntime()
 {
 #ifdef _WIN32
-	// Load order mirrors RenderDoc:
-	// 1. Already in-process (PIX attached / pre-injected the DLL).
-	// 2. INNO_PIX_RUNTIME_DLL env var override.
-	// 3. PATH lookup for "WinPixEventRuntime.dll".
-	// We deliberately do NOT bundle the DLL — keeping it dynamic means a
-	// run with no PIX runtime present pays zero cost, and we don't have to
-	// vendor a binary. The user-facing contract: launch the engine under
-	// PIX (programmatic capture supported via -capture_frame N) or place
-	// WinPixEventRuntime.dll on PATH to get named events on the timeline.
+	// Load order: in-process → INNO_PIX_RUNTIME_DLL env override → PATH.
 	HMODULE l_PIXModule = GetModuleHandleA("WinPixEventRuntime.dll");
 	const char* l_LoadedFrom = nullptr;
 	if (l_PIXModule)
@@ -44,9 +36,6 @@ void DX12GraphicsHardwareService::TryLoadPIXEventRuntime()
 		}
 		if (!l_PIXModule)
 		{
-			// Not an error — PIX events are an opt-in profiling aid. Log Verbose so
-			// users running under PIX can confirm-by-absence-of-warning that they
-			// got the loaded path, but normal runs stay quiet.
 			Log(Verbose, "PIX: WinPixEventRuntime.dll not found (tried pre-injected, INNO_PIX_RUNTIME_DLL, PATH). PIX event markers disabled (timer queries unaffected).");
 			return;
 		}
@@ -69,8 +58,8 @@ void DX12GraphicsHardwareService::TryLoadPIXEventRuntime()
 
 bool DX12GraphicsHardwareService::BeginGpuEvent(CommandListComponent* commandList, const char* name, uint32_t color)
 {
-	// Zero-cost when PIX runtime isn't loaded. No log here: this is a
-	// per-pass per-frame call site — flooding would drown real diagnostics.
+	// No log on the disabled path: per-pass per-frame call site, flooding would
+	// drown real diagnostics.
 	if (m_PIXBeginEventOnCommandList == nullptr)
 		return false;
 
@@ -84,9 +73,8 @@ bool DX12GraphicsHardwareService::BeginGpuEvent(CommandListComponent* commandLis
 		return false;
 	}
 
-	// Color encoding is the PIX BYN convention; the public macro uses
-	// PIX_COLOR(r,g,b) but the export takes the packed UINT64 directly.
-	// 0 means "use PIX default" — fine for an unspecified pass.
+	// PIX_COLOR(r,g,b) is the public macro; the export takes a packed UINT64.
+	// 0 selects the PIX default colour.
 	m_PIXBeginEventOnCommandList(l_commandList, static_cast<uint64_t>(color), name);
 	return true;
 }

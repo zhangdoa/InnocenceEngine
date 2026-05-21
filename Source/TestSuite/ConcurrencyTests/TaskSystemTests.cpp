@@ -8,7 +8,6 @@
 
 using namespace Inno;
 
-// Test basic task creation and execution
 void TestBasicTaskExecution()
 {
     TestRunner::StartTest("Basic Task Execution");
@@ -18,13 +17,13 @@ void TestBasicTaskExecution()
     std::atomic<int> counter{0};
     
     try {
-        // Test single task execution
         auto task = scheduler.Submit(
             ITask::Desc("TestTask", ITask::Type::Once),
             [&counter]() { counter.fetch_add(1); }
         );
-        
-        task->Activate();  // USER RESPONSIBILITY: Activate the task
+
+        // Activation is the user's responsibility — Submit alone does not run the task.
+        task->Activate();
         task->Wait();
         
         if (counter.load() != 1) {
@@ -37,7 +36,6 @@ void TestBasicTaskExecution()
     TestRunner::EndTest(testPassed);
 }
 
-// Test concurrent task submission - THIS WILL NOW WORK CORRECTLY
 void TestConcurrentTaskSubmission()
 {
     TestRunner::StartTest("Concurrent Task Submission");
@@ -45,15 +43,14 @@ void TestConcurrentTaskSubmission()
     bool testPassed = true;
     TaskScheduler scheduler;
     std::atomic<int> completedTasks{0};
-    constexpr int NUM_THREADS = 4;  // Reduced for reliability
-    constexpr int TASKS_PER_THREAD = 50;  // Reduced for reliability
-    
+    constexpr int NUM_THREADS = 4;
+    constexpr int TASKS_PER_THREAD = 50;
+
     try {
         std::vector<std::thread> submitterThreads;
         std::vector<Handle<ITask>> allTasks;
         std::mutex tasksMutex;
-        
-        // Submit tasks from multiple threads simultaneously
+
         for (int t = 0; t < NUM_THREADS; ++t) {
             submitterThreads.emplace_back([&, t]() {
                 std::vector<Handle<ITask>> localTasks;
@@ -62,30 +59,27 @@ void TestConcurrentTaskSubmission()
                     std::string taskName = "ConcurrentTask_" + std::to_string(t) + "_" + std::to_string(i);
                     auto task = scheduler.Submit(
                         ITask::Desc(taskName.c_str(), ITask::Type::Once),
-                        [&completedTasks]() { 
-                            completedTasks.fetch_add(1); 
-                            // Add small delay to increase chance of race conditions
+                        [&completedTasks]() {
+                            completedTasks.fetch_add(1);
+                            // Widens the race window the test is trying to exercise.
                             std::this_thread::sleep_for(std::chrono::microseconds(1));
                         }
                     );
-                    task->Activate();  // USER RESPONSIBILITY: Activate each task
+                    task->Activate();
                     localTasks.push_back(task);
                 }
-                
-                // Store tasks for waiting
+
                 {
                     std::lock_guard<std::mutex> lock(tasksMutex);
                     allTasks.insert(allTasks.end(), localTasks.begin(), localTasks.end());
                 }
             });
         }
-        
-        // Wait for all submissions to complete
+
         for (auto& thread : submitterThreads) {
             thread.join();
         }
-        
-        // Wait for all tasks to complete
+
         for (auto& task : allTasks) {
             task->Wait();
         }
@@ -101,7 +95,6 @@ void TestConcurrentTaskSubmission()
     TestRunner::EndTest(testPassed);
 }
 
-// Test task execution ordering and thread safety
 void TestTaskExecutionOrdering()
 {
     TestRunner::StartTest("Task Execution Ordering");
@@ -111,11 +104,11 @@ void TestTaskExecutionOrdering()
     std::atomic<int> executionOrder{0};
     std::vector<int> results;
     std::mutex resultsMutex;
-    constexpr int NUM_TASKS = 25;  // Reduced for reliability
-    
+    constexpr int NUM_TASKS = 25;
+
     try {
         std::vector<Handle<ITask>> tasks;
-        
+
         for (int i = 0; i < NUM_TASKS; ++i) {
             std::string taskName = "OrderingTask_" + std::to_string(i);
             auto task = scheduler.Submit(
@@ -128,11 +121,10 @@ void TestTaskExecutionOrdering()
                     }
                 }
             );
-            task->Activate();  // USER RESPONSIBILITY: Activate each task
+            task->Activate();
             tasks.push_back(task);
         }
-        
-        // Wait for all tasks
+
         for (auto& task : tasks) {
             task->Wait();
         }
@@ -147,7 +139,6 @@ void TestTaskExecutionOrdering()
     TestRunner::EndTest(testPassed);
 }
 
-// Test freeze/unfreeze functionality under load
 void TestFreezeUnfreezeStressTest()
 {
     TestRunner::StartTest("Freeze/Unfreeze Stress Test");
@@ -159,9 +150,8 @@ void TestFreezeUnfreezeStressTest()
         std::atomic<int> taskCounter{0};
         std::atomic<bool> shouldStop{false};
         
-        // Submit recurring tasks
         std::vector<Handle<ITask>> recurringTasks;
-        for (int i = 0; i < 5; ++i) {  // Reduced for reliability
+        for (int i = 0; i < 5; ++i) {
             std::string taskName = "RecurringTask_" + std::to_string(i);
             auto task = scheduler.Submit(
                 ITask::Desc(taskName.c_str(), ITask::Type::Recurrent),
@@ -174,36 +164,30 @@ void TestFreezeUnfreezeStressTest()
             );
             recurringTasks.push_back(task);
         }
-        
-        // Activate recurring tasks
+
         for (auto& task : recurringTasks) {
             task->Activate();
         }
-        
-        // Let tasks run briefly
+
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         int initialCount = taskCounter.load();
-        
-        // Freeze and verify tasks stop
+
         scheduler.Freeze();
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         int frozenCount = taskCounter.load();
-        
-        // Unfreeze and verify tasks resume
+
         scheduler.Unfreeze();
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         int unfrozenCount = taskCounter.load();
-        
+
         shouldStop.store(true);
-        
-        // Deactivate tasks
+
         for (auto& task : recurringTasks) {
             task->Deactivate();
         }
-        
-        // Basic verification - this test is more about not crashing
+
         if (frozenCount < initialCount || unfrozenCount < frozenCount) {
-            // Allow some flexibility in timing-based tests
+            // Timing-sensitive: allow drift; the real assertion is "no crash".
         }
     } catch (...) {
         testPassed = false;
@@ -212,7 +196,6 @@ void TestFreezeUnfreezeStressTest()
     TestRunner::EndTest(testPassed);
 }
 
-// Test task cleanup and memory management
 void TestTaskCleanupTest()
 {
     TestRunner::StartTest("Task Cleanup Test");
@@ -222,31 +205,25 @@ void TestTaskCleanupTest()
     try {
         TaskScheduler scheduler;
         
-        // Create tasks with custom cleanup tracking
         {
             std::vector<Handle<ITask>> tasks;
-            for (int i = 0; i < 50; ++i) {  // Reduced for reliability
+            for (int i = 0; i < 50; ++i) {
                 std::string taskName = "CleanupTask_" + std::to_string(i);
                 auto task = scheduler.Submit(
                     ITask::Desc(taskName.c_str(), ITask::Type::Once),
                     []() {
-                        // Task work
                         std::this_thread::sleep_for(std::chrono::microseconds(10));
                     }
                 );
                 tasks.push_back(task);
             }
-            
-            // Wait for all tasks to complete
+
             for (auto& task : tasks) {
                 task->Wait();
             }
-        } // tasks go out of scope here
-        
-        // Force some cleanup cycles
+        }
+
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        
-        // This test verifies memory cleanup works without crashes
     } catch (...) {
         testPassed = false;
     }

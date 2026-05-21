@@ -24,17 +24,11 @@ namespace Inno
 			{
 				std::memcpy(out_Result.serializeTest, l_Path.c_str(), l_Path.size() + 1);
 				Log(Success, "Serialize-determinism test on scene: ", out_Result.serializeTest);
-				out_Result.isOffscreen = true; // render pipeline not required
-				out_Result.totalFrames = 1;    // exit immediately after save
+				out_Result.isOffscreen = true;
+				out_Result.totalFrames = 1;
 			}
 		}
 
-		// Scene override for the auto-test path. `-scene <relative-path>` makes
-		// the example logic client load this scene as the initial scene and
-		// suppresses the default "switch to GISponza at frame 5" transition,
-		// so each of UnitTest / GITestBox / GISponza can be driven headlessly
-		// for the three-scene visual gate. Whitespace-terminated single token,
-		// matching the other flag-arg conventions in this parser.
 		void ParseSceneArg(const std::string& in_Arg, InitConfig& out_Result)
 		{
 			auto l_Pos = in_Arg.find("-scene ");
@@ -69,9 +63,6 @@ namespace Inno
 			if (l_Pos == std::string::npos)
 				return;
 
-			// Expect `-dump_frames START-END` (inclusive). Single token, no spaces
-			// inside the range — matches the other flag-arg conventions in this
-			// parser.
 			std::string l_Remainder = in_Arg.substr(l_Pos + 12);
 			auto l_Start = l_Remainder.find_first_not_of(' ');
 			if (l_Start == std::string::npos)
@@ -115,8 +106,6 @@ namespace Inno
 			if (l_Pos == std::string::npos)
 				return;
 
-			// Expect `-camera_orbit PITCH_DEG,RADIUS,DURATION_FRAMES`.
-			// Comma-separated triple, one whitespace-terminated token.
 			std::string l_Remainder = in_Arg.substr(l_Pos + 13);
 			auto l_Start = l_Remainder.find_first_not_of(' ');
 			if (l_Start == std::string::npos)
@@ -156,10 +145,6 @@ namespace Inno
 			}
 		}
 
-		// Bake mode (TASK-68): `-bake "path1.gltf;path2.fbx;..."` runs a one-shot
-		// asset-import-then-exit pass with no window or rendering services. The
-		// quoted argument is a `;`-separated list of paths relative to the
-		// working directory. Implies -headless.
 		void ParseBakeArg(const std::string& in_Arg, InitConfig& out_Result)
 		{
 			auto l_Pos = in_Arg.find("-bake");
@@ -167,7 +152,7 @@ namespace Inno
 				return;
 
 			auto l_Remainder = in_Arg.substr(l_Pos + 5);
-			// Accept either `-bake "a;b"` (quoted) or `-bake a;b` (unquoted, ends at next arg).
+			// Accept `-bake "a;b"` (quoted) or `-bake a;b` (unquoted, ends at next arg).
 			auto l_Start = l_Remainder.find_first_not_of(" \t");
 			if (l_Start == std::string::npos)
 				return;

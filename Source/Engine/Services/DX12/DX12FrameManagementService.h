@@ -11,11 +11,9 @@ namespace Inno
 
 		void SetDX12Context(DX12Context* ctx) { m_ctx = ctx; }
 
-		// Command list lifecycle
 		bool Open(CommandListComponent* commandList, GPUEngineType engineType, IPipelineStateObject* pipelineStateObject = nullptr) override;
 		bool Close(CommandListComponent* commandList, GPUEngineType engineType) override;
 
-		// Command recording
 		bool CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex) override;
 		bool BindRenderPassComponent(RenderPassComponent* renderPass, CommandListComponent* commandList) override;
 		bool ClearRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t index = SIZE_MAX) override;
@@ -44,7 +42,6 @@ namespace Inno
 		bool PrepareRayTracing(CommandListComponent* commandList) override;
 
 	private:
-		// Command recording helpers
 		bool BindComputeResource(CommandListComponent* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource);
 		bool BindGraphicsResource(CommandListComponent* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource);
 		bool SetDescriptorHeaps(RenderPassComponent* renderPass, CommandListComponent* commandList);
@@ -56,12 +53,10 @@ namespace Inno
 
 		DX12Context* m_ctx = nullptr;
 
-		// Swap chain
 		std::vector<ComPtr<ID3D12Resource>> m_swapChainImages;
 		DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc = {};
 		ComPtr<IDXGISwapChain4> m_swapChain = nullptr;
 
-		// Debug capture
 		bool m_BeginCapture = false;
 		bool m_EndCapture = false;
 	};

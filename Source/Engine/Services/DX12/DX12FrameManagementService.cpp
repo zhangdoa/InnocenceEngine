@@ -9,8 +9,6 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-// --- Command list lifecycle ---
-
 bool DX12FrameManagementService::Open(CommandListComponent* commandList, GPUEngineType engineType, IPipelineStateObject* pipelineStateObject)
 {
 	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
@@ -56,8 +54,6 @@ bool DX12FrameManagementService::Close(CommandListComponent* commandList, GPUEng
 	return true;
 }
 
-// --- Swap chain ---
-
 bool DX12FrameManagementService::CreateSwapChainResources()
 {
     if (!g_Engine->getInitConfig().isOffscreen)
@@ -83,7 +79,6 @@ bool DX12FrameManagementService::CreateSwapChain()
     m_swapChainDesc.SampleDesc.Count = 1;
     m_swapChainDesc.SampleDesc.Quality = 0;
 
-    // @TODO: finish this feature
     m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 
     m_swapChainDesc.Flags = 0;

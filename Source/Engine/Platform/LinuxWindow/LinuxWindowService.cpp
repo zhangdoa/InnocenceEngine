@@ -52,8 +52,6 @@ bool LinuxWindowServiceNS::Setup(IServiceConfig* systemConfig)
 		return false;
 	}
 
-	/* Show_the_window
-	--------------- */
 	auto l_windowName = g_Engine->GetApplicationName();
 	XStoreName(m_display, m_window, l_windowName.c_str());
 	XSelectInput(m_display, m_window, ExposureMask | StructureNotifyMask);
@@ -129,8 +127,3 @@ bool LinuxWindowService::AddEventCallback(WindowEventCallback* callback)
 	LinuxWindowServiceNS::m_WindowEventCallbacks.emplace(functor);
 	return true;
 }
-
-//void LinuxWindowService::swapBuffer()
-//{
-	//glXSwapBuffers(LinuxWindowServiceNS::m_display, LinuxWindowServiceNS::m_window);
-//}

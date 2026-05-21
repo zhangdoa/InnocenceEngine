@@ -11,10 +11,6 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-// ---------------------------------------------------------------------------
-// Setup / Terminate
-// ---------------------------------------------------------------------------
-
 bool DX12RenderPassResourceService::Setup(IServiceConfig* systemConfig)
 {
 	RenderPassResourceService::Setup(systemConfig);
@@ -37,10 +33,6 @@ bool DX12RenderPassResourceService::Terminate()
 	return true;
 }
 
-// ---------------------------------------------------------------------------
-// Pool allocation
-// ---------------------------------------------------------------------------
-
 IPipelineStateObject* DX12RenderPassResourceService::AddPipelineStateObject()
 {
 	return m_PSOPool->Spawn();
@@ -56,10 +48,6 @@ bool DX12RenderPassResourceService::Add(IOutputMergerTarget*& rhs)
 	rhs = m_OutputMergerTargetPool->Spawn();
 	return rhs != nullptr;
 }
-
-// ---------------------------------------------------------------------------
-// Deletion
-// ---------------------------------------------------------------------------
 
 bool DX12RenderPassResourceService::Delete(RenderPassComponent* ptr)
 {
@@ -104,18 +92,10 @@ bool DX12RenderPassResourceService::Delete(IOutputMergerTarget* rhs)
 	return true;
 }
 
-// ---------------------------------------------------------------------------
-// ReadRenderTargetSample
-// ---------------------------------------------------------------------------
-
 Vec4 DX12RenderPassResourceService::ReadRenderTargetSample(RenderPassComponent* renderPass, size_t renderTargetIndex, size_t x, size_t y)
 {
 	return Vec4();
 }
-
-// ---------------------------------------------------------------------------
-// Fence events
-// ---------------------------------------------------------------------------
 
 bool DX12RenderPassResourceService::CreateFenceEvents(RenderPassComponent* renderPass)
 {
@@ -152,10 +132,6 @@ bool DX12RenderPassResourceService::CreateFenceEvents(RenderPassComponent* rende
 
 	return result;
 }
-
-// ---------------------------------------------------------------------------
-// Output merger targets
-// ---------------------------------------------------------------------------
 
 bool DX12RenderPassResourceService::OnOutputMergerTargetsCreated(RenderPassComponent* renderPass)
 {

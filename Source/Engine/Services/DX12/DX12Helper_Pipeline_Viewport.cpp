@@ -11,7 +11,6 @@ bool DX12Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX12Pipeli
 	PSO->m_Viewport.TopLeftX = viewportDesc.m_OriginX;
 	PSO->m_Viewport.TopLeftY = viewportDesc.m_OriginY;
 
-	// Setup the scissor rect.
 	PSO->m_Scissor.left = 0;
 	PSO->m_Scissor.top = 0;
 	PSO->m_Scissor.right = (uint64_t)PSO->m_Viewport.Width;

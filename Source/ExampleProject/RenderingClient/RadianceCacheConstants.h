@@ -1,14 +1,9 @@
 #pragma once
 #include <cstdint>
 
-// C++ mirror of the radiance-cache layout constants defined in
-// Source/Shaders/HLSL/RayTracingTypes.hlsl and
-// Source/Shaders/HLSL/common/RadianceCacheCommon.hlsl. The shaders own the
-// canonical values; consumers on the C++ side (texture allocation, dispatch
-// extents) must consult this header rather than redefining the constants
-// per-pass. A drift here is what manifested as TASK-127 — the SH atlas was
-// allocated at probeGrid * 2 while the shader read at probeGrid * 3, cropping
-// GI to the upper-left ~2/3 × 2/3 of the framebuffer.
+// C++ mirror of the radiance-cache layout constants from RayTracingTypes.hlsl and
+// common/RadianceCacheCommon.hlsl. Shaders own the canonical values; drift between this
+// header and the shaders crops or oversizes the SH atlas.
 
 namespace Inno
 {

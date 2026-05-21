@@ -37,7 +37,9 @@ namespace Inno
 		void Flip()
 		{
 			while (m_ReadersCount.load(std::memory_order_acquire) != 0)
+			{
 				std::this_thread::yield();
+			}
 
 			int l_OldFront = m_FrontIndex.load(std::memory_order_relaxed);
 			m_FrontIndex.store(1 - l_OldFront, std::memory_order_release);

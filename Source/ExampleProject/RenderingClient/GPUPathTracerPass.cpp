@@ -95,12 +95,7 @@ void GPUPathTracerPass::CreateAccumulationBuffer()
 	l_texService->Initialize(m_AccumulationBuffer);
 }
 
-// Called by FrameManagementService::PostResize after the GPU has been fully
-// drained and RenderingConfigurationService holds the new resolution. The
-// accumulation buffer must be re-sized (its dimensions drive DispatchRays,
-// which already reads the current resolution each frame — a stale buffer
-// there causes out-of-bounds UAV writes). Accumulation history is scrapped
-// because sample counts across two resolutions can't be combined.
+// Accumulation history is dropped because sample counts across two resolutions can't be combined.
 void GPUPathTracerPass::OnResize()
 {
 	auto l_texService = g_Engine->Get<TextureResourceService>();
@@ -120,18 +115,8 @@ void GPUPathTracerPass::OnResize()
 	ResetAccumulation();
 }
 
-// PT screen-space denoiser GBuffer-equivalent + per-lobe radiance textures.
-// RGBA16F to mirror the rasterizer GBuffer's float16 RGBA format
-// (RenderingConfigurationService::m_DefaultRenderPassDesc) so DecodeGBuffer
-// in common/lightPassCommon.hlsl reads them with the same precision in PT
-// mode as in raster mode. Position carries 16F precision floor; same as the
-// rasterizer ships, so the format-convert pass downstream gets a contract-
-// equivalent input.
-//
-// CL-2 (TASK-77.4) collapsed the Even/Odd ping-pong introduced by TASK-77.2:
-// NRD ReBLUR owns prev-frame reconstruction via motion vectors, so the
-// engine never re-reads last frame's GBuffer-equivalent textures. 6 single-
-// buffered RGBA16F textures (RT0..RT3 + per-lobe diffuse / specular).
+// RGBA16F matches the rasterizer GBuffer precision so DecodeGBuffer reads PT-mode textures with
+// the same contract as raster mode.
 void GPUPathTracerPass::CreatePTGBufferTextures()
 {
 	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();

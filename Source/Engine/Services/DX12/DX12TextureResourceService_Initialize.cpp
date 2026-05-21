@@ -11,10 +11,6 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-// ---------------------------------------------------------------------------
-// InitializeImpl
-// ---------------------------------------------------------------------------
-
 bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void* textureData)
 {
 	texture->m_GPUResourceType = GPUResourceType::Image;
@@ -86,7 +82,6 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_globalSemaphore = g_Engine->Get<FrameManagementService>()->GetGlobalSemaphore();
 
-	// Phase 1: Upload texture data with direct command list
 	if (textureData)
 	{
 		ComPtr<ID3D12CommandAllocator> l_uploadAllocator;
@@ -145,7 +140,6 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 				l_defaultHeapBuffer, D3D12_RESOURCE_STATE_COPY_DEST, l_nextState));
 		}
 
-		// Execute and wait for upload phase
 		l_fmService->Close(&l_uploadCommandList, GPUEngineType::Graphics);
 		l_hwService->Execute(&l_uploadCommandList, GPUEngineType::Graphics);
 		l_hwService->SignalOnGPU(l_globalSemaphore, GPUEngineType::Graphics);
@@ -153,7 +147,6 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 		l_hwService->WaitOnCPU(l_uploadSemaphoreValue, GPUEngineType::Graphics);
 	}
 
-	// Create descriptor handles
 	uint32_t mipLevels = l_textureDesc.MipLevels;
 	texture->m_ReadHandles.resize(frameCount * mipLevels);
 	texture->m_WriteHandles.resize(frameCount * mipLevels);
@@ -188,7 +181,6 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 		}
 	}
 
-	// Phase 2: Generate mipmaps with compute command list (if needed)
 	if (texture->m_TextureDesc.MipLevels > 1 && textureData)
 	{
 		ComPtr<ID3D12CommandAllocator> l_mipmapAllocator;
@@ -210,7 +202,6 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 		auto l_computeSemaphoreValue = l_hwService->GetSemaphoreValue(GPUEngineType::Compute);
 		l_hwService->WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
 
-		// Phase 3: Transition texture back to initial state for rendering passes
 		ComPtr<ID3D12CommandAllocator> l_transitionAllocator;
 		if (FAILED(m_ctx->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&l_transitionAllocator))))
 		{
@@ -231,7 +222,6 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 				l_initialState));
 		}
 
-		// Execute and wait for transition
 		l_fmService->Close(&l_transitionCommandList, GPUEngineType::Graphics);
 		l_hwService->Execute(&l_transitionCommandList, GPUEngineType::Graphics);
 		l_hwService->SignalOnGPU(l_globalSemaphore, GPUEngineType::Graphics);

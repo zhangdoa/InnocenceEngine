@@ -4,13 +4,9 @@
 
 namespace Inno
 {
-	// NRD ReBLUR back-end unpack + per-lobe re-modulation, post-denoise
-	// (TASK-77.4 CL-3). Consumes the adapter's borrowed OUT_DIFF /
-	// OUT_SPEC outputs plus the engine's PT GBuffer + AccumBuffer; writes
+	// Unpacks NRD outputs + re-modulates by primary-hit albedo: writes
 	// `albedo * outDiff + outSpec` into m_Result for the tonemap input.
-	//
-	// HLSL shader: Source/Shaders/HLSL/PTNRDComposition.comp.
-	//
+	// HLSL: PTNRDComposition.comp.
 	// Bindings (HLSL register block matched 1:1 in C++ resize):
 	//   b0 (set 0, idx 0)  - PerFrameConstantBuffer
 	//   t0 (set 1, idx 0)  - PT_RT0_PositionInstanceID  (sky test)

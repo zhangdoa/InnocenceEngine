@@ -33,11 +33,8 @@ bool GPUPathTracerPass::Update()
 		m_PendingMaterialRebuild = false;
 	}
 
-	// Per-frame re-resolve of material texture indices. Texture activation
-	// can lag the scene-load callback by multiple frames (TASK-74 — Sponza
-	// curtain BaseColor textures arrived after the initial material rebuild),
-	// so each frame any newly-Activated texture gets its bindless index
-	// folded back into the material buffer.
+	// Texture activation can lag the scene-load callback by multiple frames; re-resolve each
+	// frame so newly-Activated textures' bindless indices get folded into the material buffer.
 	RefreshMaterialTextureIndices();
 
 	const bool l_ready = m_MaterialBuffer && m_MaterialBuffer->m_ObjectStatus == ObjectStatus::Activated;

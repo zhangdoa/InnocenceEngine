@@ -14,7 +14,6 @@ void TestConcurrentAtomicOperations()
 	std::atomic<uint32_t> l_FinishedTaskCount{0};
 	bool l_TestPassed = true;
 
-	// Initialize atomic buffer
 	{
 		auto l_Writer = AtomicWriter(l_AtomicBuffer);
 		*l_Writer.Get() = 0;
@@ -37,24 +36,21 @@ void TestConcurrentAtomicOperations()
 			{
 				auto l_ExecutionTime = l_RandomDelta(l_Generator);
 
-				// Read operation
 				{
 					auto l_Reader = AtomicReader(l_AtomicBuffer);
 					volatile auto l_Value = *l_Reader.Get();
-					(void)l_Value; // Suppress unused variable warning
+					(void)l_Value;
 				}
 
-				// Write operation
 				{
 					auto l_Writer = AtomicWriter(l_AtomicBuffer);
 					*l_Writer.Get() += l_ExecutionTime;
 				}
 
-				// Another read to stress test
 				{
 					auto l_Reader = AtomicReader(l_AtomicBuffer);
 					volatile auto l_Value = *l_Reader.Get();
-					(void)l_Value; // Suppress unused variable warning
+					(void)l_Value;
 				}
 			}
 
@@ -62,13 +58,11 @@ void TestConcurrentAtomicOperations()
 		});
 	}
 
-	// Wait for all threads to complete
 	for (auto& l_Thread : l_Threads)
 	{
 		l_Thread.join();
 	}
 
-	// Verify all tasks completed
 	if (l_FinishedTaskCount != l_ThreadCount)
 	{
 		l_TestPassed = false;
@@ -99,7 +93,6 @@ void TestRingBufferStress()
 			l_RingBuffer.emplace_back(static_cast<float>(j));
 		}
 
-		// Verify buffer integrity
 		if (l_RingBuffer.size() != l_BufferSize)
 		{
 			l_TestPassed = false;

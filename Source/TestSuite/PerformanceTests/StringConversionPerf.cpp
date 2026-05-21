@@ -14,13 +14,11 @@ void TestStringConversionPerformance()
 	int64_t l_Int64 = std::numeric_limits<int64_t>::max();
 	int32_t l_Int32 = std::numeric_limits<int32_t>::max();
 
-	// Test std::to_string with int32
 	auto l_Int32Time = TestTimer::MeasurePerformance(l_TestCount, [&]()
 	{
 		auto l_StringFromInt32 = std::to_string(l_Int32);
 	});
 
-	// Test std::to_string with int64
 	auto l_Int64Time = TestTimer::MeasurePerformance(l_TestCount, [&]()
 	{
 		auto l_StringFromInt64 = std::to_string(l_Int64);

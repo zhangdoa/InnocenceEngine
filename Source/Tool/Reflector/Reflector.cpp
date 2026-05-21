@@ -29,7 +29,6 @@ namespace Reflector
 		fileWriter->os << "#include \"" << fileWriter->inputFileName << "\"\n";
 		fileWriter->os << "\n";
 		fileWriter->os << "using namespace Inno;\n";
-		//writeIncludedHeaders(fileWriter);
 
 		for (size_t i = 0; i < l_clangMetadataCount; i++)
 		{
@@ -41,12 +40,6 @@ namespace Reflector
 			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_StructDecl || l_clangMetadata.cursorKind == CXCursorKind::CXCursor_ClassDecl)
 			{
 				writeSector(i, l_clangMetadata, fileWriter);
-
-				if (l_clangMetadata.validChildrenCount)
-				{
-					//writeSerializerDefi(i, l_clangMetadata, fileWriter);
-					//writeDeserializerDefi(i, l_clangMetadata, fileWriter);
-				}
 
 				writeMetadataGetter(l_clangMetadata, fileWriter);
 			}
@@ -71,7 +64,6 @@ namespace Reflector
 
 		auto translationUnit = clang_parseTranslationUnit(index, fileName.c_str(), args, 1, nullptr, 0, CXTranslationUnit_SkipFunctionBodies);
 
-		// @TODO: Reserve with a meaningful size
 		m_includedFileSourceLocation.reserve(128);
 		m_includedFileName.reserve(128);
 		m_clangMetadata.reserve(8192);

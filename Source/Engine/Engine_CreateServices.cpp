@@ -26,7 +26,6 @@
 #include "Services/EditorService.h"
 #include "Services/GraphicsHardwareService.h"
 
-// Platform-specific systems
 #if defined INNO_PLATFORM_WIN
 #include "Platform/WinWindow/WinWindowService.h"
 #endif
@@ -37,7 +36,6 @@
 #include "Platform/LinuxWindow/LinuxWindowService.h"
 #endif
 
-// Rendering servers
 #if defined INNO_RENDERER_DIRECTX
 #include "Services/DX12/DX12GraphicsHardwareService.h"
 #include "Services/DX12/DX12FrameManagementService.h"
@@ -51,18 +49,15 @@
 #include "Services/DX12/DX12RenderPassResourceService.h"
 #endif
 
-// Headless window stub
 #include "Platform/HeadlessWindow/HeadlessWindowService.h"
 
 using namespace Inno;
 
 bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 {
-	// Parse configuration first
 	std::string l_windowArguments = pScmdline;
 	m_pImpl->m_initConfig = ParseInitConfig(l_windowArguments);
 
-	// Essential Services (always created, low-level)
 	Get<Timer>();
 	Get<LogService>();
 	if (m_pImpl->m_initConfig.totalFrames > 0)
@@ -72,7 +67,6 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	Get<IOService>()->setupWorkingDirectory();
 	Get<HIDService>();
 
-	// Create WindowSystem based on headless/offscreen mode
 	if (m_pImpl->m_initConfig.isHeadless || m_pImpl->m_initConfig.isOffscreen) {
 		m_pImpl->m_WindowSystem = std::make_unique<HeadlessWindowService>();
 	} else {
@@ -90,7 +84,6 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
-	// Create other rendering-related services if not headless (but do create for offscreen)
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		Get<RenderingConfigurationService>();
 		Get<TemplateAssetService>();
@@ -106,7 +99,6 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 			Get<GUIService>();
 	}
 
-	// Create focused graphics services (DX12-specific derived classes)
 #if defined INNO_RENDERER_DIRECTX
 	if (!m_pImpl->m_initConfig.isHeadless)
 	{
@@ -150,17 +142,14 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	}
 #endif
 
-	// Platform-specific bridge setup for Mac
 #if defined INNO_PLATFORM_MAC
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		auto l_windowSystem = reinterpret_cast<MacWindowService*>(m_pImpl->m_WindowSystem.get());
 		auto l_windowSystemBridge = reinterpret_cast<MacWindowServiceBridge*>(appHook);
 		l_windowSystem->setBridge(l_windowSystemBridge);
-		// TODO: Metal bridge setup needs to go through the focused service pattern
 	}
 #endif
 
-	// Additional Systems (IService-based, with dependency resolution)
 	Get<EntityRegistry>();
 	Get<AssetService>();
 	Get<SceneService>();

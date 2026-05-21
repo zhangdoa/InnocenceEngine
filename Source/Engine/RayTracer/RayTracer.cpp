@@ -20,14 +20,15 @@ namespace RayTracerNS
 	std::uniform_real_distribution<float> m_randomDirDelta(-1.0f, 1.0f);
 
 	TextureComponent* m_TextureComp;
-	uint32_t m_outputWidth           = 0;   // resolved in Initialize()
+	uint32_t m_outputWidth           = 0;
 	uint32_t m_outputHeight          = 0;
-	uint32_t m_explicitWidth         = 0;   // set by Setup() from config
+	uint32_t m_explicitWidth         = 0;
 	uint32_t m_explicitHeight        = 0;
 	uint32_t m_downsampleDenominator = 8;
 
-	Vec4 m_sunDir   = Vec4(0.0f, 1.0f, 0.0f, 0.0f);  // toward-sun direction (world space)
-	Vec4 m_sunColor = Vec4(1.0f, 0.95f, 0.8f, 1.0f);  // warm white
+	// World-space toward-sun direction.
+	Vec4 m_sunDir   = Vec4(0.0f, 1.0f, 0.0f, 0.0f);
+	Vec4 m_sunColor = Vec4(1.0f, 0.95f, 0.8f, 1.0f);
 }
 
 bool RayTracer::Setup(IServiceConfig* systemConfig)
@@ -88,10 +89,7 @@ bool RayTracer::Terminate()
 {
 	if (RayTracerNS::m_LastTask)
 	{
-		// Block until path tracer finishes writing cpu_reference.png.
-		// FRAGILITY NOTE: TaskScheduler::Freeze/Reset must not be called before this returns.
-		// Engine::Terminate() order: LogicClient::Terminate (reaches here) → TaskScheduler::Reset.
-		// If that ordering changes, this Wait() will deadlock.
+		// Must complete before TaskScheduler::Freeze/Reset — otherwise this Wait() deadlocks.
 		RayTracerNS::m_LastTask->Wait();
 	}
 	RayTracerNS::m_ObjectStatus = ObjectStatus::Terminated;

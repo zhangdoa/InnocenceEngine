@@ -21,11 +21,8 @@ bool SunShadowRTPass::Setup(IServiceConfig* systemConfig)
 {
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SunShadowRTPass");
 
-	// PSO subobject set: raygen + closest-hit + any-hit + primary-miss +
-	// shadow-miss. The shadow path uses MissShaderIndex=1 (shadow-miss);
-	// primary miss + closest-hit + any-hit are required by the PSO but
-	// never executed (RAY_FLAG_FORCE_OPAQUE | ACCEPT_FIRST_HIT |
-	// SKIP_CLOSEST_HIT) — see SunShadowRT*.hlsl headers.
+	// Closest-hit + any-hit + primary-miss are required by the PSO but never executed —
+	// RAY_FLAG_FORCE_OPAQUE | ACCEPT_FIRST_HIT | SKIP_CLOSEST_HIT with MissShaderIndex=1.
 	m_ShaderProgramComp->m_ShaderFilePaths.m_RayGenPath     = "SunShadowRTRayGen.hlsl";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_ClosestHitPath = "SunShadowRTClosestHit.hlsl";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_AnyHitPath     = "SunShadowRTAnyHit.hlsl";
@@ -43,29 +40,19 @@ bool SunShadowRTPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	// OnResize: visibility UAV is owned, not an output-merger target, so the
-	// frame-management resize path skips it. Recreate at new resolution and
-	// scrap any in-flight TAA accumulation history (resolution change forces
-	// it anyway).
+	// Visibility UAV is owned, not an output-merger target — engine's resize path skips it.
 	m_RenderPassComp->m_OnResize = [this]() { OnResize(); };
 
 	m_ShaderStage = ShaderStage::RayGen | ShaderStage::ClosestHit | ShaderStage::AnyHit | ShaderStage::Miss;
 
-	// Binding layout (4 SRV/CBV + 1 UAV):
-	// b0 — PerFrame CB
-	// t0 — TLAS
-	// t1 — opaque RT0 (world position + validity in .w)
-	// t2 — opaque RT1 (world normal)
-	// u0 — sun-visibility UAV
+	// b0 PerFrameCB, t0 TLAS, t1 opaque RT0 (worldPos.xyz + validity.w), t2 opaque RT1 (worldNormal), u0 sun-visibility.
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(5);
 
-	// b0 — PerFrame CB (set 0, binding 0)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = m_ShaderStage;
 
-	// t0 — TLAS (set 1, binding 0)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
@@ -74,21 +61,18 @@ bool SunShadowRTPass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = m_ShaderStage;
 
-	// t1 — opaque RT0 (world position + validity, set 1, binding 1)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_TextureUsage = TextureUsage::ColorAttachment;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage = m_ShaderStage;
 
-	// t2 — opaque RT1 (world normal, set 1, binding 2)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_TextureUsage = TextureUsage::ColorAttachment;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = m_ShaderStage;
 
-	// u0 — sun-visibility UAV (set 2, binding 0)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
@@ -169,8 +153,7 @@ bool SunShadowRTPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->TryToTransitState(m_SunVisibility, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	// Compute CL: bind resources + dispatch rays + leave the visibility UAV
-	// in ReadOnly so LightPass's ReadOnly transition is a no-op.
+	// Leave visibility UAV in ReadOnly so LightPass's ReadOnly transition is a no-op.
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
 	l_fmService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
 
@@ -180,10 +163,6 @@ bool SunShadowRTPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1], 3);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_SunVisibility, 4);
 
-	// TASK-140 timer + PIX event. PIX timeline label "SunShadowRT"; cost
-	// reported via GraphicsHardwareService::GetGpuTimings(). The whole
-	// point of TASK-138 phase 1 — quote this number in the closure
-	// alongside the existing CSM+PCSS time.
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	l_hwService->BeginGpuPass(m_CommandListComp_Compute, "SunShadowRT", GPUEngineType::Compute);
 
@@ -212,9 +191,7 @@ TextureComponent* SunShadowRTPass::GetResult()
 
 bool SunShadowRTPass::RenderTargetsCreationFunc()
 {
-	// Owned visibility UAV; created in Initialize/OnResize. Nothing for the
-	// engine's RenderTargetsInitializationFunc to do — the pass has no
-	// output-merger render targets.
+	// Visibility UAV is owned and created in Initialize/OnResize; no output-merger targets here.
 	return true;
 }
 
@@ -227,9 +204,8 @@ void SunShadowRTPass::CreateVisibilityBuffer()
 	m_SunVisibility->m_TextureDesc.Sampler          = TextureSampler::Sampler2D;
 	m_SunVisibility->m_TextureDesc.Usage            = TextureUsage::ComputeOnly;
 	m_SunVisibility->m_TextureDesc.PixelDataFormat  = TexturePixelDataFormat::R;
-	// R8 unorm is enough — visibility is in [0,1] and a single jittered
-	// sample per frame quantises to ~256 levels. TAA accumulation in the
-	// downstream consumer (LightPass + post-TAA) smooths the penumbra.
+	// R8 unorm is enough — visibility ∈ [0,1] with one jittered sample/frame quantises to ~256
+	// levels; downstream TAA accumulation smooths the penumbra.
 	m_SunVisibility->m_TextureDesc.PixelDataType    = TexturePixelDataType::UByte;
 	m_SunVisibility->m_TextureDesc.Width            = l_resolution.x;
 	m_SunVisibility->m_TextureDesc.Height           = l_resolution.y;

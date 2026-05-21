@@ -5,7 +5,6 @@
 
 using namespace Inno;
 
-// Static member definitions
 size_t TestRunner::m_TotalTests = 0;
 size_t TestRunner::m_PassedTests = 0;
 size_t TestRunner::m_FailedTests = 0;
@@ -75,8 +74,7 @@ void TestRunner::ReportResults()
 	}
 	double l_SuccessRate = (double)m_PassedTests / (double)m_TotalTests * 100.0;
 	Log(Success, "Success Rate: ", l_SuccessRate, "%");
-	
-	// Cleanup
+
 	if (m_Timer)
 	{
 		delete m_Timer;
@@ -84,7 +82,6 @@ void TestRunner::ReportResults()
 	}
 }
 
-// Forward declarations for test suites (to be implemented)
 extern void RunObjectPoolUnitTests();
 extern void RunArrayUnitTests();
 extern void RunAtomicUnitTests();

@@ -42,7 +42,6 @@ bool WinWindowService::Setup(IServiceConfig* systemConfig)
 
 	if (m_InitConfig.engineMode == EngineMode::Host || m_InitConfig.engineMode == EngineMode::Sidecar)
 	{
-		// Setup the windows class with default settings.
 		auto l_windowName = g_Engine->GetApplicationName();
 
 		WNDCLASSEX wcex;
@@ -56,7 +55,6 @@ bool WinWindowService::Setup(IServiceConfig* systemConfig)
 
 		auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
 
-		// Determine the resolution of the clients desktop screen.
 		auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 		auto l_screenWidth = (int32_t)l_screenResolution.x;
 		auto l_screenHeight = (int32_t)l_screenResolution.y;
@@ -67,20 +65,18 @@ bool WinWindowService::Setup(IServiceConfig* systemConfig)
 		int actualWindowWidth  = l_rect.right - l_rect.left;
 		int actualWindowHeight = l_rect.bottom - l_rect.top;
 
-		// Center the window on screen:
 		int screenW = GetSystemMetrics(SM_CXSCREEN);
 		int screenH = GetSystemMetrics(SM_CYSCREEN);
 		int posX = (screenW - actualWindowWidth) / 2;
 		int posY = (screenH - actualWindowHeight) / 2;
 
-		// create a new window and context
 		auto l_hwnd = CreateWindow(
-			l_windowClass, reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetApplicationName(), // class name, window name
-			WS_OVERLAPPEDWINDOW, // styles
-			posX, posY, // posx, posy. If x is set to CW_USEDEFAULT y is ignored
-			actualWindowWidth, actualWindowHeight, // width, height
-			NULL, NULL, // parent window, menu
-			m_ApplicationInstance, NULL); // instance, param
+			l_windowClass, reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetApplicationName(),
+			WS_OVERLAPPEDWINDOW,
+			posX, posY,
+			actualWindowWidth, actualWindowHeight,
+			NULL, NULL,
+			m_ApplicationInstance, NULL);
 
 		m_WindowHandle = l_hwnd;
 
@@ -101,7 +97,6 @@ bool WinWindowService::Initialize()
 
 	if (m_InitConfig.engineMode == EngineMode::Host || m_InitConfig.engineMode == EngineMode::Sidecar)
 	{
-		// Bring the window up on the screen and set it as main focus.
 		ShowWindow(reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle(), true);
 		SetForegroundWindow(reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle());
 		SetFocus(reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle());
@@ -134,16 +129,13 @@ bool WinWindowService::Terminate()
 
 	if (m_InitConfig.engineMode == EngineMode::Host || m_InitConfig.engineMode == EngineMode::Sidecar)
 	{
-		// Show the mouse cursor.
 		ShowCursor(true);
 
-		// Remove the window.
 		DestroyWindow(m_WindowHandle);
 		m_WindowHandle = NULL;
 
 		Log(Warning, "Window closed.");
 
-		// Remove the application instance.
 		UnregisterClass(m_ApplicationName, m_ApplicationInstance);
 		m_ApplicationInstance = NULL;
 	}

@@ -23,17 +23,10 @@ bool DX12RenderPassResourceService::CreatePipelineStateObject(RenderPassComponen
 	}
 	else if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute && !renderPass->m_RenderPassDesc.m_UseRaytracing)
 	{
-		// Compute passes without a shader program are valid: TASK-77.4
-		// CL-3 PTNRDDenoisePass owns its own root signatures + PSOs via
-		// the NRDIntegrationAdapter (raw-D3D12 passthrough), so the
-		// engine-side render-pass shell carries no shader. Skip PSO
-		// creation in that case; downstream Bind / Dispatch helpers
-		// already gate on m_PipelineStateObject and the adapter binds
-		// its own root sig + PSO directly to the command list. The pass
-		// still needs a render-pass-component (semaphores) for the
-		// Execute / Signal / Wait fence chain in
-		// ExampleRenderingClient_ExecuteCommands.cpp, which is what the
-		// rest of InitializeRenderPass produces unchanged.
+		// A compute pass with no shader program is valid: the pass may own its
+		// own root signature + PSO via an external adapter and bind them directly
+		// to the command list. Downstream Bind / Dispatch helpers gate on
+		// m_PipelineStateObject so skipping PSO creation here is safe.
 		if (renderPass->m_ShaderProgram)
 		{
 			LoadComputeShaders(renderPass);
@@ -164,7 +157,7 @@ bool DX12RenderPassResourceService::CreateRaytracingPipelineStateObject(RenderPa
 	hitGroupDesc.IntersectionShaderImport = nullptr;
 
 	D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = {};
-	// PathTracerPayload (see common/pathTracerPayload.hlsli — single source of truth):
+	// PathTracerPayload (source of truth: common/pathTracerPayload.hlsli):
 	// hitPos(12) + normal(12) + texCoord(8) + albedo(12) + metalness(4) + roughness(4) + missed(4) + instanceID(4) = 60B.
 	// ShadowPayload: 4B. Round up to 64 for 16B alignment.
 	shaderConfig.MaxPayloadSizeInBytes = 64;
@@ -173,14 +166,10 @@ bool DX12RenderPassResourceService::CreateRaytracingPipelineStateObject(RenderPa
 	D3D12_GLOBAL_ROOT_SIGNATURE globalSig = { PSO->m_RootSignature.Get() };
 
 	D3D12_RAYTRACING_PIPELINE_CONFIG pipelineCfg = {};
-	// TASK-6.10: bumped 1 -> 2 to enable RadianceCacheClosestHit's nested
-	// shadow-ray TraceRay (sky NEE at the secondary vertex). PT bounce loop
-	// remains iterative-from-raygen so this is a no-op for that pipeline; the
-	// cap covers the radiance-cache pipeline's one level of CHS-issued shadow
-	// rays. Driver-level cost is one extra register per ray slot; trivial.
+	// Depth 2 covers the radiance-cache CHS's nested sky-NEE shadow ray. The PT
+	// bounce loop is iterative-from-raygen, so this is a no-op there.
 	pipelineCfg.MaxTraceRecursionDepth = 2;
 
-	// Up to 9 subobjects: RayGen + ClosestHit + AnyHit + Miss + (opt ShadowMiss) + HitGroup + ShaderConfig + GlobalRS + PipelineCfg
 	D3D12_STATE_SUBOBJECT subobjects[9] = {};
 	uint32_t subIdx = 0;
 
@@ -232,9 +221,9 @@ bool DX12RenderPassResourceService::CreateRaytracingPipelineStateObject(RenderPa
 
 	Log(Verbose, RenderPassComp->m_InstanceName, " Raytracing PSO has been created.");
 
-	// Shader table layout:
-	//   hasShadowMiss == false: [RayGen][Miss][HitGroup]             (3 slots)
-	//   hasShadowMiss == true:  [RayGen][Miss][ShadowMiss][HitGroup] (4 slots)
+	// Shader-table layout (must match DispatchRays packing):
+	//   no shadow miss: [RayGen][Miss][HitGroup]
+	//   with shadow miss: [RayGen][Miss][ShadowMiss][HitGroup]
 	const uint32_t numSlots = hasShadowMiss ? 4 : 3;
 	PSO->m_RaytracingMissShaderCount = hasShadowMiss ? 2u : 1u;
 	PSO->m_RaytracingHitGroupCount   = 1u;

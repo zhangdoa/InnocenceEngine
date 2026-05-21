@@ -160,7 +160,6 @@ namespace Reflector
 				}
 				else
 				{
-					//@TODO: Deal with custom type pointer
 					if (l_childClangMetaData.isPtr)
 					{
 						if (l_childClangMetaData.isPOD)
@@ -208,7 +207,6 @@ namespace Reflector
 				}
 				else
 				{
-					//@TODO: Deal with custom type pointer
 					if (l_childClangMetaData.isPtr)
 					{
 						if (l_childClangMetaData.isPOD)

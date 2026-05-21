@@ -147,13 +147,10 @@ bool RenderPassResourceService::InitializeOutputMergerTargets(RenderPassComponen
 		auto l_outputMergerTarget = renderPass->m_OutputMergerTarget;
 		const size_t l_colorOutputCount = l_outputMergerTarget->m_ColorOutputs.size();
 
-		// TASK-38: enforce pass-type ↔ usage invariant here, at the one site that
-		// actually stamps the Usage onto each output texture. A compute-only pass
-		// producing ColorAttachment textures would silently get RENDER_TARGET layout
-		// and explode at the first UAV bind (GBV-only symptom; see TASK-36). Fail
-		// loudly at declaration time instead. Only validate when output textures
-		// will inherit the pass's default RT desc — passes with custom init funcs
-		// or no color outputs bypass this copy, so the check wouldn't be meaningful.
+		// Fail at declaration time on the pass-type / RT-Usage mismatch — the silent
+		// path produces a GBV-only crash at first UAV/RTV bind. Skipped when there
+		// are no color outputs or the pass installs custom init funcs (no copy of
+		// the default desc onto the targets).
 		if (l_colorOutputCount > 0)
 		{
 			const auto l_passEngine = renderPass->m_RenderPassDesc.m_GPUEngineType;
