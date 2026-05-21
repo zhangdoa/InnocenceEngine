@@ -102,15 +102,15 @@ namespace Inno
 	void ExampleRenderingClientImpl::HandleAutoCaptureTriggers()
 	{
 		auto l_totalFrames = g_Engine->getInitConfig().totalFrames;
-		const bool l_isPathTracerTestMode =
-			strcmp(g_Engine->getInitConfig().testCase, "gpu_path_tracer") == 0 && m_GPUPathTracerActive;
+		const bool l_isPTTestMode =
+			strcmp(g_Engine->getInitConfig().testCase, "gpu_path_tracer") == 0 && m_PTActive;
 		// Serialize-test mode sets totalFrames=1 but never activates FinalBlendPass; skipping the
 		// trigger avoids ReadTextureBackToCPU on an unactivated texture (fatal log path).
 		const bool l_isSerializeTest = g_Engine->getInitConfig().serializeTest[0] != '\0';
 		const uint32_t l_triggerAtFrame = l_isSerializeTest ? 0u
 			: (l_totalFrames > 0
 				? static_cast<uint32_t>(l_totalFrames)
-				: (l_isPathTracerTestMode ? 30u : 0u));
+				: (l_isPTTestMode ? 30u : 0u));
 
 		// Steady-state gate makes the counter cross-launch reproducible (deferred-init drain timing
 		// varies the absolute load frame). Once accumulation begins, flap-back (TLAS rebuild after
@@ -221,7 +221,7 @@ namespace Inno
 				}
 			}
 			const float l_total = static_cast<float>(l_floatPixels.size());
-			Log(Success, "PathTracerReadback: total=", l_floatPixels.size(),
+			Log(Success, "PTReadback: total=", l_floatPixels.size(),
 				" zero=", l_zeroCount, " nonZero=", l_nonZeroCount,
 				" mean=(", l_sumR / l_total, ",", l_sumG / l_total, ",", l_sumB / l_total, ")",
 				" max=(", l_maxR, ",", l_maxG, ",", l_maxB, ")");

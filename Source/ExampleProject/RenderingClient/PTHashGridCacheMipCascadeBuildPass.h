@@ -33,7 +33,7 @@ namespace Inno
 	// Schedule. Compute queue. Ordered after PurgeTiles + UpdateTiles, before
 	// the path tracer. Same-queue Signal/Wait pairs match the existing cache
 	// passes; no graphics-side fence. The cache UAVs themselves live on
-	// GPUPathTracerPass; this pass borrows HashBuffer + ValueBuffer + the
+	// PTPass; this pass borrows HashBuffer + ValueBuffer + the
 	// HashGridCache CB by accessor and never owns them.
 	class PTHashGridCacheMipCascadeBuildPass : public IRenderPass
 	{

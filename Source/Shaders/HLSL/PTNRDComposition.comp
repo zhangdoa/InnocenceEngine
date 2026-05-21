@@ -7,7 +7,7 @@
 // diffuse lobe by the primary-hit albedo that the integrator demodulated
 // at the per-lobe write site (PTRaygenIntegrator.hlsl:274-275 — divide by
 // max(albedo, 0.001) carried through CL-2), and sums to the tonemap input
-// surface. The composition output replaces GPUPathTracerPass::GetResult()
+// surface. The composition output replaces PTPass::GetResult()
 // (the AccumBuffer) as the tonemap source for hit pixels; sky pixels pass
 // through verbatim from the AccumBuffer because NRD does not denoise
 // outside CommonSettings::denoisingRange and the integrator's sky branch

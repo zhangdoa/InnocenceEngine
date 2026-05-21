@@ -2,7 +2,7 @@
 #ifndef PT_RAYGEN_INTEGRATOR_HLSL
 #define PT_RAYGEN_INTEGRATOR_HLSL
 
-// Path-tracer integrator body extracted from GPUPathTracerRayGen.hlsl.
+// Path-tracer integrator body extracted from PTRayGen.hlsl.
 // Behaviour-preserving extraction — every statement (including all
 // PT_HASH_GRID_CACHE_ENABLED + PT_DENOISE_ENABLED #if blocks) is moved
 // verbatim from the pre-split inline form. The toggle=0 + toggle=1 DXIL
@@ -85,7 +85,7 @@ void RunPathIntegrator(uint2 pixel, uint2 resolution)
 
     for (uint bounce = 0; bounce < MAX_BOUNCES; bounce++)
     {
-        PathTracerPayload payload = (PathTracerPayload)0;
+        PTPayload payload = (PTPayload)0;
         payload.missed = true;
 
         TraceRay(SceneAS, RAY_FLAG_FORCE_OPAQUE, 0xFF, 0, 0, 0, ray, payload);

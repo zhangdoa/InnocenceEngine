@@ -1,0 +1,131 @@
+// shadertype=hlsl
+#include "common/SSRCCommon.hlsl"
+#include "RayTracingTypes.hlsl"
+
+struct ComputeInputType
+{
+    uint3 groupID : SV_GroupID;
+    uint3 groupThreadID : SV_GroupThreadID;
+    uint3 dispatchThreadID : SV_DispatchThreadID;
+    uint groupIndex : SV_GroupIndex;
+};
+
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+    PerFrame_CB g_Frame;
+}
+
+[[vk::binding(0, 1)]]
+Texture2D<float4> in_SSRCResults : register(t0);
+
+[[vk::binding(1, 1)]]
+Texture2D<float4> in_ProbePosition : register(t1);
+
+[[vk::binding(2, 1)]]
+Texture2D<float4> in_ProbeNormal : register(t2);
+
+[[vk::binding(3, 1)]]
+Texture2D<uint> in_ProbeMask : register(t3);
+
+[[vk::binding(0, 2)]]
+RWTexture2D<float4> out_FilteredSSRC : register(u0);
+
+// GI-1.0 Algorithm 5: horizontal pass of the separable probe-space bilateral
+// filter. Operates in PROBE space (6 taps at ±{1,2,3} probe-tiles along the
+// blur direction), not screen space — a screen-space filter with stride 1
+// samples different cells of neighbour probes that each represent different
+// world directions and was semantically wrong for the atlas layout.
+//
+// Parallax correction per tap (paper Figure 6):
+//   hit_neighbour = neighbour_pos + direction * neighbour_stored_distance
+//   reprojected_direction = normalize(hit_neighbour - current_pos)
+// Reject if dot(direction, reprojected_direction) < PROBE_FILTER_ANGLE_THRESHOLD
+// (≈ cos 3.6°) — a parallax-divergent neighbour is seeing different geometry
+// at this cell and would contaminate small-scale occlusion (paper Figure 9).
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+    uint2 screenCoord = input.dispatchThreadID.xy;
+    int2 probeCoord = int2(screenCoord / RADIANCE_CACHE_TILE_SIZE);
+    int2 gridSize = int2(uint2(g_Frame.viewportSize.xy) / RADIANCE_CACHE_TILE_SIZE);
+
+    uint currentMask = in_ProbeMask.Load(int3(probeCoord, 0));
+    if (!IsValidProbe(currentMask))
+    {
+        out_FilteredSSRC[screenCoord] = float4(0, 0, 0, 0);
+        return;
+    }
+
+    float3 currentPosWS = in_ProbePosition.Load(int3(probeCoord, 0)).xyz;
+    float3 currentNormal = normalize(in_ProbeNormal.Load(int3(probeCoord, 0)).xyz);
+
+    int2 localCoord = int2(screenCoord) % int(RADIANCE_CACHE_TILE_SIZE);
+    float2 octUV = (float2(localCoord) + 0.5) / float(RADIANCE_CACHE_TILE_SIZE);
+    float3 direction = DecodeOctahedral(octUV);
+
+    if (dot(direction, currentNormal) <= 0.0)
+    {
+        out_FilteredSSRC[screenCoord] = float4(0, 0, 0, 0);
+        return;
+    }
+
+    float4 centerSample = in_SSRCResults.Load(int3(screenCoord, 0));
+    float currentDepth = length(currentPosWS - g_Frame.camera_posWS.xyz);
+    float cellSize = max(AdaptiveCellSize(currentDepth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
+
+    float4 filteredRadiance = centerSample;
+    float totalWeight = 1.0;
+
+    // 6 taps at step ∈ { -3, -2, -1, 1, 2, 3 } probe-tiles along X.
+    // [S1.5b] FindClosestProbe substitutes a ring-neighbour probe when the
+    // requested step lands on an invalid tile — fills multi-tile
+    // disocclusion holes the spawn-redirect ([S1.5c]) can't cover in the
+    // current frame.
+    const int kRadius = 3;
+    const int kSize = kRadius * 2;
+    for (int i = 0; i < kSize; i++)
+    {
+        int step = (((i & 1) << 1) - 1) * ((i >> 1) + 1);
+        ProbeLookup neighbour = FindClosestProbe(in_ProbeMask, int2(screenCoord), int2(step, 0), gridSize);
+        if (!IsValidProbe(neighbour.packed))
+            continue;
+
+        int2 neighbourProbe = neighbour.tileCoord;
+        float3 neighbourPosWS = in_ProbePosition.Load(int3(neighbourProbe, 0)).xyz;
+        float3 neighbourNormal = normalize(in_ProbeNormal.Load(int3(neighbourProbe, 0)).xyz);
+
+        // Plane distance — reject neighbours off the current probe's shading plane.
+        if (abs(dot(neighbourPosWS - currentPosWS, currentNormal)) > cellSize)
+            continue;
+        // Hemisphere reject — neighbour surface can't radiate along `direction`.
+        if (dot(direction, neighbourNormal) <= 0.0)
+            continue;
+
+        int2 neighbourAtlasCoord = neighbourProbe * int(RADIANCE_CACHE_TILE_SIZE) + localCoord;
+        float4 neighbourSample = in_SSRCResults.Load(int3(neighbourAtlasCoord, 0));
+        float neighbourHitDistance = min(neighbourSample.a, centerSample.a);
+
+        // Parallax-corrected direction from current probe through the
+        // neighbour's stored hit point; accept only when the angular
+        // disagreement stays inside PROBE_FILTER_ANGLE_THRESHOLD.
+        float3 hitWS = neighbourPosWS + direction * neighbourHitDistance;
+        float3 reprojectedDir = normalize(hitWS - currentPosWS);
+        if (dot(direction, reprojectedDir) < PROBE_FILTER_ANGLE_THRESHOLD)
+            continue;
+
+        // Bilateral weight in linear depth (Capsaicin gi1.comp weight).
+        float neighbourDepth = length(neighbourPosWS - g_Frame.camera_posWS.xyz);
+        float depthRatio = saturate(1.0 - abs(neighbourDepth - currentDepth) / max(currentDepth, EPSILON));
+        float weight = pow(depthRatio, 8.0);
+
+        filteredRadiance += weight * float4(neighbourSample.rgb, neighbourHitDistance);
+        totalWeight += weight;
+    }
+
+    filteredRadiance /= totalWeight;
+    filteredRadiance.rgb = max(filteredRadiance.rgb, float3(0.0, 0.0, 0.0));
+
+    out_FilteredSSRC[screenCoord] = filteredRadiance;
+    DeviceMemoryBarrier();
+}

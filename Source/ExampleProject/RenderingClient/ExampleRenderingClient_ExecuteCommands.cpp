@@ -2,7 +2,7 @@
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
 #include "FinalBlendPass.h"
-#include "GPUPathTracerPass.h"
+#include "PTPass.h"
 #include "TAAPass.h"
 #include "LuminanceHistogramPass.h"
 #include "LuminanceAveragePass.h"
@@ -62,7 +62,7 @@ namespace Inno
 			}
 		}
 
-		// PurgeTiles → UpdateTiles → MipCascadeBuild → PathTracer chain;
+		// PurgeTiles → UpdateTiles → MipCascadeBuild → PT chain;
 		// per-block Waits enforce ordering. All four on Compute queue
 		// (same-queue Signal/Wait, no graphics-side fence). The PT Wait
 		// on MipCascadeBuild is reserved for future mip-aware Site-3
@@ -70,7 +70,7 @@ namespace Inno
 		// block (passes stay Terminated, gates short-circuit).
 		if constexpr (Inno::PTHashGridCache::ENABLED)
 		{
-			if (m_GPUPathTracerActive
+			if (m_PTActive
 				&& PTHashGridCachePurgeTilesPass::Get().GetStatus() == ObjectStatus::Activated
 				&& !IsBypassed(PTHashGridCachePurgeTilesPass::Get()))
 			{
@@ -80,7 +80,7 @@ namespace Inno
 				l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 			}
 
-			if (m_GPUPathTracerActive
+			if (m_PTActive
 				&& PTHashGridCacheUpdateTilesPass::Get().GetStatus() == ObjectStatus::Activated
 				&& !IsBypassed(PTHashGridCacheUpdateTilesPass::Get()))
 			{
@@ -94,7 +94,7 @@ namespace Inno
 				l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 			}
 
-			if (m_GPUPathTracerActive
+			if (m_PTActive
 				&& PTHashGridCacheMipCascadeBuildPass::Get().GetStatus() == ObjectStatus::Activated
 				&& !IsBypassed(PTHashGridCacheMipCascadeBuildPass::Get()))
 			{
@@ -110,12 +110,12 @@ namespace Inno
 			}
 		}
 
-		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(GPUPathTracerPass::Get()))
+		if (m_PTActive && PTPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(PTPass::Get()))
 		{
-			auto l_renderPass = GPUPathTracerPass::Get().GetRenderPassComp();
+			auto l_renderPass = PTPass::Get().GetRenderPassComp();
 
 			// Graphics CL: transition accumulation buffer to UAV
-			auto l_graphicsCL = GPUPathTracerPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			auto l_graphicsCL = PTPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCL, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
@@ -129,7 +129,7 @@ namespace Inno
 			// PurgeTiles + UpdateTiles waits.
 			if constexpr (Inno::PTHashGridCache::ENABLED)
 				WaitIfActive(PTHashGridCacheMipCascadeBuildPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
-			auto l_computeCL = GPUPathTracerPass::Get().GetCommandListComp(GPUEngineType::Compute);
+			auto l_computeCL = PTPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
@@ -141,7 +141,7 @@ namespace Inno
 		// dispatch — the entire block elides at compile time.
 		if constexpr (Inno::NRD::ENABLED)
 		{
-			if (m_GPUPathTracerActive
+			if (m_PTActive
 				&& PTNRDFormatConvertPass::Get().GetStatus() == ObjectStatus::Activated
 				&& !IsBypassed(PTNRDFormatConvertPass::Get()))
 			{
@@ -159,7 +159,7 @@ namespace Inno
 
 				// Wait on the path tracer — its compute dispatch wrote
 				// the GBuffer + per-lobe radiance UAVs we read as SRVs.
-				WaitIfActive(GPUPathTracerPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
+				WaitIfActive(PTPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
 
 				auto l_computeCL = PTNRDFormatConvertPass::Get().GetCommandListComp(GPUEngineType::Compute);
 				l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
@@ -175,7 +175,7 @@ namespace Inno
 			// PTNRDFormatConvertPass — its 5 output UAVs are this
 			// pass's SRV inputs (already in NON_PIXEL_SHADER_RESOURCE
 			// state from the format-convert exit transition).
-			if (m_GPUPathTracerActive
+			if (m_PTActive
 				&& PTNRDDenoisePass::Get().GetStatus() == ObjectStatus::Activated
 				&& !IsBypassed(PTNRDDenoisePass::Get()))
 			{
@@ -195,7 +195,7 @@ namespace Inno
 			// PTNRDDenoise — its OUT_DIFF / OUT_SPEC borrowed shells
 			// are this pass's SRV inputs (transitioned to
 			// NON_PIXEL_SHADER_RESOURCE at the adapter's dispatch tail).
-			if (m_GPUPathTracerActive
+			if (m_PTActive
 				&& PTNRDCompositionPass::Get().GetStatus() == ObjectStatus::Activated
 				&& !IsBypassed(PTNRDCompositionPass::Get()))
 			{
@@ -214,14 +214,14 @@ namespace Inno
 			}
 		}
 
-		if (!m_GPUPathTracerActive)
+		if (!m_PTActive)
 			ExecuteRasterizerPasses();
 
 		if (LuminanceHistogramPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(LuminanceHistogramPass::Get()))
 		{
-			if (m_GPUPathTracerActive)
+			if (m_PTActive)
 			{
-				WaitIfActive(GPUPathTracerPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+				WaitIfActive(PTPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 				// Under NRD-ENABLED the histogram source is the
 				// composition output, not the PT result. WaitIfActive
 				// is a no-op when the pass is unactivated / bypassed,
@@ -257,9 +257,9 @@ namespace Inno
 
 		if (FinalBlendPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(FinalBlendPass::Get()))
 		{
-			if (m_GPUPathTracerActive)
+			if (m_PTActive)
 			{
-				WaitIfActive(GPUPathTracerPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+				WaitIfActive(PTPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 				if constexpr (Inno::NRD::ENABLED)
 					WaitIfActive(PTNRDCompositionPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			}

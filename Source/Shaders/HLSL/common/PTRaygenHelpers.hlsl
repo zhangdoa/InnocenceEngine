@@ -2,7 +2,7 @@
 #ifndef PT_RAYGEN_HELPERS_HLSL
 #define PT_RAYGEN_HELPERS_HLSL
 
-// Pure-function helpers for GPUPathTracerRayGen.hlsl: RNG (PCG / Halton),
+// Pure-function helpers for PTRayGen.hlsl: RNG (PCG / Halton),
 // Disney/GGX BSDF math, hemisphere / GGX importance sampling, and the
 // camera-ray + sky-shading helpers. Behaviour-preserving extraction from
 // the raygen TU — every function body is unchanged from the pre-split

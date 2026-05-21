@@ -1,6 +1,6 @@
 #include "PTNRDFormatConvertPass.h"
 
-#include "GPUPathTracerPass.h"
+#include "PTPass.h"
 #include "NRDConstants.h"
 
 #include "../../Engine/Engine.h"
@@ -21,7 +21,7 @@ bool PTNRDFormatConvertPass::PrepareCommandList(IRenderingContext* renderingCont
 	auto  l_fmService   = g_Engine->Get<FrameManagementService>();
 	auto  l_resolution  = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	auto  l_perFrameCB  = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
-	auto* l_owner       = &GPUPathTracerPass::Get();
+	auto* l_owner       = &PTPass::Get();
 
 	auto* l_RT0 = l_owner->GetPTGBufferPosition();
 	auto* l_RT1 = l_owner->GetPTGBufferNormalMetalness();
@@ -36,7 +36,7 @@ bool PTNRDFormatConvertPass::PrepareCommandList(IRenderingContext* renderingCont
 	// Graphics CL: transition our five output UAVs from ReadOnly (the
 	// post-Initialize / cross-frame state) to ReadWrite for the kernel
 	// write. The six SRV inputs were already transitioned to ReadOnly by
-	// GPUPathTracerPass at the end of its compute dispatch (same-queue),
+	// PTPass at the end of its compute dispatch (same-queue),
 	// so we do not touch their state — TryToTransitState is a no-op when
 	// the source/dest match. The graphics-queue transition itself is
 	// required because tracked state may include PIXEL_SHADER_RESOURCE

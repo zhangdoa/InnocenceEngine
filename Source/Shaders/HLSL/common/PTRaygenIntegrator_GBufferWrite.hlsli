@@ -30,7 +30,7 @@
             // Motion vector at primary hit. Project hitPos with previous
             // frame's view + p_original (held in g_FramePrev), subtract
             // current screen-space position. Sign and unit (pixels) match
-            // OpaquePass.frag:124 so GIDenoise.comp's
+            // OpaquePass.frag:124 so SSRCTemporal.comp's
             // `previous_uv = uv + velocity` reprojection is reusable
             // unchanged in CL-2.
             float4 hitWS_curr  = float4(payload.hitPos, 1.0f);

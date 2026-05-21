@@ -42,8 +42,8 @@ Applies until the project moves to PowerShell 7+ or commits to UTF-8-with-BOM so
 | `StartEditorWin.ps1`         | Launch the editor binary.                                             |
 | `TestEditorComplete.ps1`     | Editor smoke test driver (orchestrates `VerifyEditorService.py` + `npm test`). |
 | `TestGIScene.ps1`            | GI scene capture / regression driver.                                 |
-| `TestGPUPathTracer.ps1`      | GPU path tracer single-scene capture.                                 |
-| `TestPathTracerThreeScenes.ps1` | Three-scene PT capture.                                            |
+| `TestPT.ps1`      | GPU path tracer single-scene capture.                                 |
+| `TestPTThreeScenes.ps1` | Three-scene PT capture.                                            |
 | `InteractiveTest.ps1`        | Interactive engine smoke test (windowed + keystroke automation). Invoked from `.vscode/tasks.json`. |
 | `VerifyEditorService.py`     | Engine IPC websocket round-trip pre-flight. Invoked by `TestEditorComplete.ps1`. |
 | `frame_variance.py`          | Ad-hoc frame-variance analysis (manual invocation; no live caller).   |
@@ -70,7 +70,7 @@ Rationale: TASK-212. Picked after Phases 1+2 settled the de-facto pattern; codif
 
 ### Test-driver taxonomy (top level)
 
-- `Test*.ps1` — engine-driver tests that launch `Main.exe` and assert on its output (`TestGIScene.ps1`, `TestGPUPathTracer.ps1`, `TestPathTracerThreeScenes.ps1`, `TestEditorComplete.ps1`).
+- `Test*.ps1` — engine-driver tests that launch `Main.exe` and assert on its output (`TestGIScene.ps1`, `TestPT.ps1`, `TestPTThreeScenes.ps1`, `TestEditorComplete.ps1`).
 - `Verify*.{ps1,py}` — engine-stack readiness pre-flights (currently `VerifyEditorService.py` only; the `.ps1` sibling was removed in Phase 1). `Verify` = "the stack is healthy enough to run a test." `Test` = "the feature behaves correctly."
 - `InteractiveTest.ps1` — user-driven smoke (windowed + keystroke automation). Distinct from headless `Test*` because the entry point is human eyes on a window, not an exit code.
 

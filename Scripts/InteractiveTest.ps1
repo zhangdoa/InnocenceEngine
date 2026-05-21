@@ -111,24 +111,24 @@ function Wait-AndCheck($seconds, $label) {
 }
 
 # --- Scenario: Toggle path tracer on/off ---
-function Run-TogglePathTracer {
+function Run-TogglePT {
     Write-Host "`n--- Toggle Path Tracer ---"
 
     Write-Host "  Pressing B (path tracer ON)"
     Send-Key $hwnd $VK_B
-    Wait-AndCheck 5 "PathTracer ON"
+    Wait-AndCheck 5 "PT ON"
 
     Write-Host "  Pressing B (path tracer OFF)"
     Send-Key $hwnd $VK_B
-    Wait-AndCheck 3 "PathTracer OFF"
+    Wait-AndCheck 3 "PT OFF"
 
     Write-Host "  Pressing B (path tracer ON again)"
     Send-Key $hwnd $VK_B
-    Wait-AndCheck 5 "PathTracer ON again"
+    Wait-AndCheck 5 "PT ON again"
 
     Write-Host "  Pressing B (path tracer OFF again)"
     Send-Key $hwnd $VK_B
-    Wait-AndCheck 3 "PathTracer OFF again"
+    Wait-AndCheck 3 "PT OFF again"
 }
 
 # --- Scenario: Scene reload ---
@@ -220,14 +220,14 @@ function Run-GISponza {
 }
 
 # --- Scenario: Path tracer + window resize (TASK-113) ---
-# Exercises GPUPathTracerPass::OnResize — the accumulation buffer must be
+# Exercises PTPass::OnResize — the accumulation buffer must be
 # recreated at the new resolution and accumulation history scrapped.
-function Run-PathTracerResize {
+function Run-PTResize {
     Write-Host "`n--- Path Tracer + Window Resize ---"
 
     Write-Host "  Pressing B (path tracer ON)"
     Send-Key $hwnd $VK_B
-    Wait-AndCheck 5 "PathTracer ON"
+    Wait-AndCheck 5 "PT ON"
 
     $flags = [Win32]::SWP_NOZORDER -bor [Win32]::SWP_NOMOVE
 
@@ -240,12 +240,12 @@ function Run-PathTracerResize {
 }
 
 # --- Scenario: Path tracer + scene reload (the dangerous combo) ---
-function Run-PathTracerWithReload {
+function Run-PTWithReload {
     Write-Host "`n--- Path Tracer + Scene Reload ---"
 
     Write-Host "  Pressing B (path tracer ON)"
     Send-Key $hwnd $VK_B
-    Wait-AndCheck 5 "PathTracer ON"
+    Wait-AndCheck 5 "PT ON"
 
     Write-Host "  Pressing R (reload scene while path tracer active)"
     Send-Key $hwnd $VK_R
@@ -253,24 +253,24 @@ function Run-PathTracerWithReload {
 
     Write-Host "  Pressing B (toggle path tracer after reload)"
     Send-Key $hwnd $VK_B
-    Wait-AndCheck 5 "PathTracer toggle post-reload"
+    Wait-AndCheck 5 "PT toggle post-reload"
 }
 
 # --- Execute scenario ---
 switch ($Scenario) {
-    "toggle_pathtracer"  { Run-TogglePathTracer }
+    "toggle_pathtracer"  { Run-TogglePT }
     "scene_reload"       { Run-SceneReload }
     "camera_movement"    { Run-CameraMovement }
-    "pathtracer_reload"  { Run-PathTracerWithReload }
-    "pathtracer_resize"  { Run-PathTracerResize }
+    "pathtracer_reload"  { Run-PTWithReload }
+    "pathtracer_resize"  { Run-PTResize }
     "gi_sponza"          { Run-GISponza }
     "reimport"           { Run-ReImport }
     "full" {
         Run-CameraMovement
-        Run-TogglePathTracer
+        Run-TogglePT
         Run-SceneReload
-        Run-PathTracerWithReload
-        Run-PathTracerResize
+        Run-PTWithReload
+        Run-PTResize
     }
     default {
         Write-Host "Unknown scenario: $Scenario"

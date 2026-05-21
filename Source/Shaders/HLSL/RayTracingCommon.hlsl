@@ -23,4 +23,4 @@ Texture2D in_opaquePassRT3 : register(t4); // Motion Vector (RG), AO (B), Transp
 Texture2D in_lightPassRT0 : register(t5); // Direct Illumination (RGB)
 
 // RW texture to store computed radiance for each cache entry.
-RWTexture2D<float4> RadianceCacheResults : register(u0);
+RWTexture2D<float4> SSRCResults : register(u0);

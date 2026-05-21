@@ -1,3 +1,0 @@
-// shadertype=hlsl
-#define BLUR_DIRECTION int2(1, 0)
-#include "common/GIFilterCommon.hlsl"

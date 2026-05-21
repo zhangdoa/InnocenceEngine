@@ -5,14 +5,14 @@
 #include "OpaqueCullingPass.h"
 #include "OpaquePass.h"
 #include "SSAOPass.h"
-#include "RadianceCacheReprojectionPass.h"
-#include "RadianceCacheRaytracingPass.h"
-#include "RadianceCacheFilterHorizontalPass.h"
-#include "RadianceCacheFilterVerticalPass.h"
-#include "RadianceCacheIntegrationPass.h"
-#include "GIDenoisePass.h"
-#include "GIFilterHorizontalPass.h"
-#include "GIFilterVerticalPass.h"
+#include "SSRCReprojectionPass.h"
+#include "SSRCRaytracingPass.h"
+#include "SSRCFilterHorizontalPass.h"
+#include "SSRCFilterVerticalPass.h"
+#include "SSRCIntegrationPass.h"
+#include "SSRCTemporalPass.h"
+#include "SSRCSpatialHorizontalPass.h"
+#include "SSRCSpatialVerticalPass.h"
 #include "TiledFrustumGenerationPass.h"
 #include "LightCullingPass.h"
 #include "LightPass.h"
@@ -22,7 +22,7 @@
 #include "LuminanceHistogramPass.h"
 #include "LuminanceAveragePass.h"
 #include "FinalBlendPass.h"
-#include "GPUPathTracerPass.h"
+#include "PTPass.h"
 #include "PTHashGridCachePurgeTilesPass.h"
 #include "PTHashGridCacheUpdateTilesPass.h"
 #include "PTHashGridCacheMipCascadeBuildPass.h"
@@ -47,14 +47,14 @@ namespace Inno
 
 	bool ExampleRenderingClientImpl::PrepareCommands()
 	{
-		if (m_GPUPathTracerDesired != m_GPUPathTracerActive)
+		if (m_PTDesired != m_PTActive)
 		{
-			m_GPUPathTracerActive = m_GPUPathTracerDesired;
-			if (m_GPUPathTracerActive)
-				GPUPathTracerPass::Get().ResetAccumulation();
+			m_PTActive = m_PTDesired;
+			if (m_PTActive)
+				PTPass::Get().ResetAccumulation();
 		}
 
-		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
+		if (m_PTActive && PTPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			// PurgeTiles must precede UpdateTiles so the path tracer's InsertCell can re-claim
 			// the freed slots this frame; UpdateTiles must precede the path tracer so mip 0 reads
@@ -66,7 +66,7 @@ namespace Inno
 				DispatchOrBypass(PTHashGridCacheUpdateTilesPass::Get());
 				DispatchOrBypass(PTHashGridCacheMipCascadeBuildPass::Get());
 			}
-			DispatchOrBypass(GPUPathTracerPass::Get());
+			DispatchOrBypass(PTPass::Get());
 			if constexpr (Inno::NRD::ENABLED)
 			{
 				DispatchOrBypass(PTNRDFormatConvertPass::Get());
@@ -78,7 +78,7 @@ namespace Inno
 		m_Canvas = FinalBlendPass::Get().GetResult();
 		m_CanvasOwner = FinalBlendPass::Get().GetRenderPassComp();
 
-		if (!m_GPUPathTracerActive)
+		if (!m_PTActive)
 		{
 			if (m_ExecuteOneShotCommands)
 			{
@@ -92,14 +92,14 @@ namespace Inno
 			DispatchOrBypass(OpaqueCullingPass::Get());
 			DispatchOrBypass(OpaquePass::Get());
 
-			DispatchOrBypass(RadianceCacheReprojectionPass::Get());
-			DispatchOrBypass(RadianceCacheRaytracingPass::Get());
-			DispatchOrBypass(RadianceCacheFilterHorizontalPass::Get());
-			DispatchOrBypass(RadianceCacheFilterVerticalPass::Get());
-			DispatchOrBypass(RadianceCacheIntegrationPass::Get());
-			DispatchOrBypass(GIDenoisePass::Get());
-			DispatchOrBypass(GIFilterHorizontalPass::Get());
-			DispatchOrBypass(GIFilterVerticalPass::Get());
+			DispatchOrBypass(SSRCReprojectionPass::Get());
+			DispatchOrBypass(SSRCRaytracingPass::Get());
+			DispatchOrBypass(SSRCFilterHorizontalPass::Get());
+			DispatchOrBypass(SSRCFilterVerticalPass::Get());
+			DispatchOrBypass(SSRCIntegrationPass::Get());
+			DispatchOrBypass(SSRCTemporalPass::Get());
+			DispatchOrBypass(SSRCSpatialHorizontalPass::Get());
+			DispatchOrBypass(SSRCSpatialVerticalPass::Get());
 
 			DispatchOrBypass(SSAOPass::Get());
 
@@ -121,11 +121,11 @@ namespace Inno
 		}
 
 		GPUResourceComponent* l_hdrSource = nullptr;
-		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
+		if (m_PTActive && PTPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			// Fall back to the raw AccumBuffer when composition is not yet activated, so the
 			// visible output never goes black on a transient state (first-frame / adapter-init).
-			l_hdrSource = GPUPathTracerPass::Get().GetResult();
+			l_hdrSource = PTPass::Get().GetResult();
 			if constexpr (Inno::NRD::ENABLED)
 			{
 				if (PTNRDCompositionPass::Get().GetStatus() == ObjectStatus::Activated

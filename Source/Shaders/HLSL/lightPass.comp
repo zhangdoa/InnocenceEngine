@@ -76,7 +76,7 @@ Texture2D in_SSAO : register(t6);
 Texture2D<uint2> in_LightGrid : register(t8);
 [[vk::binding(9, 1)]]
 StructuredBuffer<uint> in_LightIndexList : register(t9);
-// Denoised per-pixel indirect irradiance produced by GIDenoisePass.
+// Denoised per-pixel indirect irradiance produced by SSRCTemporalPass.
 // rgb = irradiance, a = linear depth (LightPass only consumes rgb).
 [[vk::binding(10, 1)]]
 Texture2D<float4> in_GIIrradiance : register(t10);

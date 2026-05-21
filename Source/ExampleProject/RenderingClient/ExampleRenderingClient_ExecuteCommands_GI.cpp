@@ -1,13 +1,13 @@
 #include "ExampleRenderingClient_Internal.h"
 #include "OpaquePass.h"
-#include "RadianceCacheReprojectionPass.h"
-#include "RadianceCacheRaytracingPass.h"
-#include "RadianceCacheFilterHorizontalPass.h"
-#include "RadianceCacheFilterVerticalPass.h"
-#include "RadianceCacheIntegrationPass.h"
-#include "GIDenoisePass.h"
-#include "GIFilterHorizontalPass.h"
-#include "GIFilterVerticalPass.h"
+#include "SSRCReprojectionPass.h"
+#include "SSRCRaytracingPass.h"
+#include "SSRCFilterHorizontalPass.h"
+#include "SSRCFilterVerticalPass.h"
+#include "SSRCIntegrationPass.h"
+#include "SSRCTemporalPass.h"
+#include "SSRCSpatialHorizontalPass.h"
+#include "SSRCSpatialVerticalPass.h"
 
 #include "../../Engine/Services/GraphicsHardwareService.h"
 
@@ -23,125 +23,125 @@ namespace Inno
 	{
 		auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
-		if (RadianceCacheReprojectionPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(RadianceCacheReprojectionPass::Get()))
+		if (SSRCReprojectionPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(SSRCReprojectionPass::Get()))
 		{
 			WaitIfActive(OpaquePass::Get(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 
-			auto l_renderPass = RadianceCacheReprojectionPass::Get().GetRenderPassComp();
+			auto l_renderPass = SSRCReprojectionPass::Get().GetRenderPassComp();
 
-			auto l_graphicsCommandList = RadianceCacheReprojectionPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			auto l_graphicsCommandList = SSRCReprojectionPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-			auto l_computeCommandList = RadianceCacheReprojectionPass::Get().GetCommandListComp(GPUEngineType::Compute);
+			auto l_computeCommandList = SSRCReprojectionPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		if (RadianceCacheRaytracingPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(RadianceCacheRaytracingPass::Get()))
+		if (SSRCRaytracingPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(SSRCRaytracingPass::Get()))
 		{
-			WaitIfActive(RadianceCacheReprojectionPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			WaitIfActive(SSRCReprojectionPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
-			auto l_renderPass = RadianceCacheRaytracingPass::Get().GetRenderPassComp();
+			auto l_renderPass = SSRCRaytracingPass::Get().GetRenderPassComp();
 
-			auto l_graphicsCommandList = RadianceCacheRaytracingPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			auto l_graphicsCommandList = SSRCRaytracingPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			WaitIfActive(OpaquePass::Get(), GPUEngineType::Graphics, GPUEngineType::Graphics);
-			auto l_computeCommandList = RadianceCacheRaytracingPass::Get().GetCommandListComp(GPUEngineType::Compute);
+			auto l_computeCommandList = SSRCRaytracingPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		if (RadianceCacheFilterHorizontalPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(RadianceCacheFilterHorizontalPass::Get()))
+		if (SSRCFilterHorizontalPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(SSRCFilterHorizontalPass::Get()))
 		{
-			WaitIfActive(RadianceCacheRaytracingPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			WaitIfActive(SSRCRaytracingPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
-			auto l_renderPass = RadianceCacheFilterHorizontalPass::Get().GetRenderPassComp();
+			auto l_renderPass = SSRCFilterHorizontalPass::Get().GetRenderPassComp();
 
-			auto l_graphicsCommandList = RadianceCacheFilterHorizontalPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			auto l_graphicsCommandList = SSRCFilterHorizontalPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-			auto l_computeCommandList = RadianceCacheFilterHorizontalPass::Get().GetCommandListComp(GPUEngineType::Compute);
+			auto l_computeCommandList = SSRCFilterHorizontalPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		if (RadianceCacheFilterVerticalPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(RadianceCacheFilterVerticalPass::Get()))
+		if (SSRCFilterVerticalPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(SSRCFilterVerticalPass::Get()))
 		{
-			WaitIfActive(RadianceCacheFilterHorizontalPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			WaitIfActive(SSRCFilterHorizontalPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
-			auto l_renderPass = RadianceCacheFilterVerticalPass::Get().GetRenderPassComp();
+			auto l_renderPass = SSRCFilterVerticalPass::Get().GetRenderPassComp();
 
-			auto l_graphicsCommandList = RadianceCacheFilterVerticalPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			auto l_graphicsCommandList = SSRCFilterVerticalPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-			auto l_computeCommandList = RadianceCacheFilterVerticalPass::Get().GetCommandListComp(GPUEngineType::Compute);
+			auto l_computeCommandList = SSRCFilterVerticalPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		if (RadianceCacheIntegrationPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(RadianceCacheIntegrationPass::Get()))
+		if (SSRCIntegrationPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(SSRCIntegrationPass::Get()))
 		{
-			WaitIfActive(RadianceCacheFilterVerticalPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			WaitIfActive(SSRCFilterVerticalPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
-			auto l_renderPass = RadianceCacheIntegrationPass::Get().GetRenderPassComp();
+			auto l_renderPass = SSRCIntegrationPass::Get().GetRenderPassComp();
 
-			auto l_graphicsCommandList = RadianceCacheIntegrationPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			auto l_graphicsCommandList = SSRCIntegrationPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-			auto l_computeCommandList = RadianceCacheIntegrationPass::Get().GetCommandListComp(GPUEngineType::Compute);
+			auto l_computeCommandList = SSRCIntegrationPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		if (GIDenoisePass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(GIDenoisePass::Get()))
+		if (SSRCTemporalPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(SSRCTemporalPass::Get()))
 		{
 			WaitIfActive(OpaquePass::Get(), GPUEngineType::Graphics, GPUEngineType::Graphics);
-			WaitIfActive(RadianceCacheIntegrationPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			WaitIfActive(SSRCIntegrationPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
-			auto l_renderPass = GIDenoisePass::Get().GetRenderPassComp();
+			auto l_renderPass = SSRCTemporalPass::Get().GetRenderPassComp();
 
-			auto l_graphicsCommandList = GIDenoisePass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			auto l_graphicsCommandList = SSRCTemporalPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-			auto l_computeCommandList = GIDenoisePass::Get().GetCommandListComp(GPUEngineType::Compute);
+			auto l_computeCommandList = SSRCTemporalPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		if (GIFilterHorizontalPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(GIFilterHorizontalPass::Get()))
+		if (SSRCSpatialHorizontalPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(SSRCSpatialHorizontalPass::Get()))
 		{
-			WaitIfActive(GIDenoisePass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			WaitIfActive(SSRCTemporalPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
-			auto l_renderPass = GIFilterHorizontalPass::Get().GetRenderPassComp();
-			l_hwService->Execute(GIFilterHorizontalPass::Get().GetCommandListComp(GPUEngineType::Graphics), GPUEngineType::Graphics);
+			auto l_renderPass = SSRCSpatialHorizontalPass::Get().GetRenderPassComp();
+			l_hwService->Execute(SSRCSpatialHorizontalPass::Get().GetCommandListComp(GPUEngineType::Graphics), GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
-			l_hwService->Execute(GIFilterHorizontalPass::Get().GetCommandListComp(GPUEngineType::Compute), GPUEngineType::Compute);
+			l_hwService->Execute(SSRCSpatialHorizontalPass::Get().GetCommandListComp(GPUEngineType::Compute), GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		if (GIFilterVerticalPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(GIFilterVerticalPass::Get()))
+		if (SSRCSpatialVerticalPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(SSRCSpatialVerticalPass::Get()))
 		{
-			WaitIfActive(GIFilterHorizontalPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			WaitIfActive(SSRCSpatialHorizontalPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
-			auto l_renderPass = GIFilterVerticalPass::Get().GetRenderPassComp();
-			l_hwService->Execute(GIFilterVerticalPass::Get().GetCommandListComp(GPUEngineType::Graphics), GPUEngineType::Graphics);
+			auto l_renderPass = SSRCSpatialVerticalPass::Get().GetRenderPassComp();
+			l_hwService->Execute(SSRCSpatialVerticalPass::Get().GetCommandListComp(GPUEngineType::Graphics), GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
-			l_hwService->Execute(GIFilterVerticalPass::Get().GetCommandListComp(GPUEngineType::Compute), GPUEngineType::Compute);
+			l_hwService->Execute(SSRCSpatialVerticalPass::Get().GetCommandListComp(GPUEngineType::Compute), GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 	}

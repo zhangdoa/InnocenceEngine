@@ -10,7 +10,7 @@
 #include "SSAOPass.h"
 #include "SunShadowRTPass.h"
 #include "LightCullingPass.h"
-#include "GIFilterVerticalPass.h"
+#include "SSRCSpatialVerticalPass.h"
 #include "VolumetricPass.h"
 
 #include "../../Engine/Engine.h"
@@ -298,7 +298,7 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated)
 		l_fmService->TryToTransitState(SunShadowRTPass::Get().GetResult(), m_CommandListComp_Graphics, Accessibility::ReadWrite, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(LightCullingPass::Get().GetLightGrid()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
-	l_fmService->TryToTransitState(GIFilterVerticalPass::Get().GetResult(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_fmService->TryToTransitState(SSRCSpatialVerticalPass::Get().GetResult(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
@@ -319,7 +319,7 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 12);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 13);
 
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, GIFilterVerticalPass::Get().GetResult(), 14);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, SSRCSpatialVerticalPass::Get().GetResult(), 14);
 	// l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, VolumetricPass::GetRayMarchingResult(), 15);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_LuminanceResult, 16);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_IlluminanceResult, 17);

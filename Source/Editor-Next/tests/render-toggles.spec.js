@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 // The engine publishes DevToggleRegistry over IPC and the panel renders
-// a row per toggle / action. GPUPathTracer + Screenshot are the two
+// a row per toggle / action. PT + Screenshot are the two
 // entries the example rendering client always registers.
 test('render toggles pane lists engine-registered toggles + actions', async () => {
   test.setTimeout(180000);
@@ -31,9 +31,9 @@ test('render toggles pane lists engine-registered toggles + actions', async () =
       timeout: 15000,
     });
 
-    // Engine registers GPUPathTracer (toggle) and Screenshot (action) in
+    // Engine registers PT (toggle) and Screenshot (action) in
     // ExampleRenderingClient::Setup. Both must show up in the panel.
-    await window.waitForSelector('[data-test="toggle-row-GPUPathTracer"]', { timeout: 10000 });
+    await window.waitForSelector('[data-test="toggle-row-PT"]', { timeout: 10000 });
     await window.waitForSelector('[data-test="action-btn-Screenshot"]', { timeout: 10000 });
 
     // Toggle the path tracer on, then verify the ENGINE's own getter
@@ -44,18 +44,18 @@ test('render toggles pane lists engine-registered toggles + actions', async () =
     // __innoStores.devToggle after that round-trip is genuinely server
     // truth.
     await window.waitForFunction(() => !!window.__innoStores?.devToggle, { timeout: 5000 });
-    const ptSwitch = window.locator('[data-test="toggle-switch-GPUPathTracer"]');
+    const ptSwitch = window.locator('[data-test="toggle-switch-PT"]');
     await ptSwitch.click();
     await expect(ptSwitch).toHaveAttribute('aria-checked', 'true');
 
     // Force a fresh LIST_DEV_TOGGLES round-trip and assert the value
-    // the engine reports for GPUPathTracer is true.
+    // the engine reports for PT is true.
     const reported = await window.evaluate(async () => {
       await window.__innoStores.devToggle.refresh();
-      const t = window.__innoStores.devToggle.toggles.find((x) => x.name === 'GPUPathTracer');
+      const t = window.__innoStores.devToggle.toggles.find((x) => x.name === 'PT');
       return t ? t.value : null;
     });
-    expect(reported, 'engine-reported GPUPathTracer state after set').toBe(true);
+    expect(reported, 'engine-reported PT state after set').toBe(true);
 
     // Screenshot action: the optimistic "Screenshot triggered" toast is
     // gone — the panel now waits for the engine's SCREENSHOT_SAVED event

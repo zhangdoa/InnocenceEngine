@@ -34,7 +34,7 @@
 // Motion-vector convention matches OpaquePass.frag:124:
 //   motionVec_px = screenPos_prev - screenPos_curr        // pixels
 // i.e. it points FROM the current pixel TO where it was last frame.
-// GIDenoise.comp:184-194 reprojects with `previous_uv = uv + velocity`
+// SSRCTemporal.comp:184-194 reprojects with `previous_uv = uv + velocity`
 // where `velocity = motionPx / viewportSize`; the denoiser passes added
 // in CL-2 inherit the same sign and unit so the engine-side history
 // reprojection helpers are reusable unchanged.

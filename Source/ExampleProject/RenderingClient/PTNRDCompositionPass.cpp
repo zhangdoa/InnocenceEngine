@@ -1,6 +1,6 @@
 #include "PTNRDCompositionPass.h"
 
-#include "GPUPathTracerPass.h"
+#include "PTPass.h"
 #include "PTNRDDenoisePass.h"
 #include "NRDConstants.h"
 
@@ -103,7 +103,7 @@ bool PTNRDCompositionPass::Update()
 	{
 		return t && t->m_ObjectStatus == ObjectStatus::Activated;
 	};
-	auto* l_pt   = &GPUPathTracerPass::Get();
+	auto* l_pt   = &PTPass::Get();
 	auto* l_nrd  = &PTNRDDenoisePass::Get();
 	const bool l_inputsReady =
 		l_isActivated(l_pt->GetPTGBufferPosition()) &&

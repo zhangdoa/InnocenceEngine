@@ -4,7 +4,7 @@
 namespace Inno
 {
 	// PT hash-grid cache running-mean resolve. Consumes the per-cell scratch
-	// sums atomically accumulated by GPUPathTracerRayGen on the previous
+	// sums atomically accumulated by PTRayGen on the previous
 	// frame's bounce loop, blends them into the persistent ValueBuffer /
 	// ValueIndirectBuffer with sample-count-capped running-mean updates, and
 	// zeroes the scratch so the next frame's writes accumulate fresh.
@@ -23,9 +23,9 @@ namespace Inno
 	// dispatch — the pass is structurally inert under the bypass invariant.
 	//
 	// Schedule: dispatched on the Compute queue every frame, ordered before
-	// GPUPathTracerPass so the path tracer reads ValueBuffer with the
+	// PTPass so the path tracer reads ValueBuffer with the
 	// most-recent resolved running mean and writes into the now-empty
-	// scratch. The cache UAVs themselves live on GPUPathTracerPass; this
+	// scratch. The cache UAVs themselves live on PTPass; this
 	// pass borrows them by name through the singleton, no buffer ownership
 	// crosses the boundary.
 	class PTHashGridCacheUpdateTilesPass : public IRenderPass

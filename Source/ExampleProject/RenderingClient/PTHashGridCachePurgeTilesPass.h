@@ -21,11 +21,11 @@ namespace Inno
 	//
 	// Schedule: dispatched on the Compute queue every frame, ordered before
 	// PTHashGridCacheUpdateTilesPass. The order PurgeTiles → UpdateTiles →
-	// GPUPathTracer matches Capsaicin's pipeline: PurgeTiles frees stale
+	// PT matches Capsaicin's pipeline: PurgeTiles frees stale
 	// slots first so UpdateTiles' HashBuffer == 0 early-out skips them
 	// (avoiding a running-mean merge against a doomed tile) and the path
 	// tracer's InsertCell can claim the freed slot the same frame. The
-	// cache UAVs themselves live on GPUPathTracerPass; this pass borrows
+	// cache UAVs themselves live on PTPass; this pass borrows
 	// HashBuffer + DecayTileBuffer + the FrameCount CB by accessor and
 	// never owns them.
 	class PTHashGridCachePurgeTilesPass : public IRenderPass

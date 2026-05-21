@@ -9,7 +9,7 @@
 //
 // Size is mirrored by MaxPayloadSizeInBytes in DX12RenderPassResourceService.cpp
 // (currently 64). If you add a field, check both.
-struct PathTracerPayload
+struct PTPayload
 {
     float3 hitPos;     // 12B
     float3 normal;     // 12B

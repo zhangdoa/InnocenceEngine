@@ -58,7 +58,7 @@ bool PTNRDDenoisePass::PrepareCommandList(IRenderingContext* renderingContext)
 		}
 	}
 
-	// Camera-jump detection mirrors GPUPathTracerPass::Update — view matrix
+	// Camera-jump detection mirrors PTPass::Update — view matrix
 	// changed means reset accumulation.
 	const bool l_resetAccum = !m_HasPrevMatrices ||
 	                          std::memcmp(&l_perFrameCB.v, &m_PrevWorldToView, sizeof(Math::Mat4)) != 0;

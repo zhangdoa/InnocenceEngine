@@ -1,0 +1,3 @@
+// shadertype=hlsl
+#define BLUR_DIRECTION int2(0, 1)
+#include "common/SSRCSpatialCommon.hlsl"

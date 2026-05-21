@@ -24,11 +24,11 @@ Texture2D in_opaquePassRT3 : register(t4); // Motion Vector (RG), AO (B), Transp
 Texture2D in_LightPassOutgoingLuminance : register(t5);
 
 [[vk::binding(6, 1)]]
-Texture2D<float4> in_RadianceCacheResults_Prev : register(t6); // Previous frame's radiance cache
+Texture2D<float4> in_SSRCResults_Prev : register(t6); // Previous frame's radiance cache
 
 // RW texture to store computed radiance for each cache entry.
 [[vk::binding(0, 2)]]
-RWTexture2D<float4> in_RadianceCacheResults : register(u0);
+RWTexture2D<float4> in_SSRCResults : register(u0);
 
 [[vk::binding(2, 2)]]
 RWTexture2D<float4> in_ProbePosition : register(u2);

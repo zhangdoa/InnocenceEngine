@@ -1,7 +1,7 @@
 // shadertype=hlsl
 // PT hash-grid radiance cache — running-mean resolve. For each claimed
 // tile, reads the per-cell atomic-sum scratch deltas accumulated by
-// GPUPathTracerRayGen during the previous frame's bounce loop and merges
+// PTRayGen during the previous frame's bounce loop and merges
 // them into the persistent estimator with a sample-count-capped running
 // mean, then clears the scratch so next frame's writes accumulate fresh.
 //
@@ -21,7 +21,7 @@
 // PTHashGridCacheMipCascadeBuild.comp. PurgeTiles (50-frame decay) runs
 // before this pass on the same Compute queue.
 //
-// The write site in GPUPathTracerRayGen multiplies radiance by 1e3 and
+// The write site in PTRayGen multiplies radiance by 1e3 and
 // rounds to uint before InterlockedAdd; this kernel divides by the same
 // constant on read (RecoverRadiance). The persistent buffer stores
 // radiance × sample_count in fp16 (PackRadiance / UnpackRadiance) — the

@@ -59,7 +59,7 @@ static const uint kPTHashGridCache_InvalidId = 0xFFFFFFFFu;
 
 // Per-frame constant buffer mirroring Source/ExampleProject/RenderingClient/
 // HashGridCacheConstants.h::HashGridCacheConstants. Values are uploaded by
-// GPUPathTracerPass; the size knobs here are kept as compile-time defines so
+// PTPass; the size knobs here are kept as compile-time defines so
 // the cbuffer can be bound only when PT_HASH_GRID_CACHE_ENABLED is set.
 struct PTHashGridCacheCB_t
 {

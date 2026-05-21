@@ -5,14 +5,14 @@
 #include "OpaqueCullingPass.h"
 #include "OpaquePass.h"
 #include "SSAOPass.h"
-#include "RadianceCacheReprojectionPass.h"
-#include "RadianceCacheRaytracingPass.h"
-#include "RadianceCacheFilterHorizontalPass.h"
-#include "RadianceCacheFilterVerticalPass.h"
-#include "RadianceCacheIntegrationPass.h"
-#include "GIDenoisePass.h"
-#include "GIFilterHorizontalPass.h"
-#include "GIFilterVerticalPass.h"
+#include "SSRCReprojectionPass.h"
+#include "SSRCRaytracingPass.h"
+#include "SSRCFilterHorizontalPass.h"
+#include "SSRCFilterVerticalPass.h"
+#include "SSRCIntegrationPass.h"
+#include "SSRCTemporalPass.h"
+#include "SSRCSpatialHorizontalPass.h"
+#include "SSRCSpatialVerticalPass.h"
 #include "TiledFrustumGenerationPass.h"
 #include "LightCullingPass.h"
 #include "LightPass.h"
@@ -22,7 +22,7 @@
 #include "LuminanceHistogramPass.h"
 #include "LuminanceAveragePass.h"
 #include "FinalBlendPass.h"
-#include "GPUPathTracerPass.h"
+#include "PTPass.h"
 #include "PTHashGridCachePurgeTilesPass.h"
 #include "PTHashGridCacheUpdateTilesPass.h"
 #include "PTHashGridCacheMipCascadeBuildPass.h"
@@ -52,27 +52,27 @@ namespace Inno
 		// IPC setter-reply convention) see their own write, not yesterday's
 		// frame state. The frame loop reconciles Active with Desired at the
 		// next boundary so the toggle never lands mid-frame.
-		DevToggleRegistry::RegisterToggle("GPUPathTracer",
-			[this]() { return m_GPUPathTracerDesired; },
-			[this](bool desired) { m_GPUPathTracerDesired = desired; });
+		DevToggleRegistry::RegisterToggle("PT",
+			[this]() { return m_PTDesired; },
+			[this](bool desired) { m_PTDesired = desired; });
 
 		// "GI on" reads/writes m_Bypassed across the rasterized-GI pass group.
 		// Bypass landing per-frame (TASK-171); no Desired/Active reconciliation
 		// needed because m_Bypassed is the source of truth read at dispatch.
 		DevToggleRegistry::RegisterToggle("RasterizedGI",
 			[]() {
-				return !RadianceCacheRaytracingPass::Get().m_Bypassed.load(std::memory_order_relaxed);
+				return !SSRCRaytracingPass::Get().m_Bypassed.load(std::memory_order_relaxed);
 			},
 			[](bool desired) {
 				const bool l_bypass = !desired;
-				RadianceCacheReprojectionPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				RadianceCacheRaytracingPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				RadianceCacheFilterHorizontalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				RadianceCacheFilterVerticalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				RadianceCacheIntegrationPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				GIDenoisePass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				GIFilterHorizontalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				GIFilterVerticalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				SSRCReprojectionPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				SSRCRaytracingPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				SSRCFilterHorizontalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				SSRCFilterVerticalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				SSRCIntegrationPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				SSRCTemporalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				SSRCSpatialHorizontalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				SSRCSpatialVerticalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
 			});
 
 		DevToggleRegistry::RegisterAction("Screenshot", [this]() { m_saveScreenCapture = true; });
@@ -209,8 +209,8 @@ namespace Inno
 
 		if (strcmp(g_Engine->getInitConfig().testCase, "gpu_path_tracer") == 0)
 		{
-			m_GPUPathTracerDesired = true;
-			m_GPUPathTracerActive  = true;
+			m_PTDesired = true;
+			m_PTActive  = true;
 		}
 
 		BootstrapAmbientCGTextures();
@@ -223,14 +223,14 @@ namespace Inno
 		OpaqueCullingPass::Get().Setup();
 		OpaquePass::Get().Setup();
 
-		RadianceCacheReprojectionPass::Get().Setup();
-		RadianceCacheRaytracingPass::Get().Setup();
-		RadianceCacheFilterHorizontalPass::Get().Setup();
-		RadianceCacheFilterVerticalPass::Get().Setup();
-		RadianceCacheIntegrationPass::Get().Setup();
-		GIDenoisePass::Get().Setup();
-		GIFilterHorizontalPass::Get().Setup();
-		GIFilterVerticalPass::Get().Setup();
+		SSRCReprojectionPass::Get().Setup();
+		SSRCRaytracingPass::Get().Setup();
+		SSRCFilterHorizontalPass::Get().Setup();
+		SSRCFilterVerticalPass::Get().Setup();
+		SSRCIntegrationPass::Get().Setup();
+		SSRCTemporalPass::Get().Setup();
+		SSRCSpatialHorizontalPass::Get().Setup();
+		SSRCSpatialVerticalPass::Get().Setup();
 
 		SSAOPass::Get().Setup();
 
@@ -248,7 +248,7 @@ namespace Inno
 		LuminanceAveragePass::Get().Setup();
 
 		FinalBlendPass::Get().Setup();
-		GPUPathTracerPass::Get().Setup();
+		PTPass::Get().Setup();
 		// PurgeTiles runs first each frame to free 50-frame-stale slots, so
 		// the path tracer's InsertCell can claim them and UpdateTiles' early-
 		// out skips them; UpdateTiles then resolves the path tracer's per-cell

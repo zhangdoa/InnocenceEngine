@@ -53,8 +53,8 @@ namespace Inno
 		// Desired is what the user/toggle asked for; Active is what the
 		// frame loop has actually switched into. PrepareCommands reconciles
 		// them at the next frame boundary so the toggle never lands mid-frame.
-		bool m_GPUPathTracerDesired = false;
-		bool m_GPUPathTracerActive  = false;
+		bool m_PTDesired = false;
+		bool m_PTActive  = false;
 		bool m_saveScreenCapture = false;
 
 
@@ -95,11 +95,11 @@ namespace Inno
 		void BootstrapAmbientCGTextures();
 
 		// ExecuteCommands seam — the rasterizer-only pass chain runs only
-		// when GPUPathTracer is inactive. Lives in
+		// when PT is inactive. Lives in
 		// _ExecuteCommands_Rasterizer.cpp to keep both TUs under the ratchet.
 		void ExecuteRasterizerPasses();
 
-		// Sub-seam of the rasterizer chain — RadianceCache reproject /
+		// Sub-seam of the rasterizer chain — SSRC reproject /
 		// raytrace / filter / integrate + GI denoise + GI filter. Pulled
 		// into a dedicated TU so _ExecuteCommands_Rasterizer.cpp stays
 		// under the file-size ratchet.

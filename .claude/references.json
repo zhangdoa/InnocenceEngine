@@ -2,80 +2,80 @@
   "description": "Map of implementation files to the papers + reference implementations they port. The commit-gate hook uses this to require a `Reference: <URL>` line in the commit message for any CL touching a listed file, and `[divergence-acknowledged]` when the entry records a known divergence. See .claude/hooks/commit-gate.js citation-evidence gate.",
   "entries": [
     {
-      "glob": "Source/Shaders/HLSL/RadianceCacheRayGen.hlsl",
+      "glob": "Source/Shaders/HLSL/SSRCRayGen.hlsl",
       "paper": "GI-1.0 §2.1 (Screen Probes) — Algorithms 1, 2, 3",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp",
       "notes": "Screen probe ray spawn + radiance blending. Compare to Capsaicin's TraceScreenProbes / PopulateCellsBuffer entry points."
     },
     {
-      "glob": "Source/Shaders/HLSL/RadianceCacheReprojection.comp",
+      "glob": "Source/Shaders/HLSL/SSRCReprojection.comp",
       "paper": "GI-1.0 §2.1.1 / Algorithm 1 (Screen probes reprojection)",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp"
     },
     {
-      "glob": "Source/Shaders/HLSL/common/RadianceCacheReprojection.hlsl",
-      "paper": "GI-1.0 §2.1.1 (Screen probes reprojection) — per-cell octahedral-remap accumulator + LDS radiance-backup parallel reduction. Hosts the shared LDS state and helpers (quantization, RemapHistoryCell, SeedRadianceBackup, ReduceRadianceBackup, FinalizeRadianceBackup) used by RadianceCacheReprojection.comp's per-probe-cell dispatch.",
+      "glob": "Source/Shaders/HLSL/common/SSRCReprojection.hlsl",
+      "paper": "GI-1.0 §2.1.1 (Screen probes reprojection) — per-cell octahedral-remap accumulator + LDS radiance-backup parallel reduction. Hosts the shared LDS state and helpers (quantization, RemapHistoryCell, SeedRadianceBackup, ReduceRadianceBackup, FinalizeRadianceBackup) used by SSRCReprojection.comp's per-probe-cell dispatch.",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L293"
     },
     {
-      "glob": "Source/Shaders/HLSL/RadianceCacheIntegration.comp",
+      "glob": "Source/Shaders/HLSL/SSRCIntegration.comp",
       "paper": "GI-1.0 §2.4.2 (SH projection) + §2.1.4 (radiance blending)",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp"
     },
     {
-      "glob": "Source/Shaders/HLSL/RadianceCacheFilterHorizontal.comp",
+      "glob": "Source/Shaders/HLSL/SSRCFilterHorizontal.comp",
       "paper": "GI-1.0 §2.1.6 / Algorithm 5 (Radiance filtering in probe space)",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp"
     },
     {
-      "glob": "Source/Shaders/HLSL/RadianceCacheFilterVertical.comp",
+      "glob": "Source/Shaders/HLSL/SSRCFilterVertical.comp",
       "paper": "GI-1.0 §2.1.6 / Algorithm 5 (Radiance filtering in probe space)",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp"
     },
     {
-      "glob": "Source/Shaders/HLSL/RadianceCacheClosestHit.hlsl",
+      "glob": "Source/Shaders/HLSL/SSRCClosestHit.hlsl",
       "paper": "GI-1.0 §2.2 (World Cache) — hash lookup on secondary hits",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/hash_grid_cache.hlsl"
     },
     {
-      "glob": "Source/Shaders/HLSL/common/RadianceCacheCommon.hlsl",
+      "glob": "Source/Shaders/HLSL/common/SSRCCommon.hlsl",
       "paper": "GI-1.0 §2.1.5 (FindClosestProbe / sparse directional search, Algorithm 4) + §2.1.7 (adaptive cell size, Algorithm 6)",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/screen_probes.hlsl"
     },
     {
-      "glob": "Source/Shaders/HLSL/GIDenoise.comp",
+      "glob": "Source/Shaders/HLSL/SSRCTemporal.comp",
       "paper": "GI-1.0 §2.4.3 (Denoising) — temporal accumulation half (color delta, dynamic history cap, blur-mask emission).",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L3997"
     },
     {
-      "glob": "Source/Shaders/HLSL/GIFilterHorizontal.comp",
+      "glob": "Source/Shaders/HLSL/SSRCSpatialHorizontal.comp",
       "paper": "GI-1.0 §2.4.3 (Denoising) — Figure 19 spatial filter, horizontal axis of the separable variable-radius bilateral blur.",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104"
     },
     {
-      "glob": "Source/Shaders/HLSL/GIFilterVertical.comp",
+      "glob": "Source/Shaders/HLSL/SSRCSpatialVertical.comp",
       "paper": "GI-1.0 §2.4.3 (Denoising) — Figure 19 spatial filter, vertical axis of the separable variable-radius bilateral blur.",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104"
     },
     {
-      "glob": "Source/Shaders/HLSL/common/GIFilterCommon.hlsl",
-      "paper": "GI-1.0 §2.4.3 (Denoising) — Figure 19 spatial filter body, shared by GIFilterHorizontal/Vertical.",
+      "glob": "Source/Shaders/HLSL/common/SSRCSpatialCommon.hlsl",
+      "paper": "GI-1.0 §2.4.3 (Denoising) — Figure 19 spatial filter body, shared by SSRCSpatialHorizontal/Vertical.",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104"
     },
     {
-      "glob": "Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl",
+      "glob": "Source/Shaders/HLSL/PTRayGen.hlsl",
       "paper": "Reference path tracer — ground-truth comparator; no specific paper cited, but serves as the A/B target for radiance-cache quality assessments. The PT_HASH_GRID_CACHE_ENABLED-gated cache writes at secondary+ vertices port Capsaicin GI-1.0 hash_grid_cache.hlsl secondary-vertex pattern; the cache read at bounce>=1 ports Capsaicin's Site-3 (TraceReflectionsHandleHit, gi1.comp:2865-2900) read-only-replace-shading shape into our loop-per-bounce raygen. The secondary-bounce write — BRDF/pdf-modulated next-cell mean folded back into the previous vertex's slot — ports Capsaicin's UpdateMultibounceCells (gi1.comp:1948-1989) cell-to-cell feedback into the same loop-per-bounce shape; the (a) primary-hit direct write targets UpdateCellValueBuffer and the (b) secondary-bounce write targets UpdateCellValueIndirectBuffer (Capsaicin's canonical lobe split). The PT_DENOISE_ENABLED-gated primary-hit signal split + GBuffer-equivalent UAV writes (TASK-77.2 CL-1) follow SVGF's demodulated diffuse/specular shape: lobe assignment fires at the primary-hit BSDF importance sample, NEE-at-primary lands in diffuse, indirect contributions follow the locked path tag. Channel layout mirrors opaqueGeometryProcessPass.frag so DecodeGBuffer (common/lightPassCommon.hlsl) reads the PT-written GBuffer-equivalent in the same shape as the rasterized GBuffer. Full audit at .alignments/TASK-77.1-rework-paper-port-audit.md.",
       "reference": "Any path-tracer reference; this file is our own implementation. Cache integration references https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/hash_grid_cache.hlsl, gi1.comp:2865-2900 (Site-3 read) and gi1.comp:1948-1989 (Site-2 / UpdateMultibounceCells secondary-bounce write — the indirect target is UpdateCellValueIndirectBuffer). Screen-space denoiser shape references SVGF (Schied et al. 2017): https://cg.ivd.kit.edu/publications/2017/svgf/svgf_preprint.pdf. NRD-Sample (https://github.com/NVIDIA-RTX/NRD-Sample) is consulted as architectural reference only — no NRD library or NVIDIA-NRD source is linked or vendored, per the TASK-77.2 license constraint."
     },
     {
       "glob": "Source/Shaders/HLSL/common/PTDenoiseShared.hlsl",
-      "paper": "SVGF (Schied et al. 2017) — demodulated diffuse/specular channel separation feeding temporal accumulation + edge-aware à-trous wavelet spatial filter. This header carries the channel-layout enumeration and motion-vector convention shared by GPUPathTracerRayGen.hlsl (CL-1 producer) and the future temporal/à-trous/composition passes (CL-2/3/4). Layout deliberately mirrors opaqueGeometryProcessPass.frag's RT0..RT3 so DecodeGBuffer (common/lightPassCommon.hlsl) reads the PT-written GBuffer-equivalent identically to the rasterized GBuffer.",
+      "paper": "SVGF (Schied et al. 2017) — demodulated diffuse/specular channel separation feeding temporal accumulation + edge-aware à-trous wavelet spatial filter. This header carries the channel-layout enumeration and motion-vector convention shared by PTRayGen.hlsl (CL-1 producer) and the future temporal/à-trous/composition passes (CL-2/3/4). Layout deliberately mirrors opaqueGeometryProcessPass.frag's RT0..RT3 so DecodeGBuffer (common/lightPassCommon.hlsl) reads the PT-written GBuffer-equivalent identically to the rasterized GBuffer.",
       "reference": "https://cg.ivd.kit.edu/publications/2017/svgf/svgf_preprint.pdf (SVGF). NRD-Sample (https://github.com/NVIDIA-RTX/NRD-Sample) consulted as architectural reference only; no NRD library or NVIDIA-NRD source is linked or vendored. Channel-layout invariant cross-references opaqueGeometryProcessPass.frag:124 and common/lightPassCommon.hlsl:38-67."
     },
     {
       "glob": "Source/Shaders/HLSL/PTDenoiseTemporal.comp",
-      "paper": "SVGF (Schied et al. 2017) §3 (temporal accumulation) + §4.2 (variance estimation via Σ luma + Σ luma²). TASK-77.2 CL-2 — per-pixel motion-vector reprojection of last frame's per-lobe history, geometry-aware rejection on mesh-id strict equality + relative depth + normal-dot, and a single-tap blend at α = 1/min(N+1, MaxHistoryFrames). Pattern shape ports the engine-side GIDenoise.comp:184-260 reprojection block — same motion-vector sign convention, same normal-dot threshold (0.95), depth gate adapted to the SVGF relative-tolerance form (0.1 of linear depth) since the PT denoiser does not have a Capsaicin-style adaptive cell-size formula at this layer. Variance form is SVGF Σ/Σ² (paper-faithful) rather than Welford so CL-3's à-trous edge-stop weight reads it directly without reconciliation.",
-      "reference": "https://cg.ivd.kit.edu/publications/2017/svgf/svgf_preprint.pdf (SVGF). Engine-side reprojection precedent: Source/Shaders/HLSL/GIDenoise.comp:184-260. NRD-Sample (https://github.com/NVIDIA-RTX/NRD-Sample) consulted as architectural reference only; no NRD library or NVIDIA-NRD source is linked or vendored."
+      "paper": "SVGF (Schied et al. 2017) §3 (temporal accumulation) + §4.2 (variance estimation via Σ luma + Σ luma²). TASK-77.2 CL-2 — per-pixel motion-vector reprojection of last frame's per-lobe history, geometry-aware rejection on mesh-id strict equality + relative depth + normal-dot, and a single-tap blend at α = 1/min(N+1, MaxHistoryFrames). Pattern shape ports the engine-side SSRCTemporal.comp:184-260 reprojection block — same motion-vector sign convention, same normal-dot threshold (0.95), depth gate adapted to the SVGF relative-tolerance form (0.1 of linear depth) since the PT denoiser does not have a Capsaicin-style adaptive cell-size formula at this layer. Variance form is SVGF Σ/Σ² (paper-faithful) rather than Welford so CL-3's à-trous edge-stop weight reads it directly without reconciliation.",
+      "reference": "https://cg.ivd.kit.edu/publications/2017/svgf/svgf_preprint.pdf (SVGF). Engine-side reprojection precedent: Source/Shaders/HLSL/SSRCTemporal.comp:184-260. NRD-Sample (https://github.com/NVIDIA-RTX/NRD-Sample) consulted as architectural reference only; no NRD library or NVIDIA-NRD source is linked or vendored."
     },
     {
       "glob": "Source/Shaders/HLSL/common/PTHashGridCache.hlsl",
@@ -99,7 +99,7 @@
       "glob": "Source/Shaders/HLSL/PTHashGridCacheMipCascadeBuild.comp",
       "paper": "GI-1.0 §2.2 (World Cache) — per-tile mip-cascade aggregation. mip-(L+1) cells are the 4-way sum of their mip-L children in `radiance × sample_count` storage; recovering the per-sample mean at read time yields a sample-count-weighted average of the children, matching a fatter footprint. Direct lobe at gi1.comp:2227-2347 and indirect lobe at gi1.comp:2252-2345 (the `USE_MULTI_BOUNCE` twin running side-by-side with the direct cascade in the same fused thread group).",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L2227",
-      "notes": "Ports Capsaicin's mip 1/2/3 blocks of UpdateTiles (gi1.comp:2227-2347 direct; gi1.comp:2252-2345 indirect `USE_MULTI_BOUNCE` twin with its own LDS array `lds_UpdateTiles_ValueIndirectBuffer[8][8]`) plus the cell-index-by-mip helper (hash_grid_cache.hlsl:207-221). Aggregation rule, stride-doubling LDS box filter, and packed `radiance × sample_count` storage convention are paper-faithful. Pipeline divergence: Capsaicin fuses the cascade into UpdateTiles with a 2D 8x8 thread group; we run a separate pass with one tile per group (64 threads, 1D layout) so PTHashGridCacheUpdateTiles can stay a focused mip-0 resolve. Schedule: PurgeTiles → UpdateTiles → MipCascadeBuild → PathTracer on the Compute queue, same Signal/Wait pattern as siblings. The Site-3 read in GPUPathTracerRayGen consumes mip 0 only; mip 1-3 contents are reserved for downstream consumers (denoise-time spatial filter, debug visualisation)."
+      "notes": "Ports Capsaicin's mip 1/2/3 blocks of UpdateTiles (gi1.comp:2227-2347 direct; gi1.comp:2252-2345 indirect `USE_MULTI_BOUNCE` twin with its own LDS array `lds_UpdateTiles_ValueIndirectBuffer[8][8]`) plus the cell-index-by-mip helper (hash_grid_cache.hlsl:207-221). Aggregation rule, stride-doubling LDS box filter, and packed `radiance × sample_count` storage convention are paper-faithful. Pipeline divergence: Capsaicin fuses the cascade into UpdateTiles with a 2D 8x8 thread group; we run a separate pass with one tile per group (64 threads, 1D layout) so PTHashGridCacheUpdateTiles can stay a focused mip-0 resolve. Schedule: PurgeTiles → UpdateTiles → MipCascadeBuild → PT on the Compute queue, same Signal/Wait pattern as siblings. The Site-3 read in PTRayGen consumes mip 0 only; mip 1-3 contents are reserved for downstream consumers (denoise-time spatial filter, debug visualisation)."
     },
     {
       "glob": "Source/Shaders/HLSL/common/AgX.hlsl",

@@ -24,7 +24,7 @@
 // first frame, then decays the contamination away in ~16 frames). Paper-
 // faithful; flagged as a known minor divergence in the running-mean shape
 // only when a tile is reclaimed within the same scene. A scene-load clear
-// (GPUPathTracerPass::m_HashGridCachePendingClear) zeros every cell, so
+// (PTPass::m_HashGridCachePendingClear) zeros every cell, so
 // the leak is bounded to mid-scene reclaims.
 
 #include "common/PTHashGridCache.hlsl"

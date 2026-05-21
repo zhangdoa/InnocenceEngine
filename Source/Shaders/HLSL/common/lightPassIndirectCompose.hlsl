@@ -1,13 +1,13 @@
 // shadertype=hlsl
 //
 // LightPass indirect-compose stage. Reads the denoised per-pixel
-// irradiance from GIDenoisePass and converts SH irradiance to outgoing
+// irradiance from SSRCTemporalPass and converts SH irradiance to outgoing
 // Lambertian radiance via
 //   L_o = albedo * (1 - metallic) * E / PI.
 //
 // Per-pixel under-sampling (paper §2.4.1 relaxed interpolation) is
-// resolved upstream: SampleRadianceCache packs a denoiser_hint into the
-// irradiance alpha; GIDenoise.comp turns that into the spatial filter's
+// resolved upstream: SampleSSRC packs a denoiser_hint into the
+// irradiance alpha; SSRCTemporal.comp turns that into the spatial filter's
 // blur-mask widening (paper §2.4.3) so under-sampled pixels are
 // absorbed by their well-sampled neighbours. Nothing to clamp here.
 

@@ -4,7 +4,7 @@
 // shadow-ray dispatch in SunShadowRTRayGen.hlsl uses MissShaderIndex=1
 // (ShadowMissShader), so this miss never fires; it exists only because
 // the PSO requires a miss-shader at index 0. Empty body matches the
-// "unused but required" precedent of GPUPathTracerMiss.hlsl behaviour for
+// "unused but required" precedent of PTMiss.hlsl behaviour for
 // shadow-only pipelines.
 
 #include "common/pathTracerPayload.hlsli"

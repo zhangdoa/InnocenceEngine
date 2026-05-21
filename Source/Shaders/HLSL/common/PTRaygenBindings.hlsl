@@ -2,9 +2,9 @@
 #ifndef PT_RAYGEN_BINDINGS_HLSL
 #define PT_RAYGEN_BINDINGS_HLSL
 
-// Resource bindings for GPUPathTracerRayGen.hlsl. The matching descriptor
+// Resource bindings for PTRayGen.hlsl. The matching descriptor
 // table is populated in
-// Source/ExampleProject/RenderingClient/GPUPathTracerPass_BindingLayout.cpp;
+// Source/ExampleProject/RenderingClient/PTPass_BindingLayout.cpp;
 // the layout count + register order in this header and that .cpp must move
 // in lockstep — count drift is a silent root-signature / DXIL mismatch
 // surface (b9a103cc PSO-failure precedent).

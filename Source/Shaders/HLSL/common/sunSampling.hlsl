@@ -1,8 +1,8 @@
 // shadertype=hlsl
 //
 // Cone-jitter sampler for the sun's angular disc. Single source of truth shared
-// by GPUPathTracerRayGen.hlsl (offline reference) and SunShadowRTRayGen.hlsl
-// (real-time RT shadows, TASK-138). Lifted out of GPUPathTracerRayGen.hlsl per
+// by PTRayGen.hlsl (offline reference) and SunShadowRTRayGen.hlsl
+// (real-time RT shadows, TASK-138). Lifted out of PTRayGen.hlsl per
 // "no copy-paste — extract shared logic" (safety-observability discipline).
 
 #ifndef SUN_SAMPLING_HLSL
@@ -17,7 +17,7 @@
 // pair in [0,1]^2. Returns a unit-length perturbed direction.
 //
 // Convention parity with PT: identical formula to the original
-// SampleSunDirection in GPUPathTracerRayGen.hlsl prior to extraction —
+// SampleSunDirection in PTRayGen.hlsl prior to extraction —
 // PT-vs-rast shadow softness must match modulo TAA convergence.
 float3 SampleSunDirection(float3 sunDir, float2 xi)
 {

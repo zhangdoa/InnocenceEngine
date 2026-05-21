@@ -157,7 +157,7 @@ bool DX12RenderPassResourceService::CreateRaytracingPipelineStateObject(RenderPa
 	hitGroupDesc.IntersectionShaderImport = nullptr;
 
 	D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = {};
-	// PathTracerPayload (source of truth: common/pathTracerPayload.hlsli):
+	// PTPayload (source of truth: common/pathTracerPayload.hlsli):
 	// hitPos(12) + normal(12) + texCoord(8) + albedo(12) + metalness(4) + roughness(4) + missed(4) + instanceID(4) = 60B.
 	// ShadowPayload: 4B. Round up to 64 for 16B alignment.
 	shaderConfig.MaxPayloadSizeInBytes = 64;

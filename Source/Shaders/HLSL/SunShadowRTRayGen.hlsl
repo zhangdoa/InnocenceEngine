@@ -7,7 +7,7 @@
 //
 // Pattern reuse:
 // - Ray flags + miss-shader-index 1 + ShadowPayload sentinel pattern from
-//   GPUPathTracerRayGen.hlsl:260-266 (cite-prior-art). The same triplet
+//   PTRayGen.hlsl:260-266 (cite-prior-art). The same triplet
 //   `RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH |
 //   RAY_FLAG_SKIP_CLOSEST_HIT_SHADER` produces the cheapest opaque-only
 //   visibility test the API supports — any opaque hit terminates the ray
@@ -47,7 +47,7 @@ RWTexture2D<float> out_SunVisibility : register(u0);
 // PCG-style hash for per-pixel jitter. Mixes pixel coords with frameIndex so
 // TAA accumulation across frames produces soft-shadow penumbras over time
 // without needing multiple samples per frame. Same hash family as
-// RadianceCacheClosestHit.hlsl::HitHash2D.
+// SSRCClosestHit.hlsl::HitHash2D.
 float2 PixelJitter2D(uint2 pixel, uint frameIndex)
 {
 	uint3 q = uint3(pixel.x, pixel.y, frameIndex) ^ uint3(0x68E31DA4u, 0xB5297A4Du, 0x1B56C4E9u);

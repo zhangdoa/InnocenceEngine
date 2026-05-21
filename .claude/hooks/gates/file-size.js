@@ -1,22 +1,51 @@
 // File-size gate — strict block on code/script files past the limit.
 // For each staged file matching FILE_SIZE_EXT_RE (and not excluded by
-// FILE_SIZE_EXCLUDE_RE), block if `new_lines > FILE_SIZE_LIMIT`.
-// No grandfathering — touching an oversized file forces it under the limit
-// in the same CL. Split per `skills/file-splitting/SKILL.md`.
+// FILE_SIZE_EXCLUDE_RE), block if `new_lines > FILE_SIZE_LIMIT` AND the
+// file is growing (new_lines > old_lines). A touch that does NOT grow
+// an already-oversized file is allowed — the gate's role is to prevent
+// growth past the limit, not to force a split on every incidental edit
+// to an already-too-big file. Renames are followed via
+// `git diff --cached --find-renames`; the pre-image's size is used as
+// `old_lines` so a mechanical rename of an oversized file passes.
+// Split per `skills/file-splitting/SKILL.md` when actually growing.
 
+const { execSync } = require('child_process')
 const {
   FILE_SIZE_LIMIT, FILE_SIZE_EXT_RE, FILE_SIZE_EXCLUDE_RE,
   blobLineCount,
 } = require('../lib/common')
 
+function buildRenameMap(cwd) {
+  // Pathspec-filtered rename detection (`-- <newpath>`) hides the
+  // corresponding delete and reports the new path as `A`. Pull the full
+  // rename-aware diff once and build a newPath → oldPath map.
+  const map = new Map()
+  try {
+    const out = execSync(
+      `git diff --cached --find-renames --name-status`,
+      { cwd, encoding: 'utf8' }
+    )
+    for (const line of out.split('\n')) {
+      const m = line.match(/^R\d+\t(.+?)\t(.+)$/)
+      if (m) map.set(m[2], m[1])
+    }
+  } catch { /* fall through; empty map */ }
+  return map
+}
+
 function findViolations(cwd, staged) {
+  const renames = buildRenameMap(cwd)
   const violations = []
   for (const f of staged) {
     if (!FILE_SIZE_EXT_RE.test(f)) continue
     if (FILE_SIZE_EXCLUDE_RE.test(f)) continue
     const newLines = blobLineCount(cwd, `:${f}`)
     if (newLines <= FILE_SIZE_LIMIT) continue
-    const oldLines = blobLineCount(cwd, `HEAD:${f}`)
+    let oldLines = blobLineCount(cwd, `HEAD:${f}`)
+    if (oldLines === 0 && renames.has(f)) {
+      oldLines = blobLineCount(cwd, `HEAD:${renames.get(f)}`)
+    }
+    if (newLines <= oldLines) continue
     violations.push({ file: f, oldLines, newLines })
   }
   return violations

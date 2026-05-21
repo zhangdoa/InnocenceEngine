@@ -1,0 +1,115 @@
+// shadertype=hlsl
+#include "common/SSRCCommon.hlsl"
+#include "RayTracingTypes.hlsl"
+
+struct ComputeInputType
+{
+    uint3 groupID : SV_GroupID;
+    uint3 groupThreadID : SV_GroupThreadID;
+    uint3 dispatchThreadID : SV_DispatchThreadID;
+    uint groupIndex : SV_GroupIndex;
+};
+
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+    PerFrame_CB g_Frame;
+}
+
+[[vk::binding(0, 1)]]
+Texture2D<float4> in_HorizontalFiltered : register(t0);
+
+[[vk::binding(1, 1)]]
+Texture2D<float4> in_ProbePosition : register(t1);
+
+[[vk::binding(2, 1)]]
+Texture2D<float4> in_ProbeNormal : register(t2);
+
+[[vk::binding(3, 1)]]
+Texture2D<uint> in_ProbeMask : register(t3);
+
+[[vk::binding(0, 2)]]
+RWTexture2D<float4> out_FinalFiltered : register(u0);
+
+// GI-1.0 Algorithm 5: vertical pass of the separable probe-space bilateral
+// filter. See the horizontal pass for the full documentation — this pass
+// swaps the blur direction to Y and sources from the horizontal-filtered
+// atlas.
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+    uint2 screenCoord = input.dispatchThreadID.xy;
+    int2 probeCoord = int2(screenCoord / RADIANCE_CACHE_TILE_SIZE);
+    int2 gridSize = int2(uint2(g_Frame.viewportSize.xy) / RADIANCE_CACHE_TILE_SIZE);
+
+    uint currentMask = in_ProbeMask.Load(int3(probeCoord, 0));
+    if (!IsValidProbe(currentMask))
+    {
+        out_FinalFiltered[screenCoord] = float4(0, 0, 0, 0);
+        return;
+    }
+
+    float3 currentPosWS = in_ProbePosition.Load(int3(probeCoord, 0)).xyz;
+    float3 currentNormal = normalize(in_ProbeNormal.Load(int3(probeCoord, 0)).xyz);
+
+    int2 localCoord = int2(screenCoord) % int(RADIANCE_CACHE_TILE_SIZE);
+    float2 octUV = (float2(localCoord) + 0.5) / float(RADIANCE_CACHE_TILE_SIZE);
+    float3 direction = DecodeOctahedral(octUV);
+
+    if (dot(direction, currentNormal) <= 0.0)
+    {
+        out_FinalFiltered[screenCoord] = float4(0, 0, 0, 0);
+        return;
+    }
+
+    float4 centerSample = in_HorizontalFiltered.Load(int3(screenCoord, 0));
+    float currentDepth = length(currentPosWS - g_Frame.camera_posWS.xyz);
+    float cellSize = max(AdaptiveCellSize(currentDepth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
+
+    float4 filteredRadiance = centerSample;
+    float totalWeight = 1.0;
+
+    // [S1.5b] FindClosestProbe substitutes a ring-neighbour probe when the
+    // requested step lands on an invalid tile. See the horizontal filter
+    // for the full rationale.
+    const int kRadius = 3;
+    const int kSize = kRadius * 2;
+    for (int i = 0; i < kSize; i++)
+    {
+        int step = (((i & 1) << 1) - 1) * ((i >> 1) + 1);
+        ProbeLookup neighbour = FindClosestProbe(in_ProbeMask, int2(screenCoord), int2(0, step), gridSize);
+        if (!IsValidProbe(neighbour.packed))
+            continue;
+
+        int2 neighbourProbe = neighbour.tileCoord;
+        float3 neighbourPosWS = in_ProbePosition.Load(int3(neighbourProbe, 0)).xyz;
+        float3 neighbourNormal = normalize(in_ProbeNormal.Load(int3(neighbourProbe, 0)).xyz);
+
+        if (abs(dot(neighbourPosWS - currentPosWS, currentNormal)) > cellSize)
+            continue;
+        if (dot(direction, neighbourNormal) <= 0.0)
+            continue;
+
+        int2 neighbourAtlasCoord = neighbourProbe * int(RADIANCE_CACHE_TILE_SIZE) + localCoord;
+        float4 neighbourSample = in_HorizontalFiltered.Load(int3(neighbourAtlasCoord, 0));
+        float neighbourHitDistance = min(neighbourSample.a, centerSample.a);
+
+        float3 hitWS = neighbourPosWS + direction * neighbourHitDistance;
+        float3 reprojectedDir = normalize(hitWS - currentPosWS);
+        if (dot(direction, reprojectedDir) < PROBE_FILTER_ANGLE_THRESHOLD)
+            continue;
+
+        float neighbourDepth = length(neighbourPosWS - g_Frame.camera_posWS.xyz);
+        float depthRatio = saturate(1.0 - abs(neighbourDepth - currentDepth) / max(currentDepth, EPSILON));
+        float weight = pow(depthRatio, 8.0);
+
+        filteredRadiance += weight * float4(neighbourSample.rgb, neighbourHitDistance);
+        totalWeight += weight;
+    }
+
+    filteredRadiance /= totalWeight;
+    filteredRadiance.rgb = max(filteredRadiance.rgb, float3(0.0, 0.0, 0.0));
+
+    out_FinalFiltered[screenCoord] = filteredRadiance;
+    DeviceMemoryBarrier();
+}

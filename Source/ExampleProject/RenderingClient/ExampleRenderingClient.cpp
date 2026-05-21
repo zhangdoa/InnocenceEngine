@@ -5,14 +5,14 @@
 #include "OpaqueCullingPass.h"
 #include "OpaquePass.h"
 #include "SSAOPass.h"
-#include "RadianceCacheReprojectionPass.h"
-#include "RadianceCacheRaytracingPass.h"
-#include "RadianceCacheFilterHorizontalPass.h"
-#include "RadianceCacheFilterVerticalPass.h"
-#include "RadianceCacheIntegrationPass.h"
-#include "GIDenoisePass.h"
-#include "GIFilterHorizontalPass.h"
-#include "GIFilterVerticalPass.h"
+#include "SSRCReprojectionPass.h"
+#include "SSRCRaytracingPass.h"
+#include "SSRCFilterHorizontalPass.h"
+#include "SSRCFilterVerticalPass.h"
+#include "SSRCIntegrationPass.h"
+#include "SSRCTemporalPass.h"
+#include "SSRCSpatialHorizontalPass.h"
+#include "SSRCSpatialVerticalPass.h"
 #include "TiledFrustumGenerationPass.h"
 #include "LightCullingPass.h"
 #include "LightPass.h"
@@ -22,7 +22,7 @@
 #include "LuminanceHistogramPass.h"
 #include "LuminanceAveragePass.h"
 #include "FinalBlendPass.h"
-#include "GPUPathTracerPass.h"
+#include "PTPass.h"
 #include "PTHashGridCachePurgeTilesPass.h"
 #include "PTHashGridCacheUpdateTilesPass.h"
 #include "PTHashGridCacheMipCascadeBuildPass.h"
@@ -52,14 +52,14 @@ namespace Inno
 		OpaqueCullingPass::Get().Initialize();
 		OpaquePass::Get().Initialize();
 
-		RadianceCacheReprojectionPass::Get().Initialize();
-		RadianceCacheRaytracingPass::Get().Initialize();
-		RadianceCacheFilterHorizontalPass::Get().Initialize();
-		RadianceCacheFilterVerticalPass::Get().Initialize();
-		RadianceCacheIntegrationPass::Get().Initialize();
-		GIDenoisePass::Get().Initialize();
-		GIFilterHorizontalPass::Get().Initialize();
-		GIFilterVerticalPass::Get().Initialize();
+		SSRCReprojectionPass::Get().Initialize();
+		SSRCRaytracingPass::Get().Initialize();
+		SSRCFilterHorizontalPass::Get().Initialize();
+		SSRCFilterVerticalPass::Get().Initialize();
+		SSRCIntegrationPass::Get().Initialize();
+		SSRCTemporalPass::Get().Initialize();
+		SSRCSpatialHorizontalPass::Get().Initialize();
+		SSRCSpatialVerticalPass::Get().Initialize();
 
 		SSAOPass::Get().Initialize();
 
@@ -77,7 +77,7 @@ namespace Inno
 		LuminanceAveragePass::Get().Initialize();
 
 		FinalBlendPass::Get().Initialize();
-		GPUPathTracerPass::Get().Initialize();
+		PTPass::Get().Initialize();
 		if constexpr (Inno::PTHashGridCache::ENABLED)
 		{
 			PTHashGridCachePurgeTilesPass::Get().Initialize();
@@ -98,14 +98,14 @@ namespace Inno
 
 	bool ExampleRenderingClientImpl::Update()
 	{
-		RadianceCacheReprojectionPass::Get().Update();
+		SSRCReprojectionPass::Get().Update();
 		TiledFrustumGenerationPass::Get().Update();
 		LightCullingPass::Get().Update();
 		LuminanceAveragePass::Get().Update();
 
-		if (m_GPUPathTracerActive)
+		if (m_PTActive)
 		{
-			GPUPathTracerPass::Get().Update();
+			PTPass::Get().Update();
 			if constexpr (Inno::PTHashGridCache::ENABLED)
 			{
 				PTHashGridCachePurgeTilesPass::Get().Update();
@@ -178,20 +178,20 @@ namespace Inno
 		SkyPass::Get().Terminate();
 
 		LightPass::Get().Terminate();
-		GIFilterVerticalPass::Get().Terminate();
-		GIFilterHorizontalPass::Get().Terminate();
-		GIDenoisePass::Get().Terminate();
+		SSRCSpatialVerticalPass::Get().Terminate();
+		SSRCSpatialHorizontalPass::Get().Terminate();
+		SSRCTemporalPass::Get().Terminate();
 
 		LightCullingPass::Get().Terminate();
 		TiledFrustumGenerationPass::Get().Terminate();
 
 		SSAOPass::Get().Terminate();
 
-		RadianceCacheIntegrationPass::Get().Terminate();
-		RadianceCacheFilterHorizontalPass::Get().Terminate();
-		RadianceCacheFilterVerticalPass::Get().Terminate();
-		RadianceCacheRaytracingPass::Get().Terminate();
-		RadianceCacheReprojectionPass::Get().Terminate();
+		SSRCIntegrationPass::Get().Terminate();
+		SSRCFilterHorizontalPass::Get().Terminate();
+		SSRCFilterVerticalPass::Get().Terminate();
+		SSRCRaytracingPass::Get().Terminate();
+		SSRCReprojectionPass::Get().Terminate();
 
 		OpaqueCullingPass::Get().Terminate();
 		OpaquePass::Get().Terminate();
@@ -264,7 +264,7 @@ std::vector<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
 	std::vector<IRenderPass*> l_passes;
 	l_passes.reserve(32);
 
-	l_passes.push_back(&GPUPathTracerPass::Get());
+	l_passes.push_back(&PTPass::Get());
 	if constexpr (Inno::PTHashGridCache::ENABLED)
 	{
 		l_passes.push_back(&PTHashGridCachePurgeTilesPass::Get());
@@ -286,14 +286,14 @@ std::vector<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
 	l_passes.push_back(&OpaqueCullingPass::Get());
 	l_passes.push_back(&OpaquePass::Get());
 
-	l_passes.push_back(&RadianceCacheReprojectionPass::Get());
-	l_passes.push_back(&RadianceCacheRaytracingPass::Get());
-	l_passes.push_back(&RadianceCacheFilterHorizontalPass::Get());
-	l_passes.push_back(&RadianceCacheFilterVerticalPass::Get());
-	l_passes.push_back(&RadianceCacheIntegrationPass::Get());
-	l_passes.push_back(&GIDenoisePass::Get());
-	l_passes.push_back(&GIFilterHorizontalPass::Get());
-	l_passes.push_back(&GIFilterVerticalPass::Get());
+	l_passes.push_back(&SSRCReprojectionPass::Get());
+	l_passes.push_back(&SSRCRaytracingPass::Get());
+	l_passes.push_back(&SSRCFilterHorizontalPass::Get());
+	l_passes.push_back(&SSRCFilterVerticalPass::Get());
+	l_passes.push_back(&SSRCIntegrationPass::Get());
+	l_passes.push_back(&SSRCTemporalPass::Get());
+	l_passes.push_back(&SSRCSpatialHorizontalPass::Get());
+	l_passes.push_back(&SSRCSpatialVerticalPass::Get());
 
 	l_passes.push_back(&SSAOPass::Get());
 

@@ -8,7 +8,7 @@
 // filter twice (once per lobe), reading and writing the matching LDS
 // array and UAV.
 //
-// The Site-3 read in GPUPathTracerRayGen currently consumes mip 0 only;
+// The Site-3 read in PTRayGen currently consumes mip 0 only;
 // mip 1-3 are reserved for downstream consumers (denoise-time spatial
 // filter, debug visualisation).
 //
@@ -38,9 +38,9 @@
 // Schedule. Compute queue. Ordered after PurgeTiles + UpdateTiles, before
 // the path tracer. Same Signal/Wait pattern as the sibling cache passes.
 // Capsaicin's pipeline shape (gi1.cpp:2240-2503) is PurgeTiles ->
-// PopulateScreenProbes ... -> PopulateRadianceCache -> UpdateTiles. We
+// PopulateScreenProbes ... -> PopulateSSRC -> UpdateTiles. We
 // collapse that into PurgeTiles -> UpdateTiles -> MipCascadeBuild ->
-// PathTracer because the loop-per-bounce raygen does not have separate
+// PT because the loop-per-bounce raygen does not have separate
 // PopulateCells / Resolve passes; the cascade is therefore built one
 // frame's UpdateTiles result later than Capsaicin's, but reads at
 // frame-N see mip-(L) values resolved at end-of-frame-(N-1) followed by

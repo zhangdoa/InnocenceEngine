@@ -3,7 +3,7 @@
 
 // C++ mirror of the PT hash-grid radiance cache layout constants defined in
 // Source/Shaders/HLSL/common/PTHashGridCache.hlsl. The shader header owns the
-// canonical values; this file mirrors them so GPUPathTracerPass can size the
+// canonical values; this file mirrors them so PTPass can size the
 // UAVs and upload the constant buffer without redefining them per pass.
 //
 // Reference: Capsaicin GI-1.0 hash_grid_cache.hlsl
@@ -17,12 +17,12 @@ namespace Inno
 {
 namespace PTHashGridCache
 {
-    // Master compile-time toggle. When false, GPUPathTracerPass does not
+    // Master compile-time toggle. When false, PTPass does not
     // allocate or bind cache buffers, and the corresponding #if-gated cache
-    // code in GPUPathTracerRayGen.hlsl strips out at compile time. Output
+    // code in PTRayGen.hlsl strips out at compile time. Output
     // matches the cache-off path tracer bit-identically.
     //
-    // The HLSL side mirrors this in GPUPathTracerRayGen.hlsl
+    // The HLSL side mirrors this in PTRayGen.hlsl
     // (`#define PT_HASH_GRID_CACHE_ENABLED`); both must hold the same value.
     static constexpr bool ENABLED = false;
 

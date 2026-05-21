@@ -1,6 +1,6 @@
 #include "PTNRDFormatConvertPass.h"
 
-#include "GPUPathTracerPass.h"
+#include "PTPass.h"
 #include "NRDConstants.h"
 
 #include "../../Engine/Engine.h"
@@ -39,7 +39,7 @@ bool PTNRDFormatConvertPass::Setup(IServiceConfig* systemConfig)
 
 	// Re-allocate outputs at the new resolution after a swap-chain resize.
 	// The five output UAVs are pure scratch; any resolution change scraps
-	// them. Same hook GPUPathTracerPass uses for its accumulation and
+	// them. Same hook PTPass uses for its accumulation and
 	// GBuffer-equivalent textures.
 	m_RenderPassComp->m_OnResize = [this]() { RenderTargetsCreationFunc(); };
 
@@ -60,7 +60,7 @@ bool PTNRDFormatConvertPass::Setup(IServiceConfig* systemConfig)
 	// t0..t5 — six SRV reads from compute-written textures. The path
 	// tracer's GBuffer-equivalent textures (RT0..RT3) plus the per-lobe
 	// radiance UAVs (raygen u11/u12). All allocated TextureUsage::ComputeOnly
-	// by GPUPathTracerPass; the format-convert pass only reads them.
+	// by PTPass; the format-convert pass only reads them.
 	for (uint32_t i = 0u; i < 6u; ++i)
 	{
 		auto& l_desc = m_RenderPassComp->m_ResourceBindingLayoutDescs[1u + i];
@@ -121,7 +121,7 @@ bool PTNRDFormatConvertPass::Update()
 	// textures being Activated (those are the SRV inputs we read) AND on
 	// our own five UAV outputs being Activated. Mirrors the cache passes'
 	// owner-buffer-status check shape.
-	auto* l_owner = &GPUPathTracerPass::Get();
+	auto* l_owner = &PTPass::Get();
 	auto l_isActivated = [](TextureComponent* in_Tex)
 	{
 		return in_Tex && in_Tex->m_ObjectStatus == ObjectStatus::Activated;

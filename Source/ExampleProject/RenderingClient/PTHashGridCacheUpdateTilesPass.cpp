@@ -1,6 +1,6 @@
 #include "PTHashGridCacheUpdateTilesPass.h"
 
-#include "GPUPathTracerPass.h"
+#include "PTPass.h"
 #include "HashGridCacheConstants.h"
 
 #include "../../Engine/Component/GPUBufferComponent.h"
@@ -19,7 +19,7 @@ bool PTHashGridCacheUpdateTilesPass::Setup(IServiceConfig* systemConfig)
 	{
 		// Toggle off: pass stays Terminated, never advertises Activated to
 		// the dispatcher, never allocates a shader program or render pass.
-		// Mirrors the GPUPathTracerPass `if constexpr` gate so the cache-off
+		// Mirrors the PTPass `if constexpr` gate so the cache-off
 		// build leaves no UAV transitions, no command-list recording, and
 		// no DXIL referencing this shader.
 		m_ObjectStatus = ObjectStatus::Terminated;
@@ -122,11 +122,11 @@ bool PTHashGridCacheUpdateTilesPass::Update()
 	if constexpr (!Inno::PTHashGridCache::ENABLED)
 		return true;
 
-	// Activation is gated on the GPUPathTracerPass cache buffers being
+	// Activation is gated on the PTPass cache buffers being
 	// allocated and Activated. The owner pass also drives the toggle
 	// downstream, so once the path tracer goes Activated, this pass does
 	// too on the next Update.
-	auto* l_owner = &GPUPathTracerPass::Get();
+	auto* l_owner = &PTPass::Get();
 	auto* l_cb              = l_owner->GetHashGridCacheCB();
 	auto* l_hash            = l_owner->GetHashGridCacheHashBuffer();
 	auto* l_scratch         = l_owner->GetHashGridCacheUpdateCellValueBuffer();
@@ -176,7 +176,7 @@ bool PTHashGridCacheUpdateTilesPass::PrepareCommandList(IRenderingContext* rende
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto* l_owner = &GPUPathTracerPass::Get();
+	auto* l_owner = &PTPass::Get();
 	auto* l_cb              = l_owner->GetHashGridCacheCB();
 	auto* l_hash            = l_owner->GetHashGridCacheHashBuffer();
 	auto* l_scratch         = l_owner->GetHashGridCacheUpdateCellValueBuffer();

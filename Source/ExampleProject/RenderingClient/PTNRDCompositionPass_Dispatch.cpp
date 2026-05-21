@@ -1,6 +1,6 @@
 #include "PTNRDCompositionPass.h"
 
-#include "GPUPathTracerPass.h"
+#include "PTPass.h"
 #include "PTNRDDenoisePass.h"
 #include "NRDConstants.h"
 
@@ -35,7 +35,7 @@ bool PTNRDCompositionPass::PrepareCommandList(IRenderingContext* renderingContex
 	auto  l_fmService    = g_Engine->Get<FrameManagementService>();
 	auto  l_resolution   = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	auto  l_perFrameCB   = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
-	auto* l_pt           = &GPUPathTracerPass::Get();
+	auto* l_pt           = &PTPass::Get();
 	auto* l_nrd          = &PTNRDDenoisePass::Get();
 
 	auto* l_RT0          = l_pt->GetPTGBufferPosition();

@@ -3,8 +3,8 @@
 #include "OpaqueCullingPass.h"
 #include "OpaquePass.h"
 #include "SSAOPass.h"
-#include "GIDenoisePass.h"
-#include "GIFilterVerticalPass.h"
+#include "SSRCTemporalPass.h"
+#include "SSRCSpatialVerticalPass.h"
 #include "TiledFrustumGenerationPass.h"
 #include "LightCullingPass.h"
 #include "LightPass.h"
@@ -110,10 +110,10 @@ namespace Inno
 			WaitIfActive(OpaquePass::Get(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 			WaitIfActive(SSAOPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			WaitIfActive(LightCullingPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
-			if (GIFilterVerticalPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(GIFilterVerticalPass::Get()))
-				WaitIfActive(GIFilterVerticalPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			if (SSRCSpatialVerticalPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(SSRCSpatialVerticalPass::Get()))
+				WaitIfActive(SSRCSpatialVerticalPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			else
-				WaitIfActive(GIDenoisePass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
+				WaitIfActive(SSRCTemporalPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			auto l_renderPass = LightPass::Get().GetRenderPassComp();
 

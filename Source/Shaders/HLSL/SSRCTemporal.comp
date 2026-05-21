@@ -1,0 +1,330 @@
+// shadertype=hlsl
+// PerFrame_CB + the four radiance-cache textures must exist before the
+// SSRCCommon include so its RADIANCE_CACHE_HAS_BINDINGS-gated
+// helpers (LoadIrradiance / ComputeProbeWeight / SampleSSRC)
+// resolve their references against this shader's bindings.
+#include "common/common.hlsl"
+#include "RayTracingTypes.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;
+	uint3 groupThreadID : SV_GroupThreadID;
+	uint3 dispatchThreadID : SV_DispatchThreadID;
+	uint  groupIndex : SV_GroupIndex;
+};
+
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+	PerFrame_CB g_Frame;
+}
+
+[[vk::binding(0, 1)]]
+Texture2D in_opaquePassRT0 : register(t0);
+[[vk::binding(1, 1)]]
+Texture2D in_opaquePassRT1 : register(t1);
+[[vk::binding(2, 1)]]
+Texture2D in_opaquePassRT3 : register(t2);
+[[vk::binding(3, 1)]]
+Texture2D<float4> in_SSRC : register(t3);
+[[vk::binding(4, 1)]]
+Texture2D<float4> in_ProbePosition : register(t4);
+[[vk::binding(5, 1)]]
+Texture2D<float4> in_ProbeNormal : register(t5);
+[[vk::binding(6, 1)]]
+Texture2D<uint> in_ProbeMask : register(t6);
+// Previous-frame GI history. Storage convention (paper-port aligned with
+// Capsaicin gi1.comp:4100): rgb = sample-count-weighted radiance Σ (Lᵢ),
+// a = sample count N. The final divide rgb/N is owned by the spatial
+// filter pass; here the unweighted form is what lets the dynamic cap
+// scale-down (`lighting *= max_sample_count / lighting.w`) drop the
+// effective sample weight without re-running the EMA.
+[[vk::binding(7, 1)]]
+Texture2D<float4> in_GIHistoryPrev : register(t7);
+// Previous-frame world-space position per pixel. RGBA float16 ping-pong;
+// alpha = 1 marks a non-sky tap, alpha = 0 marks sky / uninitialised.
+// Replaces the depth-from-history-alpha source we lose when the history
+// alpha switches from "linear depth" to "sample count N". Sourced as a
+// dedicated texture rather than a previous-frame G-buffer because the
+// engine doesn't keep one — see SSRCTemporalPass for the wiring.
+[[vk::binding(8, 1)]]
+Texture2D<float4> in_PrevWorldPos : register(t8);
+// Smoothed luma-delta from last frame. EMA at 1/8, taps from the 3×3
+// neighbourhood — the same neighbourhood used to gather history colour.
+// Drives `alpha_blend` and through it the dynamic history cap; under
+// motion this rises and the cap drops to ~4 samples, evicting stale
+// history without per-frame clears.
+[[vk::binding(9, 1)]]
+Texture2D<float> in_ColorDeltaPrev : register(t9);
+
+[[vk::binding(0, 2)]]
+RWTexture2D<float4> out_GIHistory : register(u0);
+// Per-pixel blur mask consumed by the SSRCSpatial{Horizontal,Vertical}
+// passes. Capsaicin gi1.comp:4083, 4099:
+//   blur_mask = is_sky ? -1 : max(MAX_BLUR_MASK - lighting.w, 0)
+//   stored = blur_mask / MAX_BLUR_MASK
+// High-sample-count pixels (lighting.w → MAX_BLUR_MASK) get blur_mask 0
+// and the filter early-outs to the centre tap; low-sample-count pixels
+// get the full radius (max ~8 px per axis) so the spatial filter masks
+// undersampling. Sky pixels (-1 sentinel) clamp to 0 in the filter's
+// `if (blur_mask > 0)` branch.
+//
+// Computed BEFORE the new sample is appended to lighting so the radius
+// reacts to the *previous* frame's converged-ness — a pixel that just
+// moved from a 32-sample plateau to a 4-sample disocclusion gets the
+// large radius this frame, not on the next.
+[[vk::binding(1, 2)]]
+RWTexture2D<float> out_BlurMask : register(u1);
+// Current-frame world-space position (xyz = GPassRT0 position, w = 1 for
+// non-sky / 0 for sky). Becomes next frame's `in_PrevWorldPos`.
+[[vk::binding(2, 2)]]
+RWTexture2D<float4> out_PrevWorldPos : register(u2);
+// Smoothed luma-delta destination. Becomes next frame's `in_ColorDeltaPrev`.
+[[vk::binding(3, 2)]]
+RWTexture2D<float> out_ColorDelta : register(u3);
+
+// Pull in the radiance-cache evaluation helpers now that all four cache
+// textures + g_Frame are visible. RADIANCE_CACHE_HAS_BINDINGS opts this
+// shader into the bilinear-blend SampleSSRC + LoadIrradiance +
+// ComputeProbeWeight bodies in the header; consumers that only need
+// FindClosestProbe / Algorithm 3 leave it undefined.
+#define RADIANCE_CACHE_HAS_BINDINGS
+#include "common/SSRCCommon.hlsl"
+
+// Capsaicin's dynamic cap maps |alpha_blend| ∈ [0,1] to
+// max_sample_count = lerp(MIN_CAP, MAX_CAP_FACTOR · MAX_BLUR_MASK,
+// alpha_blend) (gi1.comp:4092). MAX_BLUR_MASK governs the spatial
+// filter's radius taper (CL2); for CL1 it caps the absolute history
+// length so a converged surface accepts at most this many integrated
+// samples before further input gets the (1/N) tail weight.
+static const float kSSRCTemporalr_MaxBlurMask = 16.0;
+// Floor on the dynamic cap. Capsaicin uses 4: when motion drives
+// alpha_blend → 0 the cap collapses to four samples, scaling old history
+// down to that count and re-priming the EMA. Lower than 4 lets a single
+// stray bright sample through; higher leaves visible smear under fast
+// rotation. The exact value matches gi1.comp:4092.
+static const float kSSRCTemporalr_MinSampleCount = 4.0;
+// Per-Capsaicin: MAX_CAP_FACTOR · MAX_BLUR_MASK = 8 · 16 = 128 max samples.
+// In our engine the per-pixel SH evaluation is significantly less noisy
+// than Capsaicin's per-ray integration, so this cap rarely binds in
+// practice — flagged for CL1 follow-up if dynamic-cap data shows it
+// never collapses (memory rule feedback_paper_assumptions.md).
+static const float kSSRCTemporalr_MaxCapFactor = 8.0;
+// Color-delta EMA rate. Capsaicin uses 1/8 (gi1.comp:4077) — fast enough
+// to react to a yaw-motion luma jump within 8 frames, slow enough that a
+// single noisy sample doesn't collapse the cap.
+static const float kColorDeltaEmaRate = 1.0 / 8.0;
+// Sub-pixel weight scale for the 3×3 reprojection gather. Capsaicin's
+// constant; pulls the per-tap weight to 0 at √2-pixel diagonal distance
+// (corner taps get weight 0 unless the previous_uv lands exactly on the
+// corner texel centre).
+static const float kOneOverSqrtOfTwo = 0.707107;
+
+// Capsaicin's SSRCTemporalr_RemoveNaNs (gi1.comp helper). After the weight
+// divide a degenerate tap can leak NaN/Inf into the EMA; clamp once
+// without changing the in-range branch.
+float3 RemoveNaNs3(float3 v)
+{
+	return any(isnan(v) | isinf(v)) ? float3(0.0, 0.0, 0.0) : v;
+}
+float RemoveNaNs1(float v)
+{
+	return (isnan(v) || isinf(v)) ? 0.0 : v;
+}
+
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+	uint2 l_ScreenCoord = input.dispatchThreadID.xy;
+	int2 l_Viewport = int2(g_Frame.viewportSize.xy);
+
+	float4 GPassRT0 = in_opaquePassRT0[l_ScreenCoord];
+
+	// Sky / no geometry. Sentinel writes (zero everywhere) so next frame's
+	// reprojection rejects this tap by the prev-world alpha gate, and
+	// LightPass keeps agreement. Blur mask gets the Capsaicin sky
+	// sentinel `-1` (gi1.comp:4083); the filter's `blur_mask > 0` branch
+	// then clamps it to a zero-radius (centre-tap-only) fetch.
+	if (GPassRT0.a == 0.0)
+	{
+		out_GIHistory[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		out_BlurMask[l_ScreenCoord] = -1.0 / kSSRCTemporalr_MaxBlurMask;
+		out_PrevWorldPos[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		out_ColorDelta[l_ScreenCoord] = 0.0;
+		return;
+	}
+
+	float4 GPassRT1 = in_opaquePassRT1[l_ScreenCoord];
+	float3 l_Position_WorldSpace = GPassRT0.xyz;
+	float3 N = normalize(GPassRT1.xyz);
+
+	// Current sample. Capsaicin gi1.comp:1636-1638 packs a denoiser_hint into
+	// the alpha channel: 1.0 for a converged weighted blend, 0.0 for the
+	// relaxed-equal-weight backup that fires when all 4 corner probes get
+	// zero edge-aware weight (paper §2.4.1). The temporal-accumulator branch
+	// below (`color.w > 0.0 ? 1.0 : -1.0`) translates a 0.0 hint into a
+	// `lighting.w = -1.0` push so the blur-mask emission widens the spatial
+	// filter radius (paper §2.4.3 / Figure 19) — neighbouring well-sampled
+	// pixels then absorb the relaxed pixel via the bilateral blur.
+	float4 l_IrradianceFromCache = SampleSSRC(l_ScreenCoord, l_Position_WorldSpace, N);
+	if (any(isnan(l_IrradianceFromCache)) || any(isinf(l_IrradianceFromCache)))
+		l_IrradianceFromCache = float4(0.0, 0.0, 0.0, 0.0);
+	float4 color = l_IrradianceFromCache;
+
+	// Reprojection pass — Capsaicin gi1.comp:4033–4061 verbatim shape.
+	// `lighting` accumulates Σ wᵢ·(rgb·N, N) across the gathered taps;
+	// after the weight-normalise it carries the previous frame's weighted
+	// sum-of-samples representation and we append the current sample below.
+	float4 lighting = float4(0.0, 0.0, 0.0, 0.0);
+	float color_delta = 0.0;
+	float alpha_blend = 1.0;
+
+	float2 uv = (float2(l_ScreenCoord) + 0.5) / g_Frame.viewportSize.xy;
+	// Engine motion vectors (OpaquePass.frag:124) are stored as
+	//   motionVec = screenPos_prev - screenPos_curr  (in pixels)
+	// i.e. they point FROM the current pixel TO where it was last frame.
+	// Capsaicin's convention is the opposite (velocity = curr - prev), so
+	// previous_uv adds rather than subtracts here. Mismatching this sign
+	// inverts every reprojection — the validity gates fail and every
+	// pixel resets to "no history", manifesting as full-amplitude per-pixel
+	// boil exactly like the post-CL1 capture before this fix.
+	float2 motionPx = in_opaquePassRT3[l_ScreenCoord].xy;
+	float2 velocity = motionPx / g_Frame.viewportSize.xy;
+	float2 previous_uv = uv + velocity;
+
+	float3 world = l_Position_WorldSpace;
+
+	if (all(previous_uv > 0.0) && all(previous_uv < 1.0))
+	{
+		// AdaptiveCellSize already encodes the §2.1 paper formula. Capsaicin
+		// boosts cell_size at grazing angles so the depth/world-space gate
+		// stays open along thin glancing surfaces (gi1.comp:4026); the same
+		// logic applies here regardless of the spatial scheme.
+		float depth = length(world - g_Frame.camera_posWS.xyz);
+		float cell_size = max(AdaptiveCellSize(depth, g_Frame.viewportSize.xy, g_Frame.p_original), EPSILON);
+		float3 viewDir = normalize(g_Frame.camera_posWS.xyz - world);
+		float ndotv = max(dot(viewDir, N), 0.0);
+		cell_size *= lerp(1.0, 5.0, pow(1.0 - ndotv, 6.0));
+
+		float2 texel_size = 1.0 / g_Frame.viewportSize.xy;
+		float2 prev_pixel_centre = previous_uv * g_Frame.viewportSize.xy;
+		float weight = 0.0;
+
+		// 3×3 bilinear-snap gather. Snap each tap's UV to a texel centre
+		// (`floor + 0.5`) so the SampleLevel reads the texel directly under
+		// previous_uv ± offset rather than a hardware-bilinear blend across
+		// four neighbours — the latter would bleed history across edges
+		// before the validity gates run.
+		[unroll]
+		for (int y = -1; y <= 1; ++y)
+		{
+			[unroll]
+			for (int x = -1; x <= 1; ++x)
+			{
+				int2 prevTexel = int2(floor(prev_pixel_centre)) + int2(x, y);
+				if (any(prevTexel < int2(0, 0)) || any(prevTexel >= l_Viewport))
+					continue;
+
+				float4 c = in_GIHistoryPrev.Load(int3(prevTexel, 0));
+				float4 prevPos4 = in_PrevWorldPos.Load(int3(prevTexel, 0));
+				// PrevWorldPos.w == 0 marks the previous tap as sky /
+				// uninitialised — same role as Capsaicin's normal-magnitude
+				// test (gi1.comp:4041) gated on previous_normal != 0.
+				if (c.w < 1.0 || prevPos4.w == 0.0)
+					continue;
+
+				float3 previous_normal_normalized;
+				{
+					float3 prevN = in_opaquePassRT1.Load(int3(prevTexel, 0)).xyz;
+					previous_normal_normalized = normalize(prevN);
+				}
+				float3 previous_world = prevPos4.xyz;
+
+				if (distance(world, previous_world) < cell_size &&
+					dot(N, previous_normal_normalized) > 0.95)
+				{
+					float2 tap_centre_px = float2(prevTexel) + 0.5;
+					float subpixel_dist = distance(tap_centre_px, prev_pixel_centre);
+					float w = saturate(1.0 - subpixel_dist * kOneOverSqrtOfTwo);
+
+					color_delta += w * in_ColorDeltaPrev.Load(int3(prevTexel, 0));
+					lighting    += w * c;
+					weight      += w;
+				}
+			}
+		}
+
+		if (weight > 0.0)
+		{
+			// Restore the colour-delta sign: gather sums absolute deltas
+			// weighted, then re-applies the running sign so a darkening
+			// trend stays negative across the smoothed EMA.
+			float signRestore = sign(color_delta);
+			color_delta = RemoveNaNs1(abs(color_delta) / weight);
+			color_delta *= signRestore;
+			lighting = float4(RemoveNaNs3(lighting.xyz / weight), RemoveNaNs1(lighting.w / weight));
+		}
+
+		// Update colour-delta only if this tap had a previous sample to
+		// compare against. lumaB normalised by max(N, 1) because lighting.w
+		// is the sample count (not a multiplicative weight).
+		if (color.w > 0.0)
+		{
+			float lumaA = GetLuma(color.xyz);
+			float lumaB = GetLuma(lighting.xyz / max(lighting.w, 1.0));
+
+			color_delta = lerp(color_delta, lumaA - lumaB, kColorDeltaEmaRate);
+			alpha_blend = saturate(1.0 - abs(color_delta) / max(lumaB, 1e-4));
+		}
+	}
+
+	// Capsaicin gi1.comp:4083 — capture the blur mask BEFORE the new
+	// sample is appended, so the radius reacts to last frame's history
+	// count rather than this frame's post-append count. Stored
+	// normalised in [0, 1] so the filter shader and the consumer's
+	// disk format agree (it's also a single R Float16 texture; the
+	// sky sentinel `-1` propagated through the early-out branch above
+	// keeps the same encoding shape there).
+	float blur_mask = max(kSSRCTemporalr_MaxBlurMask - lighting.w, 0.0);
+
+	// Append the current sample (sample-count-weighted: rgb·1 + N·1).
+	if (color.w > 0.0 || lighting.w < 1.0)
+	{
+		lighting += float4(color.xyz, color.w > 0.0 ? 1.0 : -1.0);
+	}
+
+	// Vignette per Capsaicin gi1.comp:4090: corners of the screen integrate
+	// less reliably (probe coverage thinner, motion vectors noisier near
+	// edges) so the cap drops gracefully there rather than holding stale
+	// samples at the frame edge.
+	float2 vignette_uv = uv * (1.0 - uv.yx);
+	float vignette = pow(15.0 * vignette_uv.x * vignette_uv.y, 0.25);
+
+	// Dynamic cap. Floor at MIN_SAMPLE_COUNT (=4) so a single bad frame
+	// can't zero the history; ceiling at MAX_CAP_FACTOR · MAX_BLUR_MASK
+	// modulated by alpha_blend (paper-faithful range under Capsaicin's
+	// per-ray noise — likely conservative for our per-pixel SH eval; see
+	// kSSRCTemporalr_MaxCapFactor docs).
+	float capped_history = lerp(kSSRCTemporalr_MinSampleCount,
+	                            kSSRCTemporalr_MaxCapFactor * min(abs(lighting.w), kSSRCTemporalr_MaxBlurMask),
+	                            alpha_blend);
+	float max_sample_count = max(capped_history * vignette, 1.0);
+
+	// Proportional scale-down: keeps the rgb·N representation consistent
+	// with the new (lower) N. Equivalent to "weight the running mean by
+	// max_sample_count instead of N" without re-running the EMA.
+	if (lighting.w > max_sample_count)
+	{
+		lighting *= (max_sample_count / lighting.w);
+	}
+
+	out_GIHistory[l_ScreenCoord] = lighting;
+	// Normalised so the consumer doesn't need MAX_BLUR_MASK to interpret
+	// the value (Capsaicin gi1.comp:4099). The filter shader reads it via
+	// `in_BlurMask.Load(...)` and multiplies back to recover the raw
+	// pixel-radius range.
+	out_BlurMask[l_ScreenCoord] = blur_mask / kSSRCTemporalr_MaxBlurMask;
+	out_PrevWorldPos[l_ScreenCoord] = float4(world, 1.0);
+	out_ColorDelta[l_ScreenCoord] = color_delta;
+}

@@ -1,7 +1,7 @@
 # Test-Engine.psm1
 #
 # Shared Main.exe-driver boilerplate for the three engine smoke-test scripts
-# (TestGIScene.ps1, TestGPUPathTracer.ps1, TestPathTracerThreeScenes.ps1).
+# (TestGIScene.ps1, TestPT.ps1, TestPTThreeScenes.ps1).
 #
 # Each driver script flips Main.exe into headless / offscreen mode, waits for
 # auto-termination, then asserts on three universal post-run predicates:
