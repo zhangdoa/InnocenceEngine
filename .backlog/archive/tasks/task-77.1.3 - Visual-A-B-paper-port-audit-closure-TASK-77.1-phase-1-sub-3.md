@@ -4,6 +4,7 @@ title: Visual A/B + paper-port audit + closure (TASK-77.1 phase 1 sub-3)
 status: To Do
 assignee: []
 created_date: '2026-04-30 19:44'
+updated_date: '2026-05-21 20:44'
 labels:
   - R&D
   - path-tracer
@@ -11,9 +12,7 @@ labels:
   - denoiser
   - radiance-cache
   - validation
-dependencies:
-  - TASK-77.1.1
-  - TASK-77.1.2
+dependencies: []
 parent_task_id: TASK-77.1
 priority: high
 ---

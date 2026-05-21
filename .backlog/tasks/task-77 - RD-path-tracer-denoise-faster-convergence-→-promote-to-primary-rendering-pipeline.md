@@ -3,10 +3,10 @@ id: TASK-77
 title: >-
   R&D: path tracer denoise + faster convergence → promote to primary rendering
   pipeline
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-18 19:34'
-updated_date: '2026-04-30 19:12'
+updated_date: '2026-05-21 20:50'
 labels:
   - R&D
   - path-tracer
@@ -97,3 +97,43 @@ Umbrella moves from R&D-direction-only to actively-decomposed. Phase tasks get f
 
 **TASK-77.3 candidate stays unfiled**: cache reactivation as feeder above the NRD denoiser. Re-evaluate after TASK-77.4 lands.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+TASK-77 R&D umbrella closes. Direction explored across three phase tasks (TASK-77.1 / .2 / .4) plus three archived dead subtasks (.1.1 / .1.2 / .1.3 superseded by NRD route).
+
+## R&D arc
+
+- **TASK-77.1** (Done, "wrong-framing") — hash-grid radiance cache as denoiser. Architectural diagnosis: the cache is a long-tail-radiance feeder, not a denoiser. Five-CL D1-reversal chain (Capsaicin GI-1.0 paper-port) implementation correct but framing wrong. Toggle stays compile-time-OFF.
+- **TASK-77.1.1/.1.2/.1.3** — three children of 77.1 filed at direction approval (phase-1 sub-tasks). Archived this session (superseded; NRD ReBLUR replaces the denoise role they were planned for; no work ever started on them).
+- **TASK-77.2** (Done, superseded) — in-house SVGF-shape denoiser. CL-1 + CL-2 landed (GBuffer-equivalent + lobe split — both survived into 77.4's NRD inputs). CL-3 spatial bilateral + Option D AccumBuffer shipped with three flavors of artifact (contours, fireflies, ghosting), hitting the same architectural trap (SVGF / Capsaicin / in-house-NRD-clone) the project walked twice before.
+- **TASK-77.4** (Done this session) — NRD ReBLUR integration. Replaced the in-house stack post-MIT-relicense (commit `18b6ece3`). All 7 ACs discharged. User layer-4 sign-off: "GPU path tracer + NRD, pretty acceptable with fireflies when camera moves." Captures at `Build/captures/task-77.4-AC1/`.
+
+## Exit-criterion divergence (honest disclosure)
+
+Original exit criterion (2026-04-30 direction approval): "Rasterizer is marked 'debug / comparison mode' in the config — only the path tracer is the default render path."
+
+Reality at closure: explicit code-level rasterizer demotion-as-default did NOT land. The project still runs both pipelines concurrently (PT + NRD AND SSRC/rasterizer-trick passes), as confirmed by the user's session description today: "we have a GPU path tracer and some passes, and some NRD passes for that, and GI 1.0-inspired grid/cache passes for that, and a WIP GI 1.0 port." User-direction has since shifted — keep all stacks 1-4 (per session decisions today), and the original demotion-as-default goal is no longer the active plan.
+
+The R&D direction's *intellectual* conclusions are documented:
+- PT + NRD ReBLUR is the keeper denoise path (TASK-77.4).
+- Hash-grid cache-as-denoiser is not the right shape (TASK-77.1).
+- In-house SVGF is architecturally trap-prone (TASK-77.2).
+- `.claude/state/project-direction.md` already declares PT-primary (snapshot updated at the 2026-04-30 approval).
+
+What was NOT done: the user-facing config-default flip and `IsBypassed` plumbing that would make rasterizer truly opt-in only.
+
+## What this closure does
+
+- Marks the umbrella Done — the R&D arc has played out and produced a working denoise path (NRD).
+- Does NOT pretend the exit criterion was met as written. The criterion has been overtaken by user-direction; the umbrella stays Done rather than In Progress because there is no concrete planned next-step work under it.
+- If user later wants the explicit rasterizer-demotion CL, that will be a fresh task (small, mechanical: config-default flip + IsBypassed gates on the rasterizer-only passes when PT-primary is active).
+
+## Cross-refs at closure
+
+- TASK-77.4 final summary: NRD ReBLUR integration details + AC-1 captures.
+- `.claude/state/project-direction.md`: PT-primary direction snapshot (live).
+- TASK-226: GI 1.0 SSRC port (continues independently; user-decided to keep in tree despite quality).</finalSummary>
+</invoke>
+<!-- SECTION:FINAL_SUMMARY:END -->

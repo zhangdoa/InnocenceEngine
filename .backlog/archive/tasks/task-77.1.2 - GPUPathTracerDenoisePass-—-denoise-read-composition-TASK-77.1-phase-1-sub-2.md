@@ -6,14 +6,14 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-04-30 19:43'
+updated_date: '2026-05-21 20:44'
 labels:
   - R&D
   - path-tracer
   - rendering
   - denoiser
   - radiance-cache
-dependencies:
-  - TASK-77.1.1
+dependencies: []
 parent_task_id: TASK-77.1
 priority: high
 ---
