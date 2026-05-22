@@ -1,6 +1,5 @@
 #pragma once
 #include "AssimpImporter.h"
-#include "../../Common/AssetImportData.h"
 
 namespace Inno
 {

@@ -2,7 +2,6 @@
 #include "../Interface/IService.h"
 #include "../Common/ComponentHeaders.h"
 #include "../Common/AssetData.h"
-#include "../Common/AssetImportData.h"
 #include "../Common/BCCompression.h"
 
 namespace Inno
