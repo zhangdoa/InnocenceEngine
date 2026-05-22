@@ -1,4 +1,5 @@
 #include "TemplateAssetService.h"
+#include "../Common/Array.h"
 #include "TemplateAssetService_Internal.h"
 using namespace Inno;
 
@@ -81,7 +82,7 @@ void TemplateAssetServiceImpl::generateFaceBasedNormal(MeshComponent* meshCompon
     }
 }
 
-void TemplateAssetServiceImpl::FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace)
+void TemplateAssetServiceImpl::FulfillVerticesAndIndices(MeshComponent* meshComponent, const Inno::Array<Index>& indices, const Inno::Array<Vec3>& vertices, uint32_t verticesPerFace)
 {
     auto& serviceVertices = m_meshVertices[meshComponent];
     auto& serviceIndices = m_meshIndices[meshComponent];

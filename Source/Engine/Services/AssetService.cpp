@@ -1,4 +1,5 @@
 #include "AssetService.h"
+#include "../Common/Array.h"
 #include "../Common/HashMap.h"
 #include "AssetService_Internal.h"
 #include "../Common/LogService.h"
@@ -11,20 +12,20 @@ namespace Inno::AssetServiceNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	std::deque<MeshAsset> m_MeshAssets;
-	std::vector<uint32_t> m_MeshFreeSlots;
-	std::vector<uint32_t> m_MeshGenerations;
+	Inno::Array<uint32_t> m_MeshFreeSlots;
+	Inno::Array<uint32_t> m_MeshGenerations;
 	Inno::HashMap<std::string, MeshAssetHandle> m_MeshLUT;
 	std::shared_mutex s_MeshMutex;
 
 	std::deque<MaterialAsset> m_MaterialAssets;
-	std::vector<uint32_t> m_MaterialFreeSlots;
-	std::vector<uint32_t> m_MaterialGenerations;
+	Inno::Array<uint32_t> m_MaterialFreeSlots;
+	Inno::Array<uint32_t> m_MaterialGenerations;
 	Inno::HashMap<std::string, MaterialAssetHandle> m_MaterialLUT;
 	std::shared_mutex s_MaterialMutex;
 
 	std::deque<TextureAsset> m_TextureAssets;
-	std::vector<uint32_t> m_TextureFreeSlots;
-	std::vector<uint32_t> m_TextureGenerations;
+	Inno::Array<uint32_t> m_TextureFreeSlots;
+	Inno::Array<uint32_t> m_TextureGenerations;
 	Inno::HashMap<std::string, TextureAssetHandle> m_TextureLUT;
 	std::shared_mutex s_TextureMutex;
 
@@ -55,7 +56,7 @@ bool AssetService::Terminate()
 {
 	Log(Success, "AssetService: clearing asset registries...");
 	// Clear all asset registries before CRT static cleanup.
-	// MaterialAsset contains std::vector<std::string> which must be freed while the
+	// MaterialAsset contains Inno::Array<std::string> which must be freed while the
 	// heap is still valid — deferring to the static-destructor phase can cause
 	// STATUS_HEAP_CORRUPTION on exit if the deques are non-empty.
 	std::unique_lock<std::shared_mutex> l_meshLock(s_MeshMutex);

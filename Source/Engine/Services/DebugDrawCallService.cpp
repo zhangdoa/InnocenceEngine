@@ -1,4 +1,5 @@
 #include "DebugDrawCallService.h"
+#include "../Common/Array.h"
 
 #include "../Engine.h"
 #include "../Common/LogService.h"
@@ -13,7 +14,7 @@ namespace Inno
 
 		mutable std::shared_mutex m_Mutex;
 
-		std::vector<DebugPassDrawCallInfo> m_DebugPassDrawCallInfoVector;
+		Inno::Array<DebugPassDrawCallInfo> m_DebugPassDrawCallInfoVector;
 
 		bool Setup(IServiceConfig* systemConfig);
 		bool Initialize();
@@ -96,7 +97,7 @@ ObjectStatus DebugDrawCallService::GetStatus()
 	return m_Impl->m_ObjectStatus;
 }
 
-const std::vector<DebugPassDrawCallInfo>& DebugDrawCallService::GetDebugPassDrawCallInfo()
+const Inno::Array<DebugPassDrawCallInfo>& DebugDrawCallService::GetDebugPassDrawCallInfo()
 {
 	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
 	return m_Impl->m_DebugPassDrawCallInfoVector;

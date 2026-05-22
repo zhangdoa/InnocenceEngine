@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Common/Object.h"
 #include "../Common/STL14.h"
 
@@ -28,16 +29,16 @@ namespace Inno
 
 		ShaderFilePaths m_ShaderFilePaths = {};
 
-		std::vector<uint8_t> m_VSBuffer;
-		std::vector<uint8_t> m_HSBuffer;
-		std::vector<uint8_t> m_DSBuffer;
-		std::vector<uint8_t> m_GSBuffer;
-		std::vector<uint8_t> m_PSBuffer;
-		std::vector<uint8_t> m_CSBuffer;
-		std::vector<uint8_t> m_RayGenBuffer;
-		std::vector<uint8_t> m_AnyHitBuffer;
-		std::vector<uint8_t> m_ClosestHitBuffer;
-		std::vector<uint8_t> m_MissBuffer;
-		std::vector<uint8_t> m_ShadowMissBuffer;
+		Inno::Array<uint8_t> m_VSBuffer;
+		Inno::Array<uint8_t> m_HSBuffer;
+		Inno::Array<uint8_t> m_DSBuffer;
+		Inno::Array<uint8_t> m_GSBuffer;
+		Inno::Array<uint8_t> m_PSBuffer;
+		Inno::Array<uint8_t> m_CSBuffer;
+		Inno::Array<uint8_t> m_RayGenBuffer;
+		Inno::Array<uint8_t> m_AnyHitBuffer;
+		Inno::Array<uint8_t> m_ClosestHitBuffer;
+		Inno::Array<uint8_t> m_MissBuffer;
+		Inno::Array<uint8_t> m_ShadowMissBuffer;
 	};
 }

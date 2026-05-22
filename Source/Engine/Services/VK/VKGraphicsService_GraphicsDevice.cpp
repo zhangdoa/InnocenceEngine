@@ -1,4 +1,5 @@
 #include "VKGraphicsService.h"
+#include "../../Common/Array.h"
 #include "../../Component/VKMeshComponent.h"
 #include "../../Component/VKTextureComponent.h"
 #include "../../Component/VKMaterialComponent.h"
@@ -66,14 +67,14 @@ bool VKGraphicsService::ReleaseHardwareResources()
 	return true;
 }
 
-std::vector<const char *> VKGraphicsService::GetRequiredExtensions()
+Inno::Array<const char *> VKGraphicsService::GetRequiredExtensions()
 {
 #if defined INNO_PLATFORM_WIN
-	std::vector<const char *> l_extensions = {"VK_KHR_surface", "VK_KHR_win32_surface"};
+	Inno::Array<const char *> l_extensions = {"VK_KHR_surface", "VK_KHR_win32_surface"};
 #elif defined INNO_PLATFORM_MAC
-	std::vector<const char *> extensions = {"VK_KHR_surface", "VK_MVK_macos_surface"};
+	Inno::Array<const char *> extensions = {"VK_KHR_surface", "VK_MVK_macos_surface"};
 #elif defined INNO_PLATFORM_LINUX
-	std::vector<const char *> extensions = {"VK_KHR_surface", "VK_KHR_xcb_surface"};
+	Inno::Array<const char *> extensions = {"VK_KHR_surface", "VK_KHR_xcb_surface"};
 #endif
 
 	if (m_enableValidationLayers)

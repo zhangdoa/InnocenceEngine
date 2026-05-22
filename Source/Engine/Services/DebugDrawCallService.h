@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Interface/IService.h"
 #include "../Common/GPUDataStructure.h"
 
@@ -17,7 +18,7 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		const std::vector<DebugPassDrawCallInfo>& GetDebugPassDrawCallInfo();
+		const Inno::Array<DebugPassDrawCallInfo>& GetDebugPassDrawCallInfo();
 		void Submit(const DebugPassDrawCallInfo& info);
 
 	private:

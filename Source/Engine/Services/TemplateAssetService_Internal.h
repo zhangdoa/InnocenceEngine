@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "TemplateAssetService.h"
 #include "../Common/HashMap.h"
 
@@ -28,13 +29,13 @@ namespace Inno
         void addSphere(MeshComponent* meshComponent);
         void addTerrain(MeshComponent* meshComponent);
 
-        void FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace = 0);
+        void FulfillVerticesAndIndices(MeshComponent* meshComponent, const Inno::Array<Index>& indices, const Inno::Array<Vec3>& vertices, uint32_t verticesPerFace = 0);
         bool GenerateMesh(MeshShape shape, MeshComponent* meshComponent);
 
         ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 
-        Inno::HashMap<MeshComponent*, std::vector<Vertex>> m_meshVertices;
-        Inno::HashMap<MeshComponent*, std::vector<Index>> m_meshIndices;
+        Inno::HashMap<MeshComponent*, Inno::Array<Vertex>> m_meshVertices;
+        Inno::HashMap<MeshComponent*, Inno::Array<Index>> m_meshIndices;
         Inno::HashMap<TextureComponent*, void*> m_textureData;
 
         EntityID m_basicNormalTextureEntity      = INVALID_ENTITY;

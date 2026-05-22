@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Common/Array.h"
 #include "../MeshResourceService.h"
 #include "../../Common/HashMap.h"
 #include "DX12Headers.h"
@@ -22,7 +23,7 @@ namespace Inno
 		uint32_t GetIndexSRVSlot(MeshAssetHandle handle) const;
 
 	protected:
-		bool InitializeImpl(MeshAssetHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
+		bool InitializeImpl(MeshAssetHandle handle, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices) override;
 		void ReleaseMeshGPUResourceImpl(MeshAssetHandle handle) override;
 
 	private:

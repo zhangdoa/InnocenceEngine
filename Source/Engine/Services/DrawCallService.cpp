@@ -1,6 +1,7 @@
 ﻿#include "DrawCallService.h"
 
 #include "../Common/LogService.h"
+#include "../Common/Array.h"
 #include "EntityRegistry.h"
 #include "RenderingConfigurationService.h"
 #include "AssetService.h"
@@ -23,9 +24,9 @@ namespace Inno
 
 		mutable std::shared_mutex m_Mutex;
 
-		std::vector<GPUModelData> m_GPUModelDataVector;
-		std::vector<TransformConstantBuffer> m_TransformBufferVector;
-		std::vector<MaterialConstantBuffer> m_MaterialCBVector;
+		Inno::Array<GPUModelData> m_GPUModelDataVector;
+		Inno::Array<TransformConstantBuffer> m_TransformBufferVector;
+		Inno::Array<MaterialConstantBuffer> m_MaterialCBVector;
 
 		GPUBufferComponent* m_GPUModelDataBufferComp;
 		GPUBufferComponent* m_TransformBufferComp;
@@ -357,7 +358,7 @@ ObjectStatus DrawCallService::GetStatus()
 	return m_Impl->m_ObjectStatus;
 }
 
-const std::vector<GPUModelData>& DrawCallService::GetGPUModelData()
+const Inno::Array<GPUModelData>& DrawCallService::GetGPUModelData()
 {
 	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
 	return m_Impl->m_GPUModelDataVector;

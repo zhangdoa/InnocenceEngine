@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Interface/IService.h"
 #include "../Common/EntityID.h"
 #include "../Common/GPUDataStructure.h"
@@ -22,7 +23,7 @@ namespace Inno
 		bool CreateCollisionComponent(EntityID Entity);
 
 		void RunCulling();
-		const std::vector<CullingResult>& GetCullingResult();
+		const Inno::Array<CullingResult>& GetCullingResult();
 		AABB GetVisibleSceneAABB();
 		AABB GetStaticSceneAABB();
 		AABB GetTotalSceneAABB();

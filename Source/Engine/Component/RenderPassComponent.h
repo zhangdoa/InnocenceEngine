@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Common/GraphicsPrimitive.h"
 #include "../Common/Object.h"
 #include "../Component/TextureComponent.h"
@@ -15,7 +16,7 @@ namespace Inno
 		ShaderProgramComponent* m_ShaderProgram = nullptr;
 
 		RenderPassDesc m_RenderPassDesc = {};
-		std::vector<ResourceBindingLayoutDesc> m_ResourceBindingLayoutDescs;
+		Inno::Array<ResourceBindingLayoutDesc> m_ResourceBindingLayoutDescs;
 
 		size_t m_CurrentFrame = 0;
 
@@ -24,6 +25,6 @@ namespace Inno
 
 		IOutputMergerTarget*  m_OutputMergerTarget  = nullptr;
 		IPipelineStateObject* m_PipelineStateObject = nullptr;
-		std::vector<ISemaphore*> m_Semaphores;
+		Inno::Array<ISemaphore*> m_Semaphores;
 	};
 }

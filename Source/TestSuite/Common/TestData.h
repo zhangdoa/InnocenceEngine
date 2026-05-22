@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Engine/Common/Array.h"
 #include "../../Engine/Common/STL14.h"
 
 namespace Inno
@@ -22,8 +23,8 @@ namespace Inno
 	class TestDataGenerator
 	{
 	public:
-		static std::vector<int32_t> GenerateIntSequence(size_t count);
-		static std::vector<float> GenerateFloatSequence(size_t count);
-		static std::vector<std::string> GenerateStringData(size_t count);
+		static Inno::Array<int32_t> GenerateIntSequence(size_t count);
+		static Inno::Array<float> GenerateFloatSequence(size_t count);
+		static Inno::Array<std::string> GenerateStringData(size_t count);
 	};
 }

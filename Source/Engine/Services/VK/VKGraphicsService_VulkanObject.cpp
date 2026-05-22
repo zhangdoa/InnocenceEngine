@@ -1,4 +1,5 @@
 #include "VKGraphicsService.h"
+#include "../../Common/Array.h"
 #include "../../Component/VKMeshComponent.h"
 #include "../../Component/VKTextureComponent.h"
 #include "../../Component/VKMaterialComponent.h"
@@ -60,12 +61,12 @@ VkResult VKGraphicsService::SetDebugUtilsObjectNameEXT(const VkDebugUtilsObjectN
 	}
 }
 
-bool VKGraphicsService::CheckValidationLayerSupport(const std::vector<const char*>& validationLayers)
+bool VKGraphicsService::CheckValidationLayerSupport(const Inno::Array<const char*>& validationLayers)
 {
 	uint32_t l_layerCount;
 	vkEnumerateInstanceLayerProperties(&l_layerCount, nullptr);
 
-	std::vector<VkLayerProperties> l_availableLayers(l_layerCount);
+	Inno::Array<VkLayerProperties> l_availableLayers(l_layerCount);
 	vkEnumerateInstanceLayerProperties(&l_layerCount, l_availableLayers.data());
 
 	for (const char* layerName : validationLayers)
@@ -90,12 +91,12 @@ bool VKGraphicsService::CheckValidationLayerSupport(const std::vector<const char
 	return true;
 }
 
-bool VKGraphicsService::CheckDeviceExtensionSupport(const std::vector<const char*>& deviceExtensions)
+bool VKGraphicsService::CheckDeviceExtensionSupport(const Inno::Array<const char*>& deviceExtensions)
 {
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(m_physicalDevice, nullptr, &extensionCount, nullptr);
 
-	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+	Inno::Array<VkExtensionProperties> availableExtensions(extensionCount);
 	vkEnumerateDeviceExtensionProperties(m_physicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
 	std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
@@ -115,7 +116,7 @@ QueueFamilyIndices VKGraphicsService::FindQueueFamilies(VkPhysicalDevice physica
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
-	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+	Inno::Array<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
 	int32_t i = 0;
@@ -155,7 +156,7 @@ QueueFamilyIndices VKGraphicsService::FindQueueFamilies(VkPhysicalDevice physica
 	return indices;
 }
 
-VkSurfaceFormatKHR VKGraphicsService::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+VkSurfaceFormatKHR VKGraphicsService::ChooseSwapSurfaceFormat(const Inno::Array<VkSurfaceFormatKHR>& availableFormats)
 {
 	if (availableFormats.size() == 1 && availableFormats[0].format == VK_FORMAT_UNDEFINED)
 	{
@@ -173,7 +174,7 @@ VkSurfaceFormatKHR VKGraphicsService::ChooseSwapSurfaceFormat(const std::vector<
 	return availableFormats[0];
 }
 
-VkPresentModeKHR VKGraphicsService::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+VkPresentModeKHR VKGraphicsService::ChooseSwapPresentMode(const Inno::Array<VkPresentModeKHR>& availablePresentModes)
 {
 	VkPresentModeKHR l_bestMode = VK_PRESENT_MODE_FIFO_KHR;
 
@@ -240,7 +241,7 @@ SwapChainSupportDetails VKGraphicsService::QuerySwapChainSupport(VkPhysicalDevic
 	return l_details;
 }
 
-bool VKGraphicsService::IsDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, const std::vector<const char*>& deviceExtensions)
+bool VKGraphicsService::IsDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, const Inno::Array<const char*>& deviceExtensions)
 {
 	QueueFamilyIndices indices = FindQueueFamilies(physicalDevice, windowSurface);
 

@@ -1,4 +1,5 @@
 #pragma once
+#include "Array.h"
 #include "GPUDataStructure.h"
 #include "AssetHandle.h"
 #include "Object.h"
@@ -58,8 +59,8 @@ namespace Inno
 		AssetResidency m_Residency = AssetResidency::Unloaded;
 
 		MaterialAttributes m_Attributes;
-		std::vector<std::string> m_TextureNames;
-		std::vector<TextureAssetHandle> m_TextureSlots;
+		Inno::Array<std::string> m_TextureNames;
+		Inno::Array<TextureAssetHandle> m_TextureSlots;
 		ShaderModel m_ShaderModel = ShaderModel::Invalid;
 	};
 }

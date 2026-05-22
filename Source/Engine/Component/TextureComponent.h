@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "GPUResourceComponent.h"
 
 namespace Inno
@@ -10,10 +11,10 @@ namespace Inno
 		static const char* GetTypeName() { return "TextureComponent"; };
 		TextureDesc m_TextureDesc = {};
 
-		std::vector<void*> m_GPUResources;
+		Inno::Array<void*> m_GPUResources;
 		
 		// Track current state per frame buffer (dynamic array like m_GPUResources)
-		mutable std::vector<uint32_t> m_CurrentState;
+		mutable Inno::Array<uint32_t> m_CurrentState;
 		
 		inline uint32_t GetHandleIndex(uint32_t frameIndex, uint32_t mipLevel) const
 		{

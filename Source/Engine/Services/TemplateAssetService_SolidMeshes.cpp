@@ -1,16 +1,17 @@
 #include "TemplateAssetService.h"
+#include "../Common/Array.h"
 #include "TemplateAssetService_Internal.h"
 using namespace Inno;
 
 void TemplateAssetServiceImpl::addTetrahedron(MeshComponent* meshComponent)
 {
-    std::vector<Index> l_indices =
+    Inno::Array<Index> l_indices =
     {
         0, 3, 1, 0, 2, 3,
         0, 1, 2, 1, 3, 2
     };
 
-    std::vector<Vec3> l_vertices =
+    Inno::Array<Vec3> l_vertices =
     {
         Vec3(1.0f, 1.0f, 1.0f),
         Vec3(1.0f, -1.0f, -1.0f),
@@ -23,7 +24,7 @@ void TemplateAssetServiceImpl::addTetrahedron(MeshComponent* meshComponent)
 
 void TemplateAssetServiceImpl::addCube(MeshComponent* meshComponent)
 {
-    std::vector<Index> l_indices =
+    Inno::Array<Index> l_indices =
     {
         0, 3, 1, 1, 3, 2,
         4, 0, 5, 5, 0, 1,
@@ -33,7 +34,7 @@ void TemplateAssetServiceImpl::addCube(MeshComponent* meshComponent)
         1, 2, 5, 5, 2, 6
     };
 
-    std::vector<Vec3> l_vertices =
+    Inno::Array<Vec3> l_vertices =
     {
         Vec3(1.0f, 1.0f, 1.0f),
         Vec3(1.0f, -1.0f, 1.0f),
@@ -50,7 +51,7 @@ void TemplateAssetServiceImpl::addCube(MeshComponent* meshComponent)
 
 void TemplateAssetServiceImpl::addOctahedron(MeshComponent* meshComponent)
 {
-    std::vector<Index> l_indices =
+    Inno::Array<Index> l_indices =
     {
         0, 2, 4, 4, 2, 1,
         1, 2, 5, 5, 2, 0,
@@ -58,7 +59,7 @@ void TemplateAssetServiceImpl::addOctahedron(MeshComponent* meshComponent)
         1, 5, 3, 5, 0, 3
     };
 
-    std::vector<Vec3> l_vertices =
+    Inno::Array<Vec3> l_vertices =
     {
         Vec3(1.0f, 0.0f, 0.0f),
         Vec3(-1.0f, 0.0f, 0.0f),
@@ -79,7 +80,7 @@ void TemplateAssetServiceImpl::addDodecahedron(MeshComponent* meshComponent)
 
 void TemplateAssetServiceImpl::addIcosahedron(MeshComponent* meshComponent)
 {
-    std::vector<Index> l_indices =
+    Inno::Array<Index> l_indices =
     {
         0, 1, 2, 0, 2, 3,
         0, 3, 4, 0, 4, 5,
@@ -93,7 +94,7 @@ void TemplateAssetServiceImpl::addIcosahedron(MeshComponent* meshComponent)
         11, 6, 7, 11, 10, 6
     };
 
-    std::vector<Vec3> l_vertices =
+    Inno::Array<Vec3> l_vertices =
     {
         Vec3(1.0f, 0.0f, 0.0f),
         Vec3(0.447213595500f, 0.894427191000f, 0.0f),

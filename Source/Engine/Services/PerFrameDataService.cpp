@@ -1,6 +1,7 @@
 ﻿#include "PerFrameDataService.h"
 
 #include "../Common/LogService.h"
+#include "../Common/Array.h"
 #include "CameraService.h"
 #include "EntityRegistry.h"
 #include "../Component/TransformComponent.h"
@@ -22,7 +23,7 @@ namespace Inno
 
 		mutable std::shared_mutex m_Mutex;
 
-		std::vector<PerFrameConstantBuffer> m_perFrameCBs;
+		Inno::Array<PerFrameConstantBuffer> m_perFrameCBs;
 
 		GPUBufferComponent* m_PerFrameCBufferGPUBufferComp;
 		GPUBufferComponent* m_PerFrameCBufferPrevGPUBufferComp;

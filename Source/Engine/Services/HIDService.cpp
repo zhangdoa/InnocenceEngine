@@ -1,5 +1,6 @@
 ﻿#include "HIDService.h"
 #include "../Common/LogService.h"
+#include "../Common/Array.h"
 #include "RenderingConfigurationService.h"
 
 #include "../Engine.h"
@@ -54,7 +55,7 @@ bool HIDService::Update()
 	if (l_initConfig.isOffscreen || l_initConfig.totalFrames > 0)
 		return true;
 
-	g_Engine->getWindowService()->ConsumeEvents([this](const std::vector<IWindowEvent*>& l_events)
+	g_Engine->getWindowService()->ConsumeEvents([this](const Inno::Array<IWindowEvent*>& l_events)
 		{
 			for (auto l_event : l_events)
 			{
@@ -76,7 +77,7 @@ bool HIDService::Update()
 	// the writer side (re-entrant AddButtonStateCallback would take unique_lock
 	// while the same thread holds shared_lock — undefined on MSVC SRW-backed
 	// std::shared_mutex).
-	std::vector<ButtonEvent> l_PendingContinuousEvents;
+	Inno::Array<ButtonEvent> l_PendingContinuousEvents;
 	{
 		std::shared_lock<std::shared_mutex> l_Lock(m_ButtonEventsMutex);
 		if (m_ButtonEvents.size() != 0)
@@ -163,7 +164,7 @@ void HIDService::ButtonStateCallback(const ButtonState& buttonState)
 	auto& l_previousFrameButtonState = m_PreviousFrameButtonStates[buttonState.m_Code];
 	const bool l_StateChanged = (l_previousFrameButtonState.m_isPressed != buttonState.m_isPressed);
 
-	std::vector<ButtonEvent> l_PendingOneShotEvents;
+	Inno::Array<ButtonEvent> l_PendingOneShotEvents;
 	if (l_StateChanged)
 	{
 		std::shared_lock<std::shared_mutex> l_Lock(m_ButtonEventsMutex);

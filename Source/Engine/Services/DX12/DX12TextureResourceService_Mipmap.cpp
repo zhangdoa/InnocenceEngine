@@ -1,4 +1,5 @@
 #include "DX12TextureResourceService.h"
+#include "../../Common/Array.h"
 #include "DX12Context.h"
 #include "DX12Helper_Common.h"
 #include "DX12Helper_Pipeline.h"
@@ -171,7 +172,7 @@ bool DX12TextureResourceService::CreateMipmapGenerator()
 		l_3DPSODesc.pRootSignature = m_3DMipmapRootSignature;
 
 #ifdef USE_DXIL
-		std::vector<uint8_t> l_3DmipmapComputeShader;
+		Inno::Array<uint8_t> l_3DmipmapComputeShader;
 		LoadShaderFile(l_3DmipmapComputeShader, l_3DPath);
 		l_3DPSODesc.CS = { l_3DmipmapComputeShader.data(), l_3DmipmapComputeShader.size() };
 #else
@@ -204,7 +205,7 @@ bool DX12TextureResourceService::CreateMipmapGenerator()
 		l_2DPSODesc.pRootSignature = m_2DMipmapRootSignature;
 
 #ifdef USE_DXIL
-		std::vector<uint8_t> l_2DmipmapComputeShader;
+		Inno::Array<uint8_t> l_2DmipmapComputeShader;
 		LoadShaderFile(l_2DmipmapComputeShader, l_2DPath);
 		l_2DPSODesc.CS = { l_2DmipmapComputeShader.data(), l_2DmipmapComputeShader.size() };
 #else

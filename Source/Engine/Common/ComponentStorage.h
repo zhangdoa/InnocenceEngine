@@ -1,4 +1,5 @@
 #pragma once
+#include "Array.h"
 
 #include "STL14.h"
 #include "EntityID.h"
@@ -97,10 +98,10 @@ namespace Inno
         }
 
         // Returns a reference to the packed dense array for cache-friendly sequential iteration.
-        // C++17: returns std::vector<T>& instead of std::span<T> (std::span is C++20).
-        const std::vector<T>& All() const             { return m_Dense; }
-        std::vector<T>&       All()                   { return m_Dense; }
-        const std::vector<EntityID>& AllOwners() const { return m_Owners; }
+        // C++17: returns Inno::Array<T>& instead of std::span<T> (std::span is C++20).
+        const Inno::Array<T>& All() const             { return m_Dense; }
+        Inno::Array<T>&       All()                   { return m_Dense; }
+        const Inno::Array<EntityID>& AllOwners() const { return m_Owners; }
 
         void CleanUp(ObjectLifespan lifespan)
         {
@@ -116,9 +117,9 @@ namespace Inno
     private:
         static constexpr uint32_t InvalidIndex = UINT32_MAX;
 
-        std::vector<T>              m_Dense;
-        std::vector<EntityID>       m_Owners;
-        std::vector<ObjectLifespan> m_Lifespans;
+        Inno::Array<T>              m_Dense;
+        Inno::Array<EntityID>       m_Owners;
+        Inno::Array<ObjectLifespan> m_Lifespans;
         std::array<uint32_t, MAX_ENTITIES> m_Sparse;
     };
 }

@@ -1,4 +1,5 @@
 #include "BVHService.h"
+#include "../Common/Array.h"
 #include "PhysicsSimulationService.h"
 #include "EntityRegistry.h"
 #include "AssetService.h"
@@ -11,8 +12,8 @@ namespace Inno
 {
     struct BVHServiceImpl
     {
-        AABB GenerateAABB(std::vector<BVHNode>::iterator begin, std::vector<BVHNode>::iterator end);
-        bool GenerateNodes(std::vector<BVHNode>::iterator node, size_t begin, size_t end, std::vector<BVHNode>& nodes);
+        AABB GenerateAABB(Inno::Array<BVHNode>::iterator begin, Inno::Array<BVHNode>::iterator end);
+        bool GenerateNodes(Inno::Array<BVHNode>::iterator node, size_t begin, size_t end, Inno::Array<BVHNode>& nodes);
         void Update();
 
         const size_t m_maxDepth = 256;
@@ -20,14 +21,14 @@ namespace Inno
 
         BVHNode m_RootNode;
 
-        std::vector<BVHNode> m_Nodes;
+        Inno::Array<BVHNode> m_Nodes;
         std::atomic<size_t> m_WorkloadCount = 0;
 
-        std::vector<BVHNode> m_TempNodes;
+        Inno::Array<BVHNode> m_TempNodes;
     };
 }
 
-AABB BVHServiceImpl::GenerateAABB(std::vector<BVHNode>::iterator begin, std::vector<BVHNode>::iterator end)
+AABB BVHServiceImpl::GenerateAABB(Inno::Array<BVHNode>::iterator begin, Inno::Array<BVHNode>::iterator end)
 {
     auto l_BoundMax = Math::minVec4<float>;
     l_BoundMax.w = 1.0f;
@@ -43,7 +44,7 @@ AABB BVHServiceImpl::GenerateAABB(std::vector<BVHNode>::iterator begin, std::vec
     return Math::GenerateAABB(l_BoundMax, l_BoundMin);
 }
 
-bool BVHServiceImpl::GenerateNodes(std::vector<BVHNode>::iterator node, size_t begin, size_t end, std::vector<BVHNode>& nodes)
+bool BVHServiceImpl::GenerateNodes(Inno::Array<BVHNode>::iterator node, size_t begin, size_t end, Inno::Array<BVHNode>& nodes)
 {
     if (end - begin < 3)
     {
@@ -192,7 +193,7 @@ void BVHService::ClearNodes()
     Log(Verbose, "All BVH nodes have been cleared.");
 }
 
-const std::vector<BVHNode>& BVHService::GetNodes()
+const Inno::Array<BVHNode>& BVHService::GetNodes()
 {
     return m_Impl->m_Nodes;
 }

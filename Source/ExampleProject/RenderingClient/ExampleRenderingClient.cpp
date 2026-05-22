@@ -1,4 +1,5 @@
 #include "ExampleRenderingClient_Internal.h"
+#include "../../Engine/Common/Array.h"
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
 #include "SunShadowRTPass.h"
@@ -254,14 +255,14 @@ bool ExampleRenderingClient::Terminate()
 	return false;
 }
 
-std::vector<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
+Inno::Array<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
 {
 	// Order mirrors ExampleRenderingClientImpl::PrepareCommands. Both the
 	// rasterizer fork and the GPU-path-tracer fork are listed because the
 	// bypass flag on each pass persists across the active toggle — the editor
 	// inspector wants to reach every pass the client owns. One-shot passes
 	// (BRDFLUT*) are included for the same reason.
-	std::vector<IRenderPass*> l_passes;
+	Inno::Array<IRenderPass*> l_passes;
 	l_passes.reserve(32);
 
 	l_passes.push_back(&PTPass::Get());

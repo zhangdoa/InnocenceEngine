@@ -1,4 +1,5 @@
 #include "../Common/TestRunner.h"
+#include "../../Engine/Common/Array.h"
 #include "../Common/TestData.h"
 #include "../../Engine/Common/ObjectPool.h"
 #include "../../Engine/Common/Memory.h"
@@ -13,7 +14,7 @@ void TestObjectPoolBasicOperations()
 	auto l_ObjectPool = TObjectPool<uint32_t>::Create(100);
 	bool l_TestPassed = true;
 
-	std::vector<uint32_t*> l_Objects;
+	Inno::Array<uint32_t*> l_Objects;
 	for (size_t i = 0; i < 50; i++)
 	{
 		auto l_Object = l_ObjectPool->Spawn();
@@ -53,7 +54,7 @@ void TestObjectPoolExhaustion()
 	auto l_ObjectPool = TObjectPool<uint32_t>::Create(10);
 	bool l_TestPassed = true;
 
-	std::vector<uint32_t*> l_Objects;
+	Inno::Array<uint32_t*> l_Objects;
 
 	for (size_t i = 0; i < 10; i++)
 	{

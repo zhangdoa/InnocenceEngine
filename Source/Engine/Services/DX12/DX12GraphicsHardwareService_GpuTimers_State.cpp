@@ -1,4 +1,5 @@
 #include "DX12GraphicsHardwareService.h"
+#include "../../Common/Array.h"
 #include "DX12GraphicsHardwareService_Internal.h"
 #include "../../Engine.h"
 #include "../../Common/LogService.h"
@@ -89,9 +90,9 @@ uint32_t DX12GraphicsHardwareService::FindTimerSlot(GPUEngineType queueType, con
 	return UINT32_MAX;
 }
 
-std::vector<GpuTimingResult> DX12GraphicsHardwareService::GetGpuTimings() const
+Inno::Array<GpuTimingResult> DX12GraphicsHardwareService::GetGpuTimings() const
 {
-	std::vector<GpuTimingResult> l_all;
+	Inno::Array<GpuTimingResult> l_all;
 	const GPUEngineType l_queues[] = { GPUEngineType::Graphics, GPUEngineType::Compute, GPUEngineType::Copy };
 	for (auto l_queue : l_queues)
 	{

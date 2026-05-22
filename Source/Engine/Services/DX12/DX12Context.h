@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Common/Array.h"
 #include "DX12Headers.h"
 
 namespace Inno
@@ -27,9 +28,9 @@ namespace Inno
 		ComPtr<ID3D12Fence> m_computeCommandQueueFence = nullptr;
 		ComPtr<ID3D12Fence> m_copyCommandQueueFence = nullptr;
 
-		std::vector<ComPtr<ID3D12CommandAllocator>> m_directCommandAllocators;
-		std::vector<ComPtr<ID3D12CommandAllocator>> m_computeCommandAllocators;
-		std::vector<ComPtr<ID3D12CommandAllocator>> m_copyCommandAllocators;
+		Inno::Array<ComPtr<ID3D12CommandAllocator>> m_directCommandAllocators;
+		Inno::Array<ComPtr<ID3D12CommandAllocator>> m_computeCommandAllocators;
+		Inno::Array<ComPtr<ID3D12CommandAllocator>> m_copyCommandAllocators;
 
 		ComPtr<ID3D12DescriptorHeap> m_CSUDescHeap = nullptr;
 		DX12DescriptorHeapAccessor m_GPUBuffer_CBV_DescHeapAccessor;
@@ -61,18 +62,18 @@ namespace Inno
 		ComPtr<ID3D12QueryHeap> m_TimestampHeap_Copy = nullptr;
 		// One per swapchain image, sized for 2 * GPU_TIMER_MAX_NAMED_TIMERS
 		// UINT64s per queue (begin + end).
-		std::vector<ComPtr<ID3D12Resource>> m_TimestampReadback_Graphics;
-		std::vector<ComPtr<ID3D12Resource>> m_TimestampReadback_Compute;
-		std::vector<ComPtr<ID3D12Resource>> m_TimestampReadback_Copy;
+		Inno::Array<ComPtr<ID3D12Resource>> m_TimestampReadback_Graphics;
+		Inno::Array<ComPtr<ID3D12Resource>> m_TimestampReadback_Compute;
+		Inno::Array<ComPtr<ID3D12Resource>> m_TimestampReadback_Copy;
 		// Dedicated per-frame allocators/lists for ResolveQueryData; sharing the
 		// global pass allocator would race with the in-flight pass list still
 		// recording when ResolveGpuTimers fires.
-		std::vector<ComPtr<ID3D12CommandAllocator>> m_TimestampResolveAllocators_Graphics;
-		std::vector<ComPtr<ID3D12CommandAllocator>> m_TimestampResolveAllocators_Compute;
-		std::vector<ComPtr<ID3D12CommandAllocator>> m_TimestampResolveAllocators_Copy;
-		std::vector<ComPtr<ID3D12GraphicsCommandList7>> m_TimestampResolveLists_Graphics;
-		std::vector<ComPtr<ID3D12GraphicsCommandList7>> m_TimestampResolveLists_Compute;
-		std::vector<ComPtr<ID3D12GraphicsCommandList7>> m_TimestampResolveLists_Copy;
+		Inno::Array<ComPtr<ID3D12CommandAllocator>> m_TimestampResolveAllocators_Graphics;
+		Inno::Array<ComPtr<ID3D12CommandAllocator>> m_TimestampResolveAllocators_Compute;
+		Inno::Array<ComPtr<ID3D12CommandAllocator>> m_TimestampResolveAllocators_Copy;
+		Inno::Array<ComPtr<ID3D12GraphicsCommandList7>> m_TimestampResolveLists_Graphics;
+		Inno::Array<ComPtr<ID3D12GraphicsCommandList7>> m_TimestampResolveLists_Compute;
+		Inno::Array<ComPtr<ID3D12GraphicsCommandList7>> m_TimestampResolveLists_Copy;
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 		static constexpr bool m_enableValidationLayers = true;

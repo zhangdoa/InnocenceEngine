@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Common/Array.h"
 #include "../GraphicsHardwareService.h"
 #include "DX12Context.h"
 
@@ -35,7 +36,7 @@ namespace Inno
 		bool BeginGpuTimer(CommandListComponent* commandList, const char* name, GPUEngineType queueType) override;
 		bool EndGpuTimer(CommandListComponent* commandList, const char* name, GPUEngineType queueType) override;
 		bool ResolveGpuTimers() override;
-		std::vector<GpuTimingResult> GetGpuTimings() const override;
+		Inno::Array<GpuTimingResult> GetGpuTimings() const override;
 
 		bool BeginGpuEvent(CommandListComponent* commandList, const char* name, uint32_t color = 0) override;
 		bool EndGpuEvent(CommandListComponent* commandList) override;
@@ -72,8 +73,8 @@ namespace Inno
 		// carries no internal lock.
 		struct DX12GpuTimerQueueState
 		{
-			std::vector<DX12GpuTimerSlot> m_Slots;
-			std::vector<GpuTimingResult> m_LatestTimings;
+			Inno::Array<DX12GpuTimerSlot> m_Slots;
+			Inno::Array<GpuTimingResult> m_LatestTimings;
 			D3D12_COMMAND_LIST_TYPE m_CommandListType = D3D12_COMMAND_LIST_TYPE_DIRECT;
 			// D3D12 GBV rejects ResolveQueryData over queries that were never
 			// performed, so the resolve range is bounded by this watermark.

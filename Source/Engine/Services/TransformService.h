@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Common/EntityID.h"
 #include "../Common/STL14.h"
 #include "../Interface/IService.h"
@@ -33,11 +34,11 @@ namespace Inno
 		EntityID GetNextSibling(EntityID Entity) const;
 
 	private:
-		std::vector<HierarchyNode> m_Nodes;
-		std::vector<EntityID>      m_TraversalOrder;
+		Inno::Array<HierarchyNode> m_Nodes;
+		Inno::Array<EntityID>      m_TraversalOrder;
 		bool                       m_HierarchyDirty = true;
 		ObjectStatus               m_ObjectStatus   = ObjectStatus::Invalid;
 
-		void RebuildTraversalOrder(const std::vector<EntityID>& AllTransformOwners);
+		void RebuildTraversalOrder(const Inno::Array<EntityID>& AllTransformOwners);
 	};
 }

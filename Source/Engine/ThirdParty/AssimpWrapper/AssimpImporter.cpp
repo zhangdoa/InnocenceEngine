@@ -1,4 +1,5 @@
 #include "AssimpImporter.h"
+#include "../../Common/Array.h"
 #include "AssimpMeshProcessor.h"
 #include "AssimpMaterialProcessor.h"
 #include "AssimpTextureProcessor.h"
@@ -98,7 +99,7 @@ namespace
 	void CollectAssimpWork(const aiNode* node, const aiScene* scene, const char* baseName,
 		std::unordered_set<uint32_t>& outMeshIndices,
 		std::unordered_set<uint32_t>& outMaterialIndices,
-		std::vector<std::pair<std::string, std::string>>& outDrawCalls)
+		Inno::Array<std::pair<std::string, std::string>>& outDrawCalls)
 	{
 		for (uint32_t i = 0; i < node->mNumMeshes; i++)
 		{
@@ -138,11 +139,11 @@ void AssimpImporter::ProcessAssimpScene(const aiScene* Scene, const char* Export
 
 	std::unordered_set<uint32_t> l_UniqueMeshes;
 	std::unordered_set<uint32_t> l_UniqueMaterials;
-	std::vector<std::pair<std::string, std::string>> l_DrawCalls;
+	Inno::Array<std::pair<std::string, std::string>> l_DrawCalls;
 	CollectAssimpWork(Scene->mRootNode, Scene, ExportName, l_UniqueMeshes, l_UniqueMaterials, l_DrawCalls);
 
 	auto* l_Scheduler = g_Engine->Get<TaskScheduler>();
-	std::vector<SharedPtr<ITask>> l_TaskHandles;
+	Inno::Array<SharedPtr<ITask>> l_TaskHandles;
 	l_TaskHandles.reserve(l_UniqueMeshes.size() + l_UniqueMaterials.size());
 
 	// Copy C-strings into std::string so task lambdas own their storage; the

@@ -1,4 +1,5 @@
 #pragma once
+#include "Array.h"
 #include "Math.h"
 
 namespace Inno
@@ -1464,7 +1465,7 @@ namespace Inno
 			return l_result;
 		};
 
-		inline std::vector<Vertex> WorldToViewSpace(const std::vector<Vertex>& rhs, Mat4 t, Mat4 r)
+		inline Inno::Array<Vertex> WorldToViewSpace(const Inno::Array<Vertex>& rhs, Mat4 t, Mat4 r)
 		{
 			auto l_result = rhs;
 
@@ -1482,7 +1483,7 @@ namespace Inno
 			return l_result;
 		}
 
-		inline std::vector<Vertex> ViewToWorldSpace(const std::vector<Vertex>& rhs, Mat4 t, Mat4 r)
+		inline Inno::Array<Vertex> ViewToWorldSpace(const Inno::Array<Vertex>& rhs, Mat4 t, Mat4 r)
 		{
 			auto l_result = rhs;
 
@@ -1500,9 +1501,9 @@ namespace Inno
 			return l_result;
 		}
 
-		inline std::vector<Vertex> GenerateFrustumInViewSpace(Mat4 p)
+		inline Inno::Array<Vertex> GenerateFrustumInViewSpace(Mat4 p)
 		{
-			std::vector<Vertex> rhs(8);
+			Inno::Array<Vertex> rhs(8);
 
 			Math::GenerateNDC<float>(&rhs[0]);
 
@@ -1511,7 +1512,7 @@ namespace Inno
 				i.m_pos = Math::ClipToViewSpace(Vec4(i.m_pos, 1.0f), p).xyz();
 			}
 
-			std::vector<Vertex> l_vertices(8);
+			Inno::Array<Vertex> l_vertices(8);
 
 			// The definition of projection matrix implies the near plane has z=-1 in NDC, so after the clip-to-view space transformation,
 			// the near plane is with the vertices 4-7. We need to sort the vertices so that the near plane is first again in the view space.
@@ -1527,7 +1528,7 @@ namespace Inno
 			return l_vertices;
 		}
 
-		inline std::vector<Vertex> GenerateFrustumInWorldSpace(Mat4 p, Mat4 r, Mat4 t)
+		inline Inno::Array<Vertex> GenerateFrustumInWorldSpace(Mat4 p, Mat4 r, Mat4 t)
 		{
 			auto rhs = GenerateFrustumInViewSpace(p);
 
@@ -1544,9 +1545,9 @@ namespace Inno
 			return rhs;
 		}
 
-		inline std::vector<Vertex> generateAABBVertices(Vec4 boundMax, Vec4 boundMin)
+		inline Inno::Array<Vertex> generateAABBVertices(Vec4 boundMax, Vec4 boundMin)
 		{
-			std::vector<Vertex> l_vertices(8);
+			Inno::Array<Vertex> l_vertices(8);
 
 			l_vertices[0].m_pos = Vec3(boundMax.x, boundMax.y, boundMax.z);
 			l_vertices[0].m_texCoord = Vec2(1.0f, 1.0f);
@@ -1580,7 +1581,7 @@ namespace Inno
 			return l_vertices;
 		}
 
-		inline std::vector<Vertex> generateAABBVertices(const AABB& rhs)
+		inline Inno::Array<Vertex> generateAABBVertices(const AABB& rhs)
 		{
 			auto boundMax = rhs.m_boundMax;
 			auto boundMin = rhs.m_boundMin;

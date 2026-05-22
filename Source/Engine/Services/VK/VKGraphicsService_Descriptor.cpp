@@ -1,4 +1,5 @@
 #include "VKGraphicsService.h"
+#include "../../Common/Array.h"
 #include "../GraphicsResourceService.h"
 
 #include "../../Engine.h"
@@ -199,7 +200,7 @@ bool VKGraphicsService::CreateDescriptorPool(VKRenderPassComponent *VKRenderPass
 	// What a name
 	auto l_VkDescriptorPoolSizesSize = std::count_if(l_descriptorTypeCount.begin(), l_descriptorTypeCount.end(), [](uint32_t i) { return i != 0; });
 
-	std::vector<VkDescriptorPoolSize> l_descriptorPoolSizes(l_VkDescriptorPoolSizesSize);
+	Inno::Array<VkDescriptorPoolSize> l_descriptorPoolSizes(l_VkDescriptorPoolSizesSize);
 
 	size_t l_index = 0;
 	for (size_t i = 0; i < l_descriptorTypeCount.size(); i++)

@@ -1,4 +1,5 @@
 #include "PTPass.h"
+#include "../../Engine/Common/Array.h"
 
 #include <vector>
 
@@ -131,7 +132,7 @@ void PTPass::RefreshMaterialTextureIndices()
 	const auto& l_meshOwners = l_meshStorage.AllOwners();
 	auto* l_texService = g_Engine->Get<TextureResourceService>();
 
-	std::vector<MaterialConstantBuffer> l_materials;
+	Inno::Array<MaterialConstantBuffer> l_materials;
 	l_materials.reserve(m_BuiltMeshCount);
 
 	for (EntityID l_entity : l_meshOwners)

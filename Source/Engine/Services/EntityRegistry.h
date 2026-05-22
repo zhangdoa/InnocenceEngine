@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 
 #include "../Common/STL14.h"
 #include "../Common/HashMap.h"
@@ -30,7 +31,7 @@ namespace Inno
         bool        IsValid(EntityID Entity) const;
         const char* GetName(EntityID Entity) const;
         EntityID    FindByName(const char* Name) const;  // linear scan; editor/load only
-        std::vector<EntityID> GetAllEntityIDs(ObjectLifespan Lifespan) const;
+        Inno::Array<EntityID> GetAllEntityIDs(ObjectLifespan Lifespan) const;
         ObjectLifespan GetLifespan(EntityID Entity) const;
 
         template<typename T>
@@ -123,11 +124,11 @@ namespace Inno
             return &static_cast<TStorageWrapper<T>*>(l_It->second.get())->m_Storage;
         }
 
-        std::vector<bool>            m_Valid;
-        std::vector<ObjectLifespan>  m_Lifespans;
-        std::vector<std::string>     m_Names;
+        Inno::Array<bool>            m_Valid;
+        Inno::Array<ObjectLifespan>  m_Lifespans;
+        Inno::Array<std::string>     m_Names;
 
-        std::vector<EntityID>        m_FreeList;
+        Inno::Array<EntityID>        m_FreeList;
         EntityID                     m_NextID = 1;   // 0 = INVALID_ENTITY
 
         Inno::HashMap<size_t, std::unique_ptr<IStorageWrapper>> m_Storages;

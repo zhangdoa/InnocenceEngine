@@ -1,4 +1,5 @@
 #include "DX12MeshResourceService.h"
+#include "../../Common/Array.h"
 #include "DX12Context.h"
 #include "DX12Helper_Common.h"
 #include "../FrameManagementService.h"
@@ -34,7 +35,7 @@ void DX12MeshResourceService::ReleaseMeshGPUResourceImpl(MeshAssetHandle handle)
 	}
 }
 
-bool DX12MeshResourceService::InitializeImpl(MeshAssetHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+bool DX12MeshResourceService::InitializeImpl(MeshAssetHandle handle, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices)
 {
 	auto* l_resource = AssetService::GetMeshAsset(handle);
 	if (!l_resource)

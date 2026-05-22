@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Interface/IService.h"
 #include "../Common/NamedObjectPool.h"
 #include "../Common/ThreadSafeQueue.h"
@@ -33,7 +34,7 @@ namespace Inno
 		bool Upload(GPUBufferComponent* gpuBuffer, const T* value, size_t startOffset = 0, size_t range = SIZE_MAX);
 
 		template<typename T>
-		bool Upload(GPUBufferComponent* gpuBuffer, const std::vector<T>& value, size_t startOffset = 0, size_t range = SIZE_MAX)
+		bool Upload(GPUBufferComponent* gpuBuffer, const Inno::Array<T>& value, size_t startOffset = 0, size_t range = SIZE_MAX)
 		{
 			return Upload(gpuBuffer, &value[0], startOffset, range);
 		}
@@ -44,7 +45,7 @@ namespace Inno
 		GPUBufferComponent* GetTLASBufferComponent() { return m_TLASBufferComponent; }
 		GPUBufferComponent* GetScratchBufferComponent() { return m_ScratchBufferComponent; }
 		GPUBufferComponent* GetRaytracingInstanceBufferComponent() { return m_RaytracingInstanceBufferComponent; }
-		std::vector<IRaytracingInstanceDescList*>& GetRaytracingInstanceDescs() { return m_RaytracingInstanceDescs; }
+		Inno::Array<IRaytracingInstanceDescList*>& GetRaytracingInstanceDescs() { return m_RaytracingInstanceDescs; }
 		bool IsTLASReady() const { return m_TLASReady; }
 		void SetTLASReady(bool ready) { m_TLASReady = ready; }
 
@@ -65,7 +66,7 @@ namespace Inno
 		GPUBufferComponent* m_ScratchBufferComponent = nullptr;
 		GPUBufferComponent* m_RaytracingInstanceBufferComponent = nullptr;
 		bool m_TLASReady = false;
-		std::vector<IRaytracingInstanceDescList*> m_RaytracingInstanceDescs;
+		Inno::Array<IRaytracingInstanceDescList*> m_RaytracingInstanceDescs;
 
 	private:
 		uint32_t GetCurrentFrameIndex();

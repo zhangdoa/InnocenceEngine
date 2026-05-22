@@ -1,4 +1,5 @@
 #include "TransformService.h"
+#include "../Common/Array.h"
 #include "../Common/MathHelper.h"
 #include "../Common/LogService.h"
 #include "../Component/TransformComponent.h"
@@ -185,12 +186,12 @@ EntityID TransformService::GetNextSibling(EntityID l_Entity) const
 	return m_Nodes[l_Entity].m_NextSibling;
 }
 
-void TransformService::RebuildTraversalOrder(const std::vector<EntityID>& l_AllOwners)
+void TransformService::RebuildTraversalOrder(const Inno::Array<EntityID>& l_AllOwners)
 {
 	m_TraversalOrder.clear();
 	m_TraversalOrder.reserve(l_AllOwners.size());
 
-	std::vector<EntityID> l_Queue;
+	Inno::Array<EntityID> l_Queue;
 	l_Queue.reserve(l_AllOwners.size());
 
 	for (EntityID l_Entity : l_AllOwners)

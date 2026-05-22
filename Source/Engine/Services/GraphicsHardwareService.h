@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Interface/IService.h"
 #include "../Common/GraphicsPrimitive.h"
 #include "../Component/RenderPassComponent.h"
@@ -64,7 +65,7 @@ namespace Inno
 		virtual bool BeginGpuTimer(CommandListComponent* commandList, const char* name, GPUEngineType queueType) { return false; }
 		virtual bool EndGpuTimer(CommandListComponent* commandList, const char* name, GPUEngineType queueType) { return false; }
 		virtual bool ResolveGpuTimers() { return false; }
-		virtual std::vector<GpuTimingResult> GetGpuTimings() const { return {}; }
+		virtual Inno::Array<GpuTimingResult> GetGpuTimings() const { return {}; }
 
 		// PIX event markers — named events on the PIX timeline. Macros are
 		// zero-cost when the WinPixEventRuntime DLL isn't loaded into the

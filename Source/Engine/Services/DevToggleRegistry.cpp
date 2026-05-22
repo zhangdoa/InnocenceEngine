@@ -1,4 +1,5 @@
 #include "DevToggleRegistry.h"
+#include "../Common/Array.h"
 #include "../Common/HashMap.h"
 
 #include <algorithm>
@@ -31,10 +32,10 @@ namespace Inno
             g_actions[name] = Action{ name, std::move(trigger) };
         }
 
-        std::vector<Toggle> AllToggles()
+        Inno::Array<Toggle> AllToggles()
         {
             std::lock_guard<std::mutex> lock(g_mutex);
-            std::vector<Toggle> out;
+            Inno::Array<Toggle> out;
             out.reserve(g_toggles.size());
             for (auto& kv : g_toggles)
                 out.push_back(kv.second);
@@ -43,10 +44,10 @@ namespace Inno
             return out;
         }
 
-        std::vector<Action> AllActions()
+        Inno::Array<Action> AllActions()
         {
             std::lock_guard<std::mutex> lock(g_mutex);
-            std::vector<Action> out;
+            Inno::Array<Action> out;
             out.reserve(g_actions.size());
             for (auto& kv : g_actions)
                 out.push_back(kv.second);

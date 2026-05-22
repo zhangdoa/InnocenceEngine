@@ -1,4 +1,5 @@
 #include "EntityRegistry.h"
+#include "../Common/Array.h"
 
 #include "../Engine.h"
 #include "../Common/LogService.h"
@@ -116,9 +117,9 @@ EntityID EntityRegistry::FindByName(const char* Name) const
     return INVALID_ENTITY;
 }
 
-std::vector<EntityID> EntityRegistry::GetAllEntityIDs(ObjectLifespan Lifespan) const
+Inno::Array<EntityID> EntityRegistry::GetAllEntityIDs(ObjectLifespan Lifespan) const
 {
-    std::vector<EntityID> l_Result;
+    Inno::Array<EntityID> l_Result;
     for (EntityID l_Id = 1; l_Id < m_NextID; ++l_Id)
     {
         if (m_Valid[l_Id] && m_Lifespans[l_Id] == Lifespan)

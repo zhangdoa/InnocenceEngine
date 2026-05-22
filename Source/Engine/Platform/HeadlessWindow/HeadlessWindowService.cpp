@@ -1,4 +1,5 @@
 #include "HeadlessWindowService.h"
+#include "../../Common/Array.h"
 #include "../../Interface/IWindowSurface.h"
 #include "../../Common/LogService.h"
 #include "../../Engine.h"
@@ -36,7 +37,7 @@ ObjectStatus HeadlessWindowService::GetStatus()
     return m_ObjectStatus;
 }
 
-std::vector<std::type_index> HeadlessWindowService::GetDependencies()
+Inno::Array<std::type_index> HeadlessWindowService::GetDependencies()
 {
     return {};
 }
@@ -53,7 +54,7 @@ bool HeadlessWindowService::SendEvent(void* windowHook, uint32_t uMsg, uint32_t 
 
 void HeadlessWindowService::ConsumeEvents(const WindowEventProcessCallback& p_Callback)
 {
-    std::vector<IWindowEvent*> emptyEvents;
+    Inno::Array<IWindowEvent*> emptyEvents;
     p_Callback(emptyEvents);
 }
 

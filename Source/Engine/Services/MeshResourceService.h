@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Interface/IService.h"
 #include "../Common/NamedObjectPool.h"
 #include "../Common/ThreadSafeQueue.h"
@@ -23,7 +24,7 @@ namespace Inno
 		MeshComponent* Add(const char* name);
 		virtual bool Delete(MeshComponent* ptr);
 
-		void Initialize(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices, EntityID owner = INVALID_ENTITY);
+		void Initialize(MeshComponent* mesh, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices, EntityID owner = INVALID_ENTITY);
 		bool InitializeComponents();
 		bool OnSceneUnloading();
 
@@ -37,14 +38,14 @@ namespace Inno
 		GPUMeshResourceHandle FindMeshResourceByName(const char* name);
 
 	protected:
-		virtual bool InitializeImpl(MeshAssetHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) { return false; }
+		virtual bool InitializeImpl(MeshAssetHandle handle, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices) { return false; }
 		virtual void ReleaseMeshGPUResourceImpl(MeshAssetHandle handle) = 0;
 
 		NamedObjectPool<MeshComponent> m_Pool;
 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 
-		std::vector<GPUMeshResource> m_MeshResources;
-		std::vector<uint32_t> m_FreeMeshResourceSlots;
+		Inno::Array<GPUMeshResource> m_MeshResources;
+		Inno::Array<uint32_t> m_FreeMeshResourceSlots;
 		ThreadSafeUnorderedMap<std::string, GPUMeshResourceHandle> m_MeshResourceLUT;
 
 	private:
@@ -54,12 +55,12 @@ namespace Inno
 
 		struct MeshInitTask
 		{
-			MeshInitTask(MeshComponent* component, std::vector<Vertex>&& vertices, std::vector<Index>&& indices, EntityID owner = INVALID_ENTITY, ObjectLifespan lifespan = ObjectLifespan::Invalid)
+			MeshInitTask(MeshComponent* component, Inno::Array<Vertex>&& vertices, Inno::Array<Index>&& indices, EntityID owner = INVALID_ENTITY, ObjectLifespan lifespan = ObjectLifespan::Invalid)
 				: m_Component(component), m_Vertices(std::move(vertices)), m_Indices(std::move(indices)), m_Owner(owner), m_Lifespan(lifespan) {}
 
 			MeshComponent* m_Component;
-			std::vector<Vertex> m_Vertices;
-			std::vector<Index> m_Indices;
+			Inno::Array<Vertex> m_Vertices;
+			Inno::Array<Index> m_Indices;
 			EntityID m_Owner;
 			ObjectLifespan m_Lifespan;
 		};

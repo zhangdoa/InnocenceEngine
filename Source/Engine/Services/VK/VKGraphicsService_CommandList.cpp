@@ -1,4 +1,5 @@
 #include "VKGraphicsService.h"
+#include "../../Common/Array.h"
 
 #include "../../Engine.h"
 
@@ -81,7 +82,7 @@ bool VKGraphicsService::BindRenderPassComponent(RenderPassComponent* renderPass,
 
 		VkClearValue l_clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
-		std::vector<VkClearValue> l_clearValues;
+		Inno::Array<VkClearValue> l_clearValues;
 
 		for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{

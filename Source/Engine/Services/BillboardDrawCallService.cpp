@@ -1,6 +1,7 @@
 ﻿#include "BillboardDrawCallService.h"
 
 #include "../Common/LogService.h"
+#include "../Common/Array.h"
 #include "../Common/GPUDataStructure.h"
 #include "EntityRegistry.h"
 #include "TemplateAssetService.h"
@@ -18,12 +19,12 @@ namespace Inno
 
 		mutable std::shared_mutex m_Mutex;
 
-		std::vector<TransformConstantBuffer> m_DirectionalLightPerObjectCB;
-		std::vector<TransformConstantBuffer> m_PointLightPerObjectCB;
-		std::vector<TransformConstantBuffer> m_SphereLightPerObjectCB;
+		Inno::Array<TransformConstantBuffer> m_DirectionalLightPerObjectCB;
+		Inno::Array<TransformConstantBuffer> m_PointLightPerObjectCB;
+		Inno::Array<TransformConstantBuffer> m_SphereLightPerObjectCB;
 
-		std::vector<BillboardPassDrawCallInfo> m_BillboardPassDrawCallInfoVector;
-		std::vector<TransformConstantBuffer> m_BillboardPassPerObjectCB;
+		Inno::Array<BillboardPassDrawCallInfo> m_BillboardPassDrawCallInfoVector;
+		Inno::Array<TransformConstantBuffer> m_BillboardPassPerObjectCB;
 
 		GPUBufferComponent* m_BillboardGPUBufferComp;
 
@@ -216,7 +217,7 @@ void BillboardDrawCallService::OnSceneLoaded()
 	m_Impl->OnSceneLoaded();
 }
 
-const std::vector<BillboardPassDrawCallInfo>& BillboardDrawCallService::GetBillboardPassDrawCallInfo()
+const Inno::Array<BillboardPassDrawCallInfo>& BillboardDrawCallService::GetBillboardPassDrawCallInfo()
 {
 	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
 	return m_Impl->m_BillboardPassDrawCallInfoVector;

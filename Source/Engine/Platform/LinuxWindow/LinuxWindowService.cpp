@@ -1,4 +1,5 @@
 #include "LinuxWindowService.h"
+#include "../../Common/Array.h"
 
 #include "../../Engine.h"
 
@@ -20,7 +21,7 @@ namespace LinuxWindowServiceNS
 	IWindowSurface* m_WindowSurface;
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	InitConfig m_InitConfig;
-	std::vector<ButtonState> m_ButtonStates;
+	Inno::Array<ButtonState> m_ButtonStates;
 	std::set<WindowEventCallback*> m_WindowEventCallbacks;
 
 	Display* m_display;
@@ -112,7 +113,7 @@ IWindowSurface* LinuxWindowService::GetWindowSurface()
 	return LinuxWindowServiceNS::m_WindowSurface;
 }
 
-const std::vector<ButtonState>& LinuxWindowService::GetButtonState()
+const Inno::Array<ButtonState>& LinuxWindowService::GetButtonState()
 {
 	return LinuxWindowServiceNS::m_ButtonStates;
 }

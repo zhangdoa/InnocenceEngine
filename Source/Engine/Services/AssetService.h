@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Interface/IService.h"
 #include "../Common/ComponentHeaders.h"
 #include "../Common/AssetTypes.h"
@@ -60,7 +61,7 @@ namespace Inno
 		static bool Load(const char* fileName, CameraComponent& component);
 		static bool Load(const char* fileName, LightComponent& component);
 
-		static bool Save(const MeshComponent& component, std::vector<Vertex>& vertices, std::vector<Index>& indices);
+		static bool Save(const MeshComponent& component, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices);
 		static bool Save(const MaterialComponent& component);
 		static bool Save(const TextureComponent& component, void* textureData);
 		static bool Save(const CameraComponent& component);

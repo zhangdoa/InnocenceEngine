@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "../Interface/IService.h"
+#include "../Common/Array.h"
 #include "../Component/GPUBufferComponent.h"
 #include "../Common/GPUDataStructure.h"
 #include "AnimationSimulationService.h"
@@ -26,7 +27,7 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		const std::vector<AnimationDrawCallInfo>& GetAnimationDrawCallInfo();
+		const Inno::Array<AnimationDrawCallInfo>& GetAnimationDrawCallInfo();
 		GPUBufferComponent* GetAnimationBuffer();
 
 	private:

@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Common/Array.h"
 #include "../../Interface/IWindowService.h"
 
 namespace Inno
@@ -16,7 +17,7 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		IWindowSurface* GetWindowSurface() override;
-		const std::vector<ButtonState>& GetButtonState() override;
+		const Inno::Array<ButtonState>& GetButtonState() override;
 
 		bool SendEvent(uint32_t uMsg, uint32_t wParam, int32_t lParam) override;
 		bool AddEventCallback(WindowEventCallback* callback) override;

@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "AssetService.h"
 #include "../Common/HashMap.h"
 
@@ -12,22 +13,22 @@ namespace Inno
 		// deque guarantees reference/pointer stability on push_back, unlike vector.
 		// This allows GetMeshAsset to return stable pointers while Allocate appends concurrently.
 		extern std::deque<MeshAsset> m_MeshAssets;
-		extern std::vector<uint32_t> m_MeshFreeSlots;
-		extern std::vector<uint32_t> m_MeshGenerations;
+		extern Inno::Array<uint32_t> m_MeshFreeSlots;
+		extern Inno::Array<uint32_t> m_MeshGenerations;
 		extern Inno::HashMap<std::string, MeshAssetHandle> m_MeshLUT;
 		extern std::shared_mutex s_MeshMutex;
 
 		// Material asset registry
 		extern std::deque<MaterialAsset> m_MaterialAssets;
-		extern std::vector<uint32_t> m_MaterialFreeSlots;
-		extern std::vector<uint32_t> m_MaterialGenerations;
+		extern Inno::Array<uint32_t> m_MaterialFreeSlots;
+		extern Inno::Array<uint32_t> m_MaterialGenerations;
 		extern Inno::HashMap<std::string, MaterialAssetHandle> m_MaterialLUT;
 		extern std::shared_mutex s_MaterialMutex;
 
 		// Texture asset registry
 		extern std::deque<TextureAsset> m_TextureAssets;
-		extern std::vector<uint32_t> m_TextureFreeSlots;
-		extern std::vector<uint32_t> m_TextureGenerations;
+		extern Inno::Array<uint32_t> m_TextureFreeSlots;
+		extern Inno::Array<uint32_t> m_TextureGenerations;
 		extern Inno::HashMap<std::string, TextureAssetHandle> m_TextureLUT;
 		extern std::shared_mutex s_TextureMutex;
 

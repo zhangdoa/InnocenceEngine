@@ -32,7 +32,7 @@ namespace Inno
         bool Setup_PixelReadback();
         bool Initialize_PixelReadback();
         bool ExecuteCommands_PixelReadback();
-        void ValidatePixelReadback(TextureComponent* rt, const std::vector<Vec4>& pixels);
+        void ValidatePixelReadback(TextureComponent* rt, const Inno::Array<Vec4>& pixels);
 
         void CountFrameAndTerminateIfDone();
         static constexpr uint32_t k_TargetFrames = 10;

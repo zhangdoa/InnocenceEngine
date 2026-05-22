@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Common/Array.h"
 #include "vulkan/vulkan.h"
 
 namespace Inno
@@ -19,7 +20,7 @@ namespace Inno
 	struct SwapChainSupportDetails
 	{
 		VkSurfaceCapabilitiesKHR m_capabilities;
-		std::vector<VkSurfaceFormatKHR> m_formats;
-		std::vector<VkPresentModeKHR> m_presentModes;
+		Inno::Array<VkSurfaceFormatKHR> m_formats;
+		Inno::Array<VkPresentModeKHR> m_presentModes;
 	};
 }

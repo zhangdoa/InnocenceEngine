@@ -1,4 +1,5 @@
 #pragma once
+#include "Array.h"
 #include "Config.h"
 #include "Metadata.h"
 #include "STL14.h"
@@ -20,8 +21,8 @@ namespace Inno {
 			return sv;
 		}
 
-		inline std::vector<std::string_view> SplitNames(std::string_view s, char delimiter = ',') {
-			std::vector<std::string_view> result;
+		inline Inno::Array<std::string_view> SplitNames(std::string_view s, char delimiter = ',') {
+			Inno::Array<std::string_view> result;
 			size_t pos = 0;
 			while (pos < s.size()) {
 				size_t commaPos = s.find(delimiter, pos);
@@ -61,13 +62,13 @@ namespace Inno { namespace Enum {                                             \
     enum class EnumName { __VA_ARGS__ };                                       \
     template <>                                                               \
     struct InnoEnumTraits<EnumName> {                                           \
-        static const std::vector<std::string_view>& RawNames() {                \
-            static const std::vector<std::string_view> rawNames = SplitNames(#__VA_ARGS__); \
+        static const Inno::Array<std::string_view>& RawNames() {                \
+            static const Inno::Array<std::string_view> rawNames = SplitNames(#__VA_ARGS__); \
             return rawNames;                                                  \
         }                                                                     \
-        static const std::vector<std::string>& FullNames() {                    \
-            static const std::vector<std::string> fullNames = [](){             \
-                std::vector<std::string> names;                               \
+        static const Inno::Array<std::string>& FullNames() {                    \
+            static const Inno::Array<std::string> fullNames = [](){             \
+                Inno::Array<std::string> names;                               \
                 auto raw = RawNames();                                        \
                 names.reserve(raw.size());                                    \
                 for (auto name : raw) {                                       \

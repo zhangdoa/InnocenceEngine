@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Common/ClassTemplate.h"
 #include "../Common/Object.h"
 #include <vector>
@@ -22,6 +23,6 @@ namespace Inno
 		virtual ObjectStatus GetStatus() = 0;
 		
 		// Dependency resolution support
-		virtual std::vector<std::type_index> GetDependencies() { return {}; }
+		virtual Inno::Array<std::type_index> GetDependencies() { return {}; }
 	};
 }

@@ -1,4 +1,5 @@
 #include "../Common/TestRunner.h"
+#include "../../Engine/Common/Array.h"
 #include "../../Engine/Common/DoubleBuffer.h"
 #include <atomic>
 #include <thread>
@@ -74,7 +75,7 @@ static void TestDoubleBufferMultipleReaders()
 	std::atomic<bool> failed{false};
 	const uint32_t Iterations = 50000;
 
-	std::vector<std::thread> readers;
+	Inno::Array<std::thread> readers;
 	for (int t = 0; t < 4; ++t)
 	{
 		readers.emplace_back([&]() {

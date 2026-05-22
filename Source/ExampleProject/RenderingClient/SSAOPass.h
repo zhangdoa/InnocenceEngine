@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Engine/Common/Array.h"
 #include "../../Engine/Interface/IRenderPass.h"
 
 namespace Inno
@@ -27,8 +28,8 @@ namespace Inno
 
 		// Mirrors the canonical kernel count in SSAONoisePass.comp (sampleCount).
 		uint32_t m_kernelSize = 32;
-		std::vector<Math::Vec4> m_Kernel;
-		std::vector<Math::Vec4> m_Noise;
+		Inno::Array<Math::Vec4> m_Kernel;
+		Inno::Array<Math::Vec4> m_Noise;
 
 		GPUBufferComponent *m_KernelGPUBuffer;
 		TextureComponent *m_NoiseTexture;

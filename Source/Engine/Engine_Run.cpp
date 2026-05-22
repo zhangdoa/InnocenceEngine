@@ -1,4 +1,5 @@
 #include "Engine_Internal.h"
+#include "Common/Array.h"
 #include "Common/LogService.h"
 #include "Services/AssetService.h"
 #include <chrono>
@@ -22,7 +23,7 @@ bool Engine::Run()
 			bool ok{false};
 			int64_t elapsedMs{0};
 		};
-		std::vector<BakeTask> l_tasks;
+		Inno::Array<BakeTask> l_tasks;
 
 		size_t l_pos = 0;
 		while (l_pos < l_list.size())
@@ -37,7 +38,7 @@ bool Engine::Run()
 
 		const auto l_batchStart = std::chrono::steady_clock::now();
 
-		std::vector<std::thread> l_threads;
+		Inno::Array<std::thread> l_threads;
 		l_threads.reserve(l_tasks.size());
 		for (auto& l_entry : l_tasks)
 		{

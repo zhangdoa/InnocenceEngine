@@ -1,6 +1,7 @@
 ﻿#include "LightDataService.h"
 
 #include "../Common/LogService.h"
+#include "../Common/Array.h"
 #include "../Common/GPUDataStructure.h"
 #include "EntityRegistry.h"
 #include "RenderingConfigurationService.h"
@@ -17,8 +18,8 @@ namespace Inno
 	{
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-		std::vector<PointLightConstantBuffer>  m_PointLightCBVector;
-		std::vector<SphereLightConstantBuffer> m_SphereLightCBVector;
+		Inno::Array<PointLightConstantBuffer>  m_PointLightCBVector;
+		Inno::Array<SphereLightConstantBuffer> m_SphereLightCBVector;
 
 		GPUBufferComponent* m_PointLightGPUBufferComp   = nullptr;
 		GPUBufferComponent* m_SphereLightGPUBufferComp  = nullptr;

@@ -1,5 +1,6 @@
 ﻿#include "AnimationDrawCallService.h"
 #include "../Common/LogService.h"
+#include "../Common/Array.h"
 #include "../Engine.h"
 #include "GPUBufferResourceService.h"
 
@@ -11,8 +12,8 @@ namespace Inno
 	{
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-		std::vector<AnimationDrawCallInfo> m_AnimationDrawCallInfoVector;
-		std::vector<AnimationConstantBuffer> m_AnimationCBVector;
+		Inno::Array<AnimationDrawCallInfo> m_AnimationDrawCallInfoVector;
+		Inno::Array<AnimationConstantBuffer> m_AnimationCBVector;
 
 		GPUBufferComponent* m_AnimationGPUBufferComp;
 
@@ -126,7 +127,7 @@ ObjectStatus AnimationDrawCallService::GetStatus()
 	return m_Impl->m_ObjectStatus;
 }
 
-const std::vector<AnimationDrawCallInfo>& AnimationDrawCallService::GetAnimationDrawCallInfo()
+const Inno::Array<AnimationDrawCallInfo>& AnimationDrawCallService::GetAnimationDrawCallInfo()
 {
 	return m_Impl->m_AnimationDrawCallInfoVector;
 }

@@ -1,4 +1,5 @@
 #include "VKGraphicsService.h"
+#include "../../Common/Array.h"
 #include "../GraphicsResourceService.h"
 
 #include "../../Engine.h"
@@ -41,7 +42,7 @@ bool VKGraphicsService::SetObjectName(U* owner, const T& rhs, VkObjectType objec
 	return true;
 }
 
-bool VKGraphicsService::InitializeImpl(MeshAssetHandle handle, std::vector<Vertex> &vertices, std::vector<Index> &indices)
+bool VKGraphicsService::InitializeImpl(MeshAssetHandle handle, Inno::Array<Vertex> &vertices, Inno::Array<Index> &indices)
 {
 	return true;
 }

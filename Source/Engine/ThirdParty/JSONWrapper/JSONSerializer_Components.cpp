@@ -1,5 +1,6 @@
 ﻿#include "JSONWrapper.h"
 #include "../../Common/IOService.h"
+#include "../../Common/Array.h"
 #include "../../Services/EntityRegistry.h"
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/AssetService.h"
@@ -157,8 +158,8 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component, EntityID 
         component = *l_template;
         // Queue for deferred activation: the asset may not be Resident yet (BLAS still building).
         // InitializeComponents will activate this component once the shared handle is Resident.
-        std::vector<Vertex> l_emptyVerts;
-        std::vector<Index>  l_emptyIndices;
+        Inno::Array<Vertex> l_emptyVerts;
+        Inno::Array<Index>  l_emptyIndices;
         g_Engine->Get<MeshResourceService>()->Initialize(&component, l_emptyVerts, l_emptyIndices, owner);
         return true;
     }
@@ -174,10 +175,10 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component, EntityID 
     size_t l_verticesNumber = j["VerticesNumber"];
     size_t l_indicesNumber = j["IndicesNumber"];
 
-    std::vector<Vertex> l_vertices;
+    Inno::Array<Vertex> l_vertices;
     l_vertices.resize(l_verticesNumber);
 
-    std::vector<Index> l_indices;
+    Inno::Array<Index> l_indices;
     l_indices.resize(l_indicesNumber);
 
     g_Engine->Get<IOService>()->DeserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_vertices);

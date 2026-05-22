@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Common/Object.h"
 #include "../Common/MathHelper.h"
 
@@ -19,6 +20,6 @@ namespace Inno
 		uint32_t m_NumChannels = 0;
 		uint32_t m_NumTicks = 0;
 		// for each tick first, then for each channel
-		std::vector<KeyData> m_KeyData;
+		Inno::Array<KeyData> m_KeyData;
 	};
 }

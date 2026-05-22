@@ -7,6 +7,7 @@
 //   - Recurrent tasks are not auto-removed; caller must Deactivate() them.
 
 #include "../../Engine/Common/TaskScheduler.h"
+#include "../../Engine/Common/Array.h"
 #include "../../Engine/Common/Task.h"
 #include "../Common/TestRunner.h"
 
@@ -75,14 +76,14 @@ static void StressHighConcurrencySubmission()
     // then waits on them locally before joining. No shared handle vector
     // needed — eliminates the mutex bottleneck and the race between inserting
     // and waiting.
-    std::vector<std::thread> submitters;
+    Inno::Array<std::thread> submitters;
     submitters.reserve(NUM_SUBMITTERS);
 
     for (int t = 0; t < NUM_SUBMITTERS; ++t)
     {
         submitters.emplace_back([&, t]()
         {
-            std::vector<SharedPtr<ITask>> local;
+            Inno::Array<SharedPtr<ITask>> local;
             local.reserve(TASKS_PER_THREAD);
 
             for (int i = 0; i < TASKS_PER_THREAD; ++i)
@@ -124,7 +125,7 @@ static void StressRecurrentUnderLoad()
         [&recurrentCount]() { recurrentCount.fetch_add(1, std::memory_order_relaxed); });
     recurrent->Activate();
 
-    std::vector<SharedPtr<ITask>> onceTasks;
+    Inno::Array<SharedPtr<ITask>> onceTasks;
     onceTasks.reserve(ONCE_COUNT);
     for (int i = 0; i < ONCE_COUNT; ++i)
     {
@@ -173,7 +174,7 @@ static void StressFreezeUnfreeze()
             scheduler.Freeze();
 
             // Tasks submitted while frozen queue up and don't execute until Unfreeze.
-            std::vector<SharedPtr<ITask>> cycle_tasks;
+            Inno::Array<SharedPtr<ITask>> cycle_tasks;
             cycle_tasks.reserve(ONCE_PER_CYCLE);
             for (int i = 0; i < ONCE_PER_CYCLE; ++i)
             {

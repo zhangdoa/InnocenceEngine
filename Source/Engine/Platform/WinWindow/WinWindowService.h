@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Common/Array.h"
 #include "../../Interface/IWindowService.h"
 #include "../../Engine.h"
 #include "../../Common/DoubleBuffer.h"
@@ -38,7 +39,7 @@ namespace Inno
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 		InitConfig m_InitConfig;
 
-		DoubleBuffer<std::vector<IWindowEvent*>> m_WindowEvents;
+		DoubleBuffer<Inno::Array<IWindowEvent*>> m_WindowEvents;
 		std::set<WindowEventCallback*> m_WindowEventCallbacks;
 
 		HINSTANCE m_ApplicationInstance;

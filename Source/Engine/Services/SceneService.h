@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Interface/IService.h"
 #include "../Common/EntityID.h"
 
@@ -31,8 +32,8 @@ namespace Inno
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-		std::vector<std::function<void()>*> m_sceneUnloadingCallbacks;
-		std::vector<std::function<void()>*> m_sceneLoadedCallbacks;
+		Inno::Array<std::function<void()>*> m_sceneUnloadingCallbacks;
+		Inno::Array<std::function<void()>*> m_sceneLoadedCallbacks;
 
 		std::atomic<bool> m_IsLoading = false;
 		std::atomic<bool> m_prepareForLoadingScene = false;

@@ -271,7 +271,7 @@ bool TestRenderingClient::ExecuteCommands_PixelReadback()
     return true;
 }
 
-void TestRenderingClient::ValidatePixelReadback(TextureComponent* rt, const std::vector<Vec4>& pixels)
+void TestRenderingClient::ValidatePixelReadback(TextureComponent* rt, const Inno::Array<Vec4>& pixels)
 {
     const uint32_t l_w = rt->m_TextureDesc.Width;
     const uint32_t l_h = rt->m_TextureDesc.Height;

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "../IGraphicsService.h"
+#include "../../Common/Array.h"
 #include "MTGraphicsServiceBridge.h"
 
 namespace Inno
@@ -51,7 +52,7 @@ namespace Inno
 		bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
 
 		Vec4 ReadRenderTargetSample(RenderPassComponent* renderPass, size_t renderTargetIndex, size_t x, size_t y) override;
-		std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) override;
+		Inno::Array<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) override;
 		bool GenerateMipmap(TextureComponent* texture) override;
 
 		bool Resize() override;
@@ -62,7 +63,7 @@ namespace Inno
 		void setBridge(MTGraphicsServiceBridge* bridge);
 
 	protected:
-		bool InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
+		bool InitializeImpl(GPUMeshResourceHandle handle, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices) override;
 		void ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle) override;
 	};
 }

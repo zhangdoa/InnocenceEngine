@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Engine/Common/Array.h"
 #include "../../Engine/Interface/IRenderPass.h"
 #include "../../Engine/Services/BVHService.h"
 
@@ -46,13 +47,13 @@ namespace Inno
 		GPUBufferComponent* m_debugMaterialGPUBufferComp;
 		GPUBufferComponent* m_debugCameraFrustumGPUBufferComp;
 
-		std::vector<MeshComponent*> m_debugCameraFrustumMeshComps;
+		Inno::Array<MeshComponent*> m_debugCameraFrustumMeshComps;
 
 		const size_t m_maxDebugMeshes = 65536;
 		const size_t m_maxDebugMaterial = 512;
-		std::vector<DebugPerObjectConstantBuffer> m_debugSphereConstantBuffer;
-		std::vector<DebugPerObjectConstantBuffer> m_debugCubeConstantBuffer;
-		std::vector<DebugPerObjectConstantBuffer> m_debugCameraFrustumConstantBuffer;
-		std::vector<DebugMaterialConstantBuffer> m_debugMaterialConstantBuffer;
+		Inno::Array<DebugPerObjectConstantBuffer> m_debugSphereConstantBuffer;
+		Inno::Array<DebugPerObjectConstantBuffer> m_debugCubeConstantBuffer;
+		Inno::Array<DebugPerObjectConstantBuffer> m_debugCameraFrustumConstantBuffer;
+		Inno::Array<DebugMaterialConstantBuffer> m_debugMaterialConstantBuffer;
 	};
 } // namespace Inno

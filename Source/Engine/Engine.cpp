@@ -1,4 +1,5 @@
 #include "Engine_Internal.h"
+#include "Common/Array.h"
 #include "Common/LogService.h"
 
 #if defined INNO_PLATFORM_WIN
@@ -41,7 +42,7 @@ IWindowService* Engine::CreateWindowSystem(bool isHeadless)
 #endif
 }
 
-void Engine::ResolveDependencies(const std::vector<std::type_index>& dependencies)
+void Engine::ResolveDependencies(const Inno::Array<std::type_index>& dependencies)
 {
 }
 

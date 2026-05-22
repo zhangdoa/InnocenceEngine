@@ -1,4 +1,5 @@
 #include "../../Engine/Common/TaskScheduler.h"
+#include "../../Engine/Common/Array.h"
 #include "../../Engine/Common/Task.h"
 #include "../Common/TestRunner.h"
 #include <chrono>
@@ -47,13 +48,13 @@ void TestConcurrentTaskSubmission()
     constexpr int TASKS_PER_THREAD = 50;
 
     try {
-        std::vector<std::thread> submitterThreads;
-        std::vector<SharedPtr<ITask>> allTasks;
+        Inno::Array<std::thread> submitterThreads;
+        Inno::Array<SharedPtr<ITask>> allTasks;
         std::mutex tasksMutex;
 
         for (int t = 0; t < NUM_THREADS; ++t) {
             submitterThreads.emplace_back([&, t]() {
-                std::vector<SharedPtr<ITask>> localTasks;
+                Inno::Array<SharedPtr<ITask>> localTasks;
                 
                 for (int i = 0; i < TASKS_PER_THREAD; ++i) {
                     std::string taskName = "ConcurrentTask_" + std::to_string(t) + "_" + std::to_string(i);
@@ -102,12 +103,12 @@ void TestTaskExecutionOrdering()
     bool testPassed = true;
     TaskScheduler scheduler;
     std::atomic<int> executionOrder{0};
-    std::vector<int> results;
+    Inno::Array<int> results;
     std::mutex resultsMutex;
     constexpr int NUM_TASKS = 25;
 
     try {
-        std::vector<SharedPtr<ITask>> tasks;
+        Inno::Array<SharedPtr<ITask>> tasks;
 
         for (int i = 0; i < NUM_TASKS; ++i) {
             std::string taskName = "OrderingTask_" + std::to_string(i);
@@ -150,7 +151,7 @@ void TestFreezeUnfreezeStressTest()
         std::atomic<int> taskCounter{0};
         std::atomic<bool> shouldStop{false};
         
-        std::vector<SharedPtr<ITask>> recurringTasks;
+        Inno::Array<SharedPtr<ITask>> recurringTasks;
         for (int i = 0; i < 5; ++i) {
             std::string taskName = "RecurringTask_" + std::to_string(i);
             auto task = scheduler.Submit(
@@ -206,7 +207,7 @@ void TestTaskCleanupTest()
         TaskScheduler scheduler;
         
         {
-            std::vector<SharedPtr<ITask>> tasks;
+            Inno::Array<SharedPtr<ITask>> tasks;
             for (int i = 0; i < 50; ++i) {
                 std::string taskName = "CleanupTask_" + std::to_string(i);
                 auto task = scheduler.Submit(

@@ -1,4 +1,5 @@
 #include "PhysXWrapper.h"
+#include "../../Common/Array.h"
 #include "../../Common/HashMap.h"
 
 #if defined INNO_PLATFORM_WIN
@@ -39,16 +40,16 @@ namespace PhysXWrapperNS
 
 	bool createPxSphere(uint64_t index, Vec4 globalPos, float radius, bool isDynamic);
 	bool createPxBox(uint64_t index, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic);
-	PxConvexMesh* createPxConvexMesh(uint64_t index, PxConvexMeshCookingType::Enum convexMeshCookingType, bool directInsertion, PxU32 gaussMapLimit, std::vector<Vertex>& vertices, std::vector<Index>& indices);
-	PxTriangleMesh* createBV33TriangleMesh(uint64_t index, bool skipMeshCleanup, bool skipEdgeData, bool inserted, bool cookingPerformance, bool meshSizePerfTradeoff, std::vector<Vertex>& vertices, std::vector<Index>& indices);
-	PxTriangleMesh* createBV34TriangleMesh(uint64_t index, bool skipMeshCleanup, bool skipEdgeData, bool inserted, const PxU32 numTrisPerLeaf, std::vector<Vertex>& vertices, std::vector<Index>& indices);
+	PxConvexMesh* createPxConvexMesh(uint64_t index, PxConvexMeshCookingType::Enum convexMeshCookingType, bool directInsertion, PxU32 gaussMapLimit, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices);
+	PxTriangleMesh* createBV33TriangleMesh(uint64_t index, bool skipMeshCleanup, bool skipEdgeData, bool inserted, bool cookingPerformance, bool meshSizePerfTradeoff, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices);
+	PxTriangleMesh* createBV34TriangleMesh(uint64_t index, bool skipMeshCleanup, bool skipEdgeData, bool inserted, const PxU32 numTrisPerLeaf, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices);
 
-	bool createPxMesh(uint64_t index, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic, bool isConvex, std::vector<Vertex>& vertices, std::vector<Index>& indices);
+	bool createPxMesh(uint64_t index, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic, bool isConvex, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices);
 
 	Inno::HashMap<uint64_t, PxConvexMesh*> PhysXConvexMeshes;
 	Inno::HashMap<uint64_t, PxTriangleMesh*> PhysXTriangleMeshes;
 
-	std::vector<PhysXActor> PhysXActors;
+	Inno::Array<PhysXActor> PhysXActors;
 
 	static PxDefaultAllocator gDefaultAllocatorCallback;
 	static PxDefaultErrorCallback gDefaultErrorCallback;
@@ -261,7 +262,7 @@ bool PhysXWrapperNS::createPxBox(uint64_t index, Vec4 globalPos, Vec4 rot, Vec4 
 	return true;
 }
 
-PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(uint64_t index, PxConvexMeshCookingType::Enum convexMeshCookingType, bool directInsertion, PxU32 gaussMapLimit, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(uint64_t index, PxConvexMeshCookingType::Enum convexMeshCookingType, bool directInsertion, PxU32 gaussMapLimit, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices)
 {
 	auto l_result = PhysXConvexMeshes.find(index);
 	if (l_result != PhysXConvexMeshes.end())
@@ -360,7 +361,7 @@ void setupCommonCookingParams(PxCookingParams& params, bool skipMeshCleanup, boo
 }
 
 // Creates a triangle mesh using BVH33 midphase with different settings.
-PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(uint64_t index, bool skipMeshCleanup, bool skipEdgeData, bool inserted, bool cookingPerformance, bool meshSizePerfTradeoff, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(uint64_t index, bool skipMeshCleanup, bool skipEdgeData, bool inserted, bool cookingPerformance, bool meshSizePerfTradeoff, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices)
 {
 	auto l_result = PhysXTriangleMeshes.find(index);
 	if (l_result != PhysXTriangleMeshes.end())
@@ -454,7 +455,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(uint64_t index, bool skip
 }
 
 // Creates a triangle mesh using BVH34 midphase with different settings.
-PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(uint64_t index, bool skipMeshCleanup, bool skipEdgeData, bool inserted, const PxU32 numTrisPerLeaf, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(uint64_t index, bool skipMeshCleanup, bool skipEdgeData, bool inserted, const PxU32 numTrisPerLeaf, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices)
 {
 	auto l_result = PhysXTriangleMeshes.find(index);
 	if (l_result != PhysXTriangleMeshes.end())
@@ -532,7 +533,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(uint64_t index, bool skip
 	return triMesh;
 }
 
-bool PhysXWrapperNS::createPxMesh(uint64_t index, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic, bool isConvex, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+bool PhysXWrapperNS::createPxMesh(uint64_t index, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic, bool isConvex, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices)
 {
 	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
 
@@ -646,7 +647,7 @@ bool PhysXWrapper::createPxBox(uint64_t index, Vec4 position, Vec4 rotation, Vec
 	return PhysXWrapperNS::createPxBox(index, position, rotation, scale, isDynamic);
 }
 
-bool PhysXWrapper::createPxMesh(uint64_t index, Vec4 position, Vec4 rotation, Vec4 scale, bool isDynamic, bool isConvex, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+bool PhysXWrapper::createPxMesh(uint64_t index, Vec4 position, Vec4 rotation, Vec4 scale, bool isDynamic, bool isConvex, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices)
 {
 	return PhysXWrapperNS::createPxMesh(index, position, rotation, scale, isDynamic, isConvex, vertices, indices);
 }

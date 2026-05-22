@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Common/EntityID.h"
 #include "../Common/GPUDataStructure.h"
 
@@ -8,9 +9,9 @@ namespace Inno
     {
         AABB m_AABB;
 
-        std::vector<BVHNode>::iterator m_Parent;
-        std::vector<BVHNode>::iterator m_LeftChild;
-        std::vector<BVHNode>::iterator m_RightChild;
+        Inno::Array<BVHNode>::iterator m_Parent;
+        Inno::Array<BVHNode>::iterator m_LeftChild;
+        Inno::Array<BVHNode>::iterator m_RightChild;
         size_t m_Depth = 0;
 
         EntityID m_Entity = INVALID_ENTITY;
@@ -34,7 +35,7 @@ namespace Inno
         void Update();
         void AddNode(EntityID Entity);
         void ClearNodes();
-        const std::vector<BVHNode>& GetNodes();
+        const Inno::Array<BVHNode>& GetNodes();
 
     private:
         BVHServiceImpl* m_Impl;

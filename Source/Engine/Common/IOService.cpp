@@ -1,4 +1,5 @@
 #include "IOService.h"
+#include "Array.h"
 
 #include "STL17.h"
 
@@ -30,7 +31,7 @@ static std::string ResolvePath(const std::string& workingDir, const char* filePa
 	return workingDir + (filePath ? filePath : "");
 }
 
-std::vector<char> IOService::LoadFile(const char* filePath, IOMode openMode)
+Inno::Array<char> IOService::LoadFile(const char* filePath, IOMode openMode)
 {
 	std::ios_base::openmode l_mode = std::ios::in;
 	switch (openMode)
@@ -53,14 +54,14 @@ std::vector<char> IOService::LoadFile(const char* filePath, IOMode openMode)
 	if (!l_file.is_open())
 	{
 		Log(Error, "Can't open file : ", filePath, " (resolved to ", l_resolved.c_str(), ")");
-		return std::vector<char>();
+		return Inno::Array<char>();
 	}
 
 	auto pbuf = l_file.rdbuf();
 	std::size_t l_size = pbuf->pubseekoff(0, l_file.end, l_file.in);
 	pbuf->pubseekpos(0, l_file.in);
 
-	std::vector<char> buffer(l_size);
+	Inno::Array<char> buffer(l_size);
 	pbuf->sgetn(&buffer[0], l_size);
 
 	l_file.close();
@@ -68,7 +69,7 @@ std::vector<char> IOService::LoadFile(const char* filePath, IOMode openMode)
 	return buffer;
 }
 
-bool IOService::SaveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode)
+bool IOService::SaveFile(const char* filePath, const Inno::Array<char>& content, IOMode saveMode)
 {
 	std::ios_base::openmode l_mode = std::ios::out;
 	switch (saveMode)

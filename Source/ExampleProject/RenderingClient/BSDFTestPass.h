@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Engine/Common/Array.h"
 #include "../../Engine/Interface/IRenderPass.h"
 #include "../../Engine/Common/GPUDataStructure.h"
 
@@ -25,8 +26,8 @@ namespace Inno
 		ShaderProgramComponent *m_ShaderProgramComp;
 		SamplerComponent *m_SamplerComp;
 
-		std::vector<TransformConstantBuffer> m_transformConstantBuffer;
-		std::vector<MaterialConstantBuffer> m_materialConstantBuffer;
+		Inno::Array<TransformConstantBuffer> m_transformConstantBuffer;
+		Inno::Array<MaterialConstantBuffer> m_materialConstantBuffer;
 
 		const size_t m_shpereCount = 10;
 	};

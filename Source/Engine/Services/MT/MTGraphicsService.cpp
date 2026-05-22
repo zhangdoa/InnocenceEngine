@@ -1,4 +1,5 @@
 #include "MTGraphicsService.h"
+#include "../../Common/Array.h"
 
 #include "../../Engine.h"
 
@@ -190,9 +191,9 @@ Vec4 MTGraphicsService::ReadRenderTargetSample(RenderPassComponent* renderPass, 
 	return Vec4();
 }
 
-std::vector<Vec4> MTGraphicsService::ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp)
+Inno::Array<Vec4> MTGraphicsService::ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp)
 {
-	return std::vector<Vec4>();
+	return Inno::Array<Vec4>();
 }
 
 bool MTGraphicsService::GenerateMipmap(TextureComponent* texture)
@@ -211,7 +212,7 @@ void MTGraphicsService::setBridge(MTGraphicsServiceBridge* bridge)
 	Log(Success, "Bridge connected at ", bridge);
 }
 
-bool MTGraphicsService::InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+bool MTGraphicsService::InitializeImpl(GPUMeshResourceHandle handle, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices)
 {
 	return true;
 }

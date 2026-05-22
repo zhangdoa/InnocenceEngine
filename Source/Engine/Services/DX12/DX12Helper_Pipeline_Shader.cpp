@@ -1,4 +1,5 @@
 #include "DX12Helper_Pipeline.h"
+#include "../../Common/Array.h"
 #include "../../Common/LogServiceSpecialization.h"
 #include "../../Common/IOService.h"
 #include "../../Engine.h"
@@ -148,7 +149,7 @@ bool DX12Helper::LoadRaytracingShaders(RenderPassComponent* RenderPassComp)
 }
 
 #ifdef USE_DXIL
-bool DX12Helper::LoadShaderFile(std::vector<uint8_t> &rhs, const ShaderFilePath &shaderFilePath)
+bool DX12Helper::LoadShaderFile(Inno::Array<uint8_t> &rhs, const ShaderFilePath &shaderFilePath)
 {
 	auto l_path = std::string(m_shaderRelativePath) + shaderFilePath.c_str() + ".dxil";
 	auto l_rawData = g_Engine->Get<IOService>()->LoadFile(l_path.c_str(), IOMode::Binary);
@@ -205,7 +206,7 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 		{
 			auto l_errorMessagePtr = (char*)(l_errorMessage->GetBufferPointer());
 			auto bufferSize = l_errorMessage->GetBufferSize();
-			std::vector<char> l_errorMessageVector(bufferSize);
+			Inno::Array<char> l_errorMessageVector(bufferSize);
 			std::memcpy(l_errorMessageVector.data(), l_errorMessagePtr, bufferSize);
 
 			Log(Error, "", shaderFilePath.c_str(), " compile error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");

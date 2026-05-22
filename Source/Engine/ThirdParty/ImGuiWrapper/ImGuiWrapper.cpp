@@ -1,4 +1,5 @@
 #include "ImGuiWrapper.h"
+#include "../../Common/Array.h"
 #include "../ImGui/imgui.h"
 
 #include "IImGuiWindow.h"
@@ -53,12 +54,12 @@ namespace ImGuiWrapperNS
 	static bool m_useZoom = false;
 	static bool m_showRenderPassResult = false;
 	static bool m_showConcurrencyProfiler = false;
-	std::vector<RingBuffer<TaskReport, true>> m_taskReports;
+	Inno::Array<RingBuffer<TaskReport, true>> m_taskReports;
 
 	IImGuiWindow* m_windowImpl;
 	IImGuiRenderer* m_rendererImpl;
 
-	std::vector<std::function<void()>*> m_userDrawCallbacks;
+	Inno::Array<std::function<void()>*> m_userDrawCallbacks;
 }
 
 using namespace ImGuiWrapperNS;

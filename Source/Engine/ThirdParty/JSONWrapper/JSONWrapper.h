@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Common/Array.h"
 #include "nlohmann/json.hpp"
 using json = nlohmann::ordered_json;
 
@@ -30,7 +31,7 @@ namespace Inno
 
 		void from_json(const json& j, RenderPassComponent& p);
 
-		bool SaveChildScene(const char* exportName, const std::vector<std::pair<std::string, std::string>>& drawCalls);
+		bool SaveChildScene(const char* exportName, const Inno::Array<std::pair<std::string, std::string>>& drawCalls);
 
 		bool SaveScene(const char* fileName);
 		bool LoadScene(const char* fileName);

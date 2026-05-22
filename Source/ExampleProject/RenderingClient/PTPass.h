@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Engine/Common/Array.h"
 #include <unordered_set>
 #include "../../Engine/Interface/IRenderPass.h"
 #include "../../Engine/Component/TextureComponent.h"
@@ -100,7 +101,7 @@ namespace Inno
 		bool m_HashGridCachePendingClear = false;
 		size_t m_BuiltMeshCount = 0;
 
-		std::vector<MaterialConstantBuffer> m_PendingMaterials;
+		Inno::Array<MaterialConstantBuffer> m_PendingMaterials;
 
 		std::unordered_set<EntityID> m_WarnedMissingMaterial;
 

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Common/ClassTemplate.h"
+#include "Common/Array.h"
 #include "Common/LogService.h"
 #include "Common/HashMap.h"
 #include "Interface/IService.h"
@@ -113,7 +114,7 @@ namespace Inno
 
 		template<typename T>
 		T* GetSystemWithDependencies();
-		void ResolveDependencies(const std::vector<std::type_index>& dependencies);
+		void ResolveDependencies(const Inno::Array<std::type_index>& dependencies);
 
 		IWindowService* CreateWindowSystem(bool isHeadless);
 

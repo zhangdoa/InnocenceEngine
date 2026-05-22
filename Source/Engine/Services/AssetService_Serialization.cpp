@@ -1,4 +1,5 @@
 #include "AssetService.h"
+#include "../Common/Array.h"
 #include "../Common/ComponentHeaders.h"
 #include "../Common/LogService.h"
 #include "../Common/IOService.h"
@@ -65,7 +66,7 @@ bool AssetService::Save(const char* fileName, const TextureDesc& textureDesc, vo
 	return STBWrapper::Save(fileName, textureDesc, textureData);
 }
 
-bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+bool AssetService::Save(const MeshComponent& component, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices)
 {
 	json j;
 	JSONWrapper::to_json(j, component);

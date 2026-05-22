@@ -11,8 +11,8 @@ namespace Inno
 	public:
 		bool SetupWorkingDirectory();
 
-		std::vector<char> LoadFile(const char* filePath, IOMode openMode);
-		bool SaveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode);
+		Inno::Array<char> LoadFile(const char* filePath, IOMode openMode);
+		bool SaveFile(const char* filePath, const Inno::Array<char>& content, IOMode saveMode);
 
 		bool IsFileExist(const char* filePath);
 		std::string GetFilePath(const char* filePath);
@@ -40,13 +40,7 @@ namespace Inno
 		}
 
 		template<typename T>
-		inline bool SerializeVector(std::ostream& os, const Array<T>& vector)
-		{
-			return serialize(os, (void*)&vector[0], vector.size() * sizeof(T));
-		}
-
-		template<typename T>
-		inline bool SerializeVector(std::ostream& os, const std::vector<T>& vector)
+		inline bool SerializeVector(std::ostream& os, const Inno::Array<T>& vector)
 		{
 			return serialize(os, (void*)&vector[0], vector.size() * sizeof(T));
 		}
@@ -86,27 +80,13 @@ namespace Inno
 		}
 
 		template<typename T>
-		inline bool DeserializeVector(std::istream& is, std::streamoff startPos, std::size_t size, Array<T>& vector)
+		inline bool DeserializeVector(std::istream& is, std::streamoff startPos, std::size_t size, Inno::Array<T>& vector)
 		{
 			return deserialize(is, startPos, size, &vector[0]);
 		}
 
 		template<typename T>
-		inline bool DeserializeVector(std::istream& is, std::streamoff startPos, std::size_t size, std::vector<T>& vector)
-		{
-			return deserialize(is, startPos, size, &vector[0]);
-		}
-
-		template<typename T>
-		inline bool DeserializeVector(std::istream& is, Array<T>& vector)
-		{
-			auto l_fileSize = GetFileSize(is);
-			vector.reserve(l_fileSize / sizeof(T));
-			return deserialize(is, &vector[0]);
-		}
-
-		template<typename T>
-		inline bool DeserializeVector(std::istream& is, std::vector<T>& vector)
+		inline bool DeserializeVector(std::istream& is, Inno::Array<T>& vector)
 		{
 			auto l_fileSize = GetFileSize(is);
 			vector.resize(l_fileSize / sizeof(T));

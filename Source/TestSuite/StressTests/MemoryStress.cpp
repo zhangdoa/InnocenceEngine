@@ -1,4 +1,5 @@
 #include "../Common/TestRunner.h"
+#include "../../Engine/Common/Array.h"
 #include "../Common/TestTimer.h"
 #include "../Common/TestData.h"
 #include "../../Engine/Common/ObjectPool.h"
@@ -15,7 +16,7 @@ void TestObjectPoolMassiveAllocations()
 	auto l_ObjectPool = TObjectPool<TestStruct>::Create(l_PoolSize);
 	bool l_TestPassed = true;
 
-	std::vector<TestStruct*> l_Objects;
+	Inno::Array<TestStruct*> l_Objects;
 	l_Objects.reserve(l_PoolSize);
 
 	for (size_t i = 0; i < l_PoolSize; i++)
@@ -66,7 +67,7 @@ void TestMemoryFragmentationStress()
 	for (size_t i = 0; i < l_TestIterations; i++)
 	{
 		auto l_ObjectPool = TObjectPool<uint32_t>::Create(l_ObjectsPerIteration);
-		std::vector<uint32_t*> l_Objects;
+		Inno::Array<uint32_t*> l_Objects;
 
 		for (size_t j = 0; j < l_ObjectsPerIteration; j++)
 		{

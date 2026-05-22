@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "RenderPassComponent.h"
 #include "../Services/VK/VKHeaders.h"
 #include "VKTextureComponent.h"
@@ -8,24 +9,24 @@ namespace Inno
 	class VKPipelineStateObject : public IPipelineStateObject
 	{
 	public:
-		std::vector<VkAttachmentReference> m_ColorAttachmentRefs = {};
+		Inno::Array<VkAttachmentReference> m_ColorAttachmentRefs = {};
 		VkAttachmentReference m_DepthAttachmentRef = {};
 		VkSubpassDescription m_SubpassDesc = {};
-		std::vector<VkSubpassDependency> m_SubpassDeps = {};
-		std::vector<VkAttachmentDescription> m_AttachmentDescs;
+		Inno::Array<VkSubpassDependency> m_SubpassDeps = {};
+		Inno::Array<VkAttachmentDescription> m_AttachmentDescs;
 		VkRenderPassCreateInfo m_RenderPassCInfo = {};
 
 		VkRenderPass m_RenderPass;
 		VkPipelineLayout m_PipelineLayout;
 		VkPipeline m_Pipeline;
 		VkVertexInputBindingDescription m_VertexBindingDescription;
-		std::vector<VkVertexInputAttributeDescription> m_VertexAttributeDescriptions;
+		Inno::Array<VkVertexInputAttributeDescription> m_VertexAttributeDescriptions;
 		VkPipelineInputAssemblyStateCreateInfo m_InputAssemblyStateCInfo = {};
 		VkPipelineViewportStateCreateInfo m_ViewportStateCInfo = {};
 		VkPipelineRasterizationStateCreateInfo m_RasterizationStateCInfo = {};
 		VkPipelineMultisampleStateCreateInfo m_MultisampleStateCInfo = {};
 		VkPipelineDepthStencilStateCreateInfo m_DepthStencilStateCInfo = {};
-		std::vector<VkPipelineColorBlendAttachmentState> m_ColorBlendAttachmentStates = {};
+		Inno::Array<VkPipelineColorBlendAttachmentState> m_ColorBlendAttachmentStates = {};
 		VkPipelineColorBlendStateCreateInfo m_ColorBlendStateCInfo = {};
 		VkPipelineLayoutCreateInfo m_PipelineLayoutCInfo = {};
 		VkGraphicsPipelineCreateInfo m_GraphicsPipelineCInfo = {};
@@ -55,14 +56,14 @@ namespace Inno
 	class VKRenderPassComponent : public RenderPassComponent
 	{
 	public:
-		std::vector<VkFramebuffer> m_Framebuffers;
+		Inno::Array<VkFramebuffer> m_Framebuffers;
 
 		VkDescriptorPool m_DescriptorPool;
-		std::vector<VkDescriptorSetLayoutBinding> m_DescriptorSetLayoutBindings;
-		std::vector<VKDescriptorSetLayoutBindingIndex> m_DescriptorSetLayoutBindingIndices;
-		std::vector<VkDescriptorSetLayout> m_DescriptorSetLayouts;
-		std::vector<VkDescriptorSet> m_DescriptorSets;
-		std::vector<VkPushConstantRange> m_PushConstantRanges;
+		Inno::Array<VkDescriptorSetLayoutBinding> m_DescriptorSetLayoutBindings;
+		Inno::Array<VKDescriptorSetLayoutBindingIndex> m_DescriptorSetLayoutBindingIndices;
+		Inno::Array<VkDescriptorSetLayout> m_DescriptorSetLayouts;
+		Inno::Array<VkDescriptorSet> m_DescriptorSets;
+		Inno::Array<VkPushConstantRange> m_PushConstantRanges;
 
 		VkCommandPool m_GraphicsCommandPool;
 		VkCommandPool m_ComputeCommandPool;

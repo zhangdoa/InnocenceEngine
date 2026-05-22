@@ -1,4 +1,5 @@
 #include "../Common/TestRunner.h"
+#include "../../Engine/Common/Array.h"
 #include "../Common/TestTimer.h"
 #include "../Common/TestData.h"
 #include "../../Engine/Common/ObjectPool.h"
@@ -13,8 +14,8 @@ void TestObjectPoolPerformance()
 	TestRunner::StartTest("ObjectPool vs Malloc Performance");
 
 	const size_t l_TestCount = TestConfig::LargeDataSize;
-	std::vector<uint32_t*> l_ObjectsInPool(l_TestCount);
-	std::vector<void*> l_ObjectsRaw(l_TestCount);
+	Inno::Array<uint32_t*> l_ObjectsInPool(l_TestCount);
+	Inno::Array<void*> l_ObjectsRaw(l_TestCount);
 
 	auto l_ObjectPool = TObjectPool<uint32_t>::Create(l_TestCount);
 

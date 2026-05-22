@@ -1,6 +1,7 @@
 ﻿#include "PhysicsSimulationService.h"
 
 #include "../Common/MathHelper.h"
+#include "../Common/Array.h"
 #include "../Common/LogService.h"
 #include "EntityRegistry.h"
 #include "SceneService.h"
@@ -51,7 +52,7 @@ namespace Inno
 		SceneBoundary m_StaticSceneBoundary;
 
 		EntityID m_RootEntity = INVALID_ENTITY;
-		std::vector<CullingResult> m_CullingResults;
+		Inno::Array<CullingResult> m_CullingResults;
 		mutable std::shared_mutex m_CullingResultsMutex;
 
 	};
@@ -159,7 +160,7 @@ void PhysicsSimulationService::RunCulling()
 {
 }
 
-const std::vector<CullingResult>& PhysicsSimulationService::GetCullingResult()
+const Inno::Array<CullingResult>& PhysicsSimulationService::GetCullingResult()
 {
 	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_CullingResultsMutex);
 	return m_Impl->m_CullingResults;

@@ -1,4 +1,5 @@
 #include "VKGraphicsService.h"
+#include "../../Common/Array.h"
 #include "../GraphicsResourceService.h"
 
 #include "../../Engine.h"
@@ -59,7 +60,7 @@ bool VKGraphicsService::CreateGraphicsPipelines(VKRenderPassComponent *VKRenderP
 
 	// attach shader module and create pipeline
 	auto l_VKSPC = reinterpret_cast<VKShaderProgramComponent *>(VKRenderPassComp->m_ShaderProgram);
-	std::vector<VkPipelineShaderStageCreateInfo> l_shaderStageCInfos;
+	Inno::Array<VkPipelineShaderStageCreateInfo> l_shaderStageCInfos;
 	l_shaderStageCInfos.reserve(6);
 
 	if (l_VKSPC->m_ShaderFilePaths.m_VSPath != "")

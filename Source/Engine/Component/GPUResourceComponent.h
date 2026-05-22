@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Common/GraphicsPrimitive.h"
 #include "../Common/Object.h"
 
@@ -11,8 +12,8 @@ namespace Inno
 		Accessibility     m_GPUAccessibility = Accessibility::ReadOnly;
 		uint32_t          m_ReadState        = 0;
 		uint32_t          m_WriteState       = 0;
-		std::vector<DescriptorHandle> m_ReadHandles;
-		std::vector<DescriptorHandle> m_WriteHandles;
+		Inno::Array<DescriptorHandle> m_ReadHandles;
+		Inno::Array<DescriptorHandle> m_WriteHandles;
 		ObjectStatus      m_ObjectStatus     = ObjectStatus::Invalid;
 		ObjectName        m_InstanceName     = "";
 	};

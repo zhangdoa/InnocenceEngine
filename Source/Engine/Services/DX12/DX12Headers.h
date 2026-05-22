@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <wrl/client.h>
+#include "../../Common/Array.h"
 #include "directx/d3dx12.h"
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -39,7 +40,7 @@ namespace Inno
 	{
 		// Assuming that all render targets have the same format
 		D3D12_RENDER_TARGET_VIEW_DESC m_Desc = {};
-		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_Handles;
+		Inno::Array<D3D12_CPU_DESCRIPTOR_HANDLE> m_Handles;
 	};
 
 	struct DX12DSV
@@ -119,8 +120,8 @@ namespace Inno
 	class DX12OutputMergerTarget : public IOutputMergerTarget
 	{
 	public:
-		std::vector<DX12RTV> m_RTVs;
-		std::vector<DX12DSV> m_DSVs;
+		Inno::Array<DX12RTV> m_RTVs;
+		Inno::Array<DX12DSV> m_DSVs;
 	};
 
 	struct DX12MappedMemory : public IMappedMemory
@@ -141,6 +142,6 @@ namespace Inno
 	class DX12RaytracingInstanceDescList : public IRaytracingInstanceDescList
 	{
 	public:		
-		std::vector<D3D12_RAYTRACING_INSTANCE_DESC> m_Descs;
+		Inno::Array<D3D12_RAYTRACING_INSTANCE_DESC> m_Descs;
 	};
 }

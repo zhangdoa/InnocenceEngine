@@ -1,4 +1,5 @@
 #include "AssimpMeshProcessor.h"
+#include "../../Common/Array.h"
 #include "AssimpUtils.h"
 #include "AssimpMaterialProcessor.h"
 
@@ -18,8 +19,8 @@ bool AssimpMeshProcessor::CreateMeshComponent(const aiScene* Scene, const char* 
 
 	Log(Verbose, "Creating MeshComponent for: ", l_Mesh->mName.C_Str());
 
-	std::vector<Vertex> l_Vertices;
-	std::vector<Index> l_Indices;
+	Inno::Array<Vertex> l_Vertices;
+	Inno::Array<Index> l_Indices;
 
 	ConvertMeshData(l_Mesh, l_Vertices, l_Indices);
 
@@ -39,7 +40,7 @@ bool AssimpMeshProcessor::CreateMeshComponent(const aiScene* Scene, const char* 
 	return l_Result;
 }
 
-size_t AssimpMeshProcessor::ConvertMeshData(const aiMesh* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+size_t AssimpMeshProcessor::ConvertMeshData(const aiMesh* mesh, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices)
 {
 	auto l_numVertices = mesh->mNumVertices;
 

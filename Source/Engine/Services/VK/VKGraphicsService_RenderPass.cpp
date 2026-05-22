@@ -1,4 +1,5 @@
 #include "VKGraphicsService.h"
+#include "../../Common/Array.h"
 #include "../GraphicsResourceService.h"
 
 #include "../../Engine.h"
@@ -204,7 +205,7 @@ bool VKGraphicsService::CreateFramebuffers(VKRenderPassComponent *VKRenderPassCo
 	auto l_swapChainImageCount = GetSwapChainImageCount();
 	for (size_t i = 0; i < l_swapChainImageCount; i++)
 	{
-		std::vector<VkImageView> l_attachments(l_attachmentCount);
+		Inno::Array<VkImageView> l_attachments(l_attachmentCount);
 
 		if (VKRenderPassComp->m_RenderPassDesc.m_UseOutputMerger)
 		{

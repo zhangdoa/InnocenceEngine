@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Common/STL14.h"
 #include "../Common/Enum.h"
 #include "IService.h"
@@ -16,7 +17,7 @@ namespace Inno
 		virtual WindowEventType GetType() const = 0;
 	};
 
-	using WindowEventProcessCallback = std::function<void(const std::vector<IWindowEvent*>&)>;
+	using WindowEventProcessCallback = std::function<void(const Inno::Array<IWindowEvent*>&)>;
 
 	struct ButtonState : public IWindowEvent
 	{

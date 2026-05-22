@@ -1,4 +1,5 @@
 #include "../TextureResourceService.h"
+#include "../../Common/Array.h"
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
 #include "../../Common/Memory.h"
@@ -175,7 +176,7 @@ bool TextureResourceService::OnSceneUnloading()
 			&& l_registry->GetLifespan(owner) == ObjectLifespan::Scene;
 	};
 
-	std::vector<TextureInitTask> l_persistent;
+	Inno::Array<TextureInitTask> l_persistent;
 	TextureInitTask l_task(nullptr, nullptr);
 	while (m_DeferredQueue.tryPop(l_task))
 	{

@@ -1,4 +1,5 @@
 #include "VKGraphicsService.h"
+#include "../../Common/Array.h"
 #include "../../Component/VKMeshComponent.h"
 #include "../../Component/VKTextureComponent.h"
 #include "../../Component/VKMaterialComponent.h"
@@ -37,7 +38,7 @@ bool VKGraphicsService::CreatePhysicalDevice()
 	}
 
 	// assign the handle
-	std::vector<VkPhysicalDevice> l_devices(l_deviceCount);
+	Inno::Array<VkPhysicalDevice> l_devices(l_deviceCount);
 	vkEnumeratePhysicalDevices(m_instance, &l_deviceCount, l_devices.data());
 
 	for (const auto &l_device : l_devices)
@@ -64,7 +65,7 @@ bool VKGraphicsService::CreateLogicalDevice()
 {
 	QueueFamilyIndices l_indices = FindQueueFamilies(m_physicalDevice, m_windowSurface);
 
-	std::vector<VkDeviceQueueCreateInfo> l_queueCreateInfos;
+	Inno::Array<VkDeviceQueueCreateInfo> l_queueCreateInfos;
 	std::set<uint32_t> l_uniqueQueueFamilies = {l_indices.m_graphicsFamily.value(), l_indices.m_presentFamily.value()};
 
 	float l_queuePriority = 1.0f;
@@ -234,7 +235,7 @@ bool VKGraphicsService::CreateMaterialDescriptorPool()
 
 	Log(Success, "VkDescriptorPool for material has been created.");
 
-	std::vector<VkDescriptorSetLayoutBinding> l_textureLayoutBindings(8);
+	Inno::Array<VkDescriptorSetLayoutBinding> l_textureLayoutBindings(8);
 	for (size_t i = 0; i < l_textureLayoutBindings.size(); i++)
 	{
 		VkDescriptorSetLayoutBinding l_textureLayoutBinding = {};

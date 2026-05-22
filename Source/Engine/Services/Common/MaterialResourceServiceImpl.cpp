@@ -1,4 +1,5 @@
 #include "../MaterialResourceService.h"
+#include "../../Common/Array.h"
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
 #include "../../Engine.h"
@@ -92,7 +93,7 @@ bool MaterialResourceService::OnSceneUnloading()
 			&& l_registry->GetLifespan(owner) == ObjectLifespan::Scene;
 	};
 
-	std::vector<MaterialInitTask> l_persistent;
+	Inno::Array<MaterialInitTask> l_persistent;
 	MaterialInitTask l_task(nullptr);
 	while (m_DeferredQueue.tryPop(l_task))
 	{

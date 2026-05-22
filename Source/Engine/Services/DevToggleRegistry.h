@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 
 #include <functional>
 #include <optional>
@@ -31,8 +32,8 @@ namespace Inno
         void RegisterToggle(std::string name, std::function<bool()> getter, std::function<void(bool)> setter);
         void RegisterAction(std::string name, std::function<void()> trigger);
 
-        std::vector<Toggle> AllToggles();
-        std::vector<Action> AllActions();
+        Inno::Array<Toggle> AllToggles();
+        Inno::Array<Action> AllActions();
 
         // Returns false if the name is not registered. Both Set and Trigger
         // are safe to call from any thread; the registry takes a lock and

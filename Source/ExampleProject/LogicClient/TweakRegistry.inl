@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Engine/Common/Array.h"
 
 #include "../../Engine/ThirdParty/ImGui/imgui.h"
 #include "../../Engine/Common/LogService.h"
@@ -307,9 +308,9 @@ namespace Inno
 	private:
 		// Function-local-static storage. Keeps the helper header-only without
 		// a separate translation unit.
-		static std::vector<TweakVar>& GetVars()
+		static Inno::Array<TweakVar>& GetVars()
 		{
-			static std::vector<TweakVar> s_Vars;
+			static Inno::Array<TweakVar> s_Vars;
 			return s_Vars;
 		}
 

@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "GPUResourceComponent.h"
 
 namespace Inno
@@ -14,10 +15,10 @@ namespace Inno
 		size_t m_TotalSize = 0;
 		GPUBufferUsage m_Usage = GPUBufferUsage::Generic;
 		void* m_InitialData = 0;
-		std::vector<IMappedMemory*> m_MappedMemories;
-		std::vector<IDeviceMemory*> m_DeviceMemories;
+		Inno::Array<IMappedMemory*> m_MappedMemories;
+		Inno::Array<IDeviceMemory*> m_DeviceMemories;
 
-		mutable std::vector<uint32_t> m_CurrentState;
+		mutable Inno::Array<uint32_t> m_CurrentState;
 		
 		uint32_t GetCurrentState(uint32_t frameIndex) const
 		{

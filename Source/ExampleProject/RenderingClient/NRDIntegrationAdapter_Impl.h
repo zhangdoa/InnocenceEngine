@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Engine/Common/Array.h"
 
 #include "NRDConstants.h"
 
@@ -98,10 +99,10 @@ namespace Inno
 		ID3D12Device9* m_Device = nullptr;
 
 		// === Per-pipeline state ===
-		std::vector<NRDPipelineEntry> m_Pipelines;
+		Inno::Array<NRDPipelineEntry> m_Pipelines;
 
 		// === Permanent + transient texture pool ===
-		std::vector<NRDPoolTexture> m_PoolTextures;
+		Inno::Array<NRDPoolTexture> m_PoolTextures;
 		uint32_t                    m_PermanentCount = 0;
 		uint32_t                    m_TransientCount = 0;
 

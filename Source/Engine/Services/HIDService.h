@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Interface/IService.h"
 #include "../Common/HashMap.h"
 #include "../Interface/IWindowService.h"
@@ -72,7 +73,7 @@ namespace Inno
 
 		const InputConfig m_InputConfig = { 349, 5 };
 
-		std::vector<ButtonState> m_PreviousFrameButtonStates;
+		Inno::Array<ButtonState> m_PreviousFrameButtonStates;
 
 		// Synchronises m_ButtonEvents: writers (AddButtonStateCallback) come from
 		// the logic-client thread; readers (Update tick, ButtonStateCallback) come

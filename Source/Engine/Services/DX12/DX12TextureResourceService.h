@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Common/Array.h"
 #include "../TextureResourceService.h"
 #include "../../Common/HashMap.h"
 #include "DX12Headers.h"
@@ -19,7 +20,7 @@ namespace Inno
 		bool Copy(CommandListComponent* commandList, TextureComponent* src, TextureComponent* dst) override;
 		bool GenerateMipmap(TextureComponent* texture, CommandListComponent* commandList = nullptr) override;
 		std::optional<uint32_t> GetIndex(TextureComponent* texture, Accessibility bindingAccessibility) override;
-		std::vector<Math::Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* textureComp) override;
+		Inno::Array<Math::Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* textureComp) override;
 
 		bool CreateMipmapGenerator();
 		bool ReleaseMipmapGenerator();
@@ -34,7 +35,7 @@ namespace Inno
 		DX12Context* m_ctx = nullptr;
 
 		Inno::HashMap<uint64_t, ComPtr<ID3D12Resource>> m_TextureBuffers_Upload;
-		Inno::HashMap<uint64_t, std::vector<ComPtr<ID3D12Resource>>> m_TextureBuffers_Default;
+		Inno::HashMap<uint64_t, Inno::Array<ComPtr<ID3D12Resource>>> m_TextureBuffers_Default;
 
 		ID3D12RootSignature* m_2DMipmapRootSignature = nullptr;
 		ID3D12RootSignature* m_3DMipmapRootSignature = nullptr;

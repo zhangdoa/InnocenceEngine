@@ -7,6 +7,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <initializer_list>
 #include <type_traits>
 #include <utility>
 
@@ -40,9 +41,22 @@ namespace Inno
 
 		Array() = default;
 
-		explicit Array(size_type reserveCount)
+		explicit Array(size_type n)
 		{
-			reserve(reserveCount);
+			if (n > 0)
+			{
+				grow_to(n);
+				for (size_type i = 0; i < n; ++i)
+					::new (static_cast<void*>(m_data + i)) T();
+				m_size = n;
+			}
+		}
+
+		Array(std::initializer_list<T> il)
+		{
+			grow_to(il.size());
+			copy_range_init(m_data, il.begin(), il.size());
+			m_size = il.size();
 		}
 
 		Array(const T* first, const T* last)
@@ -53,9 +67,6 @@ namespace Inno
 			m_size = n;
 		}
 
-		// Copy ops require copyable T. For non-copyable T (e.g. unique_ptr) the
-		// resize(N) path is default-construct only, so non-copyable T works as
-		// long as nothing actually copies the Array.
 		Array(const Array& rhs)
 		{
 			grow_to(rhs.m_size);
@@ -120,8 +131,6 @@ namespace Inno
 			}
 		}
 
-		// Default-construct elements when growing — works for non-copyable T
-		// as long as T is default-constructible.
 		void resize(size_type newSize)
 		{
 			auto exec = [&]() {
@@ -251,6 +260,15 @@ namespace Inno
 			}
 		}
 
+		void assign(size_type n, const T& value)
+		{
+			clear();
+			if (n > m_capacity) grow_to(n);
+			for (size_type i = 0; i < n; ++i)
+				::new (static_cast<void*>(m_data + i)) T(value);
+			m_size = n;
+		}
+
 		void pop_back()
 		{
 			if constexpr (ThreadSafe)
@@ -326,8 +344,6 @@ namespace Inno
 		T&       back()        { assert(m_size > 0 && "Array::back on empty");  return m_data[m_size - 1]; }
 		const T& back()  const { assert(m_size > 0 && "Array::back on empty");  return m_data[m_size - 1]; }
 
-		// erase(iterator) — shift-down semantics matching std::vector::erase.
-		// Returns iterator one past the erased element (or end() if last erased).
 		iterator erase(iterator pos)
 		{
 			assert(pos >= begin() && pos < end() && "Array::erase: iterator out of bounds");
@@ -339,8 +355,6 @@ namespace Inno
 			return begin() + idx;
 		}
 
-		// insert(pos, first, last) — only end-append supported (pos == end()).
-		// Engine consumers append-only; mid-array insert not implemented.
 		template <typename InputIt>
 		iterator insert(iterator pos, InputIt first, InputIt last)
 		{
@@ -351,7 +365,6 @@ namespace Inno
 			return begin() + oldSize;
 		}
 
-		// erase(first, last) — range erase. Supports the std::remove_if + erase idiom.
 		iterator erase(iterator first, iterator last)
 		{
 			assert(first >= begin() && last <= end() && first <= last && "Array::erase: range invalid");

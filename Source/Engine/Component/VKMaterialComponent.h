@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "MaterialComponent.h"
 #include "../Services/VK/VKHeaders.h"
 
@@ -8,6 +9,6 @@ namespace Inno
 	{
 	public:
 		VkDescriptorSet m_descriptorSet;
-		std::vector<VkWriteDescriptorSet> m_writeDescriptorSets;
+		Inno::Array<VkWriteDescriptorSet> m_writeDescriptorSets;
 	};
 }

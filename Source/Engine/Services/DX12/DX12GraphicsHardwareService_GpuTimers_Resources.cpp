@@ -1,4 +1,5 @@
 #include "DX12GraphicsHardwareService.h"
+#include "../../Common/Array.h"
 #include "DX12GraphicsHardwareService_Internal.h"
 #include "DX12Helper_Common.h"
 #include "../FrameManagementService.h"
@@ -33,9 +34,9 @@ bool DX12GraphicsHardwareService::CreateGpuTimerResources()
 		D3D12_QUERY_HEAP_TYPE heapType,
 		D3D12_COMMAND_LIST_TYPE cmdListType,
 		ComPtr<ID3D12QueryHeap>& outHeap,
-		std::vector<ComPtr<ID3D12Resource>>& outReadback,
-		std::vector<ComPtr<ID3D12CommandAllocator>>& outAllocators,
-		std::vector<ComPtr<ID3D12GraphicsCommandList7>>& outLists,
+		Inno::Array<ComPtr<ID3D12Resource>>& outReadback,
+		Inno::Array<ComPtr<ID3D12CommandAllocator>>& outAllocators,
+		Inno::Array<ComPtr<ID3D12GraphicsCommandList7>>& outLists,
 		const wchar_t* heapName,
 		const char* readbackName,
 		const wchar_t* allocatorNameStem,

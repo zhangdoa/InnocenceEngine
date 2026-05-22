@@ -1,4 +1,5 @@
 #include "MacWindowService.h"
+#include "../../Common/Array.h"
 
 #include "../../Engine.h"
 
@@ -10,7 +11,7 @@ namespace MacWindowServiceNS
 	IWindowSurface* m_WindowSurface;
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	InitConfig m_InitConfig;
-	std::vector<ButtonState> m_ButtonStates;
+	Inno::Array<ButtonState> m_ButtonStates;
 	std::set<WindowEventCallback*> m_WindowEventCallbacks;
 
 	MacWindowServiceBridge* m_bridge;
@@ -60,7 +61,7 @@ IWindowSurface* MacWindowService::GetWindowSurface()
 	return MacWindowServiceNS::m_WindowSurface;
 }
 
-const std::vector<ButtonState>& MacWindowService::GetButtonState()
+const Inno::Array<ButtonState>& MacWindowService::GetButtonState()
 {
 	return MacWindowServiceNS::m_ButtonStates;
 }

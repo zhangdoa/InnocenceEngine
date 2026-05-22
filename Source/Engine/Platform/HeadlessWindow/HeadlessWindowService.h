@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Common/Array.h"
 #include "../../Interface/IWindowService.h"
 #include "../../Common/Object.h"
 
@@ -16,7 +17,7 @@ namespace Inno
 		bool Update() override;
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;
-		std::vector<std::type_index> GetDependencies() override;
+		Inno::Array<std::type_index> GetDependencies() override;
 
 		IWindowSurface* GetWindowSurface() override;
 		bool SendEvent(void* windowHook, uint32_t uMsg, uint32_t wParam, int32_t lParam) override;

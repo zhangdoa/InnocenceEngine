@@ -1,4 +1,5 @@
 #include "VKGraphicsService.h"
+#include "../../Common/Array.h"
 
 #include "../../Engine.h"
 
@@ -141,9 +142,9 @@ Vec4 VKGraphicsService::ReadRenderTargetSample(RenderPassComponent *rhs, size_t 
 	return Vec4();
 }
 
-std::vector<Vec4> VKGraphicsService::ReadTextureBackToCPU(RenderPassComponent *canvas, TextureComponent *TextureComp)
+Inno::Array<Vec4> VKGraphicsService::ReadTextureBackToCPU(RenderPassComponent *canvas, TextureComponent *TextureComp)
 {
-	return std::vector<Vec4>();
+	return Inno::Array<Vec4>();
 }
 
 bool VKGraphicsService::BeginCapture()

@@ -1,4 +1,5 @@
 #include "DX12TextureResourceService.h"
+#include "../../Common/Array.h"
 #include "DX12Context.h"
 #include "DX12Helper_Texture.h"
 #include "../FrameManagementService.h"
@@ -11,7 +12,7 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-std::vector<Vec4> DX12TextureResourceService::ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp)
+Inno::Array<Vec4> DX12TextureResourceService::ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp)
 {
     auto textureDesc = TextureComp->m_TextureDesc;
     auto l_frameIndex = textureDesc.IsMultiBuffer ? g_Engine->Get<FrameManagementService>()->GetCurrentFrame() : 0;
@@ -32,7 +33,7 @@ std::vector<Vec4> DX12TextureResourceService::ReadTextureBackToCPU(RenderPassCom
     auto l_srcDesc = l_defaultHeapBuffer->GetDesc();
 
     uint32_t l_subresourceCount = textureDesc.Sampler == TextureSampler::SamplerCubemap ? 6 : textureDesc.DepthOrArraySize;
-    std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> l_footprints(l_subresourceCount);
+    Inno::Array<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> l_footprints(l_subresourceCount);
     m_ctx->m_device->GetCopyableFootprints(&l_srcDesc, 0, l_subresourceCount, 0, l_footprints.data(), NULL, NULL, NULL);
 
     UINT64 l_bufferSize = 0;
@@ -122,7 +123,7 @@ std::vector<Vec4> DX12TextureResourceService::ReadTextureBackToCPU(RenderPassCom
     }
 
     uint32_t l_pixelDataSize = DX12Helper::GetTexturePixelDataSize(textureDesc);
-    std::vector<unsigned char> l_rawResult(l_bufferSize);
+    Inno::Array<unsigned char> l_rawResult(l_bufferSize);
 
     CD3DX12_RANGE l_readRange(0, l_rawResult.size());
     void* l_pData = nullptr;
@@ -137,7 +138,7 @@ std::vector<Vec4> DX12TextureResourceService::ReadTextureBackToCPU(RenderPassCom
     }
     std::memcpy(l_rawResult.data(), l_pData, l_rawResult.size());
     l_readBackHeapBuffer->Unmap(0, nullptr);
-    std::vector<Vec4> l_result(l_pixelCount);
+    Inno::Array<Vec4> l_result(l_pixelCount);
     size_t l_subresourceOffset = 0;
     for (uint32_t sub = 0; sub < l_subresourceCount; ++sub)
     {

@@ -1,4 +1,5 @@
 #include "TemplateAssetService.h"
+#include "../Common/Array.h"
 #include "TemplateAssetService_Internal.h"
 
 #include "EntityRegistry.h"
@@ -129,7 +130,7 @@ bool TemplateAssetService::GenerateMesh(MeshShape shape, MeshComponent* meshComp
     return m_Impl->GenerateMesh(shape, meshComponent);
 }
 
-void TemplateAssetService::FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace)
+void TemplateAssetService::FulfillVerticesAndIndices(MeshComponent* meshComponent, const Inno::Array<Index>& indices, const Inno::Array<Vec3>& vertices, uint32_t verticesPerFace)
 {
     return m_Impl->FulfillVerticesAndIndices(meshComponent, indices, vertices, verticesPerFace);
 }

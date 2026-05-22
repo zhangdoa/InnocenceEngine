@@ -1,4 +1,5 @@
 #include "ExampleRenderingClient_Internal.h"
+#include "../../Engine/Common/Array.h"
 #include "FinalBlendPass.h"
 
 #include "../../Engine/Services/AssetService.h"
@@ -168,7 +169,7 @@ namespace Inno
 			return false;
 		}
 
-		std::vector<uint8_t> l_uint8Pixels;
+		Inno::Array<uint8_t> l_uint8Pixels;
 		l_uint8Pixels.reserve(l_floatPixels.size() * 4);
 		// FinalBlendPass already writes gamma-encoded sRGB (AGX tonemap); no extra encode here.
 		for (const auto& px : l_floatPixels)

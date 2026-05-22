@@ -1,4 +1,5 @@
 #include "../MeshResourceService.h"
+#include "../../Common/Array.h"
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
 #include "../../Common/MathHelper.h"
@@ -42,7 +43,7 @@ bool MeshResourceService::Delete(MeshComponent* ptr)
 	return true;
 }
 
-void MeshResourceService::Initialize(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices, EntityID owner)
+void MeshResourceService::Initialize(MeshComponent* mesh, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices, EntityID owner)
 {
 	if (mesh->m_ObjectStatus == ObjectStatus::Activated)
 		return;
@@ -86,7 +87,7 @@ bool MeshResourceService::InitializeComponents()
 {
 	while (m_DeferredQueue.size() > 0)
 	{
-		MeshInitTask l_task(nullptr, std::vector<Vertex>(), std::vector<Index>());
+		MeshInitTask l_task(nullptr, Inno::Array<Vertex>(), Inno::Array<Index>());
 		m_DeferredQueue.tryPop(l_task);
 
 		if (!l_task.m_Component)
@@ -164,7 +165,7 @@ bool MeshResourceService::OnSceneUnloading()
 			&& l_registry->GetLifespan(owner) == ObjectLifespan::Scene;
 	};
 
-	std::vector<MeshInitTask> l_persistent;
+	Inno::Array<MeshInitTask> l_persistent;
 	MeshInitTask l_task(nullptr, {}, {});
 	while (m_DeferredQueue.tryPop(l_task))
 	{

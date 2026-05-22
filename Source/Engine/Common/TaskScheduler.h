@@ -1,4 +1,5 @@
 #pragma once
+#include "Array.h"
 #include <memory>
 #include <type_traits>
 #include <future>
@@ -50,6 +51,6 @@ namespace Inno
 		uint32_t GenerateThreadIndex(uint32_t threadIndex);
 
 		std::atomic_size_t m_NumThreads = 0;
-		std::vector<std::unique_ptr<Thread>> m_Threads;
+		Inno::Array<std::unique_ptr<Thread>> m_Threads;
 	};
 }

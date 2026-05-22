@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Engine/Common/Array.h"
 #include <vector>
 #include "../../Engine/Interface/IRenderingClient.h"
 
@@ -25,7 +26,7 @@ namespace Inno
 		// Snapshot of passes the client owns, in the order PrepareCommands would
 		// dispatch them. Call from the main thread between frames; returned
 		// pointers are stable for the process lifetime.
-		std::vector<IRenderPass*> GetDispatchedPasses() const;
+		Inno::Array<IRenderPass*> GetDispatchedPasses() const;
 
 	private:
 		ExampleRenderingClientImpl* m_Impl;

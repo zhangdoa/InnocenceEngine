@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Common/Array.h"
 #include "../FrameManagementService.h"
 #include "DX12Context.h"
 
@@ -53,7 +54,7 @@ namespace Inno
 
 		DX12Context* m_ctx = nullptr;
 
-		std::vector<ComPtr<ID3D12Resource>> m_swapChainImages;
+		Inno::Array<ComPtr<ID3D12Resource>> m_swapChainImages;
 		DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc = {};
 		ComPtr<IDXGISwapChain4> m_swapChain = nullptr;
 

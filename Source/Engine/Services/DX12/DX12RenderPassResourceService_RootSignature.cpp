@@ -1,4 +1,5 @@
 #include "DX12RenderPassResourceService.h"
+#include "../../Common/Array.h"
 #include "DX12Context.h"
 #include "DX12Helper_Common.h"
 #include "DX12Helper_BindlessMesh.h"
@@ -14,10 +15,10 @@ bool DX12RenderPassResourceService::CreateRootSignature(RenderPassComponent* Ren
 		Log(Verbose, "Creating empty RootSignature for ", RenderPassComp->m_InstanceName);
 
 	auto l_maxBindingCount = RenderPassComp->m_ResourceBindingLayoutDescs.size();
-	std::vector<CD3DX12_ROOT_PARAMETER1> l_rootParameters;
+	Inno::Array<CD3DX12_ROOT_PARAMETER1> l_rootParameters;
 	l_rootParameters.reserve(l_maxBindingCount);
 
-	std::vector<D3D12_DESCRIPTOR_RANGE1> l_descriptorRanges;
+	Inno::Array<D3D12_DESCRIPTOR_RANGE1> l_descriptorRanges;
 	l_descriptorRanges.reserve(l_maxBindingCount);
 
 	for (size_t i = 0; i < l_maxBindingCount; i++)
@@ -103,7 +104,7 @@ bool DX12RenderPassResourceService::CreateRootSignature(RenderPassComponent* Ren
 		{
 			auto l_errorMessagePtr = (char*)(l_error->GetBufferPointer());
 			auto bufferSize = l_error->GetBufferSize();
-			std::vector<char> l_errorMessageVector(bufferSize);
+			Inno::Array<char> l_errorMessageVector(bufferSize);
 			std::memcpy(l_errorMessageVector.data(), l_errorMessagePtr, bufferSize);
 			l_error->Release();
 

@@ -1,4 +1,5 @@
 #include "RayTracer_Internal.h"
+#include "../Common/Array.h"
 
 #include "../Common/LogService.h"
 
@@ -71,7 +72,7 @@ bool ExecuteRayTracing()
 	auto l_up = Vec4(0.0f, 1.0f, 0.0f, 0.0f);
 	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 1.0f / l_camera->m_Aperture, 1000.0f);
 
-	std::vector<Hitable*> l_hitableListVector;
+	Inno::Array<Hitable*> l_hitableListVector;
 
 	for (auto l_entityID : l_entityIDs)
 	{
@@ -149,7 +150,7 @@ bool ExecuteRayTracing()
 	int32_t ny = m_TextureComp->m_TextureDesc.Height;
 	int32_t totalWorkload = nx * ny;
 
-	std::vector<TVec4<uint8_t>> l_result;
+	Inno::Array<TVec4<uint8_t>> l_result;
 	l_result.reserve(totalWorkload);
 
 	for (int32_t j = ny - 1; j >= 0; j--)

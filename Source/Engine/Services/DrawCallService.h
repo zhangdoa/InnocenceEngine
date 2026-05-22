@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "../Interface/IService.h"
+#include "../Common/Array.h"
 #include "../Component/GPUBufferComponent.h"
 #include "../Common/GPUDataStructure.h"
 
@@ -18,7 +19,7 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		const std::vector<GPUModelData>& GetGPUModelData();
+		const Inno::Array<GPUModelData>& GetGPUModelData();
 		GPUBufferComponent* GetGPUModelDataBuffer();
 		GPUBufferComponent* GetCurrentFrameTransformBuffer();
 		GPUBufferComponent* GetPreviousFrameTransformBuffer();

@@ -1,4 +1,5 @@
 #pragma once
+#include "Array.h"
 #include "STL14.h"
 #include "Enum.h"
 
@@ -372,14 +373,14 @@ namespace Inno
 
 	struct IOutputMergerTarget
 	{
-		std::vector<TextureComponent*> m_ColorOutputs;
+		Inno::Array<TextureComponent*> m_ColorOutputs;
 		TextureComponent* m_DepthStencilOutput = nullptr;
 	};
 
 	struct AccelerationStructureDesc
 	{
 		bool m_IsTopLevel = false;
-		std::vector<GPUResourceComponent*> m_Instances;
+		Inno::Array<GPUResourceComponent*> m_Instances;
 	};
 }
 

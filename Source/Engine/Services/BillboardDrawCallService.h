@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "../Interface/IService.h"
+#include "../Common/Array.h"
 #include "../Component/GPUBufferComponent.h"
 #include "../Common/GPUDataStructure.h"
 
@@ -20,7 +21,7 @@ namespace Inno
 
 		void OnSceneLoaded();
 
-		const std::vector<BillboardPassDrawCallInfo>& GetBillboardPassDrawCallInfo();
+		const Inno::Array<BillboardPassDrawCallInfo>& GetBillboardPassDrawCallInfo();
 		GPUBufferComponent* GetBillboardBuffer();
 
 	private:

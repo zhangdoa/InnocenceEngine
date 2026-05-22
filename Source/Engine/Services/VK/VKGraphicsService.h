@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "../GraphicsResourceService.h"
+#include "../../Common/Array.h"
 #include "VKHeaders.h"
 
 #include "../../Common/ObjectPool.h"
@@ -57,7 +58,7 @@ namespace Inno
 
 		std::optional<uint32_t> GetIndex(TextureComponent* texture, Accessibility bindingAccessibility) override;
 		Vec4 ReadRenderTargetSample(RenderPassComponent* renderPass, size_t renderTargetIndex, size_t x, size_t y) override;
-		std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) override;
+		Inno::Array<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) override;
 		bool GenerateMipmap(TextureComponent* texture, CommandListComponent* commandList = nullptr) override;
 
 		bool BeginCapture() override;
@@ -67,7 +68,7 @@ namespace Inno
 		void* GetVkSurface();
 
 	protected:
-		bool InitializeImpl(MeshAssetHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
+		bool InitializeImpl(MeshAssetHandle handle, Inno::Array<Vertex>& vertices, Inno::Array<Index>& indices) override;
 		void ReleaseMeshGPUResourceImpl(MeshAssetHandle handle) override;
 		bool InitializeImpl(TextureComponent* texture, void* textureData) override;
 		bool InitializeImpl(RenderPassComponent* renderPass);
@@ -95,7 +96,7 @@ namespace Inno
 		template <typename U, typename T>
 		bool SetObjectName(U *owner, const T &rhs, VkObjectType objectType, const char *objectTypeSuffix);
 
-		std::vector<const char*> GetRequiredExtensions();
+		Inno::Array<const char*> GetRequiredExtensions();
 		
 		// Global initialization functions
 		bool CreateVkInstance();
@@ -116,15 +117,15 @@ namespace Inno
 		void DestroyDebugUtilsMessengerEXT(VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks *pAllocator);
 		VkResult SetDebugUtilsObjectNameEXT(const VkDebugUtilsObjectNameInfoEXT *pNameInfo);
 
-		bool CheckValidationLayerSupport(const std::vector<const char*>& validationLayers);
-		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+		bool CheckValidationLayerSupport(const Inno::Array<const char*>& validationLayers);
+		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const Inno::Array<VkSurfaceFormatKHR>& availableFormats);
+		VkPresentModeKHR ChooseSwapPresentMode(const Inno::Array<VkPresentModeKHR>& availablePresentModes);
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 	
-		bool CheckDeviceExtensionSupport(const std::vector<const char*>& deviceExtensions);
+		bool CheckDeviceExtensionSupport(const Inno::Array<const char*>& deviceExtensions);
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface);
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface);
-		bool IsDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, const std::vector<const char*>& deviceExtensions);
+		bool IsDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, const Inno::Array<const char*>& deviceExtensions);
 
 		bool CreateHostStagingBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer &buffer, VkDeviceMemory &deviceMemory);
 		bool CreateDeviceLocalBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer &buffer, VkDeviceMemory &deviceMemory);
@@ -181,7 +182,7 @@ namespace Inno
 		// Vulkan objects
 		VkInstance m_instance;
 		VkSurfaceKHR m_windowSurface;
-		std::vector<VkImage> m_swapChainImages;
+		Inno::Array<VkImage> m_swapChainImages;
 		VkQueue m_presentQueue;
 		VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 		VkDevice m_device;
@@ -192,13 +193,13 @@ namespace Inno
 		VkFence m_computeQueueFence;
 		std::atomic<uint64_t> m_graphicCommandQueueSemaphore = 0;
 		std::atomic<uint64_t> m_computeCommandQueueSemaphore = 0;
-		std::vector<VkSemaphore> m_imageAvailableSemaphores;
-		std::vector<VkSemaphore> m_swapChainRenderedSemaphores;
+		Inno::Array<VkSemaphore> m_imageAvailableSemaphores;
+		Inno::Array<VkSemaphore> m_swapChainRenderedSemaphores;
 		VkSwapchainKHR m_swapChain = 0;
 		VkExtent2D m_presentSurfaceExtent = {};
 		VkFormat m_presentSurfaceFormat = {};
 
-		const std::vector<const char*> m_deviceExtensions =
+		const Inno::Array<const char*> m_deviceExtensions =
 		{
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 			VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
@@ -215,7 +216,7 @@ namespace Inno
 		const bool m_enableValidationLayers = false;
 #endif
 
-		const std::vector<const char*> m_validationLayers =
+		const Inno::Array<const char*> m_validationLayers =
 		{
 			"VK_LAYER_KHRONOS_validation" 
 		};

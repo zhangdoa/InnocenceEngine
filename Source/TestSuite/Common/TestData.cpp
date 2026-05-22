@@ -1,10 +1,11 @@
 #include "TestData.h"
+#include "../../Engine/Common/Array.h"
 
 using namespace Inno;
 
-std::vector<int32_t> TestDataGenerator::GenerateIntSequence(size_t count)
+Inno::Array<int32_t> TestDataGenerator::GenerateIntSequence(size_t count)
 {
-	std::vector<int32_t> l_Data;
+	Inno::Array<int32_t> l_Data;
 	l_Data.reserve(count);
 	for (size_t i = 0; i < count; i++)
 	{
@@ -13,9 +14,9 @@ std::vector<int32_t> TestDataGenerator::GenerateIntSequence(size_t count)
 	return l_Data;
 }
 
-std::vector<float> TestDataGenerator::GenerateFloatSequence(size_t count)
+Inno::Array<float> TestDataGenerator::GenerateFloatSequence(size_t count)
 {
-	std::vector<float> l_Data;
+	Inno::Array<float> l_Data;
 	l_Data.reserve(count);
 	for (size_t i = 0; i < count; i++)
 	{
@@ -24,9 +25,9 @@ std::vector<float> TestDataGenerator::GenerateFloatSequence(size_t count)
 	return l_Data;
 }
 
-std::vector<std::string> TestDataGenerator::GenerateStringData(size_t count)
+Inno::Array<std::string> TestDataGenerator::GenerateStringData(size_t count)
 {
-	std::vector<std::string> l_Data;
+	Inno::Array<std::string> l_Data;
 	l_Data.reserve(count);
 	for (size_t i = 0; i < count; i++)
 	{

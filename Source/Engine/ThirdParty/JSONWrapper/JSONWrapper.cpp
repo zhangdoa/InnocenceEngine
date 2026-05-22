@@ -1,4 +1,5 @@
 #include "JSONWrapper.h"
+#include "../../Common/Array.h"
 #include "../../Common/ThreadSafeQueue.h"
 #include "../../Common/LogService.h"
 #include "../../Common/IOService.h"
@@ -123,7 +124,7 @@ bool JSONWrapper::Save(const char* fileName, const json& data)
 	return true;
 }
 
-bool JSONWrapper::SaveChildScene(const char* exportName, const std::vector<std::pair<std::string, std::string>>& drawCalls)
+bool JSONWrapper::SaveChildScene(const char* exportName, const Inno::Array<std::pair<std::string, std::string>>& drawCalls)
 {
 	json topLevel;
 	topLevel["Name"] = exportName;
@@ -280,7 +281,7 @@ bool JSONWrapper::SaveScene(const char* fileName)
 
 	// --- Phase 2: Save each child scene file ---
 	// Group child entities by child scene path (via parent→child-scene map).
-	std::map<std::string, std::vector<EntityID>> l_byChildScene;
+	std::map<std::string, Inno::Array<EntityID>> l_byChildScene;
 	for (auto& [childID, parentID] : l_parentByChild)
 	{
 		auto it = l_childSceneByParent.find(parentID);

@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/Array.h"
 #include "../Interface/IService.h"
 #include "../Common/GraphicsPrimitive.h"
 #include "../Common/MathHelper.h"
@@ -62,7 +63,7 @@ namespace Inno
 
 		ISemaphore* GetGlobalSemaphore();
 		void SetGlobalSemaphore(ISemaphore* semaphore) { m_GlobalSemaphore = semaphore; }
-		std::vector<CommandListComponent*>& GetGlobalGraphicsCommandLists() { return m_GlobalGraphicsCommandLists; }
+		Inno::Array<CommandListComponent*>& GetGlobalGraphicsCommandLists() { return m_GlobalGraphicsCommandLists; }
 
 		virtual bool Open(CommandListComponent* commandList, GPUEngineType engineType, IPipelineStateObject* pipelineStateObject = nullptr) { return false; }
 		virtual bool Close(CommandListComponent* commandList, GPUEngineType engineType) { return false; }
@@ -103,11 +104,11 @@ namespace Inno
 		std::atomic<uint32_t> m_FrameCountSinceLaunch = 0;
 		TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
 
-		std::vector<uint64_t> m_GraphicsSemaphoreValues;
-		std::vector<uint64_t> m_ComputeSemaphoreValues;
-		std::vector<uint64_t> m_CopySemaphoreValues;
+		Inno::Array<uint64_t> m_GraphicsSemaphoreValues;
+		Inno::Array<uint64_t> m_ComputeSemaphoreValues;
+		Inno::Array<uint64_t> m_CopySemaphoreValues;
 
-		std::vector<CommandListComponent*> m_GlobalGraphicsCommandLists;
+		Inno::Array<CommandListComponent*> m_GlobalGraphicsCommandLists;
 		ISemaphore* m_GlobalSemaphore = nullptr;
 
 		RenderPassComponent* m_SwapChainRenderPassComp = nullptr;
