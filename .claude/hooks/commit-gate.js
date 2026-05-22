@@ -64,6 +64,7 @@ const {
 // way a missing/unreadable transcript can never bypass attribution.
 const GATES = [
   require('./gates/data-generated'),  // needsTranscript: false (structural; first)
+  require('./gates/no-images'),       // needsTranscript: false (structural; near-first)
   require('./gates/file-size'),       // needsTranscript: false
   require('./gates/paper-port'),      // needsTranscript: false
   require('./gates/closure-staleness'),// needsTranscript: false (symmetric to closure-evidence)
