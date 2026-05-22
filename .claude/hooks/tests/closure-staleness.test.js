@@ -1,15 +1,3 @@
-// closure-staleness gate tests (TASK-193).
-// See commit-gate.test.js for the orchestrator.
-//
-// Exercises against a temp .backlog/tasks/ fixture so on-disk lookup
-// runs without needing a real git checkout. Staged-content (git show)
-// paths are not exercised here — they would require a fixture git repo.
-// The on-disk-fallback covers all four AC scenarios:
-//   1. code commit + In Progress task → block
-//   2. [task-stays-open] sentinel → allow
-//   3. all-docs (docs(backlog) flip) staged → allow
-//   4. no TASK-N reference → allow
-
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
@@ -52,8 +40,6 @@ function register({ assert, group }) {
     assert(hit !== null && hit.source === 'disk', 'finds existing task on disk')
     const miss = closureStaleness.findTaskFile(csRoot, [], 99999)
     assert(miss === null, 'missing id → null')
-    // Discrimination: task-9 must not match task-90 / task-900 (the
-    // dash-space separator is the disambiguator).
     writeTaskFixture(9, 'Done', 'short-id')
     const nine = closureStaleness.findTaskFile(csRoot, [], 9)
     assert(nine !== null, 'id=9 finds task-9 fixture')
@@ -61,7 +47,6 @@ function register({ assert, group }) {
   })
 
   group('closure-staleness — run() acceptance scenarios', () => {
-    // AC: gate fires on a code-bearing commit referencing an In Progress task → blocks.
     const r1 = closureStaleness.run(csCtx({
       message: 'feat(rendering): TASK-900 add foo\n\nCode-AI-Generated-By: Claude\n',
       staged: ['Source/Engine/Foo.cpp'],
@@ -69,51 +54,42 @@ function register({ assert, group }) {
     assert(r1.ok === false, 'code commit + In Progress TASK-900 → block')
     assert(typeof r1.block === 'function', 'block callback present')
 
-    // AC: gate respects [task-stays-open] sentinel → allows.
     const r2 = closureStaleness.run(csCtx({
       message: 'feat: TASK-900 partial work [task-stays-open]\n\nCode-AI-Generated-By: Claude\n',
       staged: ['Source/Engine/Foo.cpp'],
     }))
     assert(r2.ok === true, '[task-stays-open] sentinel → allow')
 
-    // AC: gate skips for docs(backlog) flip commits → allows.
-    // (All-docs staged set is the structural marker for a flip CL;
-    // the gate must let those through regardless of referenced status.)
     const r3 = closureStaleness.run(csCtx({
       message: 'docs(backlog): TASK-900 flip\n\nCode-AI-Generated-By: Claude\n',
       staged: ['.backlog/tasks/task-900 - sample-task.md'],
     }))
     assert(r3.ok === true, 'all-docs staged set → allow')
 
-    // AC: gate skips when no TASK-N reference exists → allows.
     const r4 = closureStaleness.run(csCtx({
       message: 'feat(rendering): unrelated work\n\nCode-AI-Generated-By: Claude\n',
       staged: ['Source/Engine/Foo.cpp'],
     }))
     assert(r4.ok === true, 'no TASK-N reference → allow')
 
-    // Done-status task referenced → allow (the work landed already).
     const r5 = closureStaleness.run(csCtx({
       message: 'feat: building on TASK-901\n\nCode-AI-Generated-By: Claude\n',
       staged: ['Source/Engine/Foo.cpp'],
     }))
     assert(r5.ok === true, 'Done-status TASK referenced → allow')
 
-    // To Do-status task referenced → block (same posture as In Progress).
     const r6 = closureStaleness.run(csCtx({
       message: 'feat: TASK-902 implementing now\n\nCode-AI-Generated-By: Claude\n',
       staged: ['Source/Engine/Foo.cpp'],
     }))
     assert(r6.ok === false, 'To Do TASK referenced → block')
 
-    // Mixed: one Done + one In Progress referenced → block (any-fail-blocks).
     const r7 = closureStaleness.run(csCtx({
       message: 'refactor: TASK-901 plus TASK-900\n\nCode-AI-Generated-By: Claude\n',
       staged: ['Source/Engine/Foo.cpp'],
     }))
     assert(r7.ok === false, 'mixed Done + In Progress → block')
 
-    // Unknown TASK ID (file not found) → allow (gate fails open per AC).
     const r8 = closureStaleness.run(csCtx({
       message: 'feat: TASK-99999 phantom\n\nCode-AI-Generated-By: Claude\n',
       staged: ['Source/Engine/Foo.cpp'],

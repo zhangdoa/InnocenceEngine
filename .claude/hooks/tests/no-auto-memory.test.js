@@ -1,18 +1,4 @@
 #!/usr/bin/env node
-// Standalone tests for the no-auto-memory gate.
-//
-// Runner: `node .claude/hooks/tests/no-auto-memory.test.js`. Zero deps.
-// Each test prints PASS/FAIL and the process exits non-zero on any failure.
-//
-// Three concerns covered:
-//   1. autoMemoryDir slug computation — Claude Code's project slug
-//      rewrites every separator one-for-one (`C:\GitRepo\IE` →
-//      `C--GitRepo-IE`); the regex must NOT collapse runs.
-//   2. gate.run dispatch on tool name + path — Write/Edit/MultiEdit/
-//      NotebookEdit targeting inside the auto-memory dir block; other
-//      tools and paths pass through.
-//   3. Block-message contract — the block message routes to the new
-//      venues, not just refuses.
 
 const path = require('path')
 const gate = require('../gates/no-auto-memory')
@@ -30,7 +16,6 @@ function group(name, fn) {
   fn()
 }
 
-// Capture process.exit + stderr.write while the gate's block() runs.
 function runGate(input) {
   const r = gate.run(input)
   if (r.ok) return { blocked: false, stderr: '' }
@@ -48,13 +33,8 @@ function runGate(input) {
   return { blocked: true, stderr: captured, exitCode }
 }
 
-// ---------------------------------------------------------------------
-// Layer 1: autoMemoryDir slug
-// ---------------------------------------------------------------------
 group('autoMemoryDir — slug rewrites every separator one-for-one', () => {
   const out = gate.autoMemoryDir('C:\\GitRepo\\InnocenceEngine')
-  // Claude Code: C:\GitRepo\InnocenceEngine -> C--GitRepo-InnocenceEngine
-  // (`:` and `\` each become `-`, NOT collapsed to a single `-`).
   assert(typeof out === 'string', 'returns a string')
   assert(out.includes('c--gitrepo-innocenceengine'),
     'slug preserves double-dash from `:\\`')
@@ -64,13 +44,9 @@ group('autoMemoryDir — slug rewrites every separator one-for-one', () => {
 group('autoMemoryDir — POSIX cwd', () => {
   const out = gate.autoMemoryDir('/home/user/proj')
   assert(typeof out === 'string', 'returns a string')
-  // POSIX path: /home/user/proj -> -home-user-proj (every / -> -)
   assert(out.includes('-home-user-proj'), 'every separator rewritten')
 })
 
-// ---------------------------------------------------------------------
-// Layer 2: gate.run dispatch
-// ---------------------------------------------------------------------
 group('gate.run — Write inside memory dir blocks', () => {
   const r = runGate({
     tool_name: 'Write',
@@ -162,9 +138,6 @@ group('gate.run — missing tool_input handled gracefully', () => {
   assert(!r.blocked, 'no file_path -> pass through (fail open on shape)')
 })
 
-// ---------------------------------------------------------------------
-// Layer 3: block message contract — must route, not refuse
-// ---------------------------------------------------------------------
 group('block message — routes to each new venue', () => {
   const r = runGate({
     tool_name: 'Write',
