@@ -24,6 +24,7 @@ Single user (zhangdoa). No team, no other contributors, no CI fleet, no fresh-ch
 | `no-images.js` | New / modified image files staged (allowlist: `Data/Engine/Icons/`, `Source/Editor-Next/tests/*-snapshots/`). |
 | `no-new-md.js` | New `.md` outside `.backlog/tasks/`, `.claude/{agents,skills,commands,state}/`, or CLAUDE/README/LICENSE allowlist. |
 | `commit-body-cap.js` | Commit body > 40 lines (trailers excluded). |
+| `comment-essay-cap.js` | Staged code adds > 5 contiguous lines of `//` comments. |
 | `file-size.js` | Touched file > 300 lines AND growing past pre-image size. |
 | `closure-staleness.js` | Commit cites `TASK-N` still open AND staged files include non-docs. Bypass: `[task-stays-open]` in subject. |
 | `peer-review.js` | Missing `Reviewed-By:` / `Review-Skipped:` footer. |

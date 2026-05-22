@@ -1,31 +1,6 @@
 #!/usr/bin/env node
-/**
- * PreToolUse hook: session-scope gates that fire on every tool call.
- *
- * Dispatcher only — each gate lives in `.claude/hooks/gates/<name>.js`.
- *
- * Gate order (first failure wins):
- *   1. task-mgmt-brief    — blocks substantive tool use until task-mgmt
- *                              subagent has been invoked at least once this
- *                              session. CLAUDE.md "Session start" rule.
- *   2. skill-evidence        — blocks a sub-agent's side-effecting tool
- *                              calls until its transcript shows a `Skill`
- *                              invocation for every name on its manifest's
- *                              "Always-apply skills" line. TASK-187 design.
- *   3. agent-dispatch        — blocks `Agent` calls dispatched foreground
- *                              without `[foreground-required]` in the prompt.
- *                              Enforces .claude/skills/agent-dispatch/SKILL.md.
- *   4. no-auto-memory        — blocks Write/Edit/MultiEdit/NotebookEdit
- *                              targeting the Claude default auto-memory
- *                              directory. The block message routes to the
- *                              new venues so a future Claude does not stall.
- *
- * Each gate exports `run(input)` returning `{ ok: true }` or
- * `{ ok: false, block: () => never-returns }`. The `block` callback
- * writes its own message to stderr and `process.exit(2)`s.
- *
- * Fails OPEN on any internal error so a hook bug never bricks a session.
- */
+// PreToolUse hook: session-scope gates that fire on every tool call.
+// Fails open on internal error.
 
 const GATES = [
   require('./gates/task-mgmt-brief'),

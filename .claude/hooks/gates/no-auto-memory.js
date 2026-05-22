@@ -1,38 +1,4 @@
-// no-auto-memory gate — block any write tool whose target lives under
-// the Claude default auto-memory directory for this project.
-//
-// Rationale:
-//   Auto-memory entries do not reach spawned subagents (per
-//   `.claude/skills/persistence-venue/SKILL.md`) and bypass the review
-//   pressure that every other persistence venue carries. They also
-//   accumulate stale advice — entries get written once, never re-read,
-//   and decay against the live codebase. The project no longer uses
-//   auto-memory; this gate makes the rule load-bearing instead of
-//   prose-only.
-//
-// Block contract:
-//   The block message is the routing surface for a future Claude that
-//   trips it. It does not just refuse. It states which venue applies
-//   for each content shape (dispatcher rule, project state, engine
-//   fact, ephemeral context) so the next action is "write to <venue>",
-//   not "ask the user what to do".
-//
-// Path resolution:
-//   The auto-memory root is derived from `os.homedir()` and the
-//   current `cwd` (the project slug Claude Code uses is the cwd with
-//   path separators rewritten to `-` and the leading drive `C:\` →
-//   `C--`). Both POSIX and Windows-style paths are normalised before
-//   comparison so the gate fires on either form.
-//
-// Tools matched: Write, Edit, MultiEdit, NotebookEdit, and any future
-// write-shaped tool whose `tool_input` carries a `file_path` /
-// `notebook_path` field. Bash writes (`>`, `tee`, `cp`) are out of
-// scope — those would require parsing arbitrary shell, and the agent
-// would have to reach for shell deliberately, at which point the
-// discipline can carry the rule.
-//
-// Fails OPEN on any internal error so a hook bug never bricks a
-// session — same posture as the other session-gate sub-gates.
+// no-auto-memory: block Write/Edit/MultiEdit/NotebookEdit targeting Claude default auto-memory dir.
 
 const os = require('os')
 const path = require('path')
@@ -41,16 +7,12 @@ const WRITE_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit'])
 
 function normalise(p) {
   if (typeof p !== 'string' || p.length === 0) return ''
-  // Resolve to absolute and normalise separators for cross-platform compare.
   const abs = path.isAbsolute(p) ? p : path.resolve(p)
   return abs.replace(/\\/g, '/').toLowerCase()
 }
 
-// Compute the auto-memory directory for the project rooted at `cwd`.
-// Claude Code's project slug rewrites every separator character (`:`,
-// `\`, `/`) to `-` one-for-one, NOT collapsing runs — so
-// `C:\GitRepo\InnocenceEngine` → `C--GitRepo-InnocenceEngine` (the `:\`
-// becomes `--`, not `-`). The single-char regex preserves that.
+// Claude Code's project slug rewrites every separator char (`:`, `\`, `/`) to `-` one-for-one,
+// not collapsing runs — so `C:\GitRepo\InnocenceEngine` → `C--GitRepo-InnocenceEngine`.
 function autoMemoryDir(cwd) {
   const home = os.homedir()
   if (!home || !cwd) return null
@@ -83,24 +45,12 @@ function emit(target) {
     '',
     `  attempted target: ${target}`,
     '',
-    'Auto-memory entries are subagent-invisible and bypass the review pressure',
-    'every other persistence venue carries. To persist this content, write to the',
-    'venue that matches its shape:',
-    '',
-    '  Rule the dispatcher (main-session) must follow      →  .claude/skills/dispatch-briefs/SKILL.md',
-    '  Rule every agent must follow                        →  .claude/skills/<topic>/SKILL.md',
-    '                                                          (and add to the universal preamble in CLAUDE.md)',
-    '  Rule one specific role must follow                  →  add to that agent\'s manifest .claude/agents/<role>.md',
-    '  Project-state snapshot (direction, sync, invariants)→  .claude/state/<topic>.md',
-    '  Cross-session continuity for an in-flight task      →  the task\'s ## Implementation Notes in .backlog/tasks/',
-    '  Cost-of-one-slip-is-high enforcement                →  a new gate under .claude/hooks/gates/<name>.js',
-    '  Ephemeral conversation context                      →  do not persist; let it scroll',
-    '',
-    'Full routing rules: .claude/skills/persistence-venue/SKILL.md',
-    '',
-    'If none of the above fits, the content is probably not worth persisting — let',
-    'it scroll. Re-deriving from source on the next session is cheaper than carrying',
-    'stale advice forward.',
+    'Routing by content shape:',
+    '  Dispatcher rule              → .claude/skills/dispatch-briefs/SKILL.md',
+    '  Project-state snapshot       → .claude/state/<topic>.md',
+    '  Task cross-session continuity→ ## Implementation Notes in .backlog/tasks/<task>.md',
+    '  High-cost enforcement        → new gate under .claude/hooks/gates/<name>.js',
+    '  Ephemeral context            → do not persist',
     '',
   ].join('\n'))
   process.exit(2)
