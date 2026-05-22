@@ -1,7 +1,7 @@
 #pragma once
-#include <memory>
 #include "Engine.h"
 #include "Common/STL14.h"
+#include "Common/Handle.h"
 #include "Common/Task.h"
 #include "Common/FixedSizeString.h"
 #include "Interface/IWindowService.h"
@@ -28,7 +28,7 @@ namespace Inno
 		std::function<void()> f_SceneLoadingStartedCallback;
 		std::function<void()> f_SceneLoadingFinishedCallback;
 
-		std::shared_ptr<ITask> m_RenderingExecutionTask;
+		Handle<ITask> m_RenderingExecutionTask;
 
 		float m_tickTime = 0;
 	};

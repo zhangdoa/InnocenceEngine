@@ -82,7 +82,7 @@ static void StressHighConcurrencySubmission()
     {
         submitters.emplace_back([&, t]()
         {
-            std::vector<std::shared_ptr<ITask>> local;
+            std::vector<Handle<ITask>> local;
             local.reserve(TASKS_PER_THREAD);
 
             for (int i = 0; i < TASKS_PER_THREAD; ++i)
@@ -124,7 +124,7 @@ static void StressRecurrentUnderLoad()
         [&recurrentCount]() { recurrentCount.fetch_add(1, std::memory_order_relaxed); });
     recurrent->Activate();
 
-    std::vector<std::shared_ptr<ITask>> onceTasks;
+    std::vector<Handle<ITask>> onceTasks;
     onceTasks.reserve(ONCE_COUNT);
     for (int i = 0; i < ONCE_COUNT; ++i)
     {
@@ -173,7 +173,7 @@ static void StressFreezeUnfreeze()
             scheduler.Freeze();
 
             // Tasks submitted while frozen queue up and don't execute until Unfreeze.
-            std::vector<std::shared_ptr<ITask>> cycle_tasks;
+            std::vector<Handle<ITask>> cycle_tasks;
             cycle_tasks.reserve(ONCE_PER_CYCLE);
             for (int i = 0; i < ONCE_PER_CYCLE; ++i)
             {

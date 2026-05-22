@@ -80,7 +80,7 @@ uint32_t TaskScheduler::GenerateThreadIndex(uint32_t threadIndex)
 	}
 }
 
-void TaskScheduler::AddTask(std::shared_ptr<ITask> task, uint32_t threadIndex)
+void TaskScheduler::AddTask(Handle<ITask> task, uint32_t threadIndex)
 {
 	m_Threads[threadIndex]->AddTask(task);
 }

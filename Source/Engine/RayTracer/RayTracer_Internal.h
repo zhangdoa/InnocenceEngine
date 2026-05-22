@@ -16,7 +16,7 @@ namespace RayTracerNS
 
 	extern ObjectStatus m_ObjectStatus;
 	extern std::atomic<bool> m_isWorking;
-	extern std::shared_ptr<ITask> m_LastTask;
+	extern Handle<ITask> m_LastTask;
 	extern const int m_maxDepth;
 	extern const int m_maxSamplePerPixel;
 	extern std::default_random_engine m_generator;
