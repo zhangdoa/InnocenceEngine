@@ -14,6 +14,7 @@ set(TEST_SOURCES
     UnitTests/DoubleBufferTests.cpp
     UnitTests/AllocatorTests.cpp
     UnitTests/QueueTests.cpp
+    UnitTests/HashMapTests.cpp
     # Performance tests
     PerformanceTests/StringConversionPerf.cpp
     PerformanceTests/ContainerPerf.cpp

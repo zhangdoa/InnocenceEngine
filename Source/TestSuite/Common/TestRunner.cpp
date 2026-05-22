@@ -91,6 +91,7 @@ extern void RunMemoryUnitTests();
 extern void RunDoubleBufferUnitTests();
 extern void RunAllocatorUnitTests();
 extern void RunQueueUnitTests();
+extern void RunHashMapUnitTests();
 
 extern void RunStringConversionPerformanceTests();
 extern void RunContainerPerformanceTests();
@@ -115,6 +116,7 @@ void TestRunner::RunUnitTests()
 	RunDoubleBufferUnitTests();
 	RunAllocatorUnitTests();
 	RunQueueUnitTests();
+	RunHashMapUnitTests();
 
 	Log(Success, "========== UNIT TESTS COMPLETE ==========\n");
 }
