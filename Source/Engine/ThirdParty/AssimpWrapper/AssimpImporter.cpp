@@ -142,7 +142,7 @@ void AssimpImporter::ProcessAssimpScene(const aiScene* Scene, const char* Export
 	CollectAssimpWork(Scene->mRootNode, Scene, ExportName, l_UniqueMeshes, l_UniqueMaterials, l_DrawCalls);
 
 	auto* l_Scheduler = g_Engine->Get<TaskScheduler>();
-	std::vector<Handle<ITask>> l_TaskHandles;
+	std::vector<SharedPtr<ITask>> l_TaskHandles;
 	l_TaskHandles.reserve(l_UniqueMeshes.size() + l_UniqueMaterials.size());
 
 	// Copy C-strings into std::string so task lambdas own their storage; the

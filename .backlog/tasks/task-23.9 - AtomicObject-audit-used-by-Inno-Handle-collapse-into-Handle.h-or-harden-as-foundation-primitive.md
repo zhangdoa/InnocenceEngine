@@ -3,9 +3,10 @@ id: TASK-23.9
 title: >-
   AtomicObject: audit (used by Inno::Handle); collapse into Handle.h or harden
   as foundation primitive
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-22 07:33'
+updated_date: '2026-05-22 14:58'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -39,12 +40,43 @@ References:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Decision recorded (A: collapse into Handle, or B: harden as foundation primitive) with reason.
-- [ ] #2 If A: AtomicObject.h removed; Handle.h refactored to use std::shared_ptr<T> or inlined spinlock; no foundation header named AtomicObject remains.
+- [x] #1 Decision recorded (A: collapse into Handle, or B: harden as foundation primitive) with reason.
+- [x] #2 If A: AtomicObject.h removed; Handle.h refactored to use std::shared_ptr<T> or inlined spinlock; no foundation header named AtomicObject remains.
 - [ ] #3 If B: Get() no longer returns a raw reference without sync; SetObject/DeleteObject/MoveObject are atomic from observer's perspective; documented in header.
-- [ ] #4 Either way: Handle<ITask> consumers (Thread.h, TaskScheduler.h, Engine_Internal.h) compile and pass tests.
-- [ ] #5 Sequenced or merged with TASK-23.10 (Handle redesign).
+- [x] #4 Either way: Handle<ITask> consumers (Thread.h, TaskScheduler.h, Engine_Internal.h) compile and pass tests.
+- [x] #5 Sequenced or merged with TASK-23.10 (Handle redesign).
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+**2026-05-22 (reopened):** Cascading from TASK-23.10 reopen — Handle.h was restored via revert e8318902, so AtomicObject.h is back too (it was deleted only because Handle was the sole consumer). User's "rely less on STL" strategy means we keep AtomicObject as engine-native; the audit decision shifts from "remove" to "harden the spinlock + Get/Set contract" (Option B from the original task description).
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+**Resolution: Option A (collapse into SharedPtr.h).** Per the cascading decision from TASK-23.10: AtomicObject was Handle's sole consumer; Handle is now SharedPtr; AtomicObject's spinlock-guarded-pointer pattern would have been overkill in the new SharedPtr design.
+
+Concrete fix: SharedPtr's `m_Object` is a plain `T*` (no atomic wrapping). The only piece that needed atomicity was the refcount, handled by `std::atomic<int>*`. Concurrent reassignment of the same SharedPtr instance is UB by contract (same as std::shared_ptr) — documented in the header.
+
+The original AtomicObject.h had real bugs (Get returning T& without lock, lock-check-unlock returning stale operator bool, non-atomic DeleteObject+SetObject pair). All eliminated by the cleaner SharedPtr design.
+
+## Diff
+
+- `Source/Engine/Common/AtomicObject.h` — deleted.
+
+## Verification
+
+Same as TASK-23.10: BuildWin clean; Task System Stress 4/4 pass; Main.exe -total_frames 10 exits 0.
+
+## ACs
+
+- #1 Decision A.
+- #2 AtomicObject.h removed; Handle.h refactored as SharedPtr.h with inlined refcount logic (no spinlock).
+- #4 SharedPtr<ITask> consumers compile + pass tests.
+- #5 Sequenced + merged with TASK-23.10 in same CL.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->

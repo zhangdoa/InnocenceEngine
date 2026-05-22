@@ -49,7 +49,7 @@ const RingBuffer<TaskReport, true>& Thread::GetTaskReport()
 	return m_TaskReport;
 }
 
-void Thread::AddTask(Handle<ITask> task)
+void Thread::AddTask(SharedPtr<ITask> task)
 {
 	if (!task)
 	{
@@ -109,7 +109,7 @@ void Thread::AddTask(Handle<ITask> task)
 	assert(0);
 }
 
-inline bool Thread::ExecuteTask(Handle<ITask> task)
+inline bool Thread::ExecuteTask(SharedPtr<ITask> task)
 {
 	if (!task)
 	{
@@ -196,7 +196,7 @@ void Thread::Worker(uint32_t ThreadIndex)
 
 				m_TaskList.erase(
 					std::remove_if(m_TaskList.begin(), m_TaskList.end(),
-						[](const Handle<ITask>& task)
+						[](const SharedPtr<ITask>& task)
 						{
 							return task->CanBeRemoved();
 						}),

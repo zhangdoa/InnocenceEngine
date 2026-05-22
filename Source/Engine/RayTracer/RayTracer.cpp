@@ -13,7 +13,7 @@ namespace RayTracerNS
 {
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	std::atomic<bool> m_isWorking;
-	Handle<ITask> m_LastTask;
+	SharedPtr<ITask> m_LastTask;
 	const int m_maxDepth = 4;
 	const int m_maxSamplePerPixel = 8;
 	std::default_random_engine m_generator;

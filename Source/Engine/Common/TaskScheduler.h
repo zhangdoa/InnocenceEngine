@@ -6,7 +6,7 @@
 #include "STL14.h"
 #include "Thread.h"
 #include "Task.h"
-#include "Handle.h"
+#include "SharedPtr.h"
 #include "RingBuffer.h"
 
 namespace Inno
@@ -33,18 +33,18 @@ namespace Inno
 				std::move(boundTask), l_taskDesc
 			);
 
-			auto handle = Handle<ITask>(task);
+			auto handle = SharedPtr<ITask>(task);
 			
 			AddTask(handle, l_threadIndex);
 			return handle;
 		}
 
-		bool AddDependency(Handle<ITask> task, Handle<ITask> dependency);
+		bool AddDependency(SharedPtr<ITask> task, SharedPtr<ITask> dependency);
 		size_t GetThreadCounts();
 
 		const RingBuffer<TaskReport, true>& GetTaskReport(uint32_t threadIndex);
 
-		void AddTask(Handle<ITask> task, uint32_t threadIndex);
+		void AddTask(SharedPtr<ITask> task, uint32_t threadIndex);
 		
 	private:
 		uint32_t GenerateThreadIndex(uint32_t threadIndex);
