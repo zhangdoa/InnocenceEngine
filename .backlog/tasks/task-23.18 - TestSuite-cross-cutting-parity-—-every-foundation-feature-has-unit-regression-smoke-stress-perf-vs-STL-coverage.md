@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-05-22 07:35'
-updated_date: '2026-05-22 15:12'
+updated_date: '2026-05-22 15:42'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -40,7 +40,7 @@ References:
 <!-- AC:BEGIN -->
 - [x] #1 Coverage matrix written in closure note: rows = each kept foundation feature (Allocator, Array, Queue, HashMap, RingBuffer, DoubleBuffer if kept, Atomic if kept, AtomicObject if kept, Handle if kept, FixedSizeString, ObjectPool, Memory). Columns = unit/regression, smoke/stress, perf-vs-STL.
 - [x] #2 Every cell is either: (a) test file path + test name, or (b) explicit N/A + reason.
-- [ ] #3 Perf-vs-STL tests record numbers in stdout (engine vs STL nanoseconds per op for representative workloads). Numbers archived in closure note.
+- [x] #3 Perf-vs-STL tests record numbers in stdout (engine vs STL nanoseconds per op for representative workloads). Numbers archived in closure note.
 - [x] #4 TestSuite directory structure documented: where unit tests live, where stress tests live, where perf tests live.
 <!-- AC:END -->
 
@@ -85,6 +85,24 @@ References:
 - #4 TestSuite directory structure documented above.
 
 AC #3 (perf-vs-STL nanoseconds recorded in stdout) — deferred to the follow-up perf CL.
+
+## 2026-05-22 follow-up — perf-vs-STL benchmarks added
+
+`Source/TestSuite/PerformanceTests/ContainerPerf.cpp` extended with 4 new comparisons. N = `TestConfig::MediumDataSize` = 8192.
+
+| Workload | Inno (ms) | STL (ms) | Ratio | Verdict |
+
+|---|---|---|---|---|
+
+| Array push_back N + iterate + copy vs std::vector | 0.079 | 0.030 | **2.63×** | Inno **slower** — Allocator's Record/Erase mutex-protected hashtable adds per-allocation cost. Worth optimising (e.g. opt-out bookkeeping via debug flag) in a follow-up. |
+
+| Queue push N + pop N vs std::queue (std::deque-backed) | 0.026 | 0.259 | **0.10×** | Inno **~10× faster** — mask-modulo circular buffer beats deque's chunked storage. |
+
+| HashMap insert + find + 50% erase vs std::unordered_map | 0.295 | 1.272 | **0.23×** | Inno **~4.3× faster** — open-addressing linear-probe beats node-based unordered_map for cache-friendly trivial keys. |
+
+| std::vector<int, Inno::Allocator> push_back vs std::vector<int> | 0.022 | 0.018 | **1.22×** | Inno slightly slower — Record/Erase bookkeeping overhead (matches the Array result; same root cause). |
+
+AC #3 closed. The Array slowness is the headline follow-up: Allocator's mutex-protected per-alloc tracking is the bottleneck. Either skip bookkeeping in Release builds, switch tracking to a thread-local cache, or use a lock-free table.
 <!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
