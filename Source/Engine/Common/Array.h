@@ -106,7 +106,7 @@ namespace Inno
 
 		void reserve(size_type newCap)
 		{
-			if (ThreadSafe)
+			if constexpr (ThreadSafe)
 			{
 				std::unique_lock<std::shared_mutex> lock{m_Mutex};
 				if (newCap > m_capacity) grow_to(newCap);
@@ -129,7 +129,7 @@ namespace Inno
 
 		void shrink_to_fit()
 		{
-			if (ThreadSafe)
+			if constexpr (ThreadSafe)
 			{
 				std::unique_lock<std::shared_mutex> lock{m_Mutex};
 				shrink_impl();
@@ -145,7 +145,7 @@ namespace Inno
 		// the whole reserved range as live" hint).
 		void fulfill()
 		{
-			if (ThreadSafe)
+			if constexpr (ThreadSafe)
 			{
 				std::unique_lock<std::shared_mutex> lock{m_Mutex};
 				fulfill_impl();
@@ -160,7 +160,7 @@ namespace Inno
 
 		void clear()
 		{
-			if (ThreadSafe)
+			if constexpr (ThreadSafe)
 			{
 				std::unique_lock<std::shared_mutex> lock{m_Mutex};
 				destroy_range(m_data, m_data + m_size);
@@ -175,7 +175,7 @@ namespace Inno
 
 		void push_back(const T& value)
 		{
-			if (ThreadSafe)
+			if constexpr (ThreadSafe)
 			{
 				std::unique_lock<std::shared_mutex> lock{m_Mutex};
 				ensure_one_more();
@@ -192,7 +192,7 @@ namespace Inno
 
 		void push_back(T&& value)
 		{
-			if (ThreadSafe)
+			if constexpr (ThreadSafe)
 			{
 				std::unique_lock<std::shared_mutex> lock{m_Mutex};
 				ensure_one_more();
@@ -210,7 +210,7 @@ namespace Inno
 		template <class... Args>
 		T& emplace_back(Args&&... args)
 		{
-			if (ThreadSafe)
+			if constexpr (ThreadSafe)
 			{
 				std::unique_lock<std::shared_mutex> lock{m_Mutex};
 				ensure_one_more();
@@ -229,7 +229,7 @@ namespace Inno
 
 		void pop_back()
 		{
-			if (ThreadSafe)
+			if constexpr (ThreadSafe)
 			{
 				std::unique_lock<std::shared_mutex> lock{m_Mutex};
 				assert(m_size > 0 && "pop_back on empty Array");
@@ -376,7 +376,7 @@ namespace Inno
 					m_size = newSize;
 				}
 			};
-			if (ThreadSafe)
+			if constexpr (ThreadSafe)
 			{
 				std::unique_lock<std::shared_mutex> lock{m_Mutex};
 				exec();

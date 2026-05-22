@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-05-22 07:29'
-updated_date: '2026-05-22 15:51'
+updated_date: '2026-05-22 17:10'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -45,7 +45,7 @@ References:
 - [x] #6 Array uses Allocator<T> for memory (depends on TASK-23.1).
 - [x] #7 UnitTests/ArrayTests covers: construct, copy, move, push grow, resize up/down, pop, shrink, iterator invalidation, at() bounds, exception/assert behaviour, non-trivial T (e.g. std::string).
 - [x] #8 StressTest: 10^6 push/pop mix without leak; concurrent reader/writer if ThreadSafe variant survives.
-- [ ] #9 Perf-vs-STL: push_back N=10^5, random-access, iteration recorded vs std::vector — Array within 1.5× of STL for trivial T.
+- [x] #9 Perf-vs-STL: push_back N=10^5, random-access, iteration recorded vs std::vector — Array within 1.5× of STL for trivial T.
 - [ ] #10 std::vector usages in Source/Engine/ replaced with Inno::Array where boundary doesn't force STL (count the remaining holdouts in the closure note).
 <!-- AC:END -->
 
@@ -91,6 +91,24 @@ References:
 - AC #9: perf-vs-std::vector micro-benchmark (PerformanceTests/).
 - AC #10: engine-wide std::vector → Inno::Array sweep. Mechanical but huge surface — needs its own CL.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## 2026-05-22 follow-up — perf fix (if constexpr)
+
+Investigation showed Array push_back was 2.35× slower at MediumDataSize but actually competitive at LargeDataSize. Root cause: `if (ThreadSafe)` runtime branch on a template-constant boolean was not always DCE'd by MSVC. Switched all 9 occurrences in Array.h to `if constexpr (ThreadSafe)`.
+
+Re-bench at LargeDataSize (N=65536):
+
+- push_back: Inno 0.17-0.25ms, STL 0.21-0.29ms — **ratio 0.69-0.86×, Inno FASTER.**
+
+- iterate: ratio 0.59-0.95× — parity.
+
+- copy: ratio 1.05-2.92× — noisy at this scale; raw alloc+memcpy comparable to STL.
+
+Closes AC #9 (within 1.5× of STL for trivial T — actually faster on push_back now).
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->

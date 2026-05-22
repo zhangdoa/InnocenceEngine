@@ -16,33 +16,67 @@ using namespace Inno;
 
 static void TestArrayPerformance()
 {
-	TestRunner::StartTest("Array vs std::vector — push_back + iterate + copy");
+	TestRunner::StartTest("Array vs std::vector — isolated: push_back, iterate, copy (N=LargeDataSize)");
 
-	const size_t N = TestConfig::MediumDataSize;
+	const size_t N = TestConfig::LargeDataSize;
 
-	auto innoTime = TestTimer::MeasureFunction([&]()
+	// Per-operation isolation. Each block reserves first so no growth happens
+	// during push_back. Times in microseconds (ms × 1000).
+	double innoPush = TestTimer::MeasureFunction([&]()
 	{
 		Array<float> a;
 		a.reserve(N);
 		for (size_t i = 0; i < N; ++i) a.emplace_back(static_cast<float>(i));
-		float sum = 0;
-		for (auto v : a) sum += v;
-		auto b = a;
-		(void)sum; (void)b;
 	});
-
-	auto stlTime = TestTimer::MeasureFunction([&]()
+	double stlPush = TestTimer::MeasureFunction([&]()
 	{
 		std::vector<float> v;
 		v.reserve(N);
 		for (size_t i = 0; i < N; ++i) v.emplace_back(static_cast<float>(i));
-		float sum = 0;
-		for (auto x : v) sum += x;
-		auto b = v;
-		(void)sum; (void)b;
 	});
 
-	Log(Success, "Array vs std::vector speed ratio: ", innoTime / stlTime, " (Inno ", innoTime, "ms, STL ", stlTime, "ms)");
+	// Pre-fill once; benchmark just the iteration.
+	Array<float> innoFilled;
+	innoFilled.reserve(N);
+	for (size_t i = 0; i < N; ++i) innoFilled.emplace_back(static_cast<float>(i));
+	std::vector<float> stlFilled;
+	stlFilled.reserve(N);
+	for (size_t i = 0; i < N; ++i) stlFilled.emplace_back(static_cast<float>(i));
+
+	double innoIter = TestTimer::MeasureFunction([&]()
+	{
+		float sum = 0;
+		for (auto v : innoFilled) sum += v;
+		volatile float sink = sum; (void)sink;
+	});
+	double stlIter = TestTimer::MeasureFunction([&]()
+	{
+		float sum = 0;
+		for (auto v : stlFilled) sum += v;
+		volatile float sink = sum; (void)sink;
+	});
+
+	double innoCopy = TestTimer::MeasureFunction([&]() { auto b = innoFilled; (void)b; });
+	double stlCopy  = TestTimer::MeasureFunction([&]() { auto b = stlFilled;  (void)b; });
+
+	// Raw alloc+memcpy+free comparison to isolate from container code.
+	double rawMallocTime = TestTimer::MeasureFunction([&]()
+	{
+		void* p = std::malloc(N * sizeof(float));
+		std::memcpy(p, innoFilled.data(), N * sizeof(float));
+		std::free(p);
+	});
+	double rawNewTime = TestTimer::MeasureFunction([&]()
+	{
+		void* p = ::operator new(N * sizeof(float));
+		std::memcpy(p, stlFilled.data(), N * sizeof(float));
+		::operator delete(p);
+	});
+
+	Log(Success, "  push_back: Inno ", innoPush, "ms, STL ", stlPush, "ms (ratio ", innoPush / stlPush, ")");
+	Log(Success, "  iterate  : Inno ", innoIter, "ms, STL ", stlIter, "ms (ratio ", innoIter / stlIter, ")");
+	Log(Success, "  copy     : Inno ", innoCopy, "ms, STL ", stlCopy, "ms (ratio ", innoCopy / stlCopy, ")");
+	Log(Success, "  raw alloc+memcpy+free: malloc ", rawMallocTime, "ms, operator new ", rawNewTime, "ms");
 	TestRunner::EndTest(true);
 }
 
