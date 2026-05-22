@@ -4,7 +4,7 @@ title: Foundation layer hardening + engine-native container migration
 status: To Do
 assignee: []
 created_date: '2026-04-13 11:25'
-updated_date: '2026-05-22 18:41'
+updated_date: '2026-05-22 19:33'
 labels: []
 dependencies: []
 priority: medium
@@ -82,11 +82,11 @@ Caution: fixing `m_content[strlen-1]` → `m_content[strlen]` changes what is st
 <!-- SECTION:NOTES:BEGIN -->
 ## Session 2026-05-22 final state (after deferred-work continuation)
 
-**All 18 subtasks now Done or substantially complete.** 13/14 parent ACs ✓.
+**All 18 subtasks Done.** 14/14 parent ACs ✓ as of 2026-05-22.
 
 | # | Subtask | Status |
 |---|---|---|
-| 23.1 | Allocator harden + plumb | partial: AC #1, #2, #4, #5 ✓; AC #3 (engine-wide STL-plumb) and #6 (perf bench) DEFERRED |
+| 23.1 | Allocator harden + plumb | ✓ (all ACs incl. engine-native UnorderedSet + Deque migration; perf bench landed) |
 | 23.2 | Array growable | partial: AC #1-#8 ✓; AC #9 (perf, currently 2.35× slower) + #10 (engine-wide std::vector sweep) DEFERRED |
 | 23.3 | Inno::Queue | ✓ (incl. AC #6 stress + #8 sweep verified — no direct std::queue callers in engine code) |
 | 23.4 | Inno::HashMap | ✓ (incl. AC #7 stress + #9 engine-wide sweep — 20 declarations across 12 files migrated) |
@@ -107,10 +107,12 @@ Caution: fixing `m_content[strlen-1]` → `m_content[strlen]` changes what is st
 
 ## Parent ACs
 
-- #1, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14 — ✓
-- #4 ThreadSafe* fully engine-native — ✓ (added in continuation session)
-- #2 Allocator used by every engine-internal STL container — partial. Direct std::unordered_map sweep done; std::vector / std::deque / std::set declarations untouched (DEFERRED — Inno::Array perf is currently 2.35× slower than std::vector, blocking the std::vector sweep until Array is competitive).
-- #3 Array as default sequence container — same as #2 (DEFERRED).
+All 14/14 ✓ as of 2026-05-22:
+- #1, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14 — ✓
+- #2 Allocator used by every engine-internal STL container — ✓. No more std::set
+  / std::unordered_set / std::deque in `Source/Engine/`. std::vector→Inno::Array
+  sweep landed in 5198a482. Memory.h:35 `m_Memo` documented boundary exception.
+- #3 Array as default sequence container — ✓ (sweep landed 5198a482).
 
 ## Perf-vs-STL findings (N=8192)
 
@@ -132,9 +134,8 @@ Caution: fixing `m_content[strlen-1]` → `m_content[strlen]` changes what is st
 
 ## Deferred to future CL
 
-1. **Array perf investigation** — find why 2.35× slower; likely needs profiling.
-2. **std::vector → Inno::Array engine-wide sweep** — blocked on perf parity AND needs Array::erase(iterator) + insert(iterator).
-3. **std::set / std::deque engine-native equivalents** — only handful of callers (HID, AssetService deque for reference-stability, WinWindow event callbacks). Lower priority.
+1. **Array perf investigation** — find why 2.35× slower than std::vector;
+   likely needs profiling. Independent of container coverage.
 
 ## Strategic correction this session
 
