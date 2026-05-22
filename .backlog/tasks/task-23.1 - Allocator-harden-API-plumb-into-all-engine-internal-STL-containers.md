@@ -4,7 +4,7 @@ title: 'Allocator: harden API + plumb into all engine-internal STL containers'
 status: To Do
 assignee: []
 created_date: '2026-05-22 07:28'
-updated_date: '2026-05-22 09:38'
+updated_date: '2026-05-22 15:51'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -36,7 +36,7 @@ References:
 - [x] #2 Allocator honours alignof(T) — either via Memory::Allocate alignment param or via aligned_alloc.
 - [ ] #3 Every engine-internal std::vector / std::unordered_map / std::set / std::queue / std::deque declaration in Source/Engine/ uses Allocator<T> as the allocator template parameter.
 - [x] #4 UnitTest covers: allocate/deallocate round-trip, overflow guard, alignment honoured, copy-construction from related allocator.
-- [ ] #5 Stress test allocates+frees N=10^6 elements without leaks (verified by Memory::GetCurrentAllocationCount or equivalent).
+- [x] #5 Stress test allocates+frees N=10^6 elements without leaks (verified by Memory::GetCurrentAllocationCount or equivalent).
 - [ ] #6 Perf-vs-STL: micro-benchmark vs std::allocator for vector<int> push_back / clear, recorded in TestSuite output.
 <!-- AC:END -->
 

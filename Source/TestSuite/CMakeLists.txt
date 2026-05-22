@@ -23,6 +23,7 @@ set(TEST_SOURCES
     StressTests/ConcurrencyStress.cpp
     StressTests/MemoryStress.cpp
     StressTests/TaskSystemStressTests.cpp
+    StressTests/ContainerStress.cpp
     # Concurrency tests
     ConcurrencyTests/TaskSystemTests.cpp
     # Integration tests

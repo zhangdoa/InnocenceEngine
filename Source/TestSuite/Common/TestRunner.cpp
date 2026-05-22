@@ -100,6 +100,7 @@ extern void RunMemoryPerformanceTests();
 extern void RunConcurrencyStressTests();
 extern void RunMemoryStressTests();
 extern void RunTaskSystemStressTests();
+extern void RunContainerStressTests();
 
 extern void RunAssetConversionTests();
 
@@ -139,6 +140,7 @@ void TestRunner::RunStressTests()
 	RunTaskSystemStressTests();
 	RunConcurrencyStressTests();
 	RunMemoryStressTests();
+	RunContainerStressTests();
 	
 	Log(Success, "========== STRESS TESTS COMPLETE ==========\n");
 }

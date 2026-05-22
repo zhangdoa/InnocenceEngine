@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-05-22 07:29'
-updated_date: '2026-05-22 15:03'
+updated_date: '2026-05-22 15:51'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -44,7 +44,7 @@ References:
 - [x] #4 Surface includes: insert, emplace, try_emplace, erase, find, contains, operator[], at, size, empty, reserve, rehash, clear, iterator/const_iterator.
 - [x] #5 Rehash correctly handles non-trivially-copyable Key and T.
 - [x] #6 UnitTest covers: insert/find/erase, collision resolution, rehash trigger, iterator stability semantics (documented and tested), copy/move, non-trivial Key (e.g. std::string).
-- [ ] #7 StressTest: 10^6 insert + 50% erase + lookup pass without leak.
+- [x] #7 StressTest: 10^6 insert + 50% erase + lookup pass without leak.
 - [ ] #8 Perf-vs-STL: insert N + lookup N + erase N vs std::unordered_map. Target competitive (within 1.5× — and ideally faster than std::unordered_map for trivial keys).
 - [ ] #9 Direct std::unordered_map usages outside ThreadSafeUnorderedMap swapped where reasonable (count holdouts).
 <!-- AC:END -->

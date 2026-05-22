@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-05-22 07:29'
-updated_date: '2026-05-22 11:34'
+updated_date: '2026-05-22 15:51'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -44,7 +44,7 @@ References:
 - [x] #5 ThreadSafe template flag decision applied (removed or fixed to lock during reallocation).
 - [x] #6 Array uses Allocator<T> for memory (depends on TASK-23.1).
 - [x] #7 UnitTests/ArrayTests covers: construct, copy, move, push grow, resize up/down, pop, shrink, iterator invalidation, at() bounds, exception/assert behaviour, non-trivial T (e.g. std::string).
-- [ ] #8 StressTest: 10^6 push/pop mix without leak; concurrent reader/writer if ThreadSafe variant survives.
+- [x] #8 StressTest: 10^6 push/pop mix without leak; concurrent reader/writer if ThreadSafe variant survives.
 - [ ] #9 Perf-vs-STL: push_back N=10^5, random-access, iteration recorded vs std::vector — Array within 1.5× of STL for trivial T.
 - [ ] #10 std::vector usages in Source/Engine/ replaced with Inno::Array where boundary doesn't force STL (count the remaining holdouts in the closure note).
 <!-- AC:END -->
