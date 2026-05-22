@@ -1,22 +1,13 @@
 #pragma once
 #include "STL14.h"
-#include "Allocator.h"
-
-#include <unordered_map>
+#include "HashMap.h"
 
 namespace Inno
 {
-	// Thread-safe map. Internal storage is std::unordered_map plumbed through
-	// Inno::Allocator so allocations route through engine bookkeeping. A full
-	// migration to Inno::HashMap is deferred — current consumers iterate via
-	// std::unordered_map::iterator (.first/.second), which Inno::HashMap does
-	// not yet expose.
+	// Thread-safe wrapper over engine-native Inno::HashMap<Key, T>.
 	template <typename Key, typename T>
 	class ThreadSafeUnorderedMap
 	{
-		using PairAlloc = Allocator<std::pair<const Key, T>>;
-		using Map = std::unordered_map<Key, T, std::hash<Key>, std::equal_to<Key>, PairAlloc>;
-
 	public:
 		~ThreadSafeUnorderedMap() { invalidate(); }
 
@@ -30,17 +21,22 @@ namespace Inno
 		void emplace(Key key, T value)
 		{
 			std::unique_lock<std::shared_mutex> lock{m_mutex};
-			m_map.emplace(std::move(key), std::move(value));
+			m_map.insert_or_assign(std::move(key), std::move(value));
 			m_condition.notify_one();
 		}
 
 		void emplace(std::pair<Key, T> value)
 		{
 			std::unique_lock<std::shared_mutex> lock{m_mutex};
-			m_map.emplace(std::move(value));
+			m_map.insert_or_assign(value.first, value.second);
 			m_condition.notify_one();
 		}
 
+		// Iterators delegate to the inner HashMap. The shared_lock acquired
+		// here is RAII-destroyed at function return; callers iterating across
+		// a range take an implicit risk of concurrent mutation. This mirrors
+		// the existing std::unordered_map-backed behaviour and is what
+		// consumers currently expect.
 		auto begin()       { std::shared_lock<std::shared_mutex> lock{m_mutex}; return m_map.begin(); }
 		auto begin() const { std::shared_lock<std::shared_mutex> lock{m_mutex}; return m_map.begin(); }
 		auto end()         { std::shared_lock<std::shared_mutex> lock{m_mutex}; return m_map.end(); }
@@ -58,7 +54,7 @@ namespace Inno
 			return m_map.find(key);
 		}
 
-		auto erase(const Key& key)
+		bool erase(const Key& key)
 		{
 			std::unique_lock<std::shared_mutex> lock{m_mutex};
 			return m_map.erase(key);
@@ -103,7 +99,7 @@ namespace Inno
 	private:
 		std::atomic_bool m_valid{true};
 		mutable std::shared_mutex m_mutex;
-		Map m_map;
+		HashMap<Key, T> m_map;
 		std::condition_variable_any m_condition;
 	};
 }

@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-05-22 07:29'
-updated_date: '2026-05-22 15:11'
+updated_date: '2026-05-22 15:40'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -45,7 +45,7 @@ References:
 <!-- AC:BEGIN -->
 - [x] #1 ThreadSafeVector<T> wraps Inno::Array<T> internally.
 - [x] #2 ThreadSafeQueue<T> wraps Inno::Queue<T> internally.
-- [ ] #3 ThreadSafeUnorderedMap<K,T> wraps Inno::HashMap<K,T> internally.
+- [x] #3 ThreadSafeUnorderedMap<K,T> wraps Inno::HashMap<K,T> internally.
 - [x] #4 ThreadSafeVector::size() is const.
 - [x] #5 ThreadSafeVector::eraseByIndex bug fixed (was calling non-existent std::vector::erase(size_t)).
 - [x] #6 getRawData() return-reference-after-lock-release pattern decided (removed, snapshot-copy, or documented).
@@ -96,6 +96,16 @@ References:
 
 - #3 ThreadSafeUnorderedMap fully wrapping Inno::HashMap. Deferred — Inno::HashMap needs iterator support to be a drop-in for std::unordered_map. Iterator support is a fair amount of extra code (skip Empty/Tombstone slots, yield std::pair-like value); separate CL.
 - #8 TSan/Helgrind verification — not available in MSVC RelWithDebInfo build. Existing concurrency stress tests pass cleanly.
+
+## 2026-05-22 follow-up — full HashMap migration
+
+Added forward iterators to `Inno::HashMap` (storage refactored to `std::pair<Key, T>` array so iterator deref yields real `pair&`). Switched `ThreadSafeUnorderedMap` to wrap `Inno::HashMap` instead of `std::unordered_map` + Inno::Allocator. Closes AC #3.
+
+Engine consumers (AnimationSimulationService LUTs, MeshResourceServiceImpl, NamedObjectPool) iterate via begin/end with `.first`/`.second` access — works unchanged because HashMap iterator deref returns `std::pair<Key, T>&`. Documented in header that mutating `.first` via iterator is UB (same contract as std::unordered_map).
+
+HashMap unit test extended with 7th case (range-based-for with sprinkled tombstones — verifies iterator skips Empty + Tombstone slots exactly).
+
+Verified: BuildWin clean; TestSuite -u HashMap 7/7 pass; Main.exe -total_frames 10 exits 0; -serialize_test exits 0.
 <!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
