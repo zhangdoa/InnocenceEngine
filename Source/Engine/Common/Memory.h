@@ -14,20 +14,25 @@
 
 namespace Inno
 {
+	// Allocator-bookkeeping toggle. Off by default — Record/Erase route
+	// through a shared_mutex + std::unordered_map, adding ~2.6× overhead
+	// to Array growth (perf-vs-STL bench). Define INNO_MEMORY_TRACK to
+	// re-enable for leak diagnostics.
 	class Memory
 	{
 	public:
 		static void* Allocate(const std::size_t size);
 		static void* Reallocate(void* const ptr, const std::size_t size);
 		static void Deallocate(void* const ptr);
-	
+
+#ifdef INNO_MEMORY_TRACK
 	private:
 		bool Record(void* ptr, std::size_t size);
-
 		bool Erase(void* ptr);
 
 	private:
 		std::shared_mutex m_Mutex;
 		std::unordered_map<void*, std::size_t> m_Memo;
+#endif
 	};
 }

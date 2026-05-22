@@ -11,10 +11,12 @@ void* Memory::Allocate(const std::size_t size)
 {
 	auto l_result = std::malloc(size);
 
+#ifdef INNO_MEMORY_TRACK
 	if (g_Engine)
 	{
 		g_Engine->Get<Memory>()->Record(l_result, size);
 	}
+#endif
 
 	return l_result;
 }
@@ -22,25 +24,30 @@ void* Memory::Allocate(const std::size_t size)
 void* Memory::Reallocate(void* const ptr, const std::size_t size)
 {
 	auto l_result = std::realloc(ptr, size);
+#ifdef INNO_MEMORY_TRACK
 	if (g_Engine)
 	{
 		g_Engine->Get<Memory>()->Erase(ptr);
 		if (l_result)
 			g_Engine->Get<Memory>()->Record(l_result, size);
 	}
+#endif
 	return l_result;
 }
 
 void Memory::Deallocate(void* const ptr)
 {
+#ifdef INNO_MEMORY_TRACK
 	if (g_Engine)
 	{
 		g_Engine->Get<Memory>()->Erase(ptr);
 	}
+#endif
 
 	std::free(ptr);
 }
 
+#ifdef INNO_MEMORY_TRACK
 bool Memory::Record(void* ptr, std::size_t size)
 {
 	std::unique_lock<std::shared_mutex> lock{ m_Mutex };
@@ -67,7 +74,8 @@ bool Memory::Erase(void* ptr)
 		m_Memo.erase(ptr);
 		return true;
 	}
-	
+
 	Log(Warning, "Deallocate collision happened at ", ptr, ".");
 	return false;
 }
+#endif
