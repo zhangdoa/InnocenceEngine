@@ -123,9 +123,9 @@ namespace
 	void RunSerializeTest(const char* l_sceneRelPath)
 	{
 		auto* io = g_Engine->Get<IOService>();
-		std::string l_dataDir    = io->getDataDirectory();
+		std::string l_dataDir    = io->GetDataDirectory();
 		std::string l_sceneFile  = l_dataDir + l_sceneRelPath;
-		std::string l_compDir    = l_dataDir + io->getProjectName() + "/Components/";
+		std::string l_compDir    = l_dataDir + io->GetProjectName() + "/Components/";
 
 		// Snapshot before save
 		std::string l_origScene = ReadFileContent(l_sceneFile);

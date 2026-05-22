@@ -57,7 +57,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 auto* l_texturePtr = &l_texture;
 
                 auto l_filePath = AssetService::GetAssetFilePath(l_componentName.c_str());
-                auto l_fullPath = g_Engine->Get<IOService>()->getDataDirectory() + l_filePath;
+                auto l_fullPath = g_Engine->Get<IOService>()->GetDataDirectory() + l_filePath;
                 std::ifstream l_probe(l_fullPath);
                 if (l_probe.good() && (l_probe.close(), AssetService::Load(l_filePath.c_str(), *l_texturePtr, l_entityID)))
                 {
@@ -99,7 +99,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 auto* l_materialPtr = &l_material;
 
                 auto l_filePath = AssetService::GetAssetFilePath(l_materialName.c_str());
-                auto l_fullMatPath = g_Engine->Get<IOService>()->getDataDirectory() + l_filePath;
+                auto l_fullMatPath = g_Engine->Get<IOService>()->GetDataDirectory() + l_filePath;
                 std::ifstream l_matProbe(l_fullMatPath);
                 if (!(l_matProbe.good() && (l_matProbe.close(), AssetService::Load(l_filePath.c_str(), *l_materialPtr, l_entityID))))
                 {

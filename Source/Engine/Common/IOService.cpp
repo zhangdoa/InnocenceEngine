@@ -11,7 +11,7 @@ namespace fs = std::filesystem;
 using namespace Inno;
 ;
 
-bool IOService::setupWorkingDirectory()
+bool IOService::SetupWorkingDirectory()
 {
 	m_workingDir = fs::current_path().generic_string() + "/";
 	m_dataDir = m_workingDir + "../Data/";
@@ -30,7 +30,7 @@ static std::string ResolvePath(const std::string& workingDir, const char* filePa
 	return workingDir + (filePath ? filePath : "");
 }
 
-std::vector<char> IOService::loadFile(const char* filePath, IOMode openMode)
+std::vector<char> IOService::LoadFile(const char* filePath, IOMode openMode)
 {
 	std::ios_base::openmode l_mode = std::ios::in;
 	switch (openMode)
@@ -68,7 +68,7 @@ std::vector<char> IOService::loadFile(const char* filePath, IOMode openMode)
 	return buffer;
 }
 
-bool IOService::saveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode)
+bool IOService::SaveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode)
 {
 	std::ios_base::openmode l_mode = std::ios::out;
 	switch (saveMode)
@@ -94,69 +94,69 @@ bool IOService::saveFile(const char* filePath, const std::vector<char>& content,
 		return false;
 	}
 
-	auto l_result = serializeVector(l_file, content);
+	auto l_result = SerializeVector(l_file, content);
 
 	l_file.close();
 
 	return l_result;
 }
 
-bool IOService::isFileExist(const char* filePath)
+bool IOService::IsFileExist(const char* filePath)
 {
 	return fs::exists(fs::path(ResolvePath(m_workingDir, filePath)));
 }
 
-std::string IOService::getFilePath(const char* filePath)
+std::string IOService::GetFilePath(const char* filePath)
 {
 	return fs::path(filePath).remove_filename().generic_string();
 }
 
-std::string IOService::getFileExtension(const char* filePath)
+std::string IOService::GetFileExtension(const char* filePath)
 {
 	return fs::path(filePath).extension().generic_string();
 }
 
-std::string IOService::getFileName(const char* filePath)
+std::string IOService::GetFileName(const char* filePath)
 {
 	return fs::path(filePath).stem().generic_string();
 }
 
-std::string IOService::getWorkingDirectory()
+std::string IOService::GetWorkingDirectory()
 {
 	return m_workingDir;
 }
 
-std::string IOService::getDataDirectory()
+std::string IOService::GetDataDirectory()
 {
 	return m_dataDir;
 }
 
-std::string IOService::getEngineDirectory()
+std::string IOService::GetEngineDirectory()
 {
 	return m_dataDir + "Engine/";
 }
 
-std::string IOService::getProjectName()
+std::string IOService::GetProjectName()
 {
 	return INNO_PROJECT_NAME;
 }
 
-std::string IOService::getProjectDirectory()
+std::string IOService::GetProjectDirectory()
 {
 	return m_dataDir + INNO_PROJECT_NAME + std::string("/");
 }
 
-std::string IOService::getGeneratedDirectory()
+std::string IOService::GetGeneratedDirectory()
 {
 	return m_dataDir + "Generated/";
 }
 
-std::string IOService::getComponentDirectory()
+std::string IOService::GetComponentDirectory()
 {
 	return m_dataDir + "Generated/Components/";
 }
 
-std::string IOService::validateFileName(const char* filePath)
+std::string IOService::ValidateFileName(const char* filePath)
 {
 	std::string l_result(filePath);
 	std::replace(l_result.begin(), l_result.end(), '|', '-');
@@ -171,10 +171,10 @@ std::string IOService::validateFileName(const char* filePath)
 	return l_result;
 }
 
-bool IOService::addCPPClassFiles(const CPPClassDesc& desc)
+bool IOService::AddCPPClassFiles(const CPPClassDesc& desc)
 {
 	auto l_headerFileName = desc.filePath + desc.className + ".h";
-	std::ofstream l_headerFile(IOService::getWorkingDirectory() + l_headerFileName, std::ios::out | std::ios::trunc);
+	std::ofstream l_headerFile(IOService::GetWorkingDirectory() + l_headerFileName, std::ios::out | std::ios::trunc);
 
 	if (!l_headerFile.is_open())
 	{

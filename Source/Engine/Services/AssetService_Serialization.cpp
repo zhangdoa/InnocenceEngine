@@ -90,8 +90,8 @@ bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& ver
 		return false;
 	}
 
-	g_Engine->Get<IOService>()->serializeVector(l_binaryFile, vertices);
-	g_Engine->Get<IOService>()->serializeVector(l_binaryFile, indices);
+	g_Engine->Get<IOService>()->SerializeVector(l_binaryFile, vertices);
+	g_Engine->Get<IOService>()->SerializeVector(l_binaryFile, indices);
 	l_binaryFile.close();
 
 	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());

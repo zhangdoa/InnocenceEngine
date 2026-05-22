@@ -180,8 +180,8 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component, EntityID 
     std::vector<Index> l_indices;
     l_indices.resize(l_indicesNumber);
 
-    g_Engine->Get<IOService>()->deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_vertices);
-    g_Engine->Get<IOService>()->deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_indices);
+    g_Engine->Get<IOService>()->DeserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_vertices);
+    g_Engine->Get<IOService>()->DeserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_indices);
 
     l_meshFile.close();
 
@@ -240,7 +240,7 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component, Entit
                 continue;
 
             auto l_filePath = AssetService::GetAssetFilePath(l_textureName.c_str());
-            auto l_fullPath = g_Engine->Get<IOService>()->getDataDirectory() + l_filePath;
+            auto l_fullPath = g_Engine->Get<IOService>()->GetDataDirectory() + l_filePath;
             if (!std::filesystem::exists(l_fullPath))
                 continue;
 

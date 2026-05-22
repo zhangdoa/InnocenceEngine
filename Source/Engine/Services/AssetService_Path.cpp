@@ -11,7 +11,7 @@ using namespace Inno;
 
 std::string AssetService::GetAssetFilePath(const char* componentName)
 {
-	auto l_dataDir = g_Engine->Get<IOService>()->getDataDirectory();
+	auto l_dataDir = g_Engine->Get<IOService>()->GetDataDirectory();
 	auto l_name = std::string(componentName) + ".json";
 
 	// Search order: project components, then generated (imported) components
@@ -29,7 +29,7 @@ std::string AssetService::GetAssetFilePath(const char* componentName)
 
 std::string AssetService::GetBinaryFilePath(const char* binaryFileName)
 {
-	auto l_dataDir = g_Engine->Get<IOService>()->getDataDirectory();
+	auto l_dataDir = g_Engine->Get<IOService>()->GetDataDirectory();
 
 	// Search order: project components, then generated (imported) components
 	auto l_projectPath = l_dataDir + INNO_PROJECT_NAME + std::string("/Components/") + binaryFileName;
@@ -46,13 +46,13 @@ std::string AssetService::GetBinaryFilePath(const char* binaryFileName)
 
 std::string AssetService::GetComponentDirectory()
 {
-	return g_Engine->Get<IOService>()->getComponentDirectory();
+	return g_Engine->Get<IOService>()->GetComponentDirectory();
 }
 
 bool AssetService::Import(const char* fileName)
 {
 	auto* l_io = g_Engine->Get<IOService>();
-	auto l_extension = l_io->getFileExtension(fileName);
+	auto l_extension = l_io->GetFileExtension(fileName);
 	std::string l_fileName = fileName;
 
 	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX" || l_extension == ".gltf" || l_extension == ".GLTF" || l_extension == ".ply" || l_extension == ".PLY" || l_extension == ".md5mesh")
@@ -72,7 +72,7 @@ bool AssetService::Import(const char* fileName)
 		// AmbientCG / common-PBR convention. Unknown suffixes fall through
 		// as albedo (slot 1, sRGB) — the safest default for an unlabelled
 		// colour image.
-		std::string l_baseName = l_io->getFileName(fileName);
+		std::string l_baseName = l_io->GetFileName(fileName);
 		auto l_dot = l_baseName.find_last_of('.');
 		if (l_dot != std::string::npos)
 			l_baseName.erase(l_dot);
@@ -112,7 +112,7 @@ bool AssetService::Import(const char* fileName)
 
 bool AssetService::ImportSync(const char* fileName)
 {
-	auto l_extension = g_Engine->Get<IOService>()->getFileExtension(fileName);
+	auto l_extension = g_Engine->Get<IOService>()->GetFileExtension(fileName);
 
 	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX" || l_extension == ".gltf" || l_extension == ".GLTF" || l_extension == ".ply" || l_extension == ".PLY" || l_extension == ".md5mesh")
 	{

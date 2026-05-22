@@ -88,7 +88,7 @@ std::string AssetService::ImportTexture(const char*          absolutePath,
 		return {};
 	}
 
-	if (!g_Engine->Get<IOService>()->isFileExist(absolutePath))
+	if (!g_Engine->Get<IOService>()->IsFileExist(absolutePath))
 	{
 		Log(Warning, "AssetService::ImportTexture: file not found: ", absolutePath);
 		return {};

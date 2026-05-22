@@ -22,14 +22,14 @@ using namespace Inno;
 
 bool AssimpImporter::Import(const char* FileName)
 {
-	auto l_ExportFileName = g_Engine->Get<IOService>()->getFileName(FileName);
-	if (!g_Engine->Get<IOService>()->isFileExist(FileName))
+	auto l_ExportFileName = g_Engine->Get<IOService>()->GetFileName(FileName);
+	if (!g_Engine->Get<IOService>()->IsFileExist(FileName))
 	{
 		Log(Error, "", FileName, " doesn't exist!");
 		return false;
 	}
 
-	auto l_FullPath = g_Engine->Get<IOService>()->getWorkingDirectory() + FileName;
+	auto l_FullPath = g_Engine->Get<IOService>()->GetWorkingDirectory() + FileName;
 
 	Log(Verbose, "Converting ", l_FullPath.c_str(), "...");
 #if defined INNO_DEBUG
@@ -68,7 +68,7 @@ bool AssimpImporter::Import(const char* FileName)
 		return false;
 	}
 
-	auto l_ModelBaseDir = g_Engine->Get<IOService>()->getFilePath(FileName);
+	auto l_ModelBaseDir = g_Engine->Get<IOService>()->GetFilePath(FileName);
 	ProcessAssimpScene(l_Scene, l_ExportFileName.c_str(), l_ModelBaseDir.c_str());
 
 	Log(Success, FileName, " has been imported.");

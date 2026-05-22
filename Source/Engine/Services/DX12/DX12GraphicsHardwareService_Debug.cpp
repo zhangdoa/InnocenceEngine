@@ -75,7 +75,7 @@ bool DX12GraphicsHardwareService::TryLoadRenderDocAPI()
 
 	// Template is a "<file-prefix>"; RenderDoc appends frame index and `.rdc`.
 	// Capture dir may not exist on first run, hence create_directories.
-	auto l_workingDir  = g_Engine->Get<IOService>()->getWorkingDirectory();
+	auto l_workingDir  = g_Engine->Get<IOService>()->GetWorkingDirectory();
 	auto l_captureDir  = l_workingDir + "../Build/captures";
 	std::filesystem::create_directories(l_captureDir);
 	std::string l_captureTemplate = l_captureDir + "/frame";

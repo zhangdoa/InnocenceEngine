@@ -224,14 +224,14 @@ namespace Inno
 		}
 
 		// Load + apply registered keys from a JSON file at an asset-relative
-		// path (resolved against IOService::getDataDirectory). Returns true
+		// path (resolved against IOService::GetDataDirectory). Returns true
 		// when the file existed and was applied. Logs the loaded values on
 		// success so a runtime confirms boot-time tunables in normal-mode
 		// logs without -loglevel 1.
 		static bool LoadFromFile(const char* in_AssetRelPath)
 		{
 			auto* l_IO = g_Engine->Get<IOService>();
-			std::string l_FullPath = l_IO->getDataDirectory() + in_AssetRelPath;
+			std::string l_FullPath = l_IO->GetDataDirectory() + in_AssetRelPath;
 			std::ifstream l_File(l_FullPath);
 			if (!l_File.is_open())
 			{
@@ -264,7 +264,7 @@ namespace Inno
 		static bool SaveToFile(const char* in_AssetRelPath)
 		{
 			auto* l_IO = g_Engine->Get<IOService>();
-			std::string l_FullPath = l_IO->getDataDirectory() + in_AssetRelPath;
+			std::string l_FullPath = l_IO->GetDataDirectory() + in_AssetRelPath;
 			std::error_code l_Ec;
 			std::filesystem::create_directories(std::filesystem::path(l_FullPath).parent_path(), l_Ec);
 			if (l_Ec)

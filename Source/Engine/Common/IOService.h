@@ -9,23 +9,23 @@ namespace Inno
 	class IOService
 	{
 	public:
-		bool setupWorkingDirectory();
+		bool SetupWorkingDirectory();
 
-		std::vector<char> loadFile(const char* filePath, IOMode openMode);
-		bool saveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode);
+		std::vector<char> LoadFile(const char* filePath, IOMode openMode);
+		bool SaveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode);
 
-		bool isFileExist(const char* filePath);
-		std::string getFilePath(const char* filePath);
-		std::string getFileExtension(const char* filePath);
-		std::string getFileName(const char* filePath);
-		std::string getWorkingDirectory();
-		std::string getDataDirectory();
-		std::string getEngineDirectory();
-		std::string getProjectName();
-		std::string getProjectDirectory();
-		std::string getGeneratedDirectory();
-		std::string getComponentDirectory();
-		std::string validateFileName(const char* filePath);
+		bool IsFileExist(const char* filePath);
+		std::string GetFilePath(const char* filePath);
+		std::string GetFileExtension(const char* filePath);
+		std::string GetFileName(const char* filePath);
+		std::string GetWorkingDirectory();
+		std::string GetDataDirectory();
+		std::string GetEngineDirectory();
+		std::string GetProjectName();
+		std::string GetProjectDirectory();
+		std::string GetGeneratedDirectory();
+		std::string GetComponentDirectory();
+		std::string ValidateFileName(const char* filePath);
 
 		inline bool serialize(std::ostream& os, void* ptr, size_t size)
 		{
@@ -40,18 +40,18 @@ namespace Inno
 		}
 
 		template<typename T>
-		inline bool serializeVector(std::ostream& os, const Array<T>& vector)
+		inline bool SerializeVector(std::ostream& os, const Array<T>& vector)
 		{
 			return serialize(os, (void*)&vector[0], vector.size() * sizeof(T));
 		}
 
 		template<typename T>
-		inline bool serializeVector(std::ostream& os, const std::vector<T>& vector)
+		inline bool SerializeVector(std::ostream& os, const std::vector<T>& vector)
 		{
 			return serialize(os, (void*)&vector[0], vector.size() * sizeof(T));
 		}
 
-		inline std::size_t getFileSize(std::istream& is)
+		inline std::size_t GetFileSize(std::istream& is)
 		{
 			auto pbuf = is.rdbuf();
 			std::size_t l_size = pbuf->pubseekoff(0, is.end, is.in);
@@ -69,7 +69,7 @@ namespace Inno
 
 		inline bool deserialize(std::istream& is, void* ptr)
 		{
-			auto l_fileSize = getFileSize(is);
+			auto l_fileSize = GetFileSize(is);
 			return deserialize(is, 0, l_fileSize, ptr);
 		}
 
@@ -86,29 +86,29 @@ namespace Inno
 		}
 
 		template<typename T>
-		inline bool deserializeVector(std::istream& is, std::streamoff startPos, std::size_t size, Array<T>& vector)
+		inline bool DeserializeVector(std::istream& is, std::streamoff startPos, std::size_t size, Array<T>& vector)
 		{
 			return deserialize(is, startPos, size, &vector[0]);
 		}
 
 		template<typename T>
-		inline bool deserializeVector(std::istream& is, std::streamoff startPos, std::size_t size, std::vector<T>& vector)
+		inline bool DeserializeVector(std::istream& is, std::streamoff startPos, std::size_t size, std::vector<T>& vector)
 		{
 			return deserialize(is, startPos, size, &vector[0]);
 		}
 
 		template<typename T>
-		inline bool deserializeVector(std::istream& is, Array<T>& vector)
+		inline bool DeserializeVector(std::istream& is, Array<T>& vector)
 		{
-			auto l_fileSize = getFileSize(is);
+			auto l_fileSize = GetFileSize(is);
 			vector.reserve(l_fileSize / sizeof(T));
 			return deserialize(is, &vector[0]);
 		}
 
 		template<typename T>
-		inline bool deserializeVector(std::istream& is, std::vector<T>& vector)
+		inline bool DeserializeVector(std::istream& is, std::vector<T>& vector)
 		{
-			auto l_fileSize = getFileSize(is);
+			auto l_fileSize = GetFileSize(is);
 			vector.resize(l_fileSize / sizeof(T));
 			return deserialize(is, &vector[0]);
 		}
@@ -123,7 +123,7 @@ namespace Inno
 			std::string filePath;
 		};
 		
-		bool addCPPClassFiles(const CPPClassDesc& desc);
+		bool AddCPPClassFiles(const CPPClassDesc& desc);
 
 	private:
 		std::string m_workingDir;

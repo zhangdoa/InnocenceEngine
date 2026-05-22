@@ -145,7 +145,7 @@ VkWriteDescriptorSet VKGraphicsService::GetWriteDescriptorSet(const VkDescriptor
 bool VKGraphicsService::CreateShaderModule(VkShaderModule &vkShaderModule, const ShaderFilePath &shaderFilePath)
 {
 	auto l_shaderFileName = m_shaderRelativePath + std::string(shaderFilePath.c_str()) + ".spv";
-	auto l_shaderContent = g_Engine->Get<IOService>()->loadFile(l_shaderFileName.c_str(), IOMode::Binary);
+	auto l_shaderContent = g_Engine->Get<IOService>()->LoadFile(l_shaderFileName.c_str(), IOMode::Binary);
 
 	VkShaderModuleCreateInfo l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

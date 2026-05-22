@@ -39,7 +39,7 @@ bool TextureResourceService::Setup(IServiceConfig* systemConfig)
 				if (l_req.m_Component->m_TextureDesc.PixelDataType == TexturePixelDataType::Compressed)
 				{
 					// m_BinaryPath is absolute (from AssetService::GetBinaryFilePath).
-					// Use std::ifstream directly — IOService::loadFile prepends m_workingDir
+					// Use std::ifstream directly — IOService::LoadFile prepends m_workingDir
 					// which creates an invalid doubly-rooted path for absolute inputs.
 					std::ifstream l_bcFile(l_req.m_BinaryPath, std::ios::binary | std::ios::ate);
 					if (l_bcFile.is_open())

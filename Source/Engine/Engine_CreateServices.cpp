@@ -64,7 +64,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		Get<LogService>()->SetFatalOnError(true);
 	Get<Memory>();
 	Get<TaskScheduler>();
-	Get<IOService>()->setupWorkingDirectory();
+	Get<IOService>()->SetupWorkingDirectory();
 	Get<HIDService>();
 
 	if (m_pImpl->m_initConfig.isHeadless || m_pImpl->m_initConfig.isOffscreen) {

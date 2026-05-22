@@ -56,7 +56,7 @@ bool JSONWrapper::Load(const char* fileName, json& data)
 {
 	std::ifstream i;
 
-	i.open(g_Engine->Get<IOService>()->getDataDirectory() + fileName);
+	i.open(g_Engine->Get<IOService>()->GetDataDirectory() + fileName);
 
 	if (!i.is_open())
 	{
@@ -114,7 +114,7 @@ bool JSONWrapper::Save(const char* fileName, const json& data)
 	json trimmed = data;
 	TrimFloatPrecision(trimmed);
 	std::ofstream o;
-	o.open(g_Engine->Get<IOService>()->getDataDirectory() + fileName, std::ios::out | std::ios::trunc | std::ios::binary);
+	o.open(g_Engine->Get<IOService>()->GetDataDirectory() + fileName, std::ios::out | std::ios::trunc | std::ios::binary);
 	o << std::setw(4) << trimmed << std::endl;
 	o.close();
 
@@ -193,11 +193,11 @@ bool JSONWrapper::SaveScene(const char* fileName)
 		return entry;
 	};
 
-	std::string l_projectCompDir = l_io->getProjectName() + std::string("/Components/");
+	std::string l_projectCompDir = l_io->GetProjectName() + std::string("/Components/");
 
 	// --- Phase 1: Save the main scene file (child-scene entities excluded) ---
 	json topLevel;
-	topLevel["Name"]                 = l_io->getFileName(fileName);
+	topLevel["Name"]                 = l_io->GetFileName(fileName);
 	topLevel["DefaultComponentPath"] = l_projectCompDir;
 	topLevel["Entities"]             = json::array();
 
@@ -295,7 +295,7 @@ bool JSONWrapper::SaveScene(const char* fileName)
 		                         ? defaultPathIt->second : std::string{};
 
 		json childTop;
-		childTop["Name"]                 = l_io->getFileName(childScenePath.c_str());
+		childTop["Name"]                 = l_io->GetFileName(childScenePath.c_str());
 		childTop["DefaultComponentPath"] = l_defaultDir;
 		childTop["Entities"]             = json::array();
 

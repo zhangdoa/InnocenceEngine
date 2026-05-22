@@ -14,7 +14,7 @@ std::string AssimpTextureProcessor::CreateTextureComponent(const char* FileName,
 	std::replace(l_NormalizedFileName.begin(), l_NormalizedFileName.end(), '\\', '/');
 
 	auto l_ResolvedPath = std::string(ModelBaseDir) + l_NormalizedFileName;
-	auto l_TextureBaseName = g_Engine->Get<IOService>()->getFileName(l_NormalizedFileName.c_str());
+	auto l_TextureBaseName = g_Engine->Get<IOService>()->GetFileName(l_NormalizedFileName.c_str());
 	auto l_InstanceName = std::string(BaseName) + "." + l_TextureBaseName;
 
 	// glTF KHR_materials_pbrMetallicRoughness packs metallic + roughness into one

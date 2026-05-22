@@ -26,7 +26,7 @@ namespace Inno
 		};
 		static const char* s_AmbientCGSets[] = { "Concrete007", "Ground037", "Metal032", "Tiles074" };
 		auto* l_io = g_Engine->Get<IOService>();
-		auto l_dataDir = l_io->getDataDirectory();
+		auto l_dataDir = l_io->GetDataDirectory();
 		for (const char* setName : s_AmbientCGSets)
 		{
 			std::string l_setDir = std::string("../OriginalAssets/Textures/") + setName + "/";
@@ -34,13 +34,13 @@ namespace Inno
 			for (const auto& slot : s_AmbientCGSlots)
 			{
 				std::string l_pngPath = l_setDir + l_baseName + "_" + slot.slotName + ".png";
-				if (!l_io->isFileExist(l_pngPath.c_str()))
+				if (!l_io->IsFileExist(l_pngPath.c_str()))
 					continue;
 
 				std::string l_instanceName = std::string(setName) + "_" + slot.slotName + ".TextureComponent";
 
 				auto l_destJson = l_dataDir + AssetService::GetAssetFilePath(l_instanceName.c_str());
-				if (l_io->isFileExist(l_destJson.c_str()))
+				if (l_io->IsFileExist(l_destJson.c_str()))
 					continue;
 
 				std::string l_absPath = l_dataDir + l_pngPath;

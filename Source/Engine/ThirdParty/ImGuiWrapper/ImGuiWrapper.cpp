@@ -173,7 +173,7 @@ bool ImGuiWrapper::Initialize()
 		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 
 		// Load Fonts
-		auto l_fontPath = g_Engine->Get<IOService>()->getEngineDirectory();
+		auto l_fontPath = g_Engine->Get<IOService>()->GetEngineDirectory();
 		l_fontPath += "Fonts/FreeSans.otf";
 		auto font = io.Fonts->AddFontFromFileTTF(l_fontPath.c_str(), 16.0f);
 		if (font == nullptr)

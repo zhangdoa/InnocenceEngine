@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 
 static std::string GetTempAssetDir()
 {
-	return g_Engine->Get<IOService>()->getWorkingDirectory() + "../Build/asset_test_tmp/";
+	return g_Engine->Get<IOService>()->GetWorkingDirectory() + "../Build/asset_test_tmp/";
 }
 
 static void WriteMiniOBJ(const std::string& path)
@@ -30,7 +30,7 @@ static void CleanupTempAssets(const std::string& stemName)
 {
 	fs::remove_all(GetTempAssetDir());
 
-	auto l_dataDir = g_Engine->Get<IOService>()->getDataDirectory();
+	auto l_dataDir = g_Engine->Get<IOService>()->GetDataDirectory();
 	auto l_componentsDir = fs::path(l_dataDir + "Generated/Components/");
 	auto l_scenesDir = fs::path(l_dataDir + "Generated/Scenes/");
 
@@ -47,14 +47,14 @@ static void CleanupTempAssets(const std::string& stemName)
 
 static bool SceneFileExists(const std::string& stemName)
 {
-	auto l_dataDir = g_Engine->Get<IOService>()->getDataDirectory();
+	auto l_dataDir = g_Engine->Get<IOService>()->GetDataDirectory();
 	auto l_path = fs::path(l_dataDir + "Generated/Scenes/" + stemName + ".InnoScene");
 	return fs::exists(l_path);
 }
 
 static bool AnyComponentFileExists(const std::string& stemName)
 {
-	auto l_dataDir = g_Engine->Get<IOService>()->getDataDirectory();
+	auto l_dataDir = g_Engine->Get<IOService>()->GetDataDirectory();
 	auto l_componentsDir = fs::path(l_dataDir + "Generated/Components/");
 	if (!fs::exists(l_componentsDir))
 		return false;
@@ -69,7 +69,7 @@ static bool AnyComponentFileExists(const std::string& stemName)
 // Texture files: "<stem>.<textureName>.json" under Components/.
 static bool AnyTextureComponentExists(const std::string& stemName)
 {
-	auto l_dataDir = g_Engine->Get<IOService>()->getDataDirectory();
+	auto l_dataDir = g_Engine->Get<IOService>()->GetDataDirectory();
 	auto l_componentsDir = fs::path(l_dataDir + "Generated/Components/");
 	if (!fs::exists(l_componentsDir))
 		return false;
@@ -137,7 +137,7 @@ static void TestImportPLYConditional()
 {
 	const char* l_relPath = "../OriginalAssets/Models/bunny/bunny.ply";
 
-	if (!g_Engine->Get<IOService>()->isFileExist(l_relPath))
+	if (!g_Engine->Get<IOService>()->IsFileExist(l_relPath))
 	{
 		TestRunner::StartTest("Import: PLY (bunny) — SKIPPED (OriginalAssets not present)");
 		TestRunner::EndTest(true);
@@ -168,7 +168,7 @@ static void TestImportTexturedFBXConditional()
 	const char* l_relPath = "../OriginalAssets/Models/orb/ShaderBall.fbx";
 	const std::string l_stemName = "ShaderBall";
 
-	if (!g_Engine->Get<IOService>()->isFileExist(l_relPath))
+	if (!g_Engine->Get<IOService>()->IsFileExist(l_relPath))
 	{
 		TestRunner::StartTest("Import: FBX with textures (ShaderBall) — SKIPPED (OriginalAssets not present)");
 		TestRunner::EndTest(true);

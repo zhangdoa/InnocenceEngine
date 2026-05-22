@@ -151,7 +151,7 @@ bool DX12Helper::LoadRaytracingShaders(RenderPassComponent* RenderPassComp)
 bool DX12Helper::LoadShaderFile(std::vector<uint8_t> &rhs, const ShaderFilePath &shaderFilePath)
 {
 	auto l_path = std::string(m_shaderRelativePath) + shaderFilePath.c_str() + ".dxil";
-	auto l_rawData = g_Engine->Get<IOService>()->loadFile(l_path.c_str(), IOMode::Binary);
+	auto l_rawData = g_Engine->Get<IOService>()->LoadFile(l_path.c_str(), IOMode::Binary);
 	rhs.resize(l_rawData.size());
 	std::memcpy(rhs.data(), l_rawData.data(), l_rawData.size());
 	return true;
@@ -194,7 +194,7 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 #endif
 
 	ComPtr<ID3D10Blob> l_errorMessage = 0;
-	auto l_workingDir = g_Engine->Get<IOService>()->getWorkingDirectory();
+	auto l_workingDir = g_Engine->Get<IOService>()->GetWorkingDirectory();
 	auto l_workingDirW = std::wstring(l_workingDir.begin(), l_workingDir.end());
 	auto l_shadeFilePathW = std::wstring(shaderFilePath.begin(), shaderFilePath.end());
 	auto l_HResult = D3DCompileFromFile((l_workingDirW + m_shaderRelativePath + l_shadeFilePathW).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", l_shaderTypeName, l_compileFlags, 0, rhs, &l_errorMessage);
