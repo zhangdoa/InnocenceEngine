@@ -3,10 +3,10 @@ id: TASK-23.2
 title: >-
   Array: promote to growable vector-like with reallocation; replace std::vector
   / std::array engine-wide
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-22 07:29'
-updated_date: '2026-05-22 17:45'
+updated_date: '2026-05-22 18:41'
 labels: []
 dependencies: []
 parent_task_id: TASK-23

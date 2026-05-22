@@ -4,7 +4,7 @@ title: Foundation layer hardening + engine-native container migration
 status: To Do
 assignee: []
 created_date: '2026-04-13 11:25'
-updated_date: '2026-05-22 16:07'
+updated_date: '2026-05-22 18:41'
 labels: []
 dependencies: []
 priority: medium
@@ -62,8 +62,8 @@ Caution: fixing `m_content[strlen-1]` → `m_content[strlen]` changes what is st
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Every foundation concern listed in the Description has been broken out as a subtask (task-23.N), filed, and either Done or explicitly closed with a reason.
-- [ ] #2 Allocator is used by every engine-internal STL-style container (no std::vector / std::unordered_map / std::queue without it, in engine code).
-- [ ] #3 Array is a growable vector-like with reallocation and is the default sequence container in engine code (std::vector usages either replaced or have a documented reason to remain).
+- [x] #2 Allocator is used by every engine-internal STL-style container (no std::vector / std::unordered_map / std::queue without it, in engine code).
+- [x] #3 Array is a growable vector-like with reallocation and is the default sequence container in engine code (std::vector usages either replaced or have a documented reason to remain).
 - [x] #4 ThreadSafe* wrappers no longer wrap STL containers; they wrap engine-native Array / Queue / HashMap.
 - [x] #5 No header in Source/Engine/Common/ has 'Data' as a suffix unless the type genuinely is a serialisable blob.
 - [x] #6 Handle vs AssetHandle naming collision resolved — each type has a name that fits its actual semantics, or one is removed in favour of the other.
