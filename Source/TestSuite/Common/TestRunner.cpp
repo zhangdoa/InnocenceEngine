@@ -88,6 +88,7 @@ extern void RunAtomicUnitTests();
 extern void RunRingBufferUnitTests();
 extern void RunEntityRegistryUnitTests();
 extern void RunFixedSizeStringUnitTests();
+extern void RunMemoryUnitTests();
 
 extern void RunStringConversionPerformanceTests();
 extern void RunContainerPerformanceTests();
@@ -109,6 +110,7 @@ void TestRunner::RunUnitTests()
 	RunRingBufferUnitTests();
 	RunEntityRegistryUnitTests();
 	RunFixedSizeStringUnitTests();
+	RunMemoryUnitTests();
 
 	Log(Success, "========== UNIT TESTS COMPLETE ==========\n");
 }

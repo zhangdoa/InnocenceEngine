@@ -1,28 +1,27 @@
 #include "Memory.h"
 #include "LogService.h"
-#include <memory>
+#include <cstdlib>
 #include <unordered_map>
 
 #include "../Engine.h"
 
 using namespace Inno;
-;
 
 void* Memory::Allocate(const std::size_t size)
 {
-	auto l_result = ::new char[size];
+	auto l_result = std::malloc(size);
 
 	if (g_Engine)
 	{
 		g_Engine->Get<Memory>()->Record(l_result, size);
 	}
-	
+
 	return l_result;
 }
 
 void* Memory::Reallocate(void* const ptr, const std::size_t size)
 {
-	auto l_result = realloc(ptr, size);
+	auto l_result = std::realloc(ptr, size);
 	if (g_Engine)
 	{
 		g_Engine->Get<Memory>()->Erase(ptr);
@@ -39,7 +38,7 @@ void Memory::Deallocate(void* const ptr)
 		g_Engine->Get<Memory>()->Erase(ptr);
 	}
 
-	delete[](char*)ptr;
+	std::free(ptr);
 }
 
 bool Memory::Record(void* ptr, std::size_t size)

@@ -115,12 +115,46 @@ void TestMemoryFragmentationStress()
 	TestRunner::EndTest(l_TestPassed);
 }
 
+void TestMemoryReallocateStress()
+{
+	TestRunner::StartTest("Memory Reallocate Stress");
+
+	const size_t l_Iterations = 100000;
+	bool l_TestPassed = true;
+
+	void* p = nullptr;
+	size_t l_currentSize = 0;
+	for (size_t i = 0; i < l_Iterations; ++i)
+	{
+		size_t l_newSize = 16 + (i % 4096);
+		p = Memory::Reallocate(p, l_newSize);
+		if (!p)
+		{
+			l_TestPassed = false;
+			break;
+		}
+		// Touch the head + tail to catch obvious corruption.
+		static_cast<uint8_t*>(p)[0] = static_cast<uint8_t>(i & 0xFF);
+		static_cast<uint8_t*>(p)[l_newSize - 1] = static_cast<uint8_t>((i + 1) & 0xFF);
+		l_currentSize = l_newSize;
+	}
+
+	if (p)
+	{
+		Memory::Deallocate(p);
+	}
+
+	(void)l_currentSize;
+	TestRunner::EndTest(l_TestPassed);
+}
+
 void RunMemoryStressTests()
 {
 	TestRunner::StartTestSuite("Memory Stress Tests");
-	
+
 	TestObjectPoolMassiveAllocations();
 	TestMemoryFragmentationStress();
-	
+	TestMemoryReallocateStress();
+
 	TestRunner::EndTestSuite();
 }
