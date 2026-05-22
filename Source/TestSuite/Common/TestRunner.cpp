@@ -92,6 +92,7 @@ extern void RunDoubleBufferUnitTests();
 extern void RunAllocatorUnitTests();
 extern void RunQueueUnitTests();
 extern void RunHashMapUnitTests();
+extern void RunUnorderedSetUnitTests();
 
 extern void RunStringConversionPerformanceTests();
 extern void RunContainerPerformanceTests();
@@ -118,6 +119,7 @@ void TestRunner::RunUnitTests()
 	RunAllocatorUnitTests();
 	RunQueueUnitTests();
 	RunHashMapUnitTests();
+	RunUnorderedSetUnitTests();
 
 	Log(Success, "========== UNIT TESTS COMPLETE ==========\n");
 }
