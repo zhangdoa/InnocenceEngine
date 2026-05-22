@@ -53,6 +53,9 @@ namespace Inno
 			m_size = n;
 		}
 
+		// Copy ops require copyable T. For non-copyable T (e.g. unique_ptr) the
+		// resize(N) path is default-construct only, so non-copyable T works as
+		// long as nothing actually copies the Array.
 		Array(const Array& rhs)
 		{
 			grow_to(rhs.m_size);
@@ -117,9 +120,30 @@ namespace Inno
 			}
 		}
 
+		// Default-construct elements when growing — works for non-copyable T
+		// as long as T is default-constructible.
 		void resize(size_type newSize)
 		{
-			resize_impl(newSize, T{});
+			auto exec = [&]() {
+				if (newSize < m_size)
+				{
+					destroy_range(m_data + newSize, m_data + m_size);
+					m_size = newSize;
+				}
+				else if (newSize > m_size)
+				{
+					if (newSize > m_capacity) grow_to(newSize);
+					for (size_type i = m_size; i < newSize; ++i)
+						::new (static_cast<void*>(m_data + i)) T();
+					m_size = newSize;
+				}
+			};
+			if constexpr (ThreadSafe)
+			{
+				std::unique_lock<std::shared_mutex> lock{m_Mutex};
+				exec();
+			}
+			else { exec(); }
 		}
 
 		void resize(size_type newSize, const T& fill)
@@ -313,6 +337,18 @@ namespace Inno
 			m_data[m_size - 1].~T();
 			--m_size;
 			return begin() + idx;
+		}
+
+		// insert(pos, first, last) — only end-append supported (pos == end()).
+		// Engine consumers append-only; mid-array insert not implemented.
+		template <typename InputIt>
+		iterator insert(iterator pos, InputIt first, InputIt last)
+		{
+			assert(pos == end() && "Array::insert: only end-append supported");
+			(void)pos;
+			const size_type oldSize = m_size;
+			for (InputIt it = first; it != last; ++it) push_back(*it);
+			return begin() + oldSize;
 		}
 
 		// erase(first, last) — range erase. Supports the std::remove_if + erase idiom.
