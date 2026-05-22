@@ -1,23 +1,5 @@
-// SessionStart task-mgmt-brief gate — primary enforcement of CLAUDE.md
-// § "Session start": the first action of every new session must be
-// invoking the `task-mgmt` subagent.
-//
-// SessionStart fires before any model turn. Emits `additionalContext` so
-// the model reads a system-reminder on its very first response, before
-// it has chosen what to do this turn. The PreToolUse `task-mgmt-brief`
-// gate stays as belt-and-suspenders.
-//
-// Idempotency on resume: settings.json wires this hook to `startup|clear`
-// matchers — `resume` and `compact` skip. Transcript scan also catches
-// any task-mgmt call earlier this session.
-//
-// Subagent transcripts have no real user prompts; SessionStart should
-// never fire inside a subagent, but if it does we fail open.
-//
-// Escape: CLAUDE_SKIP_PRODUCER=1 (env-var name preserved for shell-history
-// compatibility through the rename).
-//
-// Fails OPEN on internal error.
+// session-start-brief: SessionStart hook — inject directive to dispatch task-mgmt first.
+// Fires before any model turn (PreToolUse fires after — too late for a textual-only reply).
 
 const fs = require('fs')
 const { scanTranscriptForTaskMgmtBrief } = require('../lib/common')
@@ -25,21 +7,13 @@ const { scanTranscriptForTaskMgmtBrief } = require('../lib/common')
 const DIRECTIVE = [
   'SESSION-START DIRECTIVE — task-mgmt briefing required.',
   '',
-  'Per CLAUDE.md § "Session start", the first action of every new session',
-  'must be invoking the `task-mgmt` subagent. It reads in-progress tasks,',
-  'recent commits, and continuity notes, then briefs the user on state and',
-  'likely priorities. No substantive work begins before the briefing + user',
-  'direction.',
-  '',
-  'Your first tool call this session MUST be:',
+  'First tool call this session MUST be:',
   '  Agent(subagent_type="task-mgmt", ...)',
   '',
-  'This applies regardless of what the user typed — even a continuation',
-  'prompt like "continue" or a casual "hi" routes through task-mgmt first.',
+  'Applies regardless of user input — even "continue" or "hi" routes through task-mgmt first.',
   'Do not Read, Glob, Grep, or reply textually before dispatching.',
   '',
-  'If the briefing already happened this session and the harness somehow',
-  're-fired this directive, set CLAUDE_SKIP_PRODUCER=1 in the environment.',
+  'Escape: CLAUDE_SKIP_PRODUCER=1 for resumed sessions.',
 ].join('\n')
 
 function run(input) {

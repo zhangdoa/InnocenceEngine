@@ -1,24 +1,6 @@
 #!/usr/bin/env node
-/**
- * SessionStart hook: inject a directive instructing main-session Claude
- * that the first action this session must be the task-mgmt briefing,
- * regardless of what the user typed.
- *
- * Why SessionStart and not PreToolUse: PreToolUse fires *after* the model
- * has already chosen what to do this turn. A purely-textual reply or a
- * Read-only investigation never reaches PreToolUse, so the
- * `task-mgmt-brief` PreToolUse gate (commit d39a2a0c) only catches drift
- * once Claude reaches for Bash/Edit/Write. SessionStart fires before any
- * model turn and lets us seed `additionalContext` that the model sees on
- * its very first response — the earliest event surface that can still
- * observe the violation.
- *
- * Dispatcher only — gate logic lives in
- * `.claude/hooks/gates/session-start-brief.js`. Mirrors the dispatcher
- * style of `session-gate.js` and `commit-gate.js`.
- *
- * Fails OPEN on any internal error so a hook bug never bricks a session.
- */
+// SessionStart hook: dispatcher. Gate logic in gates/session-start-brief.js.
+// Fails open on internal error.
 
 const sessionStartBriefGate = require('./gates/session-start-brief')
 

@@ -1,33 +1,12 @@
-// Backlog status-drift auditor — surface tasks whose status field is still
-// `To Do` / `In Progress` despite git log showing TASK-N references in
-// landed commits. Diagnostic only; no auto-flips, no commits, no side
-// effects. Companion to closure-staleness.js, which catches the same
-// drift going forward at commit time; this lib catches accumulated drift
-// before that gate's enforcement window opened, and at session start so
-// task-mgmt surfaces it in the briefing.
+// Backlog status-drift auditor — surface tasks still In Progress / To Do despite git log
+// showing TASK-N references in landed commits. Diagnostic only; no auto-flips.
 //
-// Public API:
+// audit({ cwd }) returns:
+//   [{ id, status, title, candidate_commits: [{ sha, subject, signal }] }]
+//   signal: 'strong' (TASK-N in commit subject) | 'weak' (body only)
 //
-//   audit({ cwd }) -> [
-//     { id, status, title, candidate_commits: [{ sha, subject, signal }] }
-//   ]
-//
-//   - `signal` is `'strong'` when TASK-N appears in the commit *subject*
-//     (high-confidence: the subject line is where landing CLs cite the
-//     task), `'weak'` when it appears only in the body (often a
-//     cross-reference, follow-up note, or filing pointer).
-//   - Only tasks with at least one candidate commit are returned.
-//
-// CLI shim (bottom of file):
-//
-//   node audit-backlog-drift.js              # human-readable
-//   node audit-backlog-drift.js --json       # machine-readable
-//   node audit-backlog-drift.js --quiet      # suppress chrome; data only
-//
-// Diagnostic-only contract: this script never mutates the backlog. The
-// task-mgmt reads the output and decides per-candidate whether to retrofit-
-// flip (the recipe in TASK-201's Implementation Notes still classifies
-// each hit as code-closure / cross-reference / multi-CL / explicit-deferred).
+// CLI:
+//   node audit-backlog-drift.js [--json] [--quiet]
 
 const fs = require('fs')
 const path = require('path')
@@ -38,8 +17,6 @@ const OPEN_STATUSES = new Set(['in progress', 'to do'])
 const STATUS_RE = /^status:\s*(.+?)\s*$/mi
 const ID_RE = /^id:\s*(\S+)/mi
 
-// Title may be a bare string or a YAML folded-block-scalar `>-` whose
-// continuation lines are indented. Capture both shapes.
 const TITLE_BARE_RE = /^title:\s*(.+?)\s*$/mi
 const TITLE_FOLDED_RE = /^title:\s*>-?\s*\r?\n((?:[ \t]+.+\r?\n?)+)/mi
 
@@ -90,11 +67,6 @@ function listOpenTasks(cwd) {
   return open
 }
 
-// One git invocation; per-task lookup against an in-memory map. The
-// `--grep=TASK-` filter narrows the corpus to commits that mention any
-// task at all (much smaller than --all by itself), and the %x09 (TAB)
-// separators give a parser-friendly record format that survives subjects
-// containing every other plausible delimiter.
 function loadTaskCommits(cwd) {
   let raw
   try {
@@ -172,7 +144,7 @@ function formatHuman(results, { quiet }) {
     lines.push('')
   }
   if (results.length === 0) {
-    if (!quiet) lines.push('  (no drift candidates — every open task lacks a TASK-N commit reference)')
+    if (!quiet) lines.push('  (no drift candidates)')
     return lines.join('\n')
   }
   for (const r of results) {
@@ -182,11 +154,6 @@ function formatHuman(results, { quiet }) {
       lines.push(`  ${c.sha}  (${tag})  ${c.subject}`)
     }
     lines.push('')
-  }
-  if (!quiet) {
-    lines.push('Each candidate needs human classification: code-closure (retrofit-flip),')
-    lines.push('cross-reference (leave open), multi-CL (partially landed), or explicit-')
-    lines.push('deferred (landed work, follow-up still pending). Recipe: TASK-201.')
   }
   return lines.join('\n')
 }
@@ -205,7 +172,6 @@ if (require.main === module) {
 
 module.exports = {
   audit,
-  // Test seams.
   parseFrontmatter, listOpenTasks, loadTaskCommits, formatHuman,
   TASK_REF_RE, OPEN_STATUSES,
 }

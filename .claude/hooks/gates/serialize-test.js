@@ -1,7 +1,5 @@
-// Serialize-test gate — when JSONWrapper / AssetService / SceneService
-// is staged, a `Main.exe -serialize_test ...` run must have happened
-// this turn. Catches round-trip regressions that only surface on a
-// real scene save-then-compare. Path-derived: only fires when
+// serialize-test: JSONWrapper / AssetService / SceneService staged → require
+// Main.exe -serialize_test ... run this turn. Path-derived: only fires when
 // SERIALIZER_CODE_PATH matches a staged file.
 
 const {
@@ -39,15 +37,10 @@ function emit(staged) {
     '',
     '[commit-gate] git commit blocked — serializer code staged but no serialize-test ran.',
     '',
-    'Serializer-facing staged paths:',
+    'Serializer staged paths:',
     filesList,
     '',
-    'Run the serialize-determinism test in this turn before committing:',
-    '  Main.exe -mode 0 -renderer 0 -loglevel 0 -offscreen -serialize_test ExampleProject/Scenes/UnitTest.InnoScene',
-    '',
-    'No string-based escape. The bypass is path-derived: this gate only fires',
-    'when SERIALIZER_CODE_PATH matches a staged file. A pure rename with no',
-    'logic change should not stage SerializerService logic — unstage it.',
+    'Run: Main.exe -mode 0 -renderer 0 -loglevel 0 -offscreen -serialize_test ExampleProject/Scenes/UnitTest.InnoScene',
     '',
   ].join('\n'))
   process.exit(2)

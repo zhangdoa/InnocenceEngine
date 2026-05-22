@@ -1,21 +1,12 @@
-// Test-run gate — staged code CLs need a qualifying integration test to
-// have run since the last real user prompt. Docs-only CLs (matching
-// DOCS_ONLY_PATH) skip the gate UNLESS a closing task is also staged
-// (which is the closure-evidence rule — the test must back the claim).
-//
-// Closure-evidence exemption: a `Closure-Reason: <value>` commit-message
-// footer suspends the closure-as-evidence-override on the docs-only path.
-// Use for genuinely-obsolete / non-reproducible / superseded closures
-// where running an integration test purely to satisfy the gate adds no
-// signal. Code-bearing CLs still need a qualifying test — the exemption
-// only re-applies the docs-only bypass.
+// test-run: staged code requires a qualifying integration test since last real user prompt.
+// Docs-only auto-skips unless a task is closing. Closure-Reason: footer re-applies docs bypass
+// for obsolete/non-reproducible/superseded closures.
 
 const {
   QUALIFYING_TEST, DOCS_ONLY_PATH, firstArray,
 } = require('../lib/common')
 
-// Same-line value required ([ \t]* not \s*, because \s includes \n and
-// would let `Closure-Reason:\n\nReviewed-By: …` satisfy the regex).
+// [ \t]* not \s* — \s includes \n, would let `Closure-Reason:\n\nReviewed-By:` satisfy.
 const CLOSURE_REASON_RE = /^Closure-Reason:[ \t]*\S/m
 
 function didQualifyingTestRun(transcript, lastUserIdx) {
@@ -33,10 +24,6 @@ function didQualifyingTestRun(transcript, lastUserIdx) {
 }
 
 function run(ctx) {
-  // Docs-only bypass. Normally doesn't apply if a task is flipping to
-  // Done (closure claim must be test-backed). The Closure-Reason: footer
-  // re-applies the bypass for genuinely-obsolete / non-reproducible /
-  // superseded closures.
   const allDocs = ctx.staged.length > 0 && ctx.staged.every(f => DOCS_ONLY_PATH.test(f))
   const closureExempt = ctx.closingTasks.length > 0 && CLOSURE_REASON_RE.test(ctx.messageText || '')
   if (allDocs && (ctx.closingTasks.length === 0 || closureExempt)) return { ok: true }
@@ -55,38 +42,28 @@ function emit(staged, closing) {
   const header = closing
     ? '[commit-gate] git commit blocked — task closure without integration test.'
     : '[commit-gate] git commit blocked — no integration test run in this turn.'
-  const rationale = closing
+  const closingNote = closing
     ? [
-        'Closing a task asserts the work is validated. The docs-only bypass does',
-        'NOT apply to a completion claim — a closing CL must be backed by a test',
-        'run in the current turn, same as a code CL.',
         '',
-        'Exemption: add a `Closure-Reason: <value>` commit-message footer for',
-        'genuinely-obsolete / non-reproducible / superseded closures where a test',
-        'run adds no signal. With the footer present, the docs-only bypass applies',
-        'again. Use sparingly — not for "the test was a pain to set up".',
+        'Closure exemption: add `Closure-Reason: <value>` footer for obsolete/non-reproducible/superseded closures.',
         '',
       ]
-    : []
+    : ['']
   process.stderr.write([
     '',
     header,
     '',
-    closing ? 'Task(s) flipping to status: Done this commit:' : 'Staged files:',
+    closing ? 'Tasks flipping to Done:' : 'Staged files:',
     filesList,
-    '',
-    ...rationale,
-    'Run one of the following in this turn before committing:',
-    '  • Bin\\RelWithDebInfo\\Main.exe -total_frames N    (see skills/perf-frame-budget/SKILL.md for choosing N)',
-    '  • Bin\\RelWithDebInfo\\Main.exe -total_frames N -reload_at_frame M',
-    '  • Bin\\RelWithDebInfo\\RenderTest.exe -test <name>',
-    '  • Bin\\RelWithDebInfo\\Main.exe -capture_frame N',
-    '  • InteractiveTest.ps1',
-    '  • npx playwright test tests/<spec>.spec.js',
-    '',
-    'No string-based escape. The bypass is path-derived: if every staged file',
-    'matches DOCS_ONLY_PATH (.backlog/, .claude/, *.md, etc.) and no closing',
-    'task is staged, the gate auto-skips. If your change touches code, run a test.',
+    ...closingNote,
+    'Run one of:',
+    '  Bin/RelWithDebInfo/Main.exe -total_frames N',
+    '  Bin/RelWithDebInfo/Main.exe -total_frames N -reload_at_frame M',
+    '  Bin/RelWithDebInfo/RenderTest.exe -test <name>',
+    '  Bin/RelWithDebInfo/Main.exe -capture_frame N',
+    '  Bin/RelWithDebInfo/Main.exe -serialize_test <scene>',
+    '  InteractiveTest.ps1',
+    '  npx playwright test tests/<spec>.spec.js',
     '',
   ].join('\n'))
   process.exit(2)

@@ -1,8 +1,6 @@
-// Live-engine gate — when editor-facing code is staged, require a
-// Playwright spec that spawns the real engine, or a Main.exe /
-// RenderTest / InteractiveTest run. Mock-only Playwright specs hide
-// optimistic-vs-server-truth races. Path-derived: only fires when
-// EDITOR_CODE_PATH matches a staged file.
+// live-engine: editor-facing staged code requires a Playwright spec spawning the real engine,
+// or a Main.exe / RenderTest / InteractiveTest run. Mock-only Playwright specs hide
+// optimistic-vs-server-truth races.
 
 const path = require('path')
 const fs = require('fs')
@@ -53,23 +51,18 @@ function emit(staged) {
     '',
     '[commit-gate] git commit blocked — editor code staged but no live-engine test ran.',
     '',
-    'Editor-facing staged paths:',
+    'Editor staged paths:',
     filesList,
     '',
-    'Mock-only Playwright specs (scene-vertical, inspector-rotation, theme-reactivity,',
-    'ipc-contract, ux-audit) hide optimistic-vs-server-truth races. Run at least one of:',
-    '  • npx playwright test                                   (full suite — includes live)',
-    '  • npx playwright test tests/render-toggles.spec.js      (live engine)',
-    '  • npx playwright test tests/render-target-debugger.spec.js',
-    '  • npx playwright test tests/scene-load.spec.js',
-    '  • npx playwright test tests/editor.spec.js',
-    '  • npx playwright test tests/window-menu.spec.js',
-    '  • Bin\\RelWithDebInfo\\Main.exe -total_frames N          (engine frame-run; see skills/perf-frame-budget/SKILL.md for choosing N)',
-    '  • Bin\\RelWithDebInfo\\RenderTest.exe -test <name>',
-    '',
-    'No string-based escape. The bypass is path-derived: this gate only fires',
-    'when EDITOR_CODE_PATH matches a staged file. If a single typo fix in a',
-    'non-editor file got pulled in, unstage it.',
+    'Run one of:',
+    '  npx playwright test                              (full suite)',
+    '  npx playwright test tests/render-toggles.spec.js (live engine)',
+    '  npx playwright test tests/render-target-debugger.spec.js',
+    '  npx playwright test tests/scene-load.spec.js',
+    '  npx playwright test tests/editor.spec.js',
+    '  npx playwright test tests/window-menu.spec.js',
+    '  Bin/RelWithDebInfo/Main.exe -total_frames N',
+    '  Bin/RelWithDebInfo/RenderTest.exe -test <name>',
     '',
   ].join('\n'))
   process.exit(2)
