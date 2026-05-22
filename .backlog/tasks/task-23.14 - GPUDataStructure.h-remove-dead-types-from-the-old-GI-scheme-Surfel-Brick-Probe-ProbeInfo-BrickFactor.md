@@ -3,9 +3,10 @@ id: TASK-23.14
 title: >-
   GPUDataStructure.h: remove dead types from the old GI scheme
   (Surfel/Brick/Probe/ProbeInfo/BrickFactor)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-22 07:34'
+updated_date: '2026-05-22 08:37'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -38,11 +39,32 @@ References:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Surfel, SurfelGrid, Brick, BrickFactor, Probe, ProbeInfo struct declarations deleted from GPUDataStructure.h.
-- [ ] #2 Confirmation in closure note that shader-side .comp/.frag definitions are independent (not depending on the deleted C++ symbols).
-- [ ] #3 Build green; Main.exe -total_frames 10 exits 0; SSRC GI test path still renders.
+- [x] #1 Surfel, SurfelGrid, Brick, BrickFactor, Probe, ProbeInfo struct declarations deleted from GPUDataStructure.h.
+- [x] #2 Confirmation in closure note that shader-side .comp/.frag definitions are independent (not depending on the deleted C++ symbols).
+- [x] #3 Build green; Main.exe -total_frames 10 exits 0; SSRC GI test path still renders.
 - [ ] #4 Optional: any other stale types found during this audit listed in closure note for future cleanup.
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Deleted `Surfel`, `SurfelGrid` alias, `Brick`, `BrickFactor`, `Probe`, `ProbeInfo` C++ structs from `Source/Engine/Common/GPUDataStructure.h` (lines 204..256 of the previous version, ~52 lines removed). No replacements added.
+
+## Shader-side independence confirmed
+
+The same type names exist as **HLSL structs** in `Source/Shaders/HLSL/common/common.hlsl:501,509,515,521`. They are independent declarations (not generated from this C++ header — separate type system altogether). The shader code consuming them (`GIResolveSurfelPass.comp`, `GIBakeBrickFactorPass.frag`, etc.) continues to work.
+
+## Verification
+
+- `Scripts/BuildWin.ps1 -SkipShaderCompile` — clean build, no errors related to removed types.
+- `Main.exe -total_frames 10` exits 0.
+
+## Optional audit (AC #4)
+
+Other `GPUDataStructure.h` types spot-checked while reading: `VoxelizationConstantBuffer` (`LightDataService.cpp` references) and `AnimationConstantBuffer` (`AnimationDrawCallService.cpp` references) — both still consumed, kept.
+
+No other obviously-stale types found in this scan, but a fuller audit is not in scope for this subtask.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
