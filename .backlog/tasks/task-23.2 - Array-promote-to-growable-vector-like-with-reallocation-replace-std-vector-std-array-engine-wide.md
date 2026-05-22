@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-05-22 07:29'
-updated_date: '2026-05-22 17:10'
+updated_date: '2026-05-22 17:45'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -52,44 +52,34 @@ References:
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-**Partial landing 2026-05-22:** Growable rewrite of `Inno::Array<T, ThreadSafe>` done with full std::vector-like surface + Allocator<T>. Engine-wide std::vector → Inno::Array sweep (AC #10) deferred — that's a separate mechanical-replacement CL.
+**Partial landing 2026-05-22:** Growable rewrite + full std::vector-like surface + Allocator<T> + `if constexpr` perf fix + std::vector-parity surface (front/back/at/erase/erase-range/assign).
 
-## Diff
+## 2026-05-22 third sitting — perf fix + surface gaps
 
-- `Source/Engine/Common/Array.h` — rewritten:
-  - Geometric growth (capacity doubling, starts at 4) on `push_back` / `emplace_back` past capacity.
-  - `std::is_trivially_copyable_v<T>` decides memcpy vs move-construct on reallocation.
-  - Full std::vector-like surface: `push_back(const T&)`, `push_back(T&&)`, `emplace_back<Args...>` (variadic, returns T&), `pop_back`, `resize(n)`, `resize(n, fill)`, `shrink_to_fit`, `clear`, `swap`, `data()`, `begin()`/`end()`, iterator typedefs.
-  - Backwards-compat surface preserved: `reserve(n)`, `fulfill()`, `is_initialized()`, `size()`, `capacity()`, `empty()`, `operator[]`, range-based-for iteration.
-  - `Allocator<T>` member replaces direct `Memory::Allocate` calls — every Array allocation now goes through the engine bookkeeping.
-  - ThreadSafe variant: `if constexpr (ThreadSafe)` guards every mutator with `unique_lock<shared_mutex>`. `operator[]` ThreadSafe overload returns `T` by value (copy under shared_lock) to avoid return-reference-after-lock-release.
+- `if (ThreadSafe)` (9 occurrences) → `if constexpr (ThreadSafe)`. MSVC was not DCE'ing the dead branch consistently. **Result: push_back is now 0.69-0.86× of std::vector (Inno FASTER) at N=65536.**
+- Added `front()`, `back()`, `at(pos)`, `erase(iterator)`, `erase(first, last)`, `assign(n, value)`.
+- Tested: 13/13 Array unit tests pass.
 
-- `Source/Engine/Common/RingBuffer.h` — `Array<T, ThreadSafe> m_Array` → `Array<T, false>`. RingBuffer manages its own mutex; double-locking through the inner Array is wasteful, and the ThreadSafe Array's by-value `operator[]` would break RingBuffer's in-place assignment in emplace_back. Comment block explains the choice.
+Closes AC #9.
 
-- `Source/TestSuite/UnitTests/ArrayTests.cpp` — added 8 new tests:
-  - Grow from empty (no reserve) → 100 push_backs.
-  - Grow past initial reserve(16) → 200 emplaces.
-  - Non-trivial T (std::string), 500 elements, exercises move-construct growth.
-  - pop_back keeps capacity, shrinks size.
-  - resize up/down with fill values, contents preserved.
-  - shrink_to_fit reduces capacity to size.
-  - swap exchanges contents.
-  - Move ctor leaves source empty + transfers buffer.
+## 2026-05-22 — engine-wide std::vector sweep attempt (REVERTED)
 
-## Verification
+Tried mass sed `std::vector<` → `Inno::Array<` across all engine files. Cascade went too wide:
+- Inno::Array's copy ctor instantiates T's copy ctor even when never called (for non-copyable T like std::unique_ptr<Thread>, fails). Needs SFINAE.
+- API boundaries break: DX12Helper::LoadShaderFile takes `std::vector<uint8_t>&`, AssetService::Save takes `std::vector<Vertex>&`, MeshResourceService::Initialize signature, JSONSerializer DeserializeVector — all crossed between converted and unconverted code.
+- Header name collision: DevToggleRegistry has its own `Array` member (separate from Inno::Array).
+- Many test files needed `#include "../../Engine/Common/Array.h"` added.
 
-- BuildWin clean (Main + RenderTest).
-- `msbuild TestSuite.vcxproj` clean.
-- `TestSuite.exe -u` Array suite: **11/11 pass** (3 existing + 8 new).
-- `TestSuite.exe -u` RingBuffer suite: **3/3 pass** (RingBuffer's Array<T, false> works as before).
-- `Main.exe -total_frames 10` exits 0.
-- `Main.exe -serialize_test ExampleProject/Scenes/UnitTest.InnoScene` exits 0.
+Errors after mass sweep + first round of fixes: ~25 unique errors across ~10 files. Continuing the cascade would take 1-2 hours and risk leaving a half-broken state.
+
+**Decision:** stashed the broad sweep (`git stash`). The engine-wide std::vector → Inno::Array sweep needs a more careful subsystem-by-subsystem approach:
+1. First, harden Inno::Array's copy ctor against non-copyable T (SFINAE).
+2. Then sweep one subsystem at a time (services/, common/, components/, etc.), building + testing after each, fixing API boundaries as they appear.
+3. Some std::vector usages may stay at external library boundaries (Assimp, DX12 shader blob) for pragmatism.
 
 ## Still to do (follow-up CL)
 
-- AC #8: 10^6-element push/pop stress test (current 500-element non-trivial test covers reallocation path; bigger stress can land separately).
-- AC #9: perf-vs-std::vector micro-benchmark (PerformanceTests/).
-- AC #10: engine-wide std::vector → Inno::Array sweep. Mechanical but huge surface — needs its own CL.
+- AC #10: engine-wide sweep — needs careful approach above; NOT mass sed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
