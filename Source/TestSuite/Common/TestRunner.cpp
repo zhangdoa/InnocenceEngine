@@ -93,6 +93,7 @@ extern void RunAllocatorUnitTests();
 extern void RunQueueUnitTests();
 extern void RunHashMapUnitTests();
 extern void RunUnorderedSetUnitTests();
+extern void RunDequeUnitTests();
 
 extern void RunStringConversionPerformanceTests();
 extern void RunContainerPerformanceTests();
@@ -120,6 +121,7 @@ void TestRunner::RunUnitTests()
 	RunQueueUnitTests();
 	RunHashMapUnitTests();
 	RunUnorderedSetUnitTests();
+	RunDequeUnitTests();
 
 	Log(Success, "========== UNIT TESTS COMPLETE ==========\n");
 }

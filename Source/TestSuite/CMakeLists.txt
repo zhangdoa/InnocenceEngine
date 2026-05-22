@@ -16,6 +16,7 @@ set(TEST_SOURCES
     UnitTests/QueueTests.cpp
     UnitTests/HashMapTests.cpp
     UnitTests/UnorderedSetTests.cpp
+    UnitTests/DequeTests.cpp
     # Performance tests
     PerformanceTests/StringConversionPerf.cpp
     PerformanceTests/ContainerPerf.cpp
