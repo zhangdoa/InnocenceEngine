@@ -10,9 +10,18 @@ namespace Inno
 		virtual ~IObjectPool() = default;
 	};
 
+	// TObjectPool — fixed-capacity slab + intrusive freelist. Caller contract:
+	// not thread-safe; Destroy ptr must be from this pool; no double-free guard
+	// (cycle on m_CurrentFreeChunk->m_Next); no generation counter — stale T*
+	// after Destroy can collide with future Spawn.
 	template <typename T>
 	class TObjectPool : public IObjectPool
 	{
+		static_assert(alignof(T) <= alignof(std::max_align_t),
+			"TObjectPool slot layout assumes alignof(T) <= alignof(std::max_align_t). "
+			"Higher-alignment T (e.g. alignas(32) SIMD types) needs aligned Memory::Allocate "
+			"and per-slot padding.");
+
 		//Single-linked-list
 		struct Chunk
 		{

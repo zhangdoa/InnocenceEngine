@@ -93,13 +93,48 @@ void TestObjectPoolNullHandling()
 	TestRunner::EndTest(l_TestPassed);
 }
 
+void TestObjectPoolSlotReuseZeroInitialised()
+{
+	TestRunner::StartTest("ObjectPool: spawn after destroy yields zero-initialised slot");
+
+	auto l_ObjectPool = TObjectPool<uint32_t>::Create(4);
+	bool l_TestPassed = true;
+
+	auto l_First = l_ObjectPool->Spawn();
+	if (!l_First)
+	{
+		l_TestPassed = false;
+	}
+	else
+	{
+		*l_First = 0xDEADBEEF;
+		l_ObjectPool->Destroy(l_First);
+
+		auto l_Second = l_ObjectPool->Spawn();
+		if (!l_Second)
+		{
+			l_TestPassed = false;
+		}
+		else
+		{
+			// Destroy memsets the T region to 0, then Spawn placement-new T() zero-inits.
+			l_TestPassed = (*l_Second == 0);
+			l_ObjectPool->Destroy(l_Second);
+		}
+	}
+
+	TObjectPool<uint32_t>::Destruct(l_ObjectPool);
+	TestRunner::EndTest(l_TestPassed);
+}
+
 void RunObjectPoolUnitTests()
 {
 	TestRunner::StartTestSuite("ObjectPool Unit Tests");
-	
+
 	TestObjectPoolBasicOperations();
 	TestObjectPoolExhaustion();
 	TestObjectPoolNullHandling();
-	
+	TestObjectPoolSlotReuseZeroInitialised();
+
 	TestRunner::EndTestSuite();
 }
