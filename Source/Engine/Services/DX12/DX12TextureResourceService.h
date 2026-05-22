@@ -1,5 +1,6 @@
 #pragma once
 #include "../TextureResourceService.h"
+#include "../../Common/HashMap.h"
 #include "DX12Headers.h"
 
 namespace Inno
@@ -32,8 +33,8 @@ namespace Inno
 
 		DX12Context* m_ctx = nullptr;
 
-		std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_TextureBuffers_Upload;
-		std::unordered_map<uint64_t, std::vector<ComPtr<ID3D12Resource>>> m_TextureBuffers_Default;
+		Inno::HashMap<uint64_t, ComPtr<ID3D12Resource>> m_TextureBuffers_Upload;
+		Inno::HashMap<uint64_t, std::vector<ComPtr<ID3D12Resource>>> m_TextureBuffers_Default;
 
 		ID3D12RootSignature* m_2DMipmapRootSignature = nullptr;
 		ID3D12RootSignature* m_3DMipmapRootSignature = nullptr;

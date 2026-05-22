@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Common/ClassTemplate.h"
 #include "Common/LogService.h"
+#include "Common/HashMap.h"
 #include "Interface/IService.h"
 #include "Interface/IRenderingClient.h"
 #include "Interface/ILogicClient.h"
@@ -119,7 +120,7 @@ namespace Inno
 		EngineImpl* m_pImpl;
 
 		// Get<T>() is reachable from any thread; singletons_mutex_ guards both map and entries.
-		std::unordered_map<std::type_index, void*> singletons_;
+		Inno::HashMap<std::type_index, void*> singletons_;
 		mutable std::shared_mutex singletons_mutex_;
 	};
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "../MeshResourceService.h"
+#include "../../Common/HashMap.h"
 #include "DX12Headers.h"
 
 namespace Inno
@@ -36,7 +37,7 @@ namespace Inno
 			uint32_t m_VertexSRVSlot = UINT32_MAX;
 			uint32_t m_IndexSRVSlot  = UINT32_MAX;
 		};
-		std::unordered_map<uint32_t, DX12MeshGPUResources> m_DX12MeshResources;
+		Inno::HashMap<uint32_t, DX12MeshGPUResources> m_DX12MeshResources;
 
 		DX12Context* m_ctx = nullptr;
 	};

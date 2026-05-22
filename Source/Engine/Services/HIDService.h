@@ -1,5 +1,6 @@
 #pragma once
 #include "../Interface/IService.h"
+#include "../Common/HashMap.h"
 #include "../Interface/IWindowService.h"
 #include "../Common/MathHelper.h"
 
@@ -35,8 +36,8 @@ namespace Inno
 	using ButtonEvent = Event<std::function<void()>>;
 	using MouseMovementEvent = Event<std::function<void(float)>>;
 	enum class MouseMovementAxis { Horizontal, Vertical };
-	using ButtonEventMap = std::unordered_map<ButtonState, std::set<ButtonEvent>, ButtonStateHasher>;
-	using MouseMovementEventMap = std::unordered_map<MouseMovementAxis, std::set<MouseMovementEvent>>;
+	using ButtonEventMap = Inno::HashMap<ButtonState, std::set<ButtonEvent>, ButtonStateHasher>;
+	using MouseMovementEventMap = Inno::HashMap<MouseMovementAxis, std::set<MouseMovementEvent>>;
 
 	class HIDService : public IService
 	{

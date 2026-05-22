@@ -1,5 +1,6 @@
 #pragma once
 #include "EditorService.h"
+#include "../Common/HashMap.h"
 #include "../Common/Math.h"
 #include "../ThirdParty/JSONWrapper/JSONWrapper.h"
 
@@ -30,7 +31,7 @@ namespace Inno
 	{
 		using Handler = std::function<json(const json& payload, ix::WebSocket& ws)>;
 		std::mutex                                  mutex;
-		std::unordered_map<std::string, Handler>    handlers;
+		Inno::HashMap<std::string, Handler>    handlers;
 	};
 
 	inline json SerializeVec(const Vec3& v) { return { v.x, v.y, v.z }; }

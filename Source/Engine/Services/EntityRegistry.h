@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Common/STL14.h"
+#include "../Common/HashMap.h"
 #include "../Common/STL17.h"
 #include "../Common/EntityID.h"
 #include "../Common/ComponentStorage.h"
@@ -129,7 +130,7 @@ namespace Inno
         std::vector<EntityID>        m_FreeList;
         EntityID                     m_NextID = 1;   // 0 = INVALID_ENTITY
 
-        std::unordered_map<size_t, std::unique_ptr<IStorageWrapper>> m_Storages;
+        Inno::HashMap<size_t, std::unique_ptr<IStorageWrapper>> m_Storages;
 
         ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
     };

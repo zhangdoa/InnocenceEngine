@@ -1,5 +1,6 @@
 #pragma once
 #include "TemplateAssetService.h"
+#include "../Common/HashMap.h"
 
 #include "EntityRegistry.h"
 
@@ -32,9 +33,9 @@ namespace Inno
 
         ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 
-        std::unordered_map<MeshComponent*, std::vector<Vertex>> m_meshVertices;
-        std::unordered_map<MeshComponent*, std::vector<Index>> m_meshIndices;
-        std::unordered_map<TextureComponent*, void*> m_textureData;
+        Inno::HashMap<MeshComponent*, std::vector<Vertex>> m_meshVertices;
+        Inno::HashMap<MeshComponent*, std::vector<Index>> m_meshIndices;
+        Inno::HashMap<TextureComponent*, void*> m_textureData;
 
         EntityID m_basicNormalTextureEntity      = INVALID_ENTITY;
         EntityID m_basicAlbedoTextureEntity      = INVALID_ENTITY;

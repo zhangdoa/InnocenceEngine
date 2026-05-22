@@ -359,12 +359,15 @@ namespace Inno
 			return false;
 		}
 
-		void insert_into_empty_slots(const Key& key, const T& value)
+		// Universal-references + forwarding so move-only T (e.g. std::unique_ptr)
+		// works on grow_to's move path; lvalue callers (copy ctor) still copy.
+		template <class K, class V>
+		void insert_into_empty_slots(K&& key, V&& value)
 		{
 			const size_type m = mask();
 			size_type i = Hash{}(key) & m;
 			while (m_state[i] != Empty) i = (i + 1) & m;
-			::new (static_cast<void*>(m_data + i)) value_type(key, value);
+			::new (static_cast<void*>(m_data + i)) value_type(std::forward<K>(key), std::forward<V>(value));
 			m_state[i] = Occupied;
 			++m_size;
 		}
@@ -399,7 +402,7 @@ namespace Inno
 				{
 					if (oldState[i] == Occupied)
 					{
-						insert_into_empty_slots(oldData[i].first, oldData[i].second);
+						insert_into_empty_slots(std::move(oldData[i].first), std::move(oldData[i].second));
 						if constexpr (!std::is_trivially_destructible_v<value_type>) oldData[i].~value_type();
 					}
 				}

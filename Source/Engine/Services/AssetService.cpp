@@ -1,4 +1,5 @@
 #include "AssetService.h"
+#include "../Common/HashMap.h"
 #include "AssetService_Internal.h"
 #include "../Common/LogService.h"
 
@@ -12,19 +13,19 @@ namespace Inno::AssetServiceNS
 	std::deque<MeshAsset> m_MeshAssets;
 	std::vector<uint32_t> m_MeshFreeSlots;
 	std::vector<uint32_t> m_MeshGenerations;
-	std::unordered_map<std::string, MeshAssetHandle> m_MeshLUT;
+	Inno::HashMap<std::string, MeshAssetHandle> m_MeshLUT;
 	std::shared_mutex s_MeshMutex;
 
 	std::deque<MaterialAsset> m_MaterialAssets;
 	std::vector<uint32_t> m_MaterialFreeSlots;
 	std::vector<uint32_t> m_MaterialGenerations;
-	std::unordered_map<std::string, MaterialAssetHandle> m_MaterialLUT;
+	Inno::HashMap<std::string, MaterialAssetHandle> m_MaterialLUT;
 	std::shared_mutex s_MaterialMutex;
 
 	std::deque<TextureAsset> m_TextureAssets;
 	std::vector<uint32_t> m_TextureFreeSlots;
 	std::vector<uint32_t> m_TextureGenerations;
-	std::unordered_map<std::string, TextureAssetHandle> m_TextureLUT;
+	Inno::HashMap<std::string, TextureAssetHandle> m_TextureLUT;
 	std::shared_mutex s_TextureMutex;
 
 	std::mutex s_ImportTextureDedupMutex;

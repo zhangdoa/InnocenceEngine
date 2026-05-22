@@ -1,5 +1,6 @@
 #pragma once
 #include "AssetService.h"
+#include "../Common/HashMap.h"
 
 namespace Inno
 {
@@ -13,21 +14,21 @@ namespace Inno
 		extern std::deque<MeshAsset> m_MeshAssets;
 		extern std::vector<uint32_t> m_MeshFreeSlots;
 		extern std::vector<uint32_t> m_MeshGenerations;
-		extern std::unordered_map<std::string, MeshAssetHandle> m_MeshLUT;
+		extern Inno::HashMap<std::string, MeshAssetHandle> m_MeshLUT;
 		extern std::shared_mutex s_MeshMutex;
 
 		// Material asset registry
 		extern std::deque<MaterialAsset> m_MaterialAssets;
 		extern std::vector<uint32_t> m_MaterialFreeSlots;
 		extern std::vector<uint32_t> m_MaterialGenerations;
-		extern std::unordered_map<std::string, MaterialAssetHandle> m_MaterialLUT;
+		extern Inno::HashMap<std::string, MaterialAssetHandle> m_MaterialLUT;
 		extern std::shared_mutex s_MaterialMutex;
 
 		// Texture asset registry
 		extern std::deque<TextureAsset> m_TextureAssets;
 		extern std::vector<uint32_t> m_TextureFreeSlots;
 		extern std::vector<uint32_t> m_TextureGenerations;
-		extern std::unordered_map<std::string, TextureAssetHandle> m_TextureLUT;
+		extern Inno::HashMap<std::string, TextureAssetHandle> m_TextureLUT;
 		extern std::shared_mutex s_TextureMutex;
 
 		// Dedup guard for concurrent ImportTexture calls targeting the same instance

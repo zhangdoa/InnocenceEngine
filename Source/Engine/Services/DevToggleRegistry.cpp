@@ -1,4 +1,5 @@
 #include "DevToggleRegistry.h"
+#include "../Common/HashMap.h"
 
 #include <algorithm>
 #include <mutex>
@@ -12,8 +13,8 @@ namespace Inno
         namespace
         {
             std::mutex                                g_mutex;
-            std::unordered_map<std::string, Toggle>   g_toggles;
-            std::unordered_map<std::string, Action>   g_actions;
+            Inno::HashMap<std::string, Toggle>   g_toggles;
+            Inno::HashMap<std::string, Action>   g_actions;
         }
 
         void RegisterToggle(std::string name,

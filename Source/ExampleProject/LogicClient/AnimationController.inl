@@ -1,5 +1,6 @@
 
 #include "../../Engine/Services/EntityRegistry.h"
+#include "../../Engine/Common/HashMap.h"
 #include "../../Engine/Services/AnimationSimulationService.h"
 
 #include "../../Engine/Engine.h"
@@ -23,7 +24,7 @@ namespace Inno
 		std::string m_currentState;
 		bool m_isStateChanged;
 
-		std::unordered_map<std::string, std::function<void()>> m_states;
+		Inno::HashMap<std::string, std::function<void()>> m_states;
 	};
 
 	bool AnimationController::Setup()

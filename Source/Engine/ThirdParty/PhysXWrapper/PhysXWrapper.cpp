@@ -1,4 +1,5 @@
 #include "PhysXWrapper.h"
+#include "../../Common/HashMap.h"
 
 #if defined INNO_PLATFORM_WIN
 #include "PxPhysicsAPI.h"
@@ -44,8 +45,8 @@ namespace PhysXWrapperNS
 
 	bool createPxMesh(uint64_t index, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic, bool isConvex, std::vector<Vertex>& vertices, std::vector<Index>& indices);
 
-	std::unordered_map<uint64_t, PxConvexMesh*> PhysXConvexMeshes;
-	std::unordered_map<uint64_t, PxTriangleMesh*> PhysXTriangleMeshes;
+	Inno::HashMap<uint64_t, PxConvexMesh*> PhysXConvexMeshes;
+	Inno::HashMap<uint64_t, PxTriangleMesh*> PhysXTriangleMeshes;
 
 	std::vector<PhysXActor> PhysXActors;
 
