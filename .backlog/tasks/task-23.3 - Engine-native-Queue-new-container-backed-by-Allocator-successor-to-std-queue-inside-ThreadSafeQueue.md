@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-05-22 07:29'
-updated_date: '2026-05-22 15:51'
+updated_date: '2026-05-22 16:06'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -44,7 +44,7 @@ References:
 - [x] #5 UnitTest covers: FIFO order, grow on full, pop empties, copy/move ctors, non-trivial T.
 - [x] #6 StressTest: 10^6 push/pop interleaved, no leaks.
 - [ ] #7 Perf-vs-STL: push N then pop N, compared to std::queue<T>. Within 1.5× for trivial T.
-- [ ] #8 Direct std::queue<T> usages outside ThreadSafeQueue swapped to Inno::Queue<T> (count holdouts in closure note).
+- [x] #8 Direct std::queue<T> usages outside ThreadSafeQueue swapped to Inno::Queue<T> (count holdouts in closure note).
 <!-- AC:END -->
 
 ## Final Summary
