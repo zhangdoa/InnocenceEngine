@@ -16,4 +16,4 @@ Conditional skills (by task / change shape):
 
 On bug: `regression-build-chain` + user-level `regression-debug`. On commit: `commit-message-policy`, `peer-review-required`.
 
-Outputs: source diffs, Implementation Notes on the owning task. Alignment artifact under `.alignments/` for paper-port tasks. Layer-1 Visual Read in the closure record for rendering-output CLs.
+Outputs: source diffs, Implementation Notes on the owning task. Layer-1 Visual Read in the closure record for rendering-output CLs.

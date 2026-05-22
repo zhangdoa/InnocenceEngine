@@ -12,6 +12,8 @@
 // If a new legitimate image path appears, add it to NO_IMAGES_EXCLUDE_RE
 // below with a one-line justification.
 
+const { execSync } = require('child_process')
+
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|bmp|tga|webp|hdr|exr|pfm|tiff?|ico|dds|heic|psd)$/i
 
 const NO_IMAGES_EXCLUDE_RE = new RegExp([
@@ -21,12 +23,30 @@ const NO_IMAGES_EXCLUDE_RE = new RegExp([
   '^Source/Editor-Next/tests/.*-snapshots/',
 ].join('|'))
 
-function findViolations(staged) {
-  return staged.filter(f => IMAGE_EXT_RE.test(f) && !NO_IMAGES_EXCLUDE_RE.test(f))
+// Only block ADD / MODIFY / RENAME-to. Deletions of pre-existing images
+// must always pass — otherwise the gate prevents cleanup of its own
+// pre-existing violations.
+function getAddedOrModifiedImages(cwd) {
+  try {
+    const out = execSync(
+      `git diff --cached --name-status --find-renames`,
+      { cwd, encoding: 'utf8' }
+    )
+    const added = []
+    for (const line of out.split('\n')) {
+      const m = line.match(/^([AMR])\d*\t(?:.+\t)?(.+)$/)
+      if (!m) continue
+      const path = m[2]
+      if (IMAGE_EXT_RE.test(path) && !NO_IMAGES_EXCLUDE_RE.test(path)) {
+        added.push(path)
+      }
+    }
+    return added
+  } catch { return [] }
 }
 
 function run(ctx) {
-  const violations = findViolations(ctx.staged)
+  const violations = getAddedOrModifiedImages(ctx.cwd)
   if (violations.length === 0) return { ok: true }
   return { ok: false, block: () => emit(violations) }
 }

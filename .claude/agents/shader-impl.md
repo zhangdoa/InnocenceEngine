@@ -16,4 +16,4 @@ Conditional skills:
 
 On bug: `regression-build-chain` + user-level `regression-debug`. On commit: `commit-message-policy`, `peer-review-required`.
 
-Outputs: shader diffs, Implementation Notes on the owning task. Layer-1 Visual Read in the closure record. Alignment artifact under `.alignments/` for paper-port tasks.
+Outputs: shader diffs, Implementation Notes on the owning task. Layer-1 Visual Read in the closure record.

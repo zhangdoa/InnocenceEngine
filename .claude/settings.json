@@ -53,8 +53,6 @@
       "Bash(./RelWithDebInfo/Main.exe:*)",
       "Bash(./RelWithDebInfo/RenderTest.exe:*)",
       "Read(${CLAUDE_PROJECT_DIR}/**)",
-      "Write(${CLAUDE_PROJECT_DIR}/.alignments/**)",
-      "Edit(${CLAUDE_PROJECT_DIR}/.alignments/**)",
       "Write(${CLAUDE_PROJECT_DIR}/.backlog/**)",
       "Edit(${CLAUDE_PROJECT_DIR}/.backlog/**)",
       "Write(${CLAUDE_PROJECT_DIR}/.claude/**)",

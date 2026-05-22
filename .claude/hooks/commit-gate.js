@@ -66,7 +66,6 @@ const GATES = [
   require('./gates/data-generated'),  // needsTranscript: false (structural; first)
   require('./gates/no-images'),       // needsTranscript: false (structural; near-first)
   require('./gates/file-size'),       // needsTranscript: false
-  require('./gates/paper-port'),      // needsTranscript: false
   require('./gates/closure-staleness'),// needsTranscript: false (symmetric to closure-evidence)
   require('./gates/peer-review'),     // needsTranscript: false (before attribution — richer claim first)
   require('./gates/visual-review'),   // needsTranscript: false (after peer-review — narrower trigger)

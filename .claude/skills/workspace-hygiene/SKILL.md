@@ -20,7 +20,6 @@ Do not create new `*.md`, `README`, design doc, roadmap, spec, or architecture n
 - `.claude/agents/`, `.claude/skills/` — agent manifests and skills.
 - `.backlog/tasks/` — backlog tasks.
 - Subtree `CLAUDE.md` — the venue for **all** subtree-level conventions: ownership, scope, policies, build-tool quirks, naming rules, inventory tables. Anything a future agent entering the subtree needs to know.
-- `.alignments/` — paper-alignment audits.
 
 Cross-session context goes in backlog task `## Implementation Notes`, not a standalone doc.
 

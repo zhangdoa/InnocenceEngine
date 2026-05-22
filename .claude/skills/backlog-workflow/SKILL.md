@@ -11,7 +11,6 @@ Generic task-first workflow, status flow, ownership, cross-session continuity, a
 
 - Tasks live under `.backlog/tasks/*.md` as the single AI-authored cross-session medium.
 - Manipulate via `mcp__backlog__*` tools (preferred) or direct file edits.
-- `paper-port`-labelled tasks also produce an alignment artefact under `.alignments/` at closure (see skill `paper-audit`).
 
 ## Closure-staleness gate
 
