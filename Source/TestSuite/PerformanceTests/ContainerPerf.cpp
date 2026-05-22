@@ -4,12 +4,16 @@
 #include "../../Engine/Common/Array.h"
 #include "../../Engine/Common/Queue.h"
 #include "../../Engine/Common/HashMap.h"
+#include "../../Engine/Common/UnorderedSet.h"
+#include "../../Engine/Common/Deque.h"
 #include "../../Engine/Common/Allocator.h"
 #include "../../Engine/Common/LogService.h"
 #include "../../Engine/Engine.h"
 
+#include <deque>
 #include <queue>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 using namespace Inno;
@@ -147,25 +151,109 @@ static void TestHashMapPerformance()
 
 static void TestAllocatorPerformance()
 {
-	TestRunner::StartTest("std::vector<T, Inno::Allocator> vs std::vector<T> — push_back");
+	TestRunner::StartTest("std::vector<T, Inno::Allocator> vs std::vector<T> — push_back + clear");
 
 	const size_t N = TestConfig::MediumDataSize;
 
-	auto innoTime = TestTimer::MeasureFunction([&]()
+	auto innoPush = TestTimer::MeasureFunction([&]()
 	{
 		std::vector<int, Allocator<int>> v;
 		v.reserve(N);
 		for (size_t i = 0; i < N; ++i) v.emplace_back(static_cast<int>(i));
 	});
-
-	auto stlTime = TestTimer::MeasureFunction([&]()
+	auto stlPush = TestTimer::MeasureFunction([&]()
 	{
 		std::vector<int> v;
 		v.reserve(N);
 		for (size_t i = 0; i < N; ++i) v.emplace_back(static_cast<int>(i));
 	});
 
-	Log(Success, "Inno::Allocator vs std::allocator speed ratio: ", innoTime / stlTime, " (Inno ", innoTime, "ms, STL ", stlTime, "ms)");
+	// std::vector<int>::clear() is just a size reset for trivial T — to get a
+	// signal on the allocator's deallocate path we measure ctor+fill+dtor
+	// (deallocate happens at scope exit) over a loop.
+	auto innoClear = TestTimer::MeasureFunction([&]()
+	{
+		for (size_t k = 0; k < 256; ++k)
+		{
+			std::vector<int, Allocator<int>> v;
+			v.reserve(N);
+			for (size_t i = 0; i < N; ++i) v.emplace_back(static_cast<int>(i));
+		}
+	});
+	auto stlClear = TestTimer::MeasureFunction([&]()
+	{
+		for (size_t k = 0; k < 256; ++k)
+		{
+			std::vector<int> v;
+			v.reserve(N);
+			for (size_t i = 0; i < N; ++i) v.emplace_back(static_cast<int>(i));
+		}
+	});
+
+	Log(Success, "Inno::Allocator vs std::allocator (push_back)      : ratio ", innoPush / stlPush, " (Inno ", innoPush, "ms, STL ", stlPush, "ms)");
+	Log(Success, "Inno::Allocator vs std::allocator (alloc+fill+free): ratio ", innoClear / stlClear, " (Inno ", innoClear, "ms, STL ", stlClear, "ms, 256 iters)");
+	TestRunner::EndTest(true);
+}
+
+static void TestUnorderedSetPerformance()
+{
+	TestRunner::StartTest("UnorderedSet vs std::unordered_set — insert + lookup + erase");
+
+	const size_t N = TestConfig::MediumDataSize;
+
+	auto innoTime = TestTimer::MeasureFunction([&]()
+	{
+		UnorderedSet<int> s;
+		s.reserve(N);
+		for (size_t i = 0; i < N; ++i) s.insert(static_cast<int>(i));
+		long long hits = 0;
+		for (size_t i = 0; i < N; ++i) if (s.contains(static_cast<int>(i))) ++hits;
+		for (size_t i = 0; i < N; i += 2) s.erase(static_cast<int>(i));
+		(void)hits;
+	});
+
+	auto stlTime = TestTimer::MeasureFunction([&]()
+	{
+		std::unordered_set<int> s;
+		s.reserve(N);
+		for (size_t i = 0; i < N; ++i) s.insert(static_cast<int>(i));
+		long long hits = 0;
+		for (size_t i = 0; i < N; ++i) if (s.find(static_cast<int>(i)) != s.end()) ++hits;
+		for (size_t i = 0; i < N; i += 2) s.erase(static_cast<int>(i));
+		(void)hits;
+	});
+
+	Log(Success, "UnorderedSet vs std::unordered_set speed ratio: ", innoTime / stlTime, " (Inno ", innoTime, "ms, STL ", stlTime, "ms)");
+	TestRunner::EndTest(true);
+}
+
+static void TestDequePerformance()
+{
+	TestRunner::StartTest("Deque vs std::deque — emplace_back + index-iterate + clear");
+
+	const size_t N = TestConfig::MediumDataSize;
+
+	auto innoTime = TestTimer::MeasureFunction([&]()
+	{
+		Deque<int> d;
+		for (size_t i = 0; i < N; ++i) d.emplace_back(static_cast<int>(i));
+		long long sum = 0;
+		for (size_t i = 0; i < N; ++i) sum += d[i];
+		d.clear();
+		volatile long long sink = sum; (void)sink;
+	});
+
+	auto stlTime = TestTimer::MeasureFunction([&]()
+	{
+		std::deque<int> d;
+		for (size_t i = 0; i < N; ++i) d.emplace_back(static_cast<int>(i));
+		long long sum = 0;
+		for (size_t i = 0; i < N; ++i) sum += d[i];
+		d.clear();
+		volatile long long sink = sum; (void)sink;
+	});
+
+	Log(Success, "Deque vs std::deque speed ratio: ", innoTime / stlTime, " (Inno ", innoTime, "ms, STL ", stlTime, "ms)");
 	TestRunner::EndTest(true);
 }
 
@@ -177,6 +265,8 @@ void RunContainerPerformanceTests()
 	TestQueuePerformance();
 	TestHashMapPerformance();
 	TestAllocatorPerformance();
+	TestUnorderedSetPerformance();
+	TestDequePerformance();
 
 	TestRunner::EndTestSuite();
 }
