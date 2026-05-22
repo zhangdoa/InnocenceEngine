@@ -11,6 +11,7 @@ set(TEST_SOURCES
     UnitTests/EntityRegistryTests.cpp
     UnitTests/FixedSizeStringTests.cpp
     UnitTests/MemoryTests.cpp
+    UnitTests/DoubleBufferTests.cpp
     # Performance tests
     PerformanceTests/StringConversionPerf.cpp
     PerformanceTests/ContainerPerf.cpp

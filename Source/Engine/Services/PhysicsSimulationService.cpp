@@ -2,7 +2,6 @@
 
 #include "../Common/MathHelper.h"
 #include "../Common/LogService.h"
-#include "../Common/DoubleBuffer.h"
 #include "EntityRegistry.h"
 #include "SceneService.h"
 #include "AssetService.h"

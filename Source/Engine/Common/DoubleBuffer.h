@@ -4,50 +4,43 @@
 
 namespace Inno
 {
+	// SPMC double buffer. Contract: ONE producer thread issuing Write + Flip;
+	// any number of reader threads issuing Read. Producer must not Write between
+	// Flip and the next consumer drain (the post-Flip back is the old front,
+	// any in-flight Write to it races with the post-Flip producer write).
+	// Sole consumer: WinWindowService::m_WindowEvents.
 	template <typename BufferType>
 	class DoubleBuffer
 	{
 	public:
-		DoubleBuffer()
-			: m_FrontIndex(0)
-			, m_ReadersCount(0)
-		{
-		}
+		DoubleBuffer() : m_FrontIndex(0) {}
 
 		DoubleBuffer(const DoubleBuffer&) = delete;
 		DoubleBuffer& operator=(const DoubleBuffer&) = delete;
 
-		// Single-producer: no inter-writer locking; back-buffer index is derived from m_FrontIndex.
 		template <typename Func>
 		auto Write(Func&& p_Func)
 		{
-			int l_BackIndex = 1 - m_FrontIndex.load(std::memory_order_relaxed);
-			p_Func(m_Buffers[l_BackIndex]);
+			std::shared_lock<std::shared_mutex> lock(m_Mutex);
+			p_Func(m_Buffers[1 - m_FrontIndex]);
 		}
 
 		template <typename Func>
 		auto Read(Func&& p_Func) const
 		{
-			m_ReadersCount.fetch_add(1, std::memory_order_acquire);
-			int l_LocalFront = m_FrontIndex.load(std::memory_order_relaxed);
-			p_Func(m_Buffers[l_LocalFront]);
-			m_ReadersCount.fetch_sub(1, std::memory_order_release);
+			std::shared_lock<std::shared_mutex> lock(m_Mutex);
+			p_Func(m_Buffers[m_FrontIndex]);
 		}
 
 		void Flip()
 		{
-			while (m_ReadersCount.load(std::memory_order_acquire) != 0)
-			{
-				std::this_thread::yield();
-			}
-
-			int l_OldFront = m_FrontIndex.load(std::memory_order_relaxed);
-			m_FrontIndex.store(1 - l_OldFront, std::memory_order_release);
+			std::unique_lock<std::shared_mutex> lock(m_Mutex);
+			m_FrontIndex = 1 - m_FrontIndex;
 		}
 
 	private:
-		std::atomic<int> m_FrontIndex;
-		mutable std::atomic<int> m_ReadersCount;
+		int m_FrontIndex;
 		BufferType m_Buffers[2];
+		mutable std::shared_mutex m_Mutex;
 	};
 }

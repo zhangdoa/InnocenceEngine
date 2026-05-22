@@ -1,10 +1,10 @@
 ---
 id: TASK-23.6
 title: 'DoubleBuffer: audit single-producer contract + tighten ordering'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-22 07:29'
-updated_date: '2026-05-22 07:32'
+updated_date: '2026-05-22 09:05'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -41,14 +41,70 @@ References:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Stale #include in PhysicsSimulationService.cpp removed.
-- [ ] #2 Decision A vs B recorded with reason. If B, header deleted and pattern inlined; rest of ACs skip.
-- [ ] #3 If A: Memory-ordering audit complete; documented in header comment.
-- [ ] #4 If A: WinWindowService usage verified single-producer (Win32 message-loop thread is sole producer of m_WindowEvents).
-- [ ] #5 If A: UnitTest exists: producer-flip-consumer pattern, 10^5 iterations on shared atomic counters; no torn reads.
-- [ ] #6 If A: StressTest: 4 readers + 1 producer + flips; assertion on read-consistency holds.
+- [x] #1 Stale #include in PhysicsSimulationService.cpp removed.
+- [x] #2 Decision A vs B recorded with reason. If B, header deleted and pattern inlined; rest of ACs skip.
+- [x] #3 If A: Memory-ordering audit complete; documented in header comment.
+- [x] #4 If A: WinWindowService usage verified single-producer (Win32 message-loop thread is sole producer of m_WindowEvents).
+- [x] #5 If A: UnitTest exists: producer-flip-consumer pattern, 10^5 iterations on shared atomic counters; no torn reads.
+- [x] #6 If A: StressTest: 4 readers + 1 producer + flips; assertion on read-consistency holds.
 - [ ] #7 Optional: TSan / Helgrind clean on the stress test (record verdict).
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+**Resolution: Option A** — kept as foundation primitive, hardened. Memory-ordering audit found a real race that the previous atomic-based impl could not fix without becoming a mutex anyway, so the impl was replaced with a `shared_mutex` (shared for Read+Write, unique for Flip).
+
+## Audit finding: race in the atomic protocol
+
+The previous impl used `m_FrontIndex` (atomic int) + `m_ReadersCount` (atomic int). Flip's protocol was:
+
+```
+while (readers != 0) yield;
+store(front, 1-front, release);
+```
+
+The race I found and reproduced with a test (snapA=5274, snapB=5272 from the same `front`):
+
+1. T0: Producer calls Flip. Load readers = 0. Pass the while loop.
+2. T1: New reader fetch_adds readers → 1.
+3. T2: New reader loads front (acquire) → still OLD front (Flip hasn't stored yet).
+4. T3: Producer's Flip stores front (release) → newFront.
+5. T4: New reader reads m_Buffers[oldFront], snapshots field A.
+6. T5: Producer iteration K+1's Write: load front = newFront, back = oldFront, writes m_Buffers[oldFront]. **Concurrent write to the same buffer the reader is mid-read on.**
+7. T6: New reader snapshots field B. Sees the newly-written iter K+1 value. Torn.
+
+No amount of memory ordering on m_FrontIndex / m_ReadersCount fixes this — the gap is between Flip's readers-check and its front-store. The lock is implicit; making it explicit is the fix.
+
+## Diff
+
+- `Source/Engine/Common/DoubleBuffer.h` — replaced atomic-protocol impl with `std::shared_mutex`:
+  - `Write` and `Read` take a `shared_lock` (Write+Read can be concurrent; they target different buffers anyway).
+  - `Flip` takes a `unique_lock` — guarantees that the front-swap is mutually exclusive with all readers and writers.
+  - Removed `std::atomic` members, removed memory-ordering parameters, removed busy-yield loop.
+  - Tightened the header contract comment.
+- `Source/Engine/Services/PhysicsSimulationService.cpp` — removed stale `#include "../Common/DoubleBuffer.h"` (file had no DoubleBuffer<> usage).
+- `Source/TestSuite/UnitTests/DoubleBufferTests.cpp` (new) — 3 tests:
+  1. Basic Write → Flip → Read.
+  2. SPSC 10^5 iterations, no torn reads (this is the test that previously caught the race).
+  3. 4 concurrent readers + 1 producer + Flip, 50k iterations.
+- `Source/TestSuite/Common/TestRunner.cpp`, `Source/TestSuite/CMakeLists.txt` — register DoubleBufferTests.
+
+## Verification
+
+- `BuildWin.ps1 -SkipShaderCompile` + `msbuild TestSuite.vcxproj` — clean.
+- `TestSuite.exe -u` DoubleBuffer: 3/3 pass (~5ms SPSC, ~15ms multi-reader).
+- `Main.exe -total_frames 10` — exits 0. WinWindow's `DoubleBuffer<std::vector<IWindowEvent*>>` working under the new impl.
+
+## ACs
+
+- #1 Stale include removed.
+- #2 Decision A. Header rewritten with shared_mutex.
+- #3 Audit + new contract comment in header.
+- #4 WinWindowService verified single-producer (Win32 message-pump thread).
+- #5 + #6 SPSC + multi-reader unit/stress tests.
+- #7 TSan/Helgrind not available in this MSVC RelWithDebInfo build — N/A. Diagnostic verification by hand: SPSC test that previously detected the race now passes 100k iterations clean.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
