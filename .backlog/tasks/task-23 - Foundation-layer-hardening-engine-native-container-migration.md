@@ -4,7 +4,7 @@ title: Foundation layer hardening + engine-native container migration
 status: To Do
 assignee: []
 created_date: '2026-04-13 11:25'
-updated_date: '2026-05-22 07:32'
+updated_date: '2026-05-22 09:39'
 labels: []
 dependencies: []
 priority: medium
@@ -76,3 +76,47 @@ Caution: fixing `m_content[strlen-1]` → `m_content[strlen]` changes what is st
 - [ ] #13 Every shipped foundation feature has unit + smoke/stress tests in Source/TestSuite/; perf-vs-STL comparison where applicable.
 - [ ] #14 RenderTest.exe and Main.exe -total_frames 10 both exit 0 after full migration.
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Session 2026-05-22 progress
+
+**Closed (12 subtasks):**
+- 23.6 DoubleBuffer audit — real race fixed, replaced atomic protocol with shared_mutex; SPMC test caught + verifies.
+- 23.7 RingBuffer audit — size()/currentElementPos() now lock; ThreadSafe operator[] / currentElement() return by value; concurrent test added.
+- 23.8 Atomic removed (zero production callers).
+- 23.9 AtomicObject deleted (cascade from 23.10).
+- 23.10 Handle → std::shared_ptr (decision D; resolves Handle vs AssetHandle naming collision).
+- 23.11 AssetData renamed to MeshAsset/TextureAsset/MaterialAsset; file AssetData.h → AssetTypes.h.
+- 23.12 AssetImportData.h deleted (zero call-site usage of the typedef).
+- 23.13 IOService 19 methods → PascalCase via sed.
+- 23.14 GPUDataStructure stale GI types removed (Surfel/Brick/Probe/etc.).
+- 23.15 FixedSizeString — actual fix already historically landed (fef48be5); this CL fixed a stale test input typo from c22b3b647.
+- 23.16 Memory::Reallocate UB resolved (malloc/realloc/free throughout).
+- 23.17 ObjectPool audit — alignment static_assert; contract comment; slot-reuse test.
+
+**Partial (1 subtask):**
+- 23.1 Allocator hardening (overflow guard + alignment doc + unit tests done). Engine-wide STL-plumb sweep (AC #3) and perf-vs-STL (AC #6) deferred.
+
+**Open / multi-session (5 subtasks):**
+- 23.2 Array growable + std::vector replacement engine-wide.
+- 23.3 Engine-native Queue<T> (new container).
+- 23.4 Engine-native HashMap<K,V> (new container).
+- 23.5 ThreadSafe* containers migrate to wrap engine-native Array/Queue/HashMap (depends on 23.2/3/4).
+- 23.18 TestSuite cross-cutting coverage matrix (depends on container arc).
+
+## Sequencing for next session
+
+The remaining 5 form one arc: 23.1 plumb → 23.2 (Array growable) → 23.3 + 23.4 (Queue, HashMap) → 23.5 (ThreadSafe migrate) → 23.18 (coverage roll-up).
+
+Start with finishing 23.1's plumb sweep (mechanical) OR jump to 23.2 (substantial new code). 23.2's Array rewrite has the highest impact — every std::vector usage downstream depends on it.
+
+## Bugs fixed in passing (not in any subtask but worth noting)
+
+- DoubleBuffer atomic-protocol race (snapA != snapB) — found and fixed in 23.6.
+- RingBuffer ThreadSafe variant size()/[]/currentElement() races — found and fixed in 23.7.
+- AssetService_h had a stale `#include "AssetData.h"` after the rename (auto-handled in 23.11 sweep).
+- PhysicsSimulationService.cpp had a stale `#include "DoubleBuffer.h"` (removed in 23.6).
+- FixedSizeStringTests `Component` typo (lost slash from c22b3b647, fixed in 23.15).
+<!-- SECTION:NOTES:END -->
