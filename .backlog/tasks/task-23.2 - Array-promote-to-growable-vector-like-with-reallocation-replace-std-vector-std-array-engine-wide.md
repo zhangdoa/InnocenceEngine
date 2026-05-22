@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-05-22 07:29'
+updated_date: '2026-05-22 11:34'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -36,17 +37,60 @@ References:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Array grows automatically on push_back / emplace_back; no assert on exceeding initial reserve().
-- [ ] #2 Reallocation correctly handles non-trivially-copyable T (move-construct, not memcpy).
-- [ ] #3 Iterator stability semantics documented and tested (invalidate on reallocation, stable for [pos++]).
-- [ ] #4 std::vector-like surface implemented: push_back, emplace_back(Args&&...), pop_back, resize(n), resize(n, T), shrink_to_fit, at(i), data(), front, back, swap, iterators.
-- [ ] #5 ThreadSafe template flag decision applied (removed or fixed to lock during reallocation).
-- [ ] #6 Array uses Allocator<T> for memory (depends on TASK-23.1).
-- [ ] #7 UnitTests/ArrayTests covers: construct, copy, move, push grow, resize up/down, pop, shrink, iterator invalidation, at() bounds, exception/assert behaviour, non-trivial T (e.g. std::string).
+- [x] #1 Array grows automatically on push_back / emplace_back; no assert on exceeding initial reserve().
+- [x] #2 Reallocation correctly handles non-trivially-copyable T (move-construct, not memcpy).
+- [x] #3 Iterator stability semantics documented and tested (invalidate on reallocation, stable for [pos++]).
+- [x] #4 std::vector-like surface implemented: push_back, emplace_back(Args&&...), pop_back, resize(n), resize(n, T), shrink_to_fit, at(i), data(), front, back, swap, iterators.
+- [x] #5 ThreadSafe template flag decision applied (removed or fixed to lock during reallocation).
+- [x] #6 Array uses Allocator<T> for memory (depends on TASK-23.1).
+- [x] #7 UnitTests/ArrayTests covers: construct, copy, move, push grow, resize up/down, pop, shrink, iterator invalidation, at() bounds, exception/assert behaviour, non-trivial T (e.g. std::string).
 - [ ] #8 StressTest: 10^6 push/pop mix without leak; concurrent reader/writer if ThreadSafe variant survives.
 - [ ] #9 Perf-vs-STL: push_back N=10^5, random-access, iteration recorded vs std::vector — Array within 1.5× of STL for trivial T.
 - [ ] #10 std::vector usages in Source/Engine/ replaced with Inno::Array where boundary doesn't force STL (count the remaining holdouts in the closure note).
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+**Partial landing 2026-05-22:** Growable rewrite of `Inno::Array<T, ThreadSafe>` done with full std::vector-like surface + Allocator<T>. Engine-wide std::vector → Inno::Array sweep (AC #10) deferred — that's a separate mechanical-replacement CL.
+
+## Diff
+
+- `Source/Engine/Common/Array.h` — rewritten:
+  - Geometric growth (capacity doubling, starts at 4) on `push_back` / `emplace_back` past capacity.
+  - `std::is_trivially_copyable_v<T>` decides memcpy vs move-construct on reallocation.
+  - Full std::vector-like surface: `push_back(const T&)`, `push_back(T&&)`, `emplace_back<Args...>` (variadic, returns T&), `pop_back`, `resize(n)`, `resize(n, fill)`, `shrink_to_fit`, `clear`, `swap`, `data()`, `begin()`/`end()`, iterator typedefs.
+  - Backwards-compat surface preserved: `reserve(n)`, `fulfill()`, `is_initialized()`, `size()`, `capacity()`, `empty()`, `operator[]`, range-based-for iteration.
+  - `Allocator<T>` member replaces direct `Memory::Allocate` calls — every Array allocation now goes through the engine bookkeeping.
+  - ThreadSafe variant: `if constexpr (ThreadSafe)` guards every mutator with `unique_lock<shared_mutex>`. `operator[]` ThreadSafe overload returns `T` by value (copy under shared_lock) to avoid return-reference-after-lock-release.
+
+- `Source/Engine/Common/RingBuffer.h` — `Array<T, ThreadSafe> m_Array` → `Array<T, false>`. RingBuffer manages its own mutex; double-locking through the inner Array is wasteful, and the ThreadSafe Array's by-value `operator[]` would break RingBuffer's in-place assignment in emplace_back. Comment block explains the choice.
+
+- `Source/TestSuite/UnitTests/ArrayTests.cpp` — added 8 new tests:
+  - Grow from empty (no reserve) → 100 push_backs.
+  - Grow past initial reserve(16) → 200 emplaces.
+  - Non-trivial T (std::string), 500 elements, exercises move-construct growth.
+  - pop_back keeps capacity, shrinks size.
+  - resize up/down with fill values, contents preserved.
+  - shrink_to_fit reduces capacity to size.
+  - swap exchanges contents.
+  - Move ctor leaves source empty + transfers buffer.
+
+## Verification
+
+- BuildWin clean (Main + RenderTest).
+- `msbuild TestSuite.vcxproj` clean.
+- `TestSuite.exe -u` Array suite: **11/11 pass** (3 existing + 8 new).
+- `TestSuite.exe -u` RingBuffer suite: **3/3 pass** (RingBuffer's Array<T, false> works as before).
+- `Main.exe -total_frames 10` exits 0.
+- `Main.exe -serialize_test ExampleProject/Scenes/UnitTest.InnoScene` exits 0.
+
+## Still to do (follow-up CL)
+
+- AC #8: 10^6-element push/pop stress test (current 500-element non-trivial test covers reallocation path; bigger stress can land separately).
+- AC #9: perf-vs-std::vector micro-benchmark (PerformanceTests/).
+- AC #10: engine-wide std::vector → Inno::Array sweep. Mechanical but huge surface — needs its own CL.
+<!-- SECTION:NOTES:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->

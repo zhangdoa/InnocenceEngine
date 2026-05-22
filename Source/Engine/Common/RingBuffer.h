@@ -179,7 +179,10 @@ namespace Inno
 		size_t m_CurrentElementIndex = 0;
 		size_t m_ElementCount = 0;
 		bool m_isLoopingOverOnce = false;
-		Array<T, ThreadSafe> m_Array;
+		// RingBuffer manages its own m_Mutex; the inner Array stays non-thread-safe
+		// to avoid double-locking and to keep operator[] returning T& for in-place
+		// assignment in emplace_back.
+		Array<T, false> m_Array;
 		mutable std::shared_mutex m_Mutex;
 	};
 }
