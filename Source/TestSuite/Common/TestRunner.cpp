@@ -90,6 +90,7 @@ extern void RunFixedSizeStringUnitTests();
 extern void RunMemoryUnitTests();
 extern void RunDoubleBufferUnitTests();
 extern void RunAllocatorUnitTests();
+extern void RunQueueUnitTests();
 
 extern void RunStringConversionPerformanceTests();
 extern void RunContainerPerformanceTests();
@@ -113,6 +114,7 @@ void TestRunner::RunUnitTests()
 	RunMemoryUnitTests();
 	RunDoubleBufferUnitTests();
 	RunAllocatorUnitTests();
+	RunQueueUnitTests();
 
 	Log(Success, "========== UNIT TESTS COMPLETE ==========\n");
 }

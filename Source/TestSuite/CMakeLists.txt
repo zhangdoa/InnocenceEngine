@@ -13,6 +13,7 @@ set(TEST_SOURCES
     UnitTests/MemoryTests.cpp
     UnitTests/DoubleBufferTests.cpp
     UnitTests/AllocatorTests.cpp
+    UnitTests/QueueTests.cpp
     # Performance tests
     PerformanceTests/StringConversionPerf.cpp
     PerformanceTests/ContainerPerf.cpp
