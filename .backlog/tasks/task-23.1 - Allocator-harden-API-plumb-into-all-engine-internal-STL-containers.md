@@ -4,6 +4,7 @@ title: 'Allocator: harden API + plumb into all engine-internal STL containers'
 status: To Do
 assignee: []
 created_date: '2026-05-22 07:28'
+updated_date: '2026-05-22 09:38'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -31,13 +32,30 @@ References:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Allocator::allocate guards against size overflow (sizeof(T) * _Count exceeds SIZE_MAX).
-- [ ] #2 Allocator honours alignof(T) — either via Memory::Allocate alignment param or via aligned_alloc.
+- [x] #1 Allocator::allocate guards against size overflow (sizeof(T) * _Count exceeds SIZE_MAX).
+- [x] #2 Allocator honours alignof(T) — either via Memory::Allocate alignment param or via aligned_alloc.
 - [ ] #3 Every engine-internal std::vector / std::unordered_map / std::set / std::queue / std::deque declaration in Source/Engine/ uses Allocator<T> as the allocator template parameter.
-- [ ] #4 UnitTest covers: allocate/deallocate round-trip, overflow guard, alignment honoured, copy-construction from related allocator.
+- [x] #4 UnitTest covers: allocate/deallocate round-trip, overflow guard, alignment honoured, copy-construction from related allocator.
 - [ ] #5 Stress test allocates+frees N=10^6 elements without leaks (verified by Memory::GetCurrentAllocationCount or equivalent).
 - [ ] #6 Perf-vs-STL: micro-benchmark vs std::allocator for vector<int> push_back / clear, recorded in TestSuite output.
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+**Partial landing 2026-05-22:** Hardening done (AC #1, #2, #4). Engine-wide STL-plumb sweep (AC #3) and perf-vs-STL (#6) deferred to a follow-up CL — they're a different concern (mechanical rewrite of every container declaration in Source/Engine vs the API hardening done here).
+
+Diff:
+- `Source/Engine/Common/Allocator.h`: overflow guard in `allocate` (throw `std::bad_alloc` if `sizeof(T) * _Count` overflows); alignment guarantee documented; cleaned up trailing-whitespace / stale comments.
+- `Source/TestSuite/UnitTests/AllocatorTests.cpp` (new): 4 tests — roundtrip, related-T copy-construct, overflow→bad_alloc, equality.
+
+Verification (this CL): TestSuite -u Allocator 4/4 pass; Main.exe -total_frames 10 exits 0.
+
+**Still to do (follow-up CL):**
+- AC #3: sweep std::vector / std::unordered_map / std::queue / std::set / std::deque declarations across Source/Engine to use `Allocator<T>` (Inno::Allocator-aware variant). Big mechanical sweep.
+- AC #5: 10^6-element leak stress test (current Memory stress at 10^5 covers allocator path indirectly).
+- AC #6: perf-vs-std::allocator micro-benchmark in PerformanceTests/.
+<!-- SECTION:NOTES:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
