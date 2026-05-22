@@ -4,9 +4,9 @@
 
 namespace Inno
 {
-	struct MeshAssetData;
-	struct TextureAssetData;
-	struct MaterialAssetData;
+	struct MeshAsset;
+	struct TextureAsset;
+	struct MaterialAsset;
 
 	template<typename T>
 	struct AssetHandle
@@ -23,9 +23,9 @@ namespace Inno
 		bool operator!=(const AssetHandle& other) const { return !(*this == other); }
 	};
 
-	using MeshAssetHandle = AssetHandle<MeshAssetData>;
-	using TextureAssetHandle = AssetHandle<TextureAssetData>;
-	using MaterialAssetHandle = AssetHandle<MaterialAssetData>;
+	using MeshAssetHandle = AssetHandle<MeshAsset>;
+	using TextureAssetHandle = AssetHandle<TextureAsset>;
+	using MaterialAssetHandle = AssetHandle<MaterialAsset>;
 }
 
 namespace std

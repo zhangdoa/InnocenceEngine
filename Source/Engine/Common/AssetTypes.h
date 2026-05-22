@@ -13,7 +13,7 @@ namespace Inno
 		Released
 	};
 
-	struct MeshAssetData
+	struct MeshAsset
 	{
 		ObjectName m_Name;
 		ObjectLifespan m_Lifespan = ObjectLifespan::Invalid;
@@ -42,7 +42,7 @@ namespace Inno
 		}
 	};
 
-	struct TextureAssetData
+	struct TextureAsset
 	{
 		ObjectName m_Name;
 		ObjectLifespan m_Lifespan = ObjectLifespan::Invalid;
@@ -51,7 +51,7 @@ namespace Inno
 		TextureDesc m_TextureDesc;
 	};
 
-	struct MaterialAssetData
+	struct MaterialAsset
 	{
 		ObjectName m_Name;
 		ObjectLifespan m_Lifespan = ObjectLifespan::Invalid;

@@ -21,7 +21,7 @@ MeshAssetHandle AssetService::AllocateMeshAsset(const char* name, ObjectLifespan
 	{
 		l_index = m_MeshFreeSlots.back();
 		m_MeshFreeSlots.pop_back();
-		m_MeshAssets[l_index] = MeshAssetData();
+		m_MeshAssets[l_index] = MeshAsset();
 	}
 	else
 	{
@@ -43,7 +43,7 @@ MeshAssetHandle AssetService::AllocateMeshAsset(const char* name, ObjectLifespan
 	return l_handle;
 }
 
-MeshAssetData* AssetService::GetMeshAsset(MeshAssetHandle handle)
+MeshAsset* AssetService::GetMeshAsset(MeshAssetHandle handle)
 {
 	std::shared_lock<std::shared_mutex> l_lock(s_MeshMutex);
 

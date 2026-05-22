@@ -26,7 +26,7 @@ TextureAssetHandle AssetService::AllocateTextureAsset(const char* name, ObjectLi
 	{
 		l_index = m_TextureFreeSlots.back();
 		m_TextureFreeSlots.pop_back();
-		m_TextureAssets[l_index] = TextureAssetData();
+		m_TextureAssets[l_index] = TextureAsset();
 	}
 	else
 	{
@@ -48,7 +48,7 @@ TextureAssetHandle AssetService::AllocateTextureAsset(const char* name, ObjectLi
 	return l_handle;
 }
 
-TextureAssetData* AssetService::GetTextureAsset(TextureAssetHandle handle)
+TextureAsset* AssetService::GetTextureAsset(TextureAssetHandle handle)
 {
 	std::shared_lock<std::shared_mutex> l_lock(s_TextureMutex);
 

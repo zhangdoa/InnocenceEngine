@@ -9,19 +9,19 @@ namespace Inno::AssetServiceNS
 {
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	std::deque<MeshAssetData> m_MeshAssets;
+	std::deque<MeshAsset> m_MeshAssets;
 	std::vector<uint32_t> m_MeshFreeSlots;
 	std::vector<uint32_t> m_MeshGenerations;
 	std::unordered_map<std::string, MeshAssetHandle> m_MeshLUT;
 	std::shared_mutex s_MeshMutex;
 
-	std::deque<MaterialAssetData> m_MaterialAssets;
+	std::deque<MaterialAsset> m_MaterialAssets;
 	std::vector<uint32_t> m_MaterialFreeSlots;
 	std::vector<uint32_t> m_MaterialGenerations;
 	std::unordered_map<std::string, MaterialAssetHandle> m_MaterialLUT;
 	std::shared_mutex s_MaterialMutex;
 
-	std::deque<TextureAssetData> m_TextureAssets;
+	std::deque<TextureAsset> m_TextureAssets;
 	std::vector<uint32_t> m_TextureFreeSlots;
 	std::vector<uint32_t> m_TextureGenerations;
 	std::unordered_map<std::string, TextureAssetHandle> m_TextureLUT;
@@ -54,7 +54,7 @@ bool AssetService::Terminate()
 {
 	Log(Success, "AssetService: clearing asset registries...");
 	// Clear all asset registries before CRT static cleanup.
-	// MaterialAssetData contains std::vector<std::string> which must be freed while the
+	// MaterialAsset contains std::vector<std::string> which must be freed while the
 	// heap is still valid — deferring to the static-destructor phase can cause
 	// STATUS_HEAP_CORRUPTION on exit if the deques are non-empty.
 	std::unique_lock<std::shared_mutex> l_meshLock(s_MeshMutex);
@@ -99,7 +99,7 @@ void AssetService::ReleaseAssetsByLifespan(ObjectLifespan lifespan)
 			if (l_asset.m_Lifespan == lifespan && l_asset.m_Residency != AssetResidency::Released)
 			{
 				m_MeshLUT.erase(std::string(l_asset.m_Name.c_str()));
-				l_asset = MeshAssetData();
+				l_asset = MeshAsset();
 				l_asset.m_Residency = AssetResidency::Released;
 				m_MeshGenerations[i]++;
 				m_MeshFreeSlots.push_back(i);
@@ -116,7 +116,7 @@ void AssetService::ReleaseAssetsByLifespan(ObjectLifespan lifespan)
 			if (l_asset.m_Lifespan == lifespan && l_asset.m_Residency != AssetResidency::Released)
 			{
 				m_MaterialLUT.erase(std::string(l_asset.m_Name.c_str()));
-				l_asset = MaterialAssetData();
+				l_asset = MaterialAsset();
 				l_asset.m_Residency = AssetResidency::Released;
 				m_MaterialGenerations[i]++;
 				m_MaterialFreeSlots.push_back(i);
@@ -133,7 +133,7 @@ void AssetService::ReleaseAssetsByLifespan(ObjectLifespan lifespan)
 			if (l_asset.m_Lifespan == lifespan && l_asset.m_Residency != AssetResidency::Released)
 			{
 				m_TextureLUT.erase(std::string(l_asset.m_Name.c_str()));
-				l_asset = TextureAssetData();
+				l_asset = TextureAsset();
 				l_asset.m_Residency = AssetResidency::Released;
 				m_TextureGenerations[i]++;
 				m_TextureFreeSlots.push_back(i);

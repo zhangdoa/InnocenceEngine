@@ -21,7 +21,7 @@ AssetService::MaterialAssetAllocation AssetService::AllocateMaterialAsset(const 
 	{
 		l_index = m_MaterialFreeSlots.back();
 		m_MaterialFreeSlots.pop_back();
-		m_MaterialAssets[l_index] = MaterialAssetData();
+		m_MaterialAssets[l_index] = MaterialAsset();
 	}
 	else
 	{
@@ -43,7 +43,7 @@ AssetService::MaterialAssetAllocation AssetService::AllocateMaterialAsset(const 
 	return { l_handle, true };
 }
 
-MaterialAssetData* AssetService::GetMaterialAsset(MaterialAssetHandle handle)
+MaterialAsset* AssetService::GetMaterialAsset(MaterialAssetHandle handle)
 {
 	std::shared_lock<std::shared_mutex> l_lock(s_MaterialMutex);
 

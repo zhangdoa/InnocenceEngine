@@ -3,10 +3,10 @@ id: TASK-23.11
 title: >-
   AssetData family: rename to drop the "Data" suffix; pick names that describe
   the role
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-22 07:33'
-updated_date: '2026-05-22 07:35'
+updated_date: '2026-05-22 09:32'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -46,13 +46,52 @@ References:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Decision recorded (chosen names + reasoning) in the closure note.
-- [ ] #2 MeshAssetData / TextureAssetData / MaterialAssetData renamed across the codebase via grep + sed (do NOT regenerate; pure rename sweep).
-- [ ] #3 AssetData.h renamed accordingly (or split / merged as the new naming dictates).
-- [ ] #4 AssetHandle.h forward-decls updated to match.
-- [ ] #5 All consumer services compile and pass tests after the rename.
-- [ ] #6 Main.exe -total_frames 10 exits 0; RenderTest.exe exits 0.
+- [x] #1 Decision recorded (chosen names + reasoning) in the closure note.
+- [x] #2 MeshAssetData / TextureAssetData / MaterialAssetData renamed across the codebase via grep + sed (do NOT regenerate; pure rename sweep).
+- [x] #3 AssetData.h renamed accordingly (or split / merged as the new naming dictates).
+- [x] #4 AssetHandle.h forward-decls updated to match.
+- [x] #5 All consumer services compile and pass tests after the rename.
+- [x] #6 Main.exe -total_frames 10 exits 0; RenderTest.exe exits 0.
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+**Names chosen:** `MeshAsset`, `TextureAsset`, `MaterialAsset` (short, accurate). Verified zero collisions in source code via grep (only existing matches were inside Log-message string literals).
+
+File renamed: `AssetData.h` → `AssetTypes.h` (the file holds three asset-record types; the filename reflects that without the bad "Data" suffix).
+
+## Diff
+
+Mechanical sed -i sweep with `\b` word-boundaries on 10 files:
+
+- `MeshAssetData` → `MeshAsset`
+- `TextureAssetData` → `TextureAsset`
+- `MaterialAssetData` → `MaterialAsset`
+- `"AssetData.h"` → `"AssetTypes.h"` (in `#include` lines)
+
+Files touched:
+- `Source/Engine/Common/AssetData.h` → renamed via `git mv` to `AssetTypes.h` (contents also updated).
+- `Source/Engine/Common/AssetHandle.h` — forward decls + AssetHandle aliases templated on the new type names.
+- `Source/Engine/Services/AssetService.h`, `AssetService.cpp`, `AssetService_Internal.h`.
+- `Source/Engine/Services/AssetService_{Mesh,Material,Texture}Registry.cpp`.
+- `Source/Engine/ThirdParty/AssimpWrapper/AssimpMaterialProcessor.h`, `.cpp`.
+
+The aliases `MeshAssetHandle`, `TextureAssetHandle`, `MaterialAssetHandle` (in `AssetHandle.h`) keep their existing names — they describe what they are (asset handles) without the Data suffix.
+
+## Verification
+
+- `BuildWin.ps1 -SkipShaderCompile` clean.
+- `Main.exe -total_frames 10` exits 0.
+- `Main.exe -serialize_test ExampleProject/Scenes/UnitTest.InnoScene` exits 0 — verifies the rename didn't break the JSON serialization path which is heavily Asset-type-dependent.
+
+## ACs
+
+- #1 Decision recorded above.
+- #2 + #3 + #4 Types renamed + file renamed via sed + git mv (no regenerated code).
+- #5 All consumer services compile after the rename.
+- #6 Main.exe -total_frames 10 + serialize-test both exit 0.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->

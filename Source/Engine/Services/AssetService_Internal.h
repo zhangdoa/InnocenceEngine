@@ -10,21 +10,21 @@ namespace Inno
 		// Mesh asset registry
 		// deque guarantees reference/pointer stability on push_back, unlike vector.
 		// This allows GetMeshAsset to return stable pointers while Allocate appends concurrently.
-		extern std::deque<MeshAssetData> m_MeshAssets;
+		extern std::deque<MeshAsset> m_MeshAssets;
 		extern std::vector<uint32_t> m_MeshFreeSlots;
 		extern std::vector<uint32_t> m_MeshGenerations;
 		extern std::unordered_map<std::string, MeshAssetHandle> m_MeshLUT;
 		extern std::shared_mutex s_MeshMutex;
 
 		// Material asset registry
-		extern std::deque<MaterialAssetData> m_MaterialAssets;
+		extern std::deque<MaterialAsset> m_MaterialAssets;
 		extern std::vector<uint32_t> m_MaterialFreeSlots;
 		extern std::vector<uint32_t> m_MaterialGenerations;
 		extern std::unordered_map<std::string, MaterialAssetHandle> m_MaterialLUT;
 		extern std::shared_mutex s_MaterialMutex;
 
 		// Texture asset registry
-		extern std::deque<TextureAssetData> m_TextureAssets;
+		extern std::deque<TextureAsset> m_TextureAssets;
 		extern std::vector<uint32_t> m_TextureFreeSlots;
 		extern std::vector<uint32_t> m_TextureGenerations;
 		extern std::unordered_map<std::string, TextureAssetHandle> m_TextureLUT;

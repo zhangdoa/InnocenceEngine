@@ -1,7 +1,7 @@
 #pragma once
 #include "../Interface/IService.h"
 #include "../Common/ComponentHeaders.h"
-#include "../Common/AssetData.h"
+#include "../Common/AssetTypes.h"
 #include "../Common/BCCompression.h"
 
 namespace Inno
@@ -19,7 +19,7 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		static MeshAssetHandle AllocateMeshAsset(const char* name, ObjectLifespan lifespan);
-		static MeshAssetData* GetMeshAsset(MeshAssetHandle handle);
+		static MeshAsset* GetMeshAsset(MeshAssetHandle handle);
 		static MeshAssetHandle FindMeshAsset(const char* name);
 		static uint32_t DebugGetMeshGeneration(uint32_t index);
 
@@ -32,11 +32,11 @@ namespace Inno
 			bool m_WasNewlyCreated;
 		};
 		static MaterialAssetAllocation AllocateMaterialAsset(const char* name, ObjectLifespan lifespan);
-		static MaterialAssetData* GetMaterialAsset(MaterialAssetHandle handle);
+		static MaterialAsset* GetMaterialAsset(MaterialAssetHandle handle);
 		static MaterialAssetHandle FindMaterialAsset(const char* name);
 
 		static TextureAssetHandle AllocateTextureAsset(const char* name, ObjectLifespan lifespan);
-		static TextureAssetData* GetTextureAsset(TextureAssetHandle handle);
+		static TextureAsset* GetTextureAsset(TextureAssetHandle handle);
 		static TextureAssetHandle FindTextureAsset(const char* name);
 
 		static void ReleaseAssetsByLifespan(ObjectLifespan lifespan);

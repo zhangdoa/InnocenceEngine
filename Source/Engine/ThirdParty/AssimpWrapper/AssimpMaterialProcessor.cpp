@@ -73,7 +73,7 @@ bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material
 	return l_Result;
 }
 
-void AssimpMaterialProcessor::ProcessMaterialProperties(const aiMaterial* material, MaterialAssetData* assetData)
+void AssimpMaterialProcessor::ProcessMaterialProperties(const aiMaterial* material, MaterialAsset* assetData)
 {
 	aiColor3D l_result;
 	aiColor4D l_result4;
@@ -153,7 +153,7 @@ void AssimpMaterialProcessor::ProcessMaterialProperties(const aiMaterial* materi
 	}
 }
 
-void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material, const char* baseName, const char* modelBaseDir, MaterialAssetData* assetData)
+void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material, const char* baseName, const char* modelBaseDir, MaterialAsset* assetData)
 {
 	// Slot mapping (matches opaqueGeometryProcessPass.frag and m_TextureIndices_N in common.hlsl):
 	//   0 = normal, 1 = albedo, 2 = metallic, 3 = roughness, 4 = AO
