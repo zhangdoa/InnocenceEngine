@@ -1,8 +1,3 @@
-// Commit-body-cap gate — body (between subject blank and trailer block)
-// capped at BODY_LINE_CAP. Targets the "long honest disclosure / verbose
-// audit prose" pattern. Trailers (Key: Value at message tail) excluded
-// from the count.
-
 const BODY_LINE_CAP = 40
 const TRAILER_RE = /^[A-Z][\w-]*: \S/
 
@@ -30,15 +25,9 @@ function run(ctx) {
 function emit(n) {
   process.stderr.write([
     '',
-    `[commit-gate] git commit blocked — body ${n} lines exceeds cap of ${BODY_LINE_CAP}.`,
+    `[commit-gate] git commit blocked — body ${n} lines > cap ${BODY_LINE_CAP}.`,
     '',
-    'Long bodies substitute for working code. Tighten or split:',
-    '  • Drop "honest disclosure", "what was NOT verified" sections.',
-    '  • Move algorithm rationale to a code comment at the decision site.',
-    '  • Cite a backlog task ID for design history rather than embedding it.',
-    '',
-    'Trailers (Key: Value lines at message tail) are excluded from the count.',
-    'No string-escape sentinel.',
+    'Trailers (Key: Value tail lines) excluded from the count.',
     '',
   ].join('\n'))
   process.exit(2)

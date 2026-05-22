@@ -4,53 +4,45 @@ Project-scoped orchestration. Meta / cross-project rules in user-scope `CLAUDE.m
 
 ## Project framing
 
-- Single user (zhangdoa). No team, no other contributors, no CI fleet, no fresh-checkout onboarding for anyone else.
-- Closure notes / backlog rationales / commit messages: cost is borne by zhangdoa alone. Do not write "blocks repro for someone else" or "misleads other developers."
+Single user (zhangdoa). No team, no other contributors, no CI fleet, no fresh-checkout onboarding for anyone else. Closure notes / backlog rationales / commit messages: cost is borne by zhangdoa alone.
 
-## Working principles
+## Stages
 
-- An agent is a stage of actions. Skills are the rules and procedures the agent applies inside a stage. No human-role simulation.
-- Push back on scope that trades structural health for narrow completion.
-- Surface structural observations.
-- Never end a turn with "awaiting next instruction."
+| Stage | File | Scope |
+|---|---|---|
+| `task-mgmt` | `.claude/agents/task-mgmt.md` | Backlog. First agent at session start. |
+| `code-impl` | `.claude/agents/code-impl.md` | C++ / TS source (engine, editor, services, tests). |
+| `shader-impl` | `.claude/agents/shader-impl.md` | HLSL (`.hlsl`, `.comp`, `.frag`, `.vert`). |
+| `harness-impl` | `.claude/agents/harness-impl.md` | `.claude/`, `CLAUDE.md`. |
+| `ci-build-impl` | `.claude/agents/ci-build-impl.md` | CMake, `Scripts/`. |
 
-## Stages and skills
+## Gates (the load-bearing harness layer)
 
-Stages live under `.claude/agents/`. Skills live under `.claude/skills/<name>/SKILL.md` and auto-load by description match; agents may also pin must-load skills in their manifest.
-
-Generic, project-agnostic skills live at user level (`~/.claude/skills/`). Project-specific skills extend or specialise:
-
-| Project skill | Use when |
+| Gate | Blocks when |
 |---|---|
-| `backlog-workflow` | Filing, working, or closing a backlog task. |
-| `persistence-venue` | Deciding where to record a rule, fact, or correction. |
-| `workspace-hygiene` | Creating files, scratch output, or new docs. |
-| `session-start` | Start of every new session. |
-| `dispatch-briefs` | Main-session shaping a dispatch brief. |
-| `commit-message-policy`, `peer-review-required` | Before `git commit`. |
-| `file-splitting` | File-size gate hits, or before adding code that would push a file past the limit. |
-| `cpp-style`, `safety-observability`, `threading-contracts` | Engine C++. |
-| `shader-standards` | Engine HLSL. |
-| `paper-port`, `paper-audit` | Paper-driven implementation. |
-| `test-etiquette`, `visual-validation` | Engine / editor / Playwright runs; rendering output. |
-| `perf-frame-budget`, `regression-build-chain` | Engine perf measurement; engine regression bisects. |
-| `comment-discipline`, `fundamentals` | Editing harness files; engine-specific quality bar. |
-
-Project-state snapshots: `.claude/state/*.md` (direction, remote-sync, engine invariants) — update in the same CL that lands a directional change.
+| `data-generated.js` | Files under `Data/Generated/` are staged or `.gitignore` mask loosened. |
+| `no-images.js` | New / modified image files staged (allowlist: `Data/Engine/Icons/`, `Source/Editor-Next/tests/*-snapshots/`). |
+| `no-new-md.js` | New `.md` outside `.backlog/tasks/`, `.claude/{agents,skills,commands,state}/`, or CLAUDE/README/LICENSE allowlist. |
+| `commit-body-cap.js` | Commit body > 40 lines (trailers excluded). |
+| `file-size.js` | Touched file > 300 lines AND growing past pre-image size. |
+| `closure-staleness.js` | Commit cites `TASK-N` still open AND staged files include non-docs. Bypass: `[task-stays-open]` in subject. |
+| `peer-review.js` | Missing `Reviewed-By:` / `Review-Skipped:` footer. |
+| `visual-review.js` | Commit body mentions `Build/captures/` but missing `Reviewed-Visually:` / `Review-Skipped-Visual:`. |
+| `test-run.js` | Code staged but no qualifying integration test ran in this turn. Closing a task = same requirement. Exemption: `Closure-Reason: <value>`. |
+| `live-engine.js` | Editor-Next code staged but no live engine / Playwright run. |
+| `serialize-test.js` | Serializer code staged but no serialize-determinism run. |
+| `attribution.js` | Missing `Code-AI-Generated-By:` / `Message-AI-Generated-By:` (or Human-Written equivalent). |
+| `agent-dispatch.js` (session-gate) | `Agent` call without `run_in_background: true` and without `[foreground-required]` in prompt. |
+| `skill-evidence.js` (session-gate) | Sub-agent side-effecting tool call before its transcript shows `Skill` invocations for every name on its manifest's always-apply line. |
+| `no-auto-memory.js` (session-gate) | Writes to `~/.claude/projects/<slug>/memory/`. |
 
 ## Session start
 
-First action every new session: invoke `task-mgmt`. No substantive work before briefing + user direction. Procedure: skill `session-start`.
+First action of every new session: invoke `task-mgmt` agent for briefing.
 
-## Dispatch
+## Harness wiring
 
-Main-session = dispatcher. Cross-stage work routes through `task-mgmt`. Peer review on every non-trivial implementation dispatch — fresh dispatch, never main-session, never the implementer (skill `peer-review-required`).
-
-## Harness enforcement
-
-- `.claude/settings.json` wires two PreToolUse hook dispatchers: `session-gate.js`, `commit-gate.js`.
+- `.claude/settings.json` registers `session-gate.js` (session-level) + `commit-gate.js` (commit-level) as PreToolUse hooks.
 - Per-gate logic: `.claude/hooks/gates/<name>.js`. Shared helpers: `.claude/hooks/lib/common.js`.
-- Both fail open on internal errors.
-- Each gate's block message lists its escape sentinel.
-- `gates/skill-evidence.js` blocks sub-agent side-effecting tool calls until the sub-agent's transcript shows a `Skill` invocation for every name on its manifest's "Always-apply skills" line. Design: `.backlog/decisions/TASK-187-enforcement-mechanism-2026-05-14.md`.
+- Both dispatchers fail open on internal errors.
 - Commit-message drafts: `Build/commit-message.txt` (gitignored).

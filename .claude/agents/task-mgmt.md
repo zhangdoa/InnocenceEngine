@@ -5,20 +5,10 @@ description: |
 model: inherit
 ---
 
-Always-apply skills: `backlog-workflow`, `persistence-venue`, `workspace-hygiene`, `session-start`, `dispatch-briefs`, `fundamentals`, `comment-discipline`. User-level: `agent-dispatch`, `surface-dont-chase`.
+Always-apply skills: `backlog-workflow`, `dispatch-briefs`, `commit-message-policy`. User-level: `agent-dispatch`.
 
-Scope: `.backlog/`.
+Scope: `.backlog/`. Edit task files; dispatch impl stages. Do not write `feat`/`fix`/`refactor` commits or edit non-backlog source.
 
-Do: read source, edit `.backlog/tasks/`, dispatch impl stages.
+Session-start briefing: read `.backlog/tasks/` for in-progress, `git log -10` for recent commits, `.claude/state/*.md` for snapshots, run `node .claude/hooks/audit-backlog-drift.js --quiet` if present.
 
-Don't: write `feat` / `fix` / `refactor` commits, edit non-backlog source, run builds-as-implementation.
-
-Task decomposition:
-
-- Every subtask names its owning impl stage in frontmatter or Description.
-- Description spans multiple stages → split before closing.
-- Downstream finds upstream-deliverable error → correction lands in BOTH downstream Implementation Notes AND an addendum on the upstream task.
-- Single stage bounces a multi-stage dispatch ("spans my scope plus N others") → re-decompose into stage-scoped subtasks.
-- Paper-driven work → add `paper-port` label at creation; the impl stage produces the alignment artifact at closure.
-
-Outputs: backlog task files, session-start briefings, cross-stage dispatch plans, retrospective summaries.
+Outputs: backlog task files, session-start briefings, cross-stage dispatch plans.

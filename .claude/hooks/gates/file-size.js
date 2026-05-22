@@ -1,14 +1,3 @@
-// File-size gate — strict block on code/script files past the limit.
-// For each staged file matching FILE_SIZE_EXT_RE (and not excluded by
-// FILE_SIZE_EXCLUDE_RE), block if `new_lines > FILE_SIZE_LIMIT` AND the
-// file is growing (new_lines > old_lines). A touch that does NOT grow
-// an already-oversized file is allowed — the gate's role is to prevent
-// growth past the limit, not to force a split on every incidental edit
-// to an already-too-big file. Renames are followed via
-// `git diff --cached --find-renames`; the pre-image's size is used as
-// `old_lines` so a mechanical rename of an oversized file passes.
-// Split per `skills/file-splitting/SKILL.md` when actually growing.
-
 const { execSync } = require('child_process')
 const {
   FILE_SIZE_LIMIT, FILE_SIZE_EXT_RE, FILE_SIZE_EXCLUDE_RE,
@@ -16,15 +5,9 @@ const {
 } = require('../lib/common')
 
 function buildRenameMap(cwd) {
-  // Pathspec-filtered rename detection (`-- <newpath>`) hides the
-  // corresponding delete and reports the new path as `A`. Pull the full
-  // rename-aware diff once and build a newPath → oldPath map.
   const map = new Map()
   try {
-    const out = execSync(
-      `git diff --cached --find-renames --name-status`,
-      { cwd, encoding: 'utf8' }
-    )
+    const out = execSync(`git diff --cached --find-renames --name-status`, { cwd, encoding: 'utf8' })
     for (const line of out.split('\n')) {
       const m = line.match(/^R\d+\t(.+?)\t(.+)$/)
       if (m) map.set(m[2], m[1])
@@ -58,27 +41,15 @@ function run(ctx) {
 }
 
 function emit(violations) {
-  const list = violations.slice(0, 10).map(v =>
-    `  ${v.file}: ${v.oldLines} → ${v.newLines}`
-  ).join('\n')
-  const more = violations.length > 10
-    ? `\n  …and ${violations.length - 10} more` : ''
+  const list = violations.slice(0, 10).map(v => `  ${v.file}: ${v.oldLines} → ${v.newLines}`).join('\n')
+  const more = violations.length > 10 ? `\n  …and ${violations.length - 10} more` : ''
   process.stderr.write([
     '',
-    `[commit-gate] git commit blocked — file(s) over the ${FILE_SIZE_LIMIT}-line limit.`,
+    `[commit-gate] git commit blocked — file(s) > ${FILE_SIZE_LIMIT} lines AND growing.`,
     '',
-    'Files in this CL exceeding the limit:',
     list + more,
     '',
-    'Touching a file makes you responsible for its size. Split per',
-    '`.claude/skills/file-splitting/SKILL.md`:',
-    '  • Same class, different responsibility cluster → Foo_SubsectionName.cpp.',
-    '  • Separate concern → new class; original holds an instance.',
-    '  • Free-function header → split by domain; umbrella header includes parts.',
-    '',
-    'No string-based escape exists. If a path legitimately requires exemption',
-    '(third-party drop, generated output), add it to FILE_SIZE_EXCLUDE_RE in',
-    '.claude/hooks/lib/common.js.',
+    'Renames followed via git diff --find-renames; no-growth touches pass. Split per .claude/skills/file-splitting/SKILL.md.',
     '',
   ].join('\n'))
   process.exit(2)

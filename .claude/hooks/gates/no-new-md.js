@@ -1,7 +1,3 @@
-// No-new-.md gate — new .md files only land in whitelisted locations.
-// Kills the .alignments/-style artifact-dumping pattern at the source.
-// Modifications to existing .md files are unaffected.
-
 const { execSync } = require('child_process')
 
 const NEW_MD_ALLOWLIST_RE = new RegExp([
@@ -21,9 +17,7 @@ function getNewMdFiles(cwd) {
     const added = []
     for (const line of out.split('\n')) {
       const m = line.match(/^A\t(.+)$/)
-      if (!m) continue
-      if (!m[1].endsWith('.md')) continue
-      if (NEW_MD_ALLOWLIST_RE.test(m[1])) continue
+      if (!m || !m[1].endsWith('.md') || NEW_MD_ALLOWLIST_RE.test(m[1])) continue
       added.push(m[1])
     }
     return added
@@ -40,19 +34,12 @@ function emit(violations) {
   const list = violations.slice(0, 10).map(f => '  ' + f).join('\n')
   process.stderr.write([
     '',
-    '[commit-gate] git commit blocked — new .md file outside allowlist.',
+    '[commit-gate] git commit blocked — new .md outside allowlist.',
     '',
-    'New .md files:',
     list,
     '',
-    'New .md files only land in:',
-    '  • .backlog/tasks/                  (task records)',
-    '  • .claude/{agents,skills,commands,state}/   (harness)',
-    '  • CLAUDE.md, README.md, LICENSE(S).md (any directory)',
-    '',
-    'Audit / design / "alignment" content goes in the task notes or commit',
-    'message body, not in standalone .md files. Modifications to existing',
-    '.md files are unaffected. No string-escape sentinel.',
+    'Allowed: .backlog/tasks/, .claude/{agents,skills,commands,state}/, CLAUDE.md, README.md, LICENSE(S).md.',
+    'Audit / design content goes in task notes or commit body, not standalone .md files.',
     '',
   ].join('\n'))
   process.exit(2)
