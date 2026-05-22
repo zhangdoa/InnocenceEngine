@@ -315,6 +315,22 @@ namespace Inno
 			return begin() + idx;
 		}
 
+		// erase(first, last) — range erase. Supports the std::remove_if + erase idiom.
+		iterator erase(iterator first, iterator last)
+		{
+			assert(first >= begin() && last <= end() && first <= last && "Array::erase: range invalid");
+			if (first == last) return first;
+			const size_type from = static_cast<size_type>(first - begin());
+			const size_type to   = static_cast<size_type>(last  - begin());
+			const size_type n    = to - from;
+			for (size_type i = to; i < m_size; ++i)
+				m_data[i - n] = std::move(m_data[i]);
+			for (size_type i = m_size - n; i < m_size; ++i)
+				m_data[i].~T();
+			m_size -= n;
+			return begin() + from;
+		}
+
 		T*       data() noexcept       { return m_data; }
 		const T* data() const noexcept { return m_data; }
 

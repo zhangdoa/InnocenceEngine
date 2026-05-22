@@ -5,6 +5,7 @@
 
 #include "Task.h"
 #include "SharedPtr.h"
+#include "Array.h"
 #include "ThreadSafeVector.h"
 #include "RingBuffer.h"
 
@@ -64,7 +65,7 @@ namespace Inno
 		std::atomic_bool m_Done = false;
 		std::atomic<uint64_t> m_CaughtExceptionCount = 0;
 
-		std::vector<SharedPtr<ITask>> m_TaskList;
+		Array<SharedPtr<ITask>> m_TaskList;
 		RingBuffer<TaskReport, true> m_TaskReport;
 	};
 }
