@@ -7,7 +7,6 @@ set(TEST_SOURCES
     # Unit tests
     UnitTests/ObjectPoolTests.cpp
     UnitTests/ArrayTests.cpp
-    UnitTests/AtomicTests.cpp
     UnitTests/RingBufferTests.cpp
     UnitTests/EntityRegistryTests.cpp
     UnitTests/FixedSizeStringTests.cpp

@@ -3,9 +3,10 @@ id: TASK-23.8
 title: >-
   Atomic / AtomicReader / AtomicWriter: remove (zero production callers) or
   adopt at AssetService LUT boundaries
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-22 07:30'
+updated_date: '2026-05-22 08:53'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -41,12 +42,45 @@ References:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Decision recorded (A: remove, or B: adopt) with the reason.
-- [ ] #2 If A: Atomic.h + AtomicTests.cpp deleted; ConcurrencyStress reference removed; TestSuite still builds + passes.
+- [x] #1 Decision recorded (A: remove, or B: adopt) with the reason.
+- [x] #2 If A: Atomic.h + AtomicTests.cpp deleted; ConcurrencyStress reference removed; TestSuite still builds + passes.
 - [ ] #3 If B: AssetService LUTs (Mesh/Texture/Material) refactored to use Atomic<T>, with regression test (e.g. concurrent reload-during-render).
 - [ ] #4 If B: condition_variable predicate audit fixes applied (FinishReading lock+notify pairing).
-- [ ] #5 Either way: zero leftover Atomic<T> references in production code that don't have a real consumer.
+- [x] #5 Either way: zero leftover Atomic<T> references in production code that don't have a real consumer.
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+**Resolution: Option A** — Atomic.h / AtomicReader / AtomicWriter deleted. Zero production callers (only TestSuite consumed them).
+
+Rationale: a foundation primitive with no production user and no clear path to adoption is dead weight. The user's framing was "remove if unused" — applied.
+
+Option B (adopt at AssetService LUT boundaries) was considered and rejected for this CL: the cross-boundary failure mode (commit 9a42a43b) is already fixed at the source with the FixedSizeString post-truncation workaround. The deeper fix is TASK-23.15 (off-by-one). Re-introducing Atomic<T> as the workaround for a workaround would be the wrong layer.
+
+## Diff
+
+- `Source/Engine/Common/Atomic.h` — deleted.
+- `Source/TestSuite/UnitTests/AtomicTests.cpp` — deleted.
+- `Source/TestSuite/StressTests/ConcurrencyStress.cpp` — removed `#include "Atomic.h"`, removed `TestConcurrentAtomicOperations` function (~62 lines), removed the call from `RunConcurrencyStressTests`.
+- `Source/TestSuite/Common/TestRunner.cpp` — removed `extern void RunAtomicUnitTests()` and its call.
+- `Source/TestSuite/CMakeLists.txt` — removed `UnitTests/AtomicTests.cpp` from source list.
+
+## Verification
+
+- `BuildWin.ps1 -SkipShaderCompile` + `msbuild TestSuite.vcxproj` — clean.
+- `TestSuite.exe -u` — no "Atomic Unit Tests" suite (confirmed by grep on output).
+- `TestSuite.exe -s` — "Concurrency Stress Tests" suite still runs (now contains only RingBuffer stress).
+- `Main.exe -total_frames 10` — exits 0.
+
+## ACs
+
+- #1 Decision: A (remove).
+- #2 Atomic.h + AtomicTests.cpp deleted; ConcurrencyStress reference removed; TestSuite builds + passes.
+- #3 N/A (Option B not taken).
+- #4 N/A (Option B not taken).
+- #5 Zero Atomic<T> references remain in production code.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->

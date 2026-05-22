@@ -84,7 +84,6 @@ void TestRunner::ReportResults()
 
 extern void RunObjectPoolUnitTests();
 extern void RunArrayUnitTests();
-extern void RunAtomicUnitTests();
 extern void RunRingBufferUnitTests();
 extern void RunEntityRegistryUnitTests();
 extern void RunFixedSizeStringUnitTests();
@@ -106,7 +105,6 @@ void TestRunner::RunUnitTests()
 	
 	RunObjectPoolUnitTests();
 	RunArrayUnitTests();
-	RunAtomicUnitTests();
 	RunRingBufferUnitTests();
 	RunEntityRegistryUnitTests();
 	RunFixedSizeStringUnitTests();

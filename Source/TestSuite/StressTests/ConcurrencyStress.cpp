@@ -1,75 +1,9 @@
 #include "../Common/TestRunner.h"
 #include "../Common/TestTimer.h"
 #include "../Common/TestData.h"
-#include "../../Engine/Common/Atomic.h"
 #include "../../Engine/Common/RingBuffer.h"
 
 using namespace Inno;
-
-void TestConcurrentAtomicOperations()
-{
-	TestRunner::StartTest("Concurrent Atomic Operations Stress");
-
-	Atomic<uint32_t> l_AtomicBuffer;
-	std::atomic<uint32_t> l_FinishedTaskCount{0};
-	bool l_TestPassed = true;
-
-	{
-		auto l_Writer = AtomicWriter(l_AtomicBuffer);
-		*l_Writer.Get() = 0;
-	}
-
-	const size_t l_ThreadCount = TestConfig::ConcurrencyTestThreads;
-	const size_t l_OperationsPerThread = 100;
-
-	std::vector<std::thread> l_Threads;
-	l_Threads.reserve(l_ThreadCount);
-
-	for (size_t i = 0; i < l_ThreadCount; i++)
-	{
-		l_Threads.emplace_back([&]()
-		{
-			std::default_random_engine l_Generator;
-			std::uniform_int_distribution<uint32_t> l_RandomDelta(1, 10);
-
-			for (size_t j = 0; j < l_OperationsPerThread; j++)
-			{
-				auto l_ExecutionTime = l_RandomDelta(l_Generator);
-
-				{
-					auto l_Reader = AtomicReader(l_AtomicBuffer);
-					volatile auto l_Value = *l_Reader.Get();
-					(void)l_Value;
-				}
-
-				{
-					auto l_Writer = AtomicWriter(l_AtomicBuffer);
-					*l_Writer.Get() += l_ExecutionTime;
-				}
-
-				{
-					auto l_Reader = AtomicReader(l_AtomicBuffer);
-					volatile auto l_Value = *l_Reader.Get();
-					(void)l_Value;
-				}
-			}
-
-			l_FinishedTaskCount++;
-		});
-	}
-
-	for (auto& l_Thread : l_Threads)
-	{
-		l_Thread.join();
-	}
-
-	if (l_FinishedTaskCount != l_ThreadCount)
-	{
-		l_TestPassed = false;
-	}
-
-	TestRunner::EndTest(l_TestPassed);
-}
 
 void TestRingBufferStress()
 {
@@ -106,9 +40,8 @@ void TestRingBufferStress()
 void RunConcurrencyStressTests()
 {
 	TestRunner::StartTestSuite("Concurrency Stress Tests");
-	
-	TestConcurrentAtomicOperations();
+
 	TestRingBufferStress();
-	
+
 	TestRunner::EndTestSuite();
 }
