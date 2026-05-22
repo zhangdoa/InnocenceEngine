@@ -48,12 +48,12 @@ void TestConcurrentTaskSubmission()
 
     try {
         std::vector<std::thread> submitterThreads;
-        std::vector<Handle<ITask>> allTasks;
+        std::vector<std::shared_ptr<ITask>> allTasks;
         std::mutex tasksMutex;
 
         for (int t = 0; t < NUM_THREADS; ++t) {
             submitterThreads.emplace_back([&, t]() {
-                std::vector<Handle<ITask>> localTasks;
+                std::vector<std::shared_ptr<ITask>> localTasks;
                 
                 for (int i = 0; i < TASKS_PER_THREAD; ++i) {
                     std::string taskName = "ConcurrentTask_" + std::to_string(t) + "_" + std::to_string(i);
@@ -107,7 +107,7 @@ void TestTaskExecutionOrdering()
     constexpr int NUM_TASKS = 25;
 
     try {
-        std::vector<Handle<ITask>> tasks;
+        std::vector<std::shared_ptr<ITask>> tasks;
 
         for (int i = 0; i < NUM_TASKS; ++i) {
             std::string taskName = "OrderingTask_" + std::to_string(i);
@@ -150,7 +150,7 @@ void TestFreezeUnfreezeStressTest()
         std::atomic<int> taskCounter{0};
         std::atomic<bool> shouldStop{false};
         
-        std::vector<Handle<ITask>> recurringTasks;
+        std::vector<std::shared_ptr<ITask>> recurringTasks;
         for (int i = 0; i < 5; ++i) {
             std::string taskName = "RecurringTask_" + std::to_string(i);
             auto task = scheduler.Submit(
@@ -206,7 +206,7 @@ void TestTaskCleanupTest()
         TaskScheduler scheduler;
         
         {
-            std::vector<Handle<ITask>> tasks;
+            std::vector<std::shared_ptr<ITask>> tasks;
             for (int i = 0; i < 50; ++i) {
                 std::string taskName = "CleanupTask_" + std::to_string(i);
                 auto task = scheduler.Submit(

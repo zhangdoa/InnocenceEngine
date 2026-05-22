@@ -4,7 +4,6 @@
 #include <future>
 
 #include "Task.h"
-#include "Handle.h"
 #include "ThreadSafeVector.h"
 #include "RingBuffer.h"
 
@@ -48,7 +47,7 @@ namespace Inno
 
 		const RingBuffer<TaskReport, true>& GetTaskReport();
 
-		void AddTask(Handle<ITask> task);
+		void AddTask(std::shared_ptr<ITask> task);
 
 		// Non-zero means at least one task threw; the thread itself kept running.
 		uint64_t GetCaughtExceptionCount() const;
@@ -56,7 +55,7 @@ namespace Inno
 	private:
 		void Worker(uint32_t ThreadIndex);
 
-		inline bool ExecuteTask(Handle<ITask> task);
+		inline bool ExecuteTask(std::shared_ptr<ITask> task);
 
 		std::thread* m_ThreadHandle;
 		ID m_ID;
@@ -64,7 +63,7 @@ namespace Inno
 		std::atomic_bool m_Done = false;
 		std::atomic<uint64_t> m_CaughtExceptionCount = 0;
 
-		std::vector<Handle<ITask>> m_TaskList;
+		std::vector<std::shared_ptr<ITask>> m_TaskList;
 		RingBuffer<TaskReport, true> m_TaskReport;
 	};
 }

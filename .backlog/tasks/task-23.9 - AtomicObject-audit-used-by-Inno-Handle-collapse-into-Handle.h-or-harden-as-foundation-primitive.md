@@ -3,9 +3,10 @@ id: TASK-23.9
 title: >-
   AtomicObject: audit (used by Inno::Handle); collapse into Handle.h or harden
   as foundation primitive
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-22 07:33'
+updated_date: '2026-05-22 09:20'
 labels: []
 dependencies: []
 parent_task_id: TASK-23
@@ -39,12 +40,35 @@ References:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Decision recorded (A: collapse into Handle, or B: harden as foundation primitive) with reason.
-- [ ] #2 If A: AtomicObject.h removed; Handle.h refactored to use std::shared_ptr<T> or inlined spinlock; no foundation header named AtomicObject remains.
+- [x] #1 Decision recorded (A: collapse into Handle, or B: harden as foundation primitive) with reason.
+- [x] #2 If A: AtomicObject.h removed; Handle.h refactored to use std::shared_ptr<T> or inlined spinlock; no foundation header named AtomicObject remains.
 - [ ] #3 If B: Get() no longer returns a raw reference without sync; SetObject/DeleteObject/MoveObject are atomic from observer's perspective; documented in header.
-- [ ] #4 Either way: Handle<ITask> consumers (Thread.h, TaskScheduler.h, Engine_Internal.h) compile and pass tests.
-- [ ] #5 Sequenced or merged with TASK-23.10 (Handle redesign).
+- [x] #4 Either way: Handle<ITask> consumers (Thread.h, TaskScheduler.h, Engine_Internal.h) compile and pass tests.
+- [x] #5 Sequenced or merged with TASK-23.10 (Handle redesign).
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+**Resolution: Option A** — `AtomicObject.h` deleted. Closed as a cascade from TASK-23.10's resolution D.
+
+TASK-23.10 replaced `Inno::Handle<T>` with `std::shared_ptr<T>` outright. `Handle.h` was the sole consumer of `AtomicObject<T>` (verified by grep). With Handle gone, AtomicObject had zero callers.
+
+## Diff
+
+- `Source/Engine/Common/AtomicObject.h` — deleted.
+
+## Verification
+
+- Same as TASK-23.10: `BuildWin.ps1 -SkipShaderCompile` clean; Main.exe -total_frames 10 exits 0; TestSuite -s task stress tests 4/4 pass.
+
+## ACs
+
+- #1 Decision A (collapse / remove).
+- #2 AtomicObject.h removed. Handle.h refactored — actually replaced wholesale with std::shared_ptr; AtomicObject's spinlock pattern is gone entirely.
+- #4 Handle<ITask> consumers (Thread.h, TaskScheduler.h, Engine_Internal.h, plus RayTracer/AssimpImporter/PhysXWrapper/test files) all compile and pass.
+- #5 Sequenced + merged with TASK-23.10 — landed in the same CL.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->

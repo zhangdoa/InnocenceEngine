@@ -64,7 +64,7 @@ namespace PhysXWrapperNS
 
 	bool m_needSimulate = false;
 	std::function<void()> f_TogglePhysXUpdateTask;
-	Handle<ITask> m_PhysXUpdateTask;
+	std::shared_ptr<ITask> m_PhysXUpdateTask;
 
 	std::mutex m_mutex;
 }
