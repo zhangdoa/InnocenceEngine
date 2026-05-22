@@ -51,7 +51,7 @@ namespace Inno
 			return *this;
 		}
 
-		template <typename U = T &>
+		template <typename U = T>
 		EnableType<U, ThreadSafe> operator[](size_t pos)
 		{
 			std::shared_lock<std::shared_mutex> lock{m_Mutex};
@@ -65,7 +65,7 @@ namespace Inno
 			return m_Array[pos % m_ElementCount];
 		}
 
-		template <typename U = const T &>
+		template <typename U = T>
 		EnableType<U, ThreadSafe> operator[](size_t pos) const
 		{
 			std::shared_lock<std::shared_mutex> lock{m_Mutex};
@@ -93,22 +93,31 @@ namespace Inno
 
 		const auto size() const
 		{
-			if (m_isLoopingOverOnce)
+			if constexpr (ThreadSafe)
 			{
-				return m_ElementCount;
+				std::shared_lock<std::shared_mutex> lock{m_Mutex};
+				return m_isLoopingOverOnce ? m_ElementCount : m_CurrentElementIndex;
 			}
 			else
 			{
-				return m_CurrentElementIndex;
+				return m_isLoopingOverOnce ? m_ElementCount : m_CurrentElementIndex;
 			}
 		}
 
 		const auto currentElementPos() const
 		{
-			return m_CurrentElementIndex == 0 ? 0 : m_CurrentElementIndex - 1;
+			if constexpr (ThreadSafe)
+			{
+				std::shared_lock<std::shared_mutex> lock{m_Mutex};
+				return m_CurrentElementIndex == 0 ? size_t(0) : m_CurrentElementIndex - 1;
+			}
+			else
+			{
+				return m_CurrentElementIndex == 0 ? size_t(0) : m_CurrentElementIndex - 1;
+			}
 		}
 
-		template <typename U = T &>
+		template <typename U = T>
 		EnableType<U, ThreadSafe> currentElement()
 		{
 			std::shared_lock<std::shared_mutex> lock{m_Mutex};
@@ -122,7 +131,7 @@ namespace Inno
 			return m_Array[m_CurrentElementIndex == 0 ? 0 : m_CurrentElementIndex - 1];
 		}
 
-		template <typename U = const T &>
+		template <typename U = T>
 		EnableType<U, ThreadSafe> currentElement() const
 		{
 			std::shared_lock<std::shared_mutex> lock{m_Mutex};

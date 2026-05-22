@@ -1,6 +1,8 @@
 #include "../Common/TestRunner.h"
 #include "../Common/TestData.h"
 #include "../../Engine/Common/RingBuffer.h"
+#include <atomic>
+#include <thread>
 
 using namespace Inno;
 
@@ -58,12 +60,46 @@ void TestRingBufferWraparound()
 	TestRunner::EndTest(l_TestPassed);
 }
 
+void TestRingBufferThreadSafeProducerConsumer()
+{
+	TestRunner::StartTest("RingBuffer<T, true>: 1 producer + 1 consumer, no torn size()/operator[]");
+
+	RingBuffer<int, true> rb;
+	rb.reserve(64);
+	std::atomic<bool> stop{false};
+	std::atomic<bool> failed{false};
+	const int Iterations = 50000;
+
+	std::thread producer([&]() {
+		for (int i = 1; i <= Iterations; ++i)
+		{
+			rb.emplace_back(i);
+		}
+		stop.store(true, std::memory_order_release);
+	});
+
+	while (!stop.load(std::memory_order_acquire))
+	{
+		size_t s = rb.size();
+		if (s > rb.capacity()) failed.store(true, std::memory_order_release);
+		for (size_t i = 0; i < s; ++i)
+		{
+			int v = rb[i];
+			if (v < 0 || v > Iterations) failed.store(true, std::memory_order_release);
+		}
+	}
+
+	producer.join();
+	TestRunner::EndTest(!failed.load(std::memory_order_acquire));
+}
+
 void RunRingBufferUnitTests()
 {
 	TestRunner::StartTestSuite("RingBuffer Unit Tests");
-	
+
 	TestRingBufferBasicOperations();
 	TestRingBufferWraparound();
-	
+	TestRingBufferThreadSafeProducerConsumer();
+
 	TestRunner::EndTestSuite();
 }
