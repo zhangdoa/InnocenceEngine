@@ -238,6 +238,38 @@ static void TestArraySwap()
 	TestRunner::EndTest(passed);
 }
 
+static void TestArrayFrontBackAt()
+{
+	TestRunner::StartTest("Array: front/back/at — element access");
+
+	Array<int> a;
+	for (int i = 0; i < 10; ++i) a.push_back(i * 11);
+	bool passed = (a.front() == 0) && (a.back() == 99) && (a.at(5) == 55);
+	a.front() = -1;
+	a.back() = -2;
+	passed = passed && (a.at(0) == -1) && (a.at(9) == -2);
+	TestRunner::EndTest(passed);
+}
+
+static void TestArrayEraseIterator()
+{
+	TestRunner::StartTest("Array: erase(iterator) shifts down + returns next");
+
+	Array<int> a;
+	for (int i = 0; i < 10; ++i) a.push_back(i);
+	auto it = a.erase(a.begin() + 4);  // erase value 4
+	bool passed = (a.size() == 9) && (*it == 5);
+	int expected[] = {0, 1, 2, 3, 5, 6, 7, 8, 9};
+	for (int i = 0; i < 9 && passed; ++i)
+		if (a[i] != expected[i]) passed = false;
+
+	// Erase last element — should return end().
+	auto endIt = a.erase(a.end() - 1);
+	passed = passed && (endIt == a.end()) && (a.size() == 8);
+
+	TestRunner::EndTest(passed);
+}
+
 static void TestArrayMoveCtor()
 {
 	TestRunner::StartTest("Array: move ctor leaves source empty + transfers buffer");
@@ -266,6 +298,8 @@ void RunArrayUnitTests()
 	TestArrayResize();
 	TestArrayShrinkToFit();
 	TestArraySwap();
+	TestArrayFrontBackAt();
+	TestArrayEraseIterator();
 	TestArrayMoveCtor();
 
 	TestRunner::EndTestSuite();

@@ -286,6 +286,35 @@ namespace Inno
 			return m_data[pos];
 		}
 
+		T&       at(size_type pos)
+		{
+			assert(pos < m_size && "Array::at: out of bounds");
+			return m_data[pos];
+		}
+		const T& at(size_type pos) const
+		{
+			assert(pos < m_size && "Array::at: out of bounds");
+			return m_data[pos];
+		}
+
+		T&       front()       { assert(m_size > 0 && "Array::front on empty"); return m_data[0]; }
+		const T& front() const { assert(m_size > 0 && "Array::front on empty"); return m_data[0]; }
+		T&       back()        { assert(m_size > 0 && "Array::back on empty");  return m_data[m_size - 1]; }
+		const T& back()  const { assert(m_size > 0 && "Array::back on empty");  return m_data[m_size - 1]; }
+
+		// erase(iterator) — shift-down semantics matching std::vector::erase.
+		// Returns iterator one past the erased element (or end() if last erased).
+		iterator erase(iterator pos)
+		{
+			assert(pos >= begin() && pos < end() && "Array::erase: iterator out of bounds");
+			const size_type idx = static_cast<size_type>(pos - begin());
+			for (size_type i = idx; i + 1 < m_size; ++i)
+				m_data[i] = std::move(m_data[i + 1]);
+			m_data[m_size - 1].~T();
+			--m_size;
+			return begin() + idx;
+		}
+
 		T*       data() noexcept       { return m_data; }
 		const T* data() const noexcept { return m_data; }
 
