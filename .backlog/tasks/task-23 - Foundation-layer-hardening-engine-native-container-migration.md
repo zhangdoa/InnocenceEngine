@@ -1,10 +1,10 @@
 ---
 id: TASK-23
 title: Foundation layer hardening + engine-native container migration
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-13 11:25'
-updated_date: '2026-05-22 19:33'
+updated_date: '2026-05-22 19:45'
 labels: []
 dependencies: []
 priority: medium
