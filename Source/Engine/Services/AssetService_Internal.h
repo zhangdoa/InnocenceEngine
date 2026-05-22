@@ -1,5 +1,7 @@
 #pragma once
 #include "../Common/Array.h"
+#include "../Common/Deque.h"
+#include "../Common/UnorderedSet.h"
 #include "AssetService.h"
 #include "../Common/HashMap.h"
 
@@ -9,24 +11,21 @@ namespace Inno
 	{
 		extern ObjectStatus m_ObjectStatus;
 
-		// Mesh asset registry
-		// deque guarantees reference/pointer stability on push_back, unlike vector.
-		// This allows GetMeshAsset to return stable pointers while Allocate appends concurrently.
-		extern std::deque<MeshAsset> m_MeshAssets;
+		// Inno::Deque preserves pointer stability across emplace_back so GetMeshAsset
+		// returns stable pointers while Allocate concurrently appends.
+		extern Inno::Deque<MeshAsset> m_MeshAssets;
 		extern Inno::Array<uint32_t> m_MeshFreeSlots;
 		extern Inno::Array<uint32_t> m_MeshGenerations;
 		extern Inno::HashMap<std::string, MeshAssetHandle> m_MeshLUT;
 		extern std::shared_mutex s_MeshMutex;
 
-		// Material asset registry
-		extern std::deque<MaterialAsset> m_MaterialAssets;
+		extern Inno::Deque<MaterialAsset> m_MaterialAssets;
 		extern Inno::Array<uint32_t> m_MaterialFreeSlots;
 		extern Inno::Array<uint32_t> m_MaterialGenerations;
 		extern Inno::HashMap<std::string, MaterialAssetHandle> m_MaterialLUT;
 		extern std::shared_mutex s_MaterialMutex;
 
-		// Texture asset registry
-		extern std::deque<TextureAsset> m_TextureAssets;
+		extern Inno::Deque<TextureAsset> m_TextureAssets;
 		extern Inno::Array<uint32_t> m_TextureFreeSlots;
 		extern Inno::Array<uint32_t> m_TextureGenerations;
 		extern Inno::HashMap<std::string, TextureAssetHandle> m_TextureLUT;
@@ -41,6 +40,6 @@ namespace Inno
 		// error log is the user-visible signal — re-running -bake starts from a
 		// fresh process and clears the set.
 		extern std::mutex s_ImportTextureDedupMutex;
-		extern std::unordered_set<std::string> s_ImportTextureDedup;
+		extern Inno::UnorderedSet<std::string> s_ImportTextureDedup;
 	}
 }

@@ -142,7 +142,7 @@ void HIDService::AddButtonStateCallback(ButtonState buttonState, ButtonEvent but
 	if (l_result != m_ButtonEvents.end())
 		l_result->second.emplace(buttonEvent);
 	else
-		m_ButtonEvents.emplace(buttonState, std::set<ButtonEvent>{ buttonEvent });
+		m_ButtonEvents.emplace(buttonState, ButtonEventSet{ buttonEvent });
 }
 
 void HIDService::AddMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent)
@@ -151,7 +151,7 @@ void HIDService::AddMouseMovementCallback(MouseMovementAxis mouseMovementAxis, M
 	if (l_result != m_MouseMovementEvents.end())
 		l_result->second.emplace(mouseMovementEvent);
 	else
-		m_MouseMovementEvents.emplace(mouseMovementAxis, std::set<MouseMovementEvent>{ mouseMovementEvent });
+		m_MouseMovementEvents.emplace(mouseMovementAxis, MouseMovementEventSet{ mouseMovementEvent });
 }
 
 Vec2 HIDService::GetMousePosition()

@@ -1,5 +1,6 @@
 #pragma once
 #include "../../Common/Array.h"
+#include "../../Common/UnorderedSet.h"
 #include "../../Interface/IWindowService.h"
 #include "../../Engine.h"
 #include "../../Common/DoubleBuffer.h"
@@ -40,7 +41,7 @@ namespace Inno
 		InitConfig m_InitConfig;
 
 		DoubleBuffer<Inno::Array<IWindowEvent*>> m_WindowEvents;
-		std::set<WindowEventCallback*> m_WindowEventCallbacks;
+		Inno::UnorderedSet<WindowEventCallback*> m_WindowEventCallbacks;
 
 		HINSTANCE m_ApplicationInstance;
 		LPCSTR m_ApplicationName;

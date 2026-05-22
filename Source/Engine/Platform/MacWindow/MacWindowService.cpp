@@ -1,5 +1,6 @@
 #include "MacWindowService.h"
 #include "../../Common/Array.h"
+#include "../../Common/UnorderedSet.h"
 
 #include "../../Engine.h"
 
@@ -12,7 +13,7 @@ namespace MacWindowServiceNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	InitConfig m_InitConfig;
 	Inno::Array<ButtonState> m_ButtonStates;
-	std::set<WindowEventCallback*> m_WindowEventCallbacks;
+	Inno::UnorderedSet<WindowEventCallback*> m_WindowEventCallbacks;
 
 	MacWindowServiceBridge* m_bridge;
 }

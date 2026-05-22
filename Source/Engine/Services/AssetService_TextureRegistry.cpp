@@ -96,7 +96,7 @@ std::string AssetService::ImportTexture(const char*          absolutePath,
 
 	{
 		std::lock_guard<std::mutex> l_lock(s_ImportTextureDedupMutex);
-		if (!s_ImportTextureDedup.insert(instanceName).second)
+		if (!s_ImportTextureDedup.insert(instanceName))
 		{
 			Log(Verbose, "AssetService::ImportTexture: dedup skip ", instanceName);
 			return std::string(instanceName);

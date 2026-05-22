@@ -1,5 +1,6 @@
 #include "VKGraphicsService.h"
 #include "../../Common/Array.h"
+#include "../../Common/UnorderedSet.h"
 #include "../../Component/VKMeshComponent.h"
 #include "../../Component/VKTextureComponent.h"
 #include "../../Component/VKMaterialComponent.h"
@@ -66,7 +67,7 @@ bool VKGraphicsService::CreateLogicalDevice()
 	QueueFamilyIndices l_indices = FindQueueFamilies(m_physicalDevice, m_windowSurface);
 
 	Inno::Array<VkDeviceQueueCreateInfo> l_queueCreateInfos;
-	std::set<uint32_t> l_uniqueQueueFamilies = {l_indices.m_graphicsFamily.value(), l_indices.m_presentFamily.value()};
+	Inno::UnorderedSet<uint32_t> l_uniqueQueueFamilies = {l_indices.m_graphicsFamily.value(), l_indices.m_presentFamily.value()};
 
 	float l_queuePriority = 1.0f;
 	for (uint32_t l_queueFamily : l_uniqueQueueFamilies)

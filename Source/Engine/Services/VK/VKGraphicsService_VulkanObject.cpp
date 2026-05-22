@@ -1,5 +1,6 @@
 #include "VKGraphicsService.h"
 #include "../../Common/Array.h"
+#include "../../Common/UnorderedSet.h"
 #include "../../Component/VKMeshComponent.h"
 #include "../../Component/VKTextureComponent.h"
 #include "../../Component/VKMaterialComponent.h"
@@ -99,7 +100,7 @@ bool VKGraphicsService::CheckDeviceExtensionSupport(const Inno::Array<const char
 	Inno::Array<VkExtensionProperties> availableExtensions(extensionCount);
 	vkEnumerateDeviceExtensionProperties(m_physicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
-	std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+	Inno::UnorderedSet<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
 	for (const auto& extension : availableExtensions)
 	{

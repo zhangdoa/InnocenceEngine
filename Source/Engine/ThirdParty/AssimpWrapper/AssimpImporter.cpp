@@ -1,5 +1,6 @@
 #include "AssimpImporter.h"
 #include "../../Common/Array.h"
+#include "../../Common/UnorderedSet.h"
 #include "AssimpMeshProcessor.h"
 #include "AssimpMaterialProcessor.h"
 #include "AssimpTextureProcessor.h"
@@ -97,8 +98,8 @@ namespace
 	}
 
 	void CollectAssimpWork(const aiNode* node, const aiScene* scene, const char* baseName,
-		std::unordered_set<uint32_t>& outMeshIndices,
-		std::unordered_set<uint32_t>& outMaterialIndices,
+		Inno::UnorderedSet<uint32_t>& outMeshIndices,
+		Inno::UnorderedSet<uint32_t>& outMaterialIndices,
 		Inno::Array<std::pair<std::string, std::string>>& outDrawCalls)
 	{
 		for (uint32_t i = 0; i < node->mNumMeshes; i++)
@@ -137,8 +138,8 @@ void AssimpImporter::ProcessAssimpScene(const aiScene* Scene, const char* Export
 {
 	Log(Verbose, "Processing scene: ", ExportName);
 
-	std::unordered_set<uint32_t> l_UniqueMeshes;
-	std::unordered_set<uint32_t> l_UniqueMaterials;
+	Inno::UnorderedSet<uint32_t> l_UniqueMeshes;
+	Inno::UnorderedSet<uint32_t> l_UniqueMaterials;
 	Inno::Array<std::pair<std::string, std::string>> l_DrawCalls;
 	CollectAssimpWork(Scene->mRootNode, Scene, ExportName, l_UniqueMeshes, l_UniqueMaterials, l_DrawCalls);
 

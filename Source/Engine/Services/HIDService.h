@@ -2,6 +2,7 @@
 #include "../Common/Array.h"
 #include "../Interface/IService.h"
 #include "../Common/HashMap.h"
+#include "../Common/UnorderedSet.h"
 #include "../Interface/IWindowService.h"
 #include "../Common/MathHelper.h"
 
@@ -37,8 +38,42 @@ namespace Inno
 	using ButtonEvent = Event<std::function<void()>>;
 	using MouseMovementEvent = Event<std::function<void(float)>>;
 	enum class MouseMovementAxis { Horizontal, Vertical };
-	using ButtonEventMap = Inno::HashMap<ButtonState, std::set<ButtonEvent>, ButtonStateHasher>;
-	using MouseMovementEventMap = Inno::HashMap<MouseMovementAxis, std::set<MouseMovementEvent>>;
+
+	// std::set previously keyed on Event::operator< which compared m_eventHandle
+	// only — preserve that dedup-by-handle invariant in the hash + equal predicates.
+	struct ButtonEventHasher
+	{
+		size_t operator()(const ButtonEvent& e) const noexcept
+		{
+			return std::hash<std::function<void()>*>{}(e.m_eventHandle);
+		}
+	};
+	struct ButtonEventEqual
+	{
+		bool operator()(const ButtonEvent& a, const ButtonEvent& b) const noexcept
+		{
+			return a.m_eventHandle == b.m_eventHandle;
+		}
+	};
+	struct MouseMovementEventHasher
+	{
+		size_t operator()(const MouseMovementEvent& e) const noexcept
+		{
+			return std::hash<std::function<void(float)>*>{}(e.m_eventHandle);
+		}
+	};
+	struct MouseMovementEventEqual
+	{
+		bool operator()(const MouseMovementEvent& a, const MouseMovementEvent& b) const noexcept
+		{
+			return a.m_eventHandle == b.m_eventHandle;
+		}
+	};
+
+	using ButtonEventSet = Inno::UnorderedSet<ButtonEvent, ButtonEventHasher, ButtonEventEqual>;
+	using MouseMovementEventSet = Inno::UnorderedSet<MouseMovementEvent, MouseMovementEventHasher, MouseMovementEventEqual>;
+	using ButtonEventMap = Inno::HashMap<ButtonState, ButtonEventSet, ButtonStateHasher>;
+	using MouseMovementEventMap = Inno::HashMap<MouseMovementAxis, MouseMovementEventSet>;
 
 	class HIDService : public IService
 	{
