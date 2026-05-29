@@ -10,21 +10,13 @@ const {
   isRealUserPrompt, resolveActiveTranscriptPath,
 } = require('./lib/common')
 
-const GATES = [
-  require('./gates/data-generated'),
-  require('./gates/no-images'),
-  require('./gates/no-new-md'),
-  require('./gates/commit-body-cap'),
-  require('./gates/comment-essay-cap'),
-  require('./gates/file-size'),
-  require('./gates/closure-staleness'),
-  require('./gates/peer-review'),
-  require('./gates/visual-review'),
-  require('./gates/test-run'),         // needsTranscript: true
-  require('./gates/live-engine'),      // needsTranscript: true
-  require('./gates/serialize-test'),   // needsTranscript: true
-  require('./gates/attribution'),
+const GATE_NAMES = [
+  'data-generated', 'no-images', 'no-new-md', 'commit-body-cap', 'comment-essay-cap',
+  'file-size', 'closure-staleness', 'peer-review', 'visual-review',
+  'test-run', 'live-engine', 'serialize-test',   // needsTranscript: true
+  'attribution',
 ]
+const GATES = GATE_NAMES.map(n => require(`./gates/${n}`))
 
 let raw = ''
 process.stdin.setEncoding('utf8')
@@ -54,9 +46,11 @@ async function main() {
   const closingTasks = detectClosingTasks(cwd, staged)
 
   const noTranscriptCtx = { cmd, cwd, messageText, staged, closingTasks }
-  for (const gate of GATES) {
-    if (gate.needsTranscript) continue
-    const result = gate.run(noTranscriptCtx)
+  for (let i = 0; i < GATES.length; i++) {
+    if (GATES[i].needsTranscript) continue
+    let result
+    try { result = GATES[i].run(noTranscriptCtx) }
+    catch (err) { gateThrew(GATE_NAMES[i], err); continue }
     if (!result.ok) { result.block(); return }
   }
 
@@ -82,13 +76,19 @@ async function main() {
   }
 
   const ctx = { cmd, cwd, messageText, staged, closingTasks, transcript, lastUserIdx }
-  for (const gate of GATES) {
-    if (!gate.needsTranscript) continue
-    const result = gate.run(ctx)
+  for (let i = 0; i < GATES.length; i++) {
+    if (!GATES[i].needsTranscript) continue
+    let result
+    try { result = GATES[i].run(ctx) }
+    catch (err) { gateThrew(GATE_NAMES[i], err); continue }
     if (!result.ok) { result.block(); return }
   }
 
   process.exit(0)
+}
+
+function gateThrew(name, err) {
+  process.stderr.write(`[commit-gate] gate ${name} threw — skipping that gate only: ${err?.message || err}\n`)
 }
 
 function failOpen(err) {
