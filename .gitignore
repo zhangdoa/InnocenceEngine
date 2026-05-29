@@ -89,6 +89,9 @@ gpu_test*.txt
 # Claude Code runtime lockfile
 /.claude/scheduled_tasks.lock
 
+# Code-graph plugin local DB (large; not source)
+/.codegraph/
+
 .worktrees/
 
 # Alignment auxiliary snapshots (third-party reference source, capture dumps, etc.).
