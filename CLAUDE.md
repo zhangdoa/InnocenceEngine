@@ -36,6 +36,8 @@ Single user (zhangdoa). No team, no other contributors, no CI fleet, no fresh-ch
 | `agent-dispatch.js` (session-gate) | `Agent` call without `run_in_background: true` and without `[foreground-required]` in prompt. |
 | `skill-evidence.js` (session-gate) | Sub-agent side-effecting tool call before its transcript shows `Skill` invocations for every name on its manifest's always-apply line. |
 | `no-auto-memory.js` (session-gate) | Writes to `~/.claude/projects/<slug>/memory/`. |
+| `task-mgmt-brief.js` (session-gate) | Substantive tool used before the `task-mgmt` subagent has run this session. Escape: `CLAUDE_SKIP_PRODUCER=1`. |
+| `session-start-brief.js` (SessionStart) | Doesn't block — injects the "dispatch task-mgmt first" directive at session start; paired with `task-mgmt-brief`. |
 
 ## Session start
 
@@ -43,7 +45,7 @@ First action of every new session: invoke `task-mgmt` agent for briefing.
 
 ## Harness wiring
 
-- `.claude/settings.json` registers `session-gate.js` (session-level) + `commit-gate.js` (commit-level) as PreToolUse hooks.
+- `.claude/settings.json` registers three dispatchers: `session-gate.js` + `commit-gate.js` as PreToolUse hooks, and `session-start.js` on the SessionStart event.
 - Per-gate logic: `.claude/hooks/gates/<name>.js`. Shared helpers: `.claude/hooks/lib/common.js`.
-- Both dispatchers fail open on internal errors.
+- All three dispatchers fail open on internal errors; a single gate that throws is skipped without disabling the rest of its tier.
 - Commit-message drafts: `Build/commit-message.txt` (gitignored).
