@@ -10,6 +10,34 @@
 
 using namespace Inno;
 
+namespace
+{
+	struct TextureSlotMapping
+	{
+		aiTextureType        m_AiType;
+		uint32_t             m_SlotIndex;
+		bool                 m_IsSRGB;
+		TextureChannelSource m_BC4Source;
+	};
+
+	// Slot layout matches opaqueGeometryProcessPass.frag / m_TextureIndices_N in common.hlsl:
+	// 0=normal 1=albedo 2=metallic 3=roughness 4=AO. BC4 channel-source picks the glTF
+	// MetallicRoughness packing (B=metallic, G=roughness) for the two slots Assimp reports
+	// off one packed RGBA; R for separate single-channel textures STB broadcasts to RGBA.
+	constexpr TextureSlotMapping kTextureSlotMappings[] = {
+		{ aiTextureType_HEIGHT,            0, false, TextureChannelSource::R },
+		{ aiTextureType_NORMALS,           0, false, TextureChannelSource::R },
+		{ aiTextureType_NORMAL_CAMERA,     0, false, TextureChannelSource::R },
+		{ aiTextureType_DIFFUSE,           1, true,  TextureChannelSource::R },
+		{ aiTextureType_BASE_COLOR,        1, true,  TextureChannelSource::R },
+		{ aiTextureType_METALNESS,         2, false, TextureChannelSource::B },
+		{ aiTextureType_SPECULAR,          2, false, TextureChannelSource::R },
+		{ aiTextureType_DIFFUSE_ROUGHNESS, 3, false, TextureChannelSource::G },
+		{ aiTextureType_SHININESS,         3, false, TextureChannelSource::R },
+		{ aiTextureType_AMBIENT,           4, false, TextureChannelSource::R },
+	};
+}
+
 bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material, uint32_t MaterialIndex, const char* BaseName, const char* ModelBaseDir, MaterialComponent& OutMaterial)
 {
 	// aiMaterial::GetName() returns aiString BY VALUE. Calling .C_Str() on that
@@ -177,74 +205,25 @@ void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material
 				continue;
 			}
 
-			TextureSampler l_sampler = TextureSampler::Sampler2D;
-			TextureUsage l_usage = TextureUsage::Sample;
-			bool l_isSRGB = false;
-			uint32_t l_textureSlotIndex = 0;
-			// Default: STB broadcasts single-channel PNGs to RGBA (R=G=B=L), so R is
-			// safe for separate / legacy textures. glTF KHR_materials_pbrMetallicRoughness
-			// packs a single RGBA: R unused, G=roughness, B=metallic. Assimp reports the
-			// SAME packed texture twice — once as aiTextureType_METALNESS, once as
-			// aiTextureType_DIFFUSE_ROUGHNESS — so the channel-source per Assimp tag is
-			// the cleanest signal for the BC4 import branch.
-			TextureChannelSource l_bc4Source = TextureChannelSource::R;
+			const TextureSlotMapping* l_mapping = nullptr;
+			for (const auto& l_candidate : kTextureSlotMappings)
+			{
+				if (l_candidate.m_AiType == l_aiTextureType)
+				{
+					l_mapping = &l_candidate;
+					break;
+				}
+			}
 
-			if (l_aiTextureType == aiTextureType::aiTextureType_HEIGHT ||
-				l_aiTextureType == aiTextureType::aiTextureType_NORMALS ||
-				l_aiTextureType == aiTextureType::aiTextureType_NORMAL_CAMERA)
-			{
-				l_usage = TextureUsage::Sample;
-				l_isSRGB = false;
-				l_textureSlotIndex = 0;
-			}
-			else if (l_aiTextureType == aiTextureType::aiTextureType_DIFFUSE ||
-				l_aiTextureType == aiTextureType::aiTextureType_BASE_COLOR)
-			{
-				l_usage = TextureUsage::Sample;
-				l_isSRGB = true;
-				l_textureSlotIndex = 1;
-			}
-			else if (l_aiTextureType == aiTextureType::aiTextureType_METALNESS)
-			{
-				l_usage = TextureUsage::Sample;
-				l_isSRGB = false;
-				l_textureSlotIndex = 2;
-				l_bc4Source = TextureChannelSource::B;
-			}
-			else if (l_aiTextureType == aiTextureType::aiTextureType_SPECULAR)
-			{
-				l_usage = TextureUsage::Sample;
-				l_isSRGB = false;
-				l_textureSlotIndex = 2;
-			}
-			else if (l_aiTextureType == aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS)
-			{
-				l_usage = TextureUsage::Sample;
-				l_isSRGB = false;
-				l_textureSlotIndex = 3;
-				l_bc4Source = TextureChannelSource::G;
-			}
-			else if (l_aiTextureType == aiTextureType::aiTextureType_SHININESS)
-			{
-				l_usage = TextureUsage::Sample;
-				l_isSRGB = false;
-				l_textureSlotIndex = 3;
-			}
-			else if (l_aiTextureType == aiTextureType::aiTextureType_AMBIENT)
-			{
-				l_usage = TextureUsage::Sample;
-				l_isSRGB = false;
-				l_textureSlotIndex = 4;
-			}
-			else
+			if (!l_mapping)
 			{
 				Log(Warning, l_AssString.C_Str(), " is unsupported texture type!");
 				continue;
 			}
 
-			auto l_textureName = AssimpTextureProcessor::CreateTextureComponent(l_localPath, modelBaseDir, l_sampler, l_usage, l_isSRGB, l_textureSlotIndex, baseName, l_bc4Source);
+			auto l_textureName = AssimpTextureProcessor::CreateTextureComponent(l_localPath, modelBaseDir, TextureSampler::Sampler2D, TextureUsage::Sample, l_mapping->m_IsSRGB, l_mapping->m_SlotIndex, baseName, l_mapping->m_BC4Source);
 			if (!l_textureName.empty())
-				assetData->m_TextureNames[l_textureSlotIndex] = l_textureName;
+				assetData->m_TextureNames[l_mapping->m_SlotIndex] = l_textureName;
 		}
 	}
 }

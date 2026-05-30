@@ -12,6 +12,10 @@ namespace Inno
     // broadcasts to RGBA on load (R=G=B=L, A=255).
     enum class TextureChannelSource : uint8_t { R = 0, G = 1, B = 2, A = 3 };
 
+    // Single-char tag per TextureChannelSource ordinal; index with the enum value
+    // to label a packed-channel import (e.g. "_chB" for the metallic slot).
+    constexpr const char k_ChannelSourceTags[] = "RGBA";
+
     namespace BCCompression
     {
         // Side effect: input RGBA buffer is freed via STBWrapper::Free.

@@ -3,7 +3,7 @@ id: TASK-232
 title: >-
   AssimpTextureProcessor — extract `"RGBA"[channel-source]` indexing into named
   constant
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-17 12:54'
 labels:
@@ -30,9 +30,9 @@ Single-use hygiene improvement; non-blocking. Surfaced separately per `surface-d
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Named constant for channel-source-tag chars introduced near the `TextureChannelSource` enum (or equivalent localized owner)
-- [ ] #2 AssimpTextureProcessor.cpp:30 references the named constant instead of inline string-literal
-- [ ] #3 Build green
+- [x] #1 Named constant for channel-source-tag chars introduced near the `TextureChannelSource` enum (or equivalent localized owner)
+- [x] #2 AssimpTextureProcessor.cpp:30 references the named constant instead of inline string-literal
+- [x] #3 Build green
 <!-- AC:END -->
 
 ## Definition of Done
@@ -44,3 +44,13 @@ Single-use hygiene improvement; non-blocking. Surfaced separately per `surface-d
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Implementation Notes
+
+### 2026-05-30 — closed
+
+Added `constexpr const char k_ChannelSourceTags[] = "RGBA";` next to the `TextureChannelSource` enum in `Source/Engine/Common/BCCompression.h`, and replaced the inline `"RGBA"[static_cast<uint32_t>(BC4Source)]` at `AssimpTextureProcessor.cpp:30` with `k_ChannelSourceTags[...]`. Resolves via `using namespace Inno;` (the constant is in `namespace Inno`; the header is included transitively through `AssimpTextureProcessor.h`). Same 4 chars, same index, same enum ordinals (R=0,G=1,B=2,A=3) → behaviour-identical.
+
+**Verification**: build green (shared with TASK-230's build); engine smoke run loaded GISponza with 0 D3D12 errors. Peer review (code-review agent): **PASS** — confirmed indexing/scope/ordinals preserved and no stale `"RGBA"[...]` indexing remains. One non-blocking advisory: a header-scope `constexpr const char[]` has internal linkage (per-TU copy); harmless here (single consumer, value-only read, address never compared across TUs).
+
+Committed together with TASK-230 (adjacent AssimpWrapper hygiene, same review origin `f407f461`).

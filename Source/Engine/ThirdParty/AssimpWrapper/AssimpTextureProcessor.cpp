@@ -27,7 +27,7 @@ std::string AssimpTextureProcessor::CreateTextureComponent(const char* FileName,
 	// call and both material slots would share one BC4 image.
 	if (BC4Source != TextureChannelSource::R)
 	{
-		const char l_ChannelTag = "RGBA"[static_cast<uint32_t>(BC4Source)];
+		const char l_ChannelTag = k_ChannelSourceTags[static_cast<uint32_t>(BC4Source)];
 		l_InstanceName += "_ch";
 		l_InstanceName += l_ChannelTag;
 	}
