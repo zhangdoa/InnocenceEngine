@@ -102,3 +102,7 @@ Pass.cpp boilerplate is the dominant friction tax on new rendering work. Every n
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+### 2026-05-31 — boilerplate quantification (survey, medium confidence)
+
+Survey of `Source/ExampleProject/RenderingClient/`: 39 `*Pass.cpp` (7,723 LOC) + 4 `*ExecuteCommands*.cpp` (842 LOC) = 8,565 LOC. Representative `::Setup()` bodies are ~74% mechanical (binding-descriptor arrays + RenderPassDesc/sampler config), 57%–81% across passes. ExecuteCommands ~19% is the repetitive WaitIfActive→Execute→Signal→Wait chain. Only one shared base class exists (`ComputeCullingPass`). Estimated eliminable via data-driven Setup + declarative pass-ordering: **~2,500 LOC (~29%)**. Confidence: med-high for Setup, med for ExecuteCommands.
