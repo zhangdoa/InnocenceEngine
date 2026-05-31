@@ -3,9 +3,11 @@ id: TASK-227
 title: >-
   Declarative render-pass resource graph (replace imperative ::Setup with
   serialized JSON/data declarations)
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - code-impl
 created_date: '2026-05-15 20:32'
+updated_date: '2026-05-31 13:16'
 labels:
   - rendering
   - engine-architecture
@@ -84,14 +86,26 @@ Pass.cpp boilerplate is the dominant friction tax on new rendering work. Every n
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 #1 Phase 0 RFC at .alignments/TASK-<N>-render-graph-design.md: data-format pick, compiler-shape pick, migration order, inventory of 51 Pass.cpp files binned by migration difficulty
+- [x] #1 #1 Phase 0 RFC at .alignments/TASK-<N>-render-graph-design.md: data-format pick, compiler-shape pick, migration order, inventory of 51 Pass.cpp files binned by migration difficulty
 - [ ] #2 #2 POC: one pass (recommend BRDFLUTPass) migrated to the data-driven form end-to-end (loaded from data at startup, dispatched in correct topo order, build + runtime smoke green)
-- [ ] #3 #3 Phase 1+ sub-tasks filed against the inventory — one per migration batch, dependency-ordered
+- [x] #3 #3 Phase 1+ sub-tasks filed against the inventory — one per migration batch, dependency-ordered
 - [ ] #4 #4 All 51 Pass.cpp files migrated to the data-driven form OR explicitly exempted in the RFC with reason cited
 - [ ] #5 #5 ExampleRenderingClient_ExecuteCommands_*.cpp imperative WaitIfActive/Execute/Signal chains replaced by render-graph-emitted dispatch — the orchestrator file shrinks to a loader-and-run entry point
 - [ ] #6 #6 60-FPS bar preserved on the Sponza autotest — graph compile cost amortized across frames (or measured + acknowledged as one-time-at-startup)
 - [ ] #7 #7 Build green; existing integration tests green; visual parity vs pre-refactor screenshots on all autotest scenes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-05-31 — Phase 0 design landed. RFC = backlog doc-1 (format=JSON-on-existing-nlohmann, compiler=startup-load+in-memory, kernel-registration with Default/override/opaque tiers mapping the 3 difficulty bins). AC#1 (RFC+inventory) and AC#3 (Phase 1+ sub-tasks .1-.4) done. AC#2 (BRDFLUTPass POC) in progress. AC#4-7 are whole-umbrella, deferred to TASK-227.{1..4}.
+
+2026-05-31 — AC#2 POC implemented (PENDING PEER REVIEW, not committed). New module Source/Engine/RenderGraph/: RenderGraphDesc.h (POD structs), RenderGraphEnumStrings.{h,cpp} (string<->enum for the plain enum-class graphics enums, which lack INNO_ENUM ToString), RenderGraphSerializer.{h,cpp} (hand-written to_json/from_json), IRenderGraphKernel.h + DefaultKernel.{h,cpp} (binds Reads/Writes per binding table, static Dispatch), RenderGraphService.{h,cpp} (load->deserialize->create resources via *ResourceService->create RenderPassComponent+binding layout+CLs+attach kernel; ScheduledNodes() is the topo-sort extension point). Data: Data/ExampleProject/RenderGraph/ExampleRenderGraph.json (BRDF LUT 512x512 Float16 RGBA + BRDFLUTPass node). Coexistence seam (RFC §10): BRDFLUTPass::Setup adopts the graph node's pointers under a constexpr g_UseRenderGraph flag; imperative body preserved verbatim under the false branch (reversible). PrepareCommandList delegates to RenderGraphService::RecordNode. All consumers (LightPass, ExecuteCommands, BRDFLUTMSPass, AuditDump) unchanged via the singleton accessors.
+
+2026-05-31 — AC#2 verification: Build green (BuildWin.ps1 MSVC RelWithDebInfo, Main+RenderTest exit 0). Unit test RenderGraphSerializerTests (enum + full-graph round-trip) added to TestSuite, 105/105 pass. Runtime smoke: Main.exe -total_frames 120 GISponza graph-driven — exit 0, scene loaded, auto-terminated, 0 D3D12 errors, logged 'RenderGraphService loaded graph [ExampleRenderGraph] with 1 resources and 1 passes'. Visual parity: audit-dumped BRDF LUT graph-vs-imperative MAE=0 (BIT-IDENTICAL via magick compare). Captures: Build/captures/brdflut_{graph,imperative}.hdr.
+
+2026-05-31 — DISCOVERY (surface, not chase): (1) TestGIScene.ps1 whole-scene MAE threshold 0.45 is ALREADY exceeded on clean ecs-overhaul HEAD (baseline 0.556-0.559 across 3 runs vs graph build 0.499) — pre-existing stale-CPU-reference issue on this branch, unrelated to TASK-227. (2) -audit mode crashes at process teardown (exit -1073740791) identically on imperative AND graph builds AFTER all dumps complete — pre-existing audit-shutdown bug, not introduced here. Both candidates for separate tasks if not already tracked.
+<!-- SECTION:NOTES:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
@@ -102,7 +116,3 @@ Pass.cpp boilerplate is the dominant friction tax on new rendering work. Every n
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
-
-### 2026-05-31 — boilerplate quantification (survey, medium confidence)
-
-Survey of `Source/ExampleProject/RenderingClient/`: 39 `*Pass.cpp` (7,723 LOC) + 4 `*ExecuteCommands*.cpp` (842 LOC) = 8,565 LOC. Representative `::Setup()` bodies are ~74% mechanical (binding-descriptor arrays + RenderPassDesc/sampler config), 57%–81% across passes. ExecuteCommands ~19% is the repetitive WaitIfActive→Execute→Signal→Wait chain. Only one shared base class exists (`ComputeCullingPass`). Estimated eliminable via data-driven Setup + declarative pass-ordering: **~2,500 LOC (~29%)**. Confidence: med-high for Setup, med for ExecuteCommands.
