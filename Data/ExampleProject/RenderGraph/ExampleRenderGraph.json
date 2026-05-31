@@ -1,0 +1,44 @@
+{
+    "Name": "ExampleRenderGraph",
+    "Resources": [
+        {
+            "Name": "BRDF LUT",
+            "Type": "Texture",
+            "Width": 512,
+            "Height": 512,
+            "DepthOrArraySize": 1,
+            "MipLevels": 1,
+            "Sampler": "Sampler2D",
+            "Usage": "ComputeOnly",
+            "PixelDataType": "Float16",
+            "PixelDataFormat": "RGBA",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
+        }
+    ],
+    "Passes": [
+        {
+            "Name": "BRDFLUTPass",
+            "Queue": "Compute",
+            "Kernel": "Default",
+            "Shader": { "CS": "BRDFLUTPass.comp" },
+            "Reads": [],
+            "Writes": [ "BRDF LUT" ],
+            "Bindings": [
+                {
+                    "Resource": "BRDF LUT",
+                    "Type": "Image",
+                    "Set": 0,
+                    "Index": 0,
+                    "BindingAccess": "ReadWrite",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ComputeOnly",
+                    "Stage": "Compute"
+                }
+            ],
+            "Dispatch": { "X": 32, "Y": 32, "Z": 1 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": true
+        }
+    ]
+}

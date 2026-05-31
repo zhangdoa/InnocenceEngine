@@ -1,0 +1,11 @@
+file(GLOB HEADERS "*.h")
+file(GLOB SOURCES "*.cpp")
+add_library(RenderGraph ${HEADERS} ${SOURCES})
+target_compile_definitions(RenderGraph PRIVATE INNO_PROJECT_NAME="${INNO_PROJECT_NAME}")
+set_property(TARGET RenderGraph PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_target_properties(RenderGraph PROPERTIES FOLDER Engine)
+target_include_directories(RenderGraph PRIVATE "${INNO_GITSUBMODULE_DIRECTORIES}/json/include")
+
+target_link_libraries(RenderGraph Common)
+target_link_libraries(RenderGraph Services)
+target_link_libraries(RenderGraph JSONWrapper)

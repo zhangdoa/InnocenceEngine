@@ -8,11 +8,49 @@
 #include "../../Engine/Services/TextureResourceService.h"
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
+#include "../../Engine/RenderGraph/RenderGraphService.h"
 
 using namespace Inno;
 
+namespace
+{
+	// TASK-227 Phase-0 coexistence seam (RFC §10): when true, BRDFLUTPass is
+	// driven by the data-declared render graph; consumers read GetResult() /
+	// GetRenderPassComp() unchanged. The imperative path below is preserved
+	// verbatim under the false branch, so the migration stays reversible and
+	// visual parity is verifiable against it.
+	constexpr bool g_UseRenderGraph = true;
+	const char* const g_GraphFile = "ExampleProject/RenderGraph/ExampleRenderGraph.json";
+}
+
+bool BRDFLUTPass::SetupFromRenderGraph()
+{
+	auto l_graphService = g_Engine->Get<RenderGraphService>();
+	if (!l_graphService->LoadGraph(g_GraphFile))
+		return false;
+
+	auto l_node = l_graphService->FindNode("BRDFLUTPass");
+	if (!l_node)
+	{
+		Log(Error, "BRDFLUTPass: render graph has no BRDFLUTPass node.");
+		return false;
+	}
+
+	m_ShaderProgramComp = l_node->m_ShaderProgram;
+	m_RenderPassComp = l_node->m_RenderPass;
+	m_Result = static_cast<TextureComponent*>(l_node->m_PrimaryOutput);
+	m_CommandListComp_Compute = l_node->m_CommandList_Compute;
+	m_CommandListComp_Graphics = l_node->m_CommandList_Graphics;
+
+	m_ObjectStatus = ObjectStatus::Created;
+	return true;
+}
+
 bool BRDFLUTPass::Setup(IServiceConfig *systemConfig)
 {
+	if (g_UseRenderGraph)
+		return SetupFromRenderGraph();
+
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BRDFLUTPass");
@@ -102,8 +140,18 @@ bool BRDFLUTPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 	}
 
+	if (g_UseRenderGraph)
+	{
+		auto l_node = g_Engine->Get<RenderGraphService>()->FindNode("BRDFLUTPass");
+		if (!g_Engine->Get<RenderGraphService>()->RecordNode(l_node))
+			return false;
+
+		m_ObjectStatus = ObjectStatus::Activated;
+		return true;
+	}
+
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
-	
+
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
 	l_fmService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
     l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 0);

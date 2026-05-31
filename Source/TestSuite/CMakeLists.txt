@@ -17,6 +17,7 @@ set(TEST_SOURCES
     UnitTests/HashMapTests.cpp
     UnitTests/UnorderedSetTests.cpp
     UnitTests/DequeTests.cpp
+    UnitTests/RenderGraphSerializerTests.cpp
     # Performance tests
     PerformanceTests/StringConversionPerf.cpp
     PerformanceTests/ContainerPerf.cpp
@@ -35,6 +36,7 @@ set(TEST_SOURCES
 add_executable(TestSuite ${TEST_SOURCES})
 target_link_libraries(TestSuite Engine)
 set_target_properties(TestSuite PROPERTIES FOLDER TestSuite)
+target_include_directories(TestSuite PRIVATE "${INNO_GITSUBMODULE_DIRECTORIES}/json/include")
 
 if (INNO_PLATFORM_LINUX)
 target_link_libraries(TestSuite -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lm -lpthread -lstdc++fs)

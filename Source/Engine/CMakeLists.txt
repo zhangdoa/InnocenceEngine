@@ -2,6 +2,7 @@
 add_subdirectory("ThirdParty")
 add_subdirectory("Services")
 add_subdirectory("RayTracer")
+add_subdirectory("RenderGraph")
 
 file(GLOB HEADERS "*.h")
 file(GLOB SOURCES "*.cpp")
@@ -11,6 +12,7 @@ set_target_properties(Engine PROPERTIES FOLDER Engine)
 target_link_libraries(Engine Common)
 target_link_libraries(Engine Services)
 target_link_libraries(Engine RayTracer)
+target_link_libraries(Engine RenderGraph)
 target_link_libraries(Engine GraphicsServiceCommon)
 
 # Always link headless systems (platform-agnostic)

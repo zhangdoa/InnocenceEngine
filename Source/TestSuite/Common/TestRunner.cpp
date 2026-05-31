@@ -94,6 +94,7 @@ extern void RunQueueUnitTests();
 extern void RunHashMapUnitTests();
 extern void RunUnorderedSetUnitTests();
 extern void RunDequeUnitTests();
+extern void RunRenderGraphSerializerUnitTests();
 
 extern void RunStringConversionPerformanceTests();
 extern void RunContainerPerformanceTests();
@@ -122,6 +123,7 @@ void TestRunner::RunUnitTests()
 	RunHashMapUnitTests();
 	RunUnorderedSetUnitTests();
 	RunDequeUnitTests();
+	RunRenderGraphSerializerUnitTests();
 
 	Log(Success, "========== UNIT TESTS COMPLETE ==========\n");
 }
