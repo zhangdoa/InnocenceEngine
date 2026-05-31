@@ -225,7 +225,7 @@ bool IOService::AddCPPClassFiles(const CPPClassDesc& desc)
 		}
 		else
 		{
-			l_headerFile << "  INNO_CLASS_INTERFACE_DEFALUT(" << desc.className << ");" << std::endl;
+			l_headerFile << "  INNO_CLASS_INTERFACE_DEFAULT(" << desc.className << ");" << std::endl;
 		}
 	}
 	else

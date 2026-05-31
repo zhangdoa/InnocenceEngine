@@ -32,7 +32,7 @@
     className(className &&other) = delete;                          \
     className &operator=(className &&other) = delete;
 
-#define INNO_CLASS_INTERFACE_DEFALUT(className)           \
+#define INNO_CLASS_INTERFACE_DEFAULT(className)           \
     className(void) = default;                            \
     virtual ~className(void) = default;                   \
     className(const className &rhs) = default;            \
