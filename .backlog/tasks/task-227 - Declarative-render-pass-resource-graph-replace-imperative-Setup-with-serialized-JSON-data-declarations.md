@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - code-impl
 created_date: '2026-05-15 20:32'
-updated_date: '2026-05-31 13:16'
+updated_date: '2026-05-31 17:20'
 labels:
   - rendering
   - engine-architecture
@@ -87,7 +87,7 @@ Pass.cpp boilerplate is the dominant friction tax on new rendering work. Every n
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 #1 Phase 0 RFC at .alignments/TASK-<N>-render-graph-design.md: data-format pick, compiler-shape pick, migration order, inventory of 51 Pass.cpp files binned by migration difficulty
-- [ ] #2 #2 POC: one pass (recommend BRDFLUTPass) migrated to the data-driven form end-to-end (loaded from data at startup, dispatched in correct topo order, build + runtime smoke green)
+- [x] #2 #2 POC: one pass (recommend BRDFLUTPass) migrated to the data-driven form end-to-end (loaded from data at startup, dispatched in correct topo order, build + runtime smoke green)
 - [x] #3 #3 Phase 1+ sub-tasks filed against the inventory — one per migration batch, dependency-ordered
 - [ ] #4 #4 All 51 Pass.cpp files migrated to the data-driven form OR explicitly exempted in the RFC with reason cited
 - [ ] #5 #5 ExampleRenderingClient_ExecuteCommands_*.cpp imperative WaitIfActive/Execute/Signal chains replaced by render-graph-emitted dispatch — the orchestrator file shrinks to a loader-and-run entry point
@@ -105,6 +105,8 @@ Pass.cpp boilerplate is the dominant friction tax on new rendering work. Every n
 2026-05-31 — AC#2 verification: Build green (BuildWin.ps1 MSVC RelWithDebInfo, Main+RenderTest exit 0). Unit test RenderGraphSerializerTests (enum + full-graph round-trip) added to TestSuite, 105/105 pass. Runtime smoke: Main.exe -total_frames 120 GISponza graph-driven — exit 0, scene loaded, auto-terminated, 0 D3D12 errors, logged 'RenderGraphService loaded graph [ExampleRenderGraph] with 1 resources and 1 passes'. Visual parity: audit-dumped BRDF LUT graph-vs-imperative MAE=0 (BIT-IDENTICAL via magick compare). Captures: Build/captures/brdflut_{graph,imperative}.hdr.
 
 2026-05-31 — DISCOVERY (surface, not chase): (1) TestGIScene.ps1 whole-scene MAE threshold 0.45 is ALREADY exceeded on clean ecs-overhaul HEAD (baseline 0.556-0.559 across 3 runs vs graph build 0.499) — pre-existing stale-CPU-reference issue on this branch, unrelated to TASK-227. (2) -audit mode crashes at process teardown (exit -1073740791) identically on imperative AND graph builds AFTER all dumps complete — pre-existing audit-shutdown bug, not introduced here. Both candidates for separate tasks if not already tracked.
+
+2026-05-31 — Phase 0 COMPLETE (AC#1-3 checked). POC committed 9e6d5acb (RenderGraph module + data-driven BRDFLUTPass, build green, TestSuite 105/105, GISponza smoke exit 0, BRDF LUT MAE=0 vs imperative). Paperwork committed a08b564c. RFC = backlog doc-1 (untracked in backlog store per venue decision). Umbrella stays In Progress: AC#4-7 are whole-engine migration, tracked in TASK-227.{1..4}.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
