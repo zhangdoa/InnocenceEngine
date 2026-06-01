@@ -24,9 +24,22 @@ bool DefaultKernel::Record(RenderGraphPassContext& ctx)
 	l_fmService->CommandListBegin(ctx.m_RenderPass, ctx.m_CommandList, 0);
 	l_fmService->BindRenderPassComponent(ctx.m_RenderPass, ctx.m_CommandList);
 
+	// Each binding is bound to the root parameter equal to its position in the
+	// pass's m_ResourceBindingLayoutDescs[]. RenderGraphService builds that array
+	// and m_BoundResources by iterating m_Bindings in the same order, so binding i
+	// here maps to layout-array slot i (the 5th BindGPUResource arg is the
+	// root-parameter / layout-array index, NOT the HLSL register m_DescriptorIndex).
+	if (ctx.m_BoundResources.size() != ctx.m_Node->m_Bindings.size())
+	{
+		Log(Warning, "DefaultKernel::Record [", ctx.m_Node->m_Name.c_str(),
+			"]: bound-resource count ", ctx.m_BoundResources.size(),
+			" != binding count ", ctx.m_Node->m_Bindings.size(), ".");
+		return false;
+	}
+
 	for (size_t i = 0; i < ctx.m_Node->m_Bindings.size(); i++)
 	{
-		auto l_resource = (i < ctx.m_BoundResources.size()) ? ctx.m_BoundResources[i] : nullptr;
+		auto l_resource = ctx.m_BoundResources[i];
 		if (!l_resource)
 		{
 			Log(Warning, "DefaultKernel::Record [", ctx.m_Node->m_Name.c_str(),

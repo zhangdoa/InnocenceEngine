@@ -10,11 +10,42 @@
 #include "../../Engine/Services/TextureResourceService.h"
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
+#include "../../Engine/RenderGraph/RenderGraphService.h"
 
 using namespace Inno;
 
+namespace
+{
+	// TASK-227 Phase-1 coexistence seam (RFC §10, mirrors BRDFLUTPass): when true,
+	// BRDFLUTMSPass is driven by the data-declared render graph. The graph file is
+	// already loaded by BRDFLUTPass::Setup (runs earlier), so this pass only adopts
+	// its node. The imperative path is preserved verbatim under the false branch.
+	constexpr bool g_UseRenderGraph = true;
+}
+
+bool BRDFLUTMSPass::SetupFromRenderGraph()
+{
+	auto l_node = g_Engine->Get<RenderGraphService>()->FindNode("BRDFLUTMSPass");
+	if (!l_node)
+	{
+		Log(Error, "BRDFLUTMSPass: render graph has no BRDFLUTMSPass node.");
+		return false;
+	}
+
+	m_ShaderProgramComp = l_node->m_ShaderProgram;
+	m_RenderPassComp = l_node->m_RenderPass;
+	m_Result = static_cast<TextureComponent*>(l_node->m_PrimaryOutput);
+	m_CommandListComp_Compute = l_node->m_CommandList_Compute;
+
+	m_ObjectStatus = ObjectStatus::Created;
+	return true;
+}
+
 bool BRDFLUTMSPass::Setup(IServiceConfig *systemConfig)
 {
+	if (g_UseRenderGraph)
+		return SetupFromRenderGraph();
+
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BRDFLUTMSPass");
@@ -104,6 +135,16 @@ bool BRDFLUTMSPass::PrepareCommandList(IRenderingContext* renderingContext)
 	{
 		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
+
+	if (g_UseRenderGraph)
+	{
+		auto l_node = g_Engine->Get<RenderGraphService>()->FindNode("BRDFLUTMSPass");
+		if (!g_Engine->Get<RenderGraphService>()->RecordNode(l_node))
+			return false;
+
+		m_ObjectStatus = ObjectStatus::Activated;
+		return true;
 	}
 
 	auto l_fmService = g_Engine->Get<FrameManagementService>();

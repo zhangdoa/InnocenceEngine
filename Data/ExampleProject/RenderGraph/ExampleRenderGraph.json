@@ -14,6 +14,20 @@
             "PixelDataFormat": "RGBA",
             "GPUAccessibility": "ReadWrite",
             "Lifetime": "Persistent"
+        },
+        {
+            "Name": "BRDF MS LUT",
+            "Type": "Texture",
+            "Width": 512,
+            "Height": 512,
+            "DepthOrArraySize": 1,
+            "MipLevels": 1,
+            "Sampler": "Sampler2D",
+            "Usage": "ComputeOnly",
+            "PixelDataType": "Float16",
+            "PixelDataFormat": "RGBA",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
         }
     ],
     "Passes": [
@@ -30,6 +44,39 @@
                     "Type": "Image",
                     "Set": 0,
                     "Index": 0,
+                    "BindingAccess": "ReadWrite",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ComputeOnly",
+                    "Stage": "Compute"
+                }
+            ],
+            "Dispatch": { "X": 32, "Y": 32, "Z": 1 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": true
+        },
+        {
+            "Name": "BRDFLUTMSPass",
+            "Queue": "Compute",
+            "Kernel": "Default",
+            "Shader": { "CS": "BRDFLUTMSPass.comp" },
+            "Reads": [ "BRDF LUT" ],
+            "Writes": [ "BRDF MS LUT" ],
+            "Bindings": [
+                {
+                    "Resource": "BRDF LUT",
+                    "Type": "Image",
+                    "Set": 0,
+                    "Index": 0,
+                    "BindingAccess": "ReadWrite",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ComputeOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "BRDF MS LUT",
+                    "Type": "Image",
+                    "Set": 0,
+                    "Index": 1,
                     "BindingAccess": "ReadWrite",
                     "ResourceAccess": "ReadWrite",
                     "TextureUsage": "ComputeOnly",
