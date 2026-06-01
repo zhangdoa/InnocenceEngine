@@ -23,6 +23,8 @@ namespace Inno
 		virtual const char* GetPassName() const = 0;
 		virtual const char* GetComputeShaderPath() const = 0;
 
+		bool SetupFromRenderGraph();
+
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 		RenderPassComponent* m_RenderPassComp = nullptr;
 		ShaderProgramComponent* m_ShaderProgramComp = nullptr;

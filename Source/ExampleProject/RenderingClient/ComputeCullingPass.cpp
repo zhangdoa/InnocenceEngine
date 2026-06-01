@@ -10,11 +10,47 @@
 #include "../../Engine/Services/GPUBufferResourceService.h"
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
+#include "../../Engine/RenderGraph/RenderGraphService.h"
 
 using namespace Inno;
 
+namespace
+{
+	// TASK-227.2 coexistence seam (RFC §10): when true, a ComputeCulling subclass is
+	// graph-driven (binding table + dynamic dispatch via the ComputeCulling kernel);
+	// a subclass with no matching node falls back to the imperative path below. The
+	// indirect buffer stays imperative (runtime-config-sized, maxMeshes) and is
+	// imported into the graph by name.
+	constexpr bool g_UseRenderGraph = true;
+}
+
+bool ComputeCullingPass::SetupFromRenderGraph()
+{
+	const char* l_passName = GetPassName();
+	const std::string l_bufferName = std::string(l_passName) + "/IndirectDrawCommandBuffer";
+
+	auto l_node = g_Engine->Get<RenderGraphService>()->FindNode(l_passName);
+	if (!l_node)
+		return false;
+
+	// Indirect buffer stays imperative (runtime-config-sized); graph imports it.
+	m_IndirectDrawCommandBuffer = g_Engine->Get<GPUBufferResourceService>()->Add(l_bufferName.c_str());
+	m_IndirectDrawCommandBuffer->m_Usage = GPUBufferUsage::IndirectDraw;
+	m_IndirectDrawCommandBuffer->m_ElementCount = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability().maxMeshes;
+
+	m_ShaderProgramComp = l_node->m_ShaderProgram;
+	m_RenderPassComp = l_node->m_RenderPass;
+	m_CommandListComp_Compute = l_node->m_CommandList_Compute;
+
+	m_ObjectStatus = ObjectStatus::Created;
+	return true;
+}
+
 bool ComputeCullingPass::Setup(IServiceConfig* systemConfig)
 {
+	if (g_UseRenderGraph && SetupFromRenderGraph())
+		return true;
+
 	const char* l_passName = GetPassName();
 	const std::string l_bufferName = std::string(l_passName) + "/IndirectDrawCommandBuffer";
 	const std::string l_commandListName = std::string(l_passName) + "/Compute";
@@ -109,6 +145,18 @@ bool ComputeCullingPass::PrepareCommandList(IRenderingContext* /*renderingContex
 
 	if (m_IndirectDrawCommandBuffer->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
+
+	if (g_UseRenderGraph)
+	{
+		// The ComputeCulling kernel owns the dynamic dispatch size, the empty-
+		// model-set early-out, and the post-dispatch UAV state-tracker side effect.
+		auto l_node = g_Engine->Get<RenderGraphService>()->FindNode(GetPassName());
+		if (!g_Engine->Get<RenderGraphService>()->RecordNode(l_node))
+			return false;
+
+		m_ObjectStatus = ObjectStatus::Activated;
+		return true;
+	}
 
 	auto l_drawCallService = g_Engine->Get<DrawCallService>();
 	auto& l_gpuModelData = l_drawCallService->GetGPUModelData();

@@ -28,6 +28,41 @@
             "PixelDataFormat": "RGBA",
             "GPUAccessibility": "ReadWrite",
             "Lifetime": "Persistent"
+        },
+        {
+            "Name": "LuminanceAverageGPUBuffer",
+            "Type": "Buffer",
+            "ElementCount": 8,
+            "ElementSize": 4,
+            "BufferUsage": "Generic",
+            "CPUAccessibility": "Immutable",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
+        },
+        {
+            "Name": "LuminanceHistogramGPUBuffer",
+            "Type": "Buffer",
+            "Imported": true
+        },
+        {
+            "Name": "PerFrameCBuffer",
+            "Type": "Buffer",
+            "Imported": true
+        },
+        {
+            "Name": "GPUModelDataBuffer",
+            "Type": "Buffer",
+            "Imported": true
+        },
+        {
+            "Name": "MaterialCBuffer",
+            "Type": "Buffer",
+            "Imported": true
+        },
+        {
+            "Name": "OpaqueCullingPass/IndirectDrawCommandBuffer",
+            "Type": "Buffer",
+            "Imported": true
         }
     ],
     "Passes": [
@@ -86,6 +121,95 @@
             "Dispatch": { "X": 32, "Y": 32, "Z": 1 },
             "Bypass": { "Enabled": false, "ClearOnBypass": false },
             "OneShot": true
+        },
+        {
+            "Name": "LuminanceAveragePass",
+            "Queue": "Compute",
+            "Kernel": "Default",
+            "Shader": { "CS": "luminanceAveragePass.comp" },
+            "Reads": [ "PerFrameCBuffer", "LuminanceHistogramGPUBuffer" ],
+            "Writes": [ "LuminanceAverageGPUBuffer" ],
+            "Bindings": [
+                {
+                    "Resource": "PerFrameCBuffer",
+                    "Type": "Buffer",
+                    "Set": 0,
+                    "Index": 0,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "LuminanceHistogramGPUBuffer",
+                    "Type": "Buffer",
+                    "Set": 1,
+                    "Index": 0,
+                    "BindingAccess": "ReadWrite",
+                    "ResourceAccess": "ReadWrite",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "LuminanceAverageGPUBuffer",
+                    "Type": "Buffer",
+                    "Set": 1,
+                    "Index": 1,
+                    "BindingAccess": "ReadWrite",
+                    "ResourceAccess": "ReadWrite",
+                    "Stage": "Compute"
+                }
+            ],
+            "Dispatch": { "X": 1, "Y": 1, "Z": 1 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "OpaqueCullingPass",
+            "Queue": "Compute",
+            "Kernel": "ComputeCulling",
+            "Shader": { "CS": "opaqueGPUCulling.comp" },
+            "Reads": [ "PerFrameCBuffer", "GPUModelDataBuffer", "MaterialCBuffer" ],
+            "Writes": [ "OpaqueCullingPass/IndirectDrawCommandBuffer" ],
+            "Bindings": [
+                {
+                    "Resource": "PerFrameCBuffer",
+                    "Type": "Buffer",
+                    "Set": 0,
+                    "Index": 0,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "GPUModelDataBuffer",
+                    "Type": "Buffer",
+                    "Set": 1,
+                    "Index": 0,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "MaterialCBuffer",
+                    "Type": "Buffer",
+                    "Set": 1,
+                    "Index": 1,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "OpaqueCullingPass/IndirectDrawCommandBuffer",
+                    "Type": "Buffer",
+                    "Set": 2,
+                    "Index": 0,
+                    "BindingAccess": "ReadWrite",
+                    "ResourceAccess": "ReadWrite",
+                    "Stage": "Compute"
+                }
+            ],
+            "Dispatch": { "X": 1, "Y": 1, "Z": 1 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
         }
     ]
 }

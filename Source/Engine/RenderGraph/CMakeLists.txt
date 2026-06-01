@@ -1,5 +1,5 @@
-file(GLOB HEADERS "*.h")
-file(GLOB SOURCES "*.cpp")
+file(GLOB HEADERS CONFIGURE_DEPENDS "*.h")
+file(GLOB SOURCES CONFIGURE_DEPENDS "*.cpp")
 add_library(RenderGraph ${HEADERS} ${SOURCES})
 target_compile_definitions(RenderGraph PRIVATE INNO_PROJECT_NAME="${INNO_PROJECT_NAME}")
 set_property(TARGET RenderGraph PROPERTY POSITION_INDEPENDENT_CODE ON)

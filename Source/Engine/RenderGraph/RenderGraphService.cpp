@@ -9,8 +9,19 @@
 #include "../Services/TextureResourceService.h"
 #include "../Services/GPUBufferResourceService.h"
 #include "../Services/CommandListResourceService.h"
+#include "../Services/PerFrameDataService.h"
+#include "ComputeCullingKernel.h"
 
 using namespace Inno;
+
+namespace
+{
+	// Recognized built-in dynamic resource (bin-b primitive #1). PerFrameCBuffer is
+	// double-buffered (GetCurrentFrameBuffer() alternates by frame-parity), so the
+	// graph re-resolves this name through that accessor at every RecordNode rather
+	// than pinning one handle via static import-by-name (stale every other frame).
+	const char* const g_PerFrameCBufferName = "PerFrameCBuffer";
+}
 
 RenderGraphService::RenderGraphService() = default;
 RenderGraphService::~RenderGraphService() = default;
@@ -49,6 +60,12 @@ bool RenderGraphService::LoadGraph(const char* fileName)
 
 GPUResourceComponent* RenderGraphService::FindResource(const std::string& name)
 {
+	// Built-in dynamic resource: re-resolve per frame via the frame-parity
+	// accessor (primitive #1). RecordNode calls FindResource each frame, so this
+	// hands back the correct double-buffered handle without per-pass C++.
+	if (name == g_PerFrameCBufferName)
+		return g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
+
 	auto it = m_Resources.find(name);
 	if (it != m_Resources.end())
 		return it->second;
@@ -125,6 +142,14 @@ IRenderGraphKernel* RenderGraphService::ResolveKernel(const std::string& name)
 		return l_raw;
 	}
 
+	if (name == "ComputeCulling")
+	{
+		auto l_kernel = std::make_unique<ComputeCullingKernel>();
+		auto l_raw = l_kernel.get();
+		m_Kernels[name] = std::move(l_kernel);
+		return l_raw;
+	}
+
 	Log(Error, "RenderGraphService: unknown kernel [", name.c_str(), "].");
 	return nullptr;
 }
@@ -174,8 +199,15 @@ bool RenderGraphService::CreatePassNode(const PassNodeDesc& desc)
 		g_Engine->Get<CommandListResourceService>()->Add((desc.m_Name + "/Graphics").c_str());
 	l_node->m_CommandList_Graphics->m_Type = GPUEngineType::Graphics;
 
+	// Primary output = first graph-OWNED write (parity with the pass's GetResult()).
+	// Imported writes are created by their owning pass after graph load, so they
+	// resolve lazily at RecordNode — never eagerly here (would log a false miss).
 	if (!desc.m_Writes.empty())
-		l_node->m_PrimaryOutput = FindResource(desc.m_Writes[0]);
+	{
+		auto it = m_Resources.find(desc.m_Writes[0]);
+		if (it != m_Resources.end())
+			l_node->m_PrimaryOutput = it->second;
+	}
 
 	auto l_raw = l_node.get();
 	m_Nodes[desc.m_Name] = std::move(l_node);

@@ -20,6 +20,8 @@ namespace Inno
 		GPUResourceComponent *GetResult();
 
 	private:
+		bool SetupFromRenderGraph();
+
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_ShaderProgramComp;

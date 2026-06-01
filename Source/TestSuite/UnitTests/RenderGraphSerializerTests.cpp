@@ -182,11 +182,82 @@ static void TestBufferRoundTrip()
 	TestRunner::EndTest(passed);
 }
 
+static RenderGraphDesc MakeComputeCullingGraph()
+{
+	// Mirrors OpaqueCullingPass: a non-Default kernel name plus a pass that binds
+	// only imported/dynamic buffers (no graph-owned output resource of its own).
+	RenderGraphDesc l_graph;
+	l_graph.m_Name = "CullingGraph";
+
+	PassNodeDesc l_pass;
+	l_pass.m_Name = "OpaqueCullingPass";
+	l_pass.m_Kernel = "ComputeCulling";
+	l_pass.m_Queue = GPUEngineType::Compute;
+	l_pass.m_ShaderFilePaths.m_CSPath = "opaqueGPUCulling.comp";
+	l_pass.m_Reads.push_back("PerFrameCBuffer");
+	l_pass.m_Writes.push_back("OpaqueCullingPass/IndirectDrawCommandBuffer");
+
+	BindingDesc l_output;
+	l_output.m_Resource = "OpaqueCullingPass/IndirectDrawCommandBuffer";
+	l_output.m_GPUResourceType = GPUResourceType::Buffer;
+	l_output.m_DescriptorSetIndex = 2;
+	l_output.m_BindingAccessibility = Accessibility::ReadWrite;
+	l_output.m_ResourceAccessibility = Accessibility::ReadWrite;
+	l_output.m_ShaderStage = ShaderStage::Compute;
+	l_pass.m_Bindings.push_back(l_output);
+	l_pass.m_Dispatch = { 1, 1, 1 };
+	l_pass.m_OneShot = false;
+	l_graph.m_Passes.push_back(l_pass);
+
+	return l_graph;
+}
+
+static void TestComputeCullingRoundTrip()
+{
+	TestRunner::StartTest("RenderGraph: ComputeCulling kernel + buffer binding survives round-trip");
+
+	RenderGraphDesc l_original = MakeComputeCullingGraph();
+
+	json j;
+	RenderGraphSerializer::to_json(j, l_original);
+
+	RenderGraphDesc l_loaded;
+	RenderGraphSerializer::from_json(j, l_loaded);
+
+	bool passed = l_loaded.m_Passes.size() == 1;
+
+	if (passed)
+	{
+		const auto& p = l_loaded.m_Passes[0];
+		passed = p.m_Name == "OpaqueCullingPass" &&
+			p.m_Kernel == "ComputeCulling" &&
+			p.m_Reads.size() == 1 && p.m_Reads[0] == "PerFrameCBuffer" &&
+			p.m_Writes.size() == 1 &&
+			p.m_Writes[0] == "OpaqueCullingPass/IndirectDrawCommandBuffer" &&
+			p.m_Bindings.size() == 1 &&
+			p.m_OneShot == false;
+	}
+
+	if (passed)
+	{
+		const auto& b = l_loaded.m_Passes[0].m_Bindings[0];
+		passed = b.m_Resource == "OpaqueCullingPass/IndirectDrawCommandBuffer" &&
+			b.m_GPUResourceType == GPUResourceType::Buffer &&
+			b.m_DescriptorSetIndex == 2 &&
+			b.m_BindingAccessibility == Accessibility::ReadWrite &&
+			b.m_ResourceAccessibility == Accessibility::ReadWrite &&
+			b.m_ShaderStage == ShaderStage::Compute;
+	}
+
+	TestRunner::EndTest(passed);
+}
+
 void RunRenderGraphSerializerUnitTests()
 {
 	TestRunner::StartTestSuite("RenderGraphSerializer");
 	TestEnumRoundTrip();
 	TestGraphRoundTrip();
 	TestBufferRoundTrip();
+	TestComputeCullingRoundTrip();
 	TestRunner::EndTestSuite();
 }

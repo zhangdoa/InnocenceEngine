@@ -11,11 +11,43 @@
 #include "../../Engine/Services/GPUBufferResourceService.h"
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
+#include "../../Engine/RenderGraph/RenderGraphService.h"
 
 using namespace Inno;
 
+namespace
+{
+	// TASK-227.2 coexistence seam (RFC §10, mirrors BRDFLUTMSPass): when true,
+	// LuminanceAveragePass is driven by the data-declared render graph. The graph
+	// file is already loaded by BRDFLUTPass::Setup (runs earlier), so this pass
+	// only adopts its node. The imperative path is preserved verbatim under the
+	// false branch, so the migration stays reversible and parity-verifiable.
+	constexpr bool g_UseRenderGraph = true;
+}
+
+bool LuminanceAveragePass::SetupFromRenderGraph()
+{
+	auto l_node = g_Engine->Get<RenderGraphService>()->FindNode("LuminanceAveragePass");
+	if (!l_node)
+	{
+		Log(Error, "LuminanceAveragePass: render graph has no LuminanceAveragePass node.");
+		return false;
+	}
+
+	m_ShaderProgramComp = l_node->m_ShaderProgram;
+	m_RenderPassComp = l_node->m_RenderPass;
+	m_luminanceAverage = static_cast<GPUBufferComponent*>(l_node->m_PrimaryOutput);
+	m_CommandListComp_Compute = l_node->m_CommandList_Compute;
+
+	m_ObjectStatus = ObjectStatus::Created;
+	return true;
+}
+
 bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 {
+	if (g_UseRenderGraph)
+		return SetupFromRenderGraph();
+
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
@@ -74,6 +106,9 @@ bool LuminanceAveragePass::Initialize()
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
+	// Graph-driven path adopts components the RenderGraphService Added (resource +
+	// render pass + command list); the graph does not Initialize them, so the
+	// adopted pointers go through the same Initialize calls as the imperative path.
 	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
 	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
 	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
@@ -123,6 +158,16 @@ bool LuminanceAveragePass::PrepareCommandList(IRenderingContext* renderingContex
 
 	if (m_luminanceAverage->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
+
+	if (g_UseRenderGraph)
+	{
+		auto l_node = g_Engine->Get<RenderGraphService>()->FindNode("LuminanceAveragePass");
+		if (!g_Engine->Get<RenderGraphService>()->RecordNode(l_node))
+			return false;
+
+		m_ObjectStatus = ObjectStatus::Activated;
+		return true;
+	}
 
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
