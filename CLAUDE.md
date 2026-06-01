@@ -24,7 +24,7 @@ Single user (zhangdoa). No team, no other contributors, no CI fleet, no fresh-ch
 | `no-images.js` | New / modified image files staged (allowlist: `Data/Engine/Icons/`, `Source/Editor-Next/tests/*-snapshots/`). |
 | `no-new-md.js` | New `.md` outside `.backlog/tasks/`, `.claude/{agents,skills,commands,state}/`, or CLAUDE/README/LICENSE allowlist. |
 | `commit-body-cap.js` | Commit body > 40 lines (trailers excluded). |
-| `comment-essay-cap.js` | Staged code adds > 5 contiguous lines of `//` comments. |
+| `comment-essay-cap.js` | Staged code adds > 5 contiguous lines of `//` comments, OR a comment carrying a tracker id / design-doc section / phase-bin-primitive ref (WHY-only in comments). |
 | `file-size.js` | Touched file > 300 lines AND growing past pre-image size. |
 | `closure-staleness.js` | Commit cites `TASK-N` still open AND staged files include non-docs. Bypass: `[task-stays-open]` in subject. |
 | `peer-review.js` | Missing `Reviewed-By:` / `Review-Skipped:` footer. |
@@ -41,7 +41,16 @@ Single user (zhangdoa). No team, no other contributors, no CI fleet, no fresh-ch
 
 ## Session start
 
-First action of every new session: invoke `task-mgmt` agent for briefing.
+First action of every new session: invoke `task-mgmt` agent for briefing. Then, for any work continuing prior sessions, read the relevant resume note from the `InnocenceEngine` basic-memory project (see Memory).
+
+## Memory (basic-memory MCP)
+
+Cross-session continuity for this project lives in the **`InnocenceEngine`** basic-memory project (created via the basic-memory MCP; run `list_memory_projects` to resolve its local path). Address it explicitly in MCP calls (`project: "InnocenceEngine"`) — it is **not** the default project.
+
+- This is the sanctioned memory venue. It is distinct from the disabled Claude auto-memory path (`~/.claude/projects/<slug>/memory/`, blocked by `no-auto-memory`) — basic-memory is not blocked.
+- **Division of labour:** Backlog.md tasks remain the task tracker + per-task history. basic-memory holds the cross-cutting / continuity layer — resume points, durable decisions, load-bearing invariants, and gotchas that outlive a single task. Don't duplicate full backlog notes into it; link to the task.
+- **Read** the relevant resume note at the start of continuing work. **Write/update** it when a session ends or lands a durable decision/invariant — not for ephemeral status.
+- **Find** the resume note for the work in hand via the project's `search_notes` / `recent_activity` (by task id or topic) — don't hardcode note titles here; they get reorganized.
 
 ## Harness wiring
 
