@@ -57,6 +57,8 @@ namespace
 		j["Lifetime"] = ES::ToString(r.m_Lifetime);
 		if (r.m_Imported)
 			j["Imported"] = true;
+		if (!r.m_SizeExpr.empty())
+			j["Size"] = r.m_SizeExpr;
 		return j;
 	}
 
@@ -66,6 +68,7 @@ namespace
 		r.m_Type = ES::ResourceTypeFromString(j.value("Type", std::string("Texture")));
 		r.m_Lifetime = ES::LifetimeFromString(j.value("Lifetime", std::string("Persistent")));
 		r.m_Imported = j.value("Imported", false);
+		r.m_SizeExpr = j.value("Size", std::string());
 		if (r.m_Type == RenderGraphResourceType::Buffer)
 			BufferDescFromJson(j, r.m_BufferDesc);
 		else

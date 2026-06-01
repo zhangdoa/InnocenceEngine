@@ -252,6 +252,10 @@ static void TestComputeCullingRoundTrip()
 	TestRunner::EndTest(passed);
 }
 
+// Deferred-RT / screen-sized + ScreenTile-kernel round-trip fixtures live in
+// RenderGraphSerializerTests_ScreenSized.cpp.
+extern void TestScreenSizedRoundTrip();
+
 void RunRenderGraphSerializerUnitTests()
 {
 	TestRunner::StartTestSuite("RenderGraphSerializer");
@@ -259,5 +263,6 @@ void RunRenderGraphSerializerUnitTests()
 	TestGraphRoundTrip();
 	TestBufferRoundTrip();
 	TestComputeCullingRoundTrip();
+	TestScreenSizedRoundTrip();
 	TestRunner::EndTestSuite();
 }

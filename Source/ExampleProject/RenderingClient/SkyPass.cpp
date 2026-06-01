@@ -10,11 +10,45 @@
 #include "../../Engine/Services/TextureResourceService.h"
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
+#include "../../Engine/RenderGraph/RenderGraphService.h"
 
 using namespace Inno;
 
+namespace
+{
+	// When true, SkyPass is driven by the render graph: its screen-sized Result is
+	// created by the writer node's RT init-func (resize flows through the engine's
+	// PostResize loop) and its dispatch comes from the screen-tile kernel. The
+	// imperative path below is the fallback.
+	constexpr bool g_UseRenderGraph = true;
+}
+
+bool SkyPass::SetupFromRenderGraph()
+{
+	auto l_node = g_Engine->Get<RenderGraphService>()->FindNode("SkyPass");
+	if (!l_node)
+	{
+		Log(Error, "SkyPass: render graph has no SkyPass node.");
+		return false;
+	}
+
+	m_ShaderProgramComp = l_node->m_ShaderProgram;
+	m_RenderPassComp = l_node->m_RenderPass;
+	m_CommandListComp_Compute = l_node->m_CommandList_Compute;
+
+	// m_Result (the deferred screen-sized RT) is created when Initialize runs the
+	// node's RT-init-func; resolved after that in Initialize.
+	m_Result = nullptr;
+
+	m_ObjectStatus = ObjectStatus::Created;
+	return true;
+}
+
 bool SkyPass::Setup(IServiceConfig* systemConfig)
 {
+	if (g_UseRenderGraph)
+		return SetupFromRenderGraph();
+
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SkyPass");
@@ -62,6 +96,9 @@ bool SkyPass::Initialize()
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	// RenderPassResourceService::Initialize is deferred — the node's RT-init-func
+	// (which creates the screen-sized Result) runs later in InitializeComponents,
+	// so m_Result is resolved lazily in PrepareCommandList, not here.
 	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
 	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
 
@@ -94,6 +131,24 @@ bool SkyPass::PrepareCommandList(IRenderingContext* renderingContext)
 	{
 		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
+
+	if (g_UseRenderGraph)
+	{
+		// The deferred RT was created by InitializeComponents (after Initialize);
+		// resolve it for GetResult() consumers. ScreenTile kernel owns the binding
+		// table + full-screen dispatch size.
+		if (!m_Result)
+			m_Result = static_cast<TextureComponent*>(g_Engine->Get<RenderGraphService>()->GetResource("Sky Pass Result"));
+		if (!m_Result || m_Result->m_ObjectStatus != ObjectStatus::Activated)
+			return false;
+
+		auto l_node = g_Engine->Get<RenderGraphService>()->FindNode("SkyPass");
+		if (!g_Engine->Get<RenderGraphService>()->RecordNode(l_node))
+			return false;
+
+		m_ObjectStatus = ObjectStatus::Activated;
+		return true;
 	}
 
 	if (m_Result->m_ObjectStatus != ObjectStatus::Activated)

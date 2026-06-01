@@ -6,22 +6,15 @@
 #include "../Services/RenderingConfigurationService.h"
 #include "../Services/ShaderProgramResourceService.h"
 #include "../Services/RenderPassResourceService.h"
-#include "../Services/TextureResourceService.h"
-#include "../Services/GPUBufferResourceService.h"
 #include "../Services/CommandListResourceService.h"
-#include "../Services/PerFrameDataService.h"
 #include "ComputeCullingKernel.h"
+#include "ScreenTileKernel.h"
 
 using namespace Inno;
 
-namespace
-{
-	// Recognized built-in dynamic resource (bin-b primitive #1). PerFrameCBuffer is
-	// double-buffered (GetCurrentFrameBuffer() alternates by frame-parity), so the
-	// graph re-resolves this name through that accessor at every RecordNode rather
-	// than pinning one handle via static import-by-name (stale every other frame).
-	const char* const g_PerFrameCBufferName = "PerFrameCBuffer";
-}
+// Resource creation + resolution (FindResource / ResolveImportedResource /
+// CreateResource / CreateScreenSizedTexture) lives in
+// RenderGraphService_Resources.cpp.
 
 RenderGraphService::RenderGraphService() = default;
 RenderGraphService::~RenderGraphService() = default;
@@ -58,76 +51,6 @@ bool RenderGraphService::LoadGraph(const char* fileName)
 	return true;
 }
 
-GPUResourceComponent* RenderGraphService::FindResource(const std::string& name)
-{
-	// Built-in dynamic resource: re-resolve per frame via the frame-parity
-	// accessor (primitive #1). RecordNode calls FindResource each frame, so this
-	// hands back the correct double-buffered handle without per-pass C++.
-	if (name == g_PerFrameCBufferName)
-		return g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
-
-	auto it = m_Resources.find(name);
-	if (it != m_Resources.end())
-		return it->second;
-
-	return ResolveImportedResource(name);
-}
-
-GPUResourceComponent* RenderGraphService::ResolveImportedResource(const std::string& name)
-{
-	// Imported resources (and any Reads name not declared in Resources) are
-	// produced by a still-imperative pass: resolve to the live engine resource
-	// by name via the owning *ResourceService. The graph never creates or owns
-	// them, so the imperative consumer and the graph share one handle.
-	if (auto l_buffer = g_Engine->Get<GPUBufferResourceService>()->Find(name.c_str()))
-		return l_buffer;
-	if (auto l_texture = g_Engine->Get<TextureResourceService>()->Find(name.c_str()))
-		return l_texture;
-
-	Log(Error, "RenderGraphService: imported resource [", name.c_str(),
-		"] not found in any resource service.");
-	return nullptr;
-}
-
-bool RenderGraphService::CreateResource(const ResourceDesc& desc)
-{
-	// Imported resources are owned by an imperative pass; resolved live by name
-	// at bind time, never created here.
-	if (desc.m_Imported)
-		return true;
-
-	if (desc.m_Type == RenderGraphResourceType::Buffer)
-	{
-		auto l_buffer = g_Engine->Get<GPUBufferResourceService>()->Add(desc.m_Name.c_str());
-		if (!l_buffer)
-		{
-			Log(Error, "RenderGraphService: failed to Add buffer [", desc.m_Name.c_str(), "].");
-			return false;
-		}
-
-		l_buffer->m_ElementCount = desc.m_BufferDesc.m_ElementCount;
-		l_buffer->m_ElementSize = desc.m_BufferDesc.m_ElementSize;
-		l_buffer->m_Usage = desc.m_BufferDesc.m_Usage;
-		l_buffer->m_CPUAccessibility = desc.m_BufferDesc.m_CPUAccessibility;
-		l_buffer->m_GPUAccessibility = desc.m_BufferDesc.m_GPUAccessibility;
-
-		m_Resources[desc.m_Name] = l_buffer;
-		return true;
-	}
-
-	auto l_texture = g_Engine->Get<TextureResourceService>()->Add(desc.m_Name.c_str());
-	if (!l_texture)
-	{
-		Log(Error, "RenderGraphService: failed to Add texture [", desc.m_Name.c_str(), "].");
-		return false;
-	}
-
-	l_texture->m_TextureDesc = desc.m_TextureDesc;
-
-	m_Resources[desc.m_Name] = l_texture;
-	return true;
-}
-
 IRenderGraphKernel* RenderGraphService::ResolveKernel(const std::string& name)
 {
 	auto it = m_Kernels.find(name);
@@ -145,6 +68,14 @@ IRenderGraphKernel* RenderGraphService::ResolveKernel(const std::string& name)
 	if (name == "ComputeCulling")
 	{
 		auto l_kernel = std::make_unique<ComputeCullingKernel>();
+		auto l_raw = l_kernel.get();
+		m_Kernels[name] = std::move(l_kernel);
+		return l_raw;
+	}
+
+	if (name == "ScreenTile")
+	{
+		auto l_kernel = std::make_unique<ScreenTileKernel>();
 		auto l_raw = l_kernel.get();
 		m_Kernels[name] = std::move(l_kernel);
 		return l_raw;
@@ -173,6 +104,34 @@ bool RenderGraphService::CreatePassNode(const PassNodeDesc& desc)
 	l_renderPassDesc.m_RenderTargetCount = 0;
 	l_renderPassDesc.m_GPUEngineType = desc.m_Queue;
 	l_renderPassDesc.m_Resizable = false;
+
+	// A screen-sized write makes this node own a deferred RT: hand the engine an
+	// RT-init-func that (re)creates that texture at current screen resolution, and
+	// mark the pass resizable so PostResize re-invokes it (parity with the
+	// imperative pass's m_RenderTargetsInitializationFunc). Multiple screen-sized
+	// writes are all (re)created in one func call.
+	Inno::Array<ResourceDesc> l_screenWrites;
+	for (const auto& l_write : desc.m_Writes)
+	{
+		auto it = m_DeferredScreenTextures.find(l_write);
+		if (it != m_DeferredScreenTextures.end())
+			l_screenWrites.push_back(it->second);
+	}
+	if (!l_screenWrites.empty())
+	{
+		l_renderPassDesc.m_Resizable = true;
+		l_renderPassDesc.m_UseOutputMerger = false;
+		l_renderPassDesc.m_RenderTargetsInitializationFunc = [this, l_screenWrites]()
+		{
+			for (const auto& l_resource : l_screenWrites)
+			{
+				if (!CreateScreenSizedTexture(l_resource))
+					return false;
+			}
+			return true;
+		};
+	}
+
 	l_renderPass->m_RenderPassDesc = l_renderPassDesc;
 
 	l_renderPass->m_ResourceBindingLayoutDescs.resize(desc.m_Bindings.size());

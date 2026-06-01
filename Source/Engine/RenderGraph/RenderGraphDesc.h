@@ -30,10 +30,15 @@ namespace Inno
 		std::string m_Name;
 		RenderGraphResourceType m_Type = RenderGraphResourceType::Texture;
 		RenderGraphResourceLifetime m_Lifetime = RenderGraphResourceLifetime::Persistent;
-		// A resource produced by a still-imperative pass: not created/owned by
-		// the graph; resolved at bind time to the live engine resource by name
-		// via the matching *ResourceService (RFC §10 coexistence). Reads naming
-		// a resource absent from the graph's Resources list are also imported.
+		// Screen-relative size as data: "screen" -> current screen resolution at
+		// creation, recreated on resize via the owning pass's RT init-func. Empty =
+		// fixed Width/Height. Only the literal "screen" is recognized today; finer
+		// expressions ("screen/2") slot in here when a pass needs one.
+		std::string m_SizeExpr;
+		// A resource produced by a still-imperative pass: not created/owned by the
+		// graph; resolved at bind time to the live engine resource by name via the
+		// matching *ResourceService. Reads naming a resource absent from the graph's
+		// Resources list are also imported.
 		bool m_Imported = false;
 		TextureDesc m_TextureDesc = {};
 		BufferDesc m_BufferDesc = {};

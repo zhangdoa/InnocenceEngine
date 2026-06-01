@@ -40,6 +40,19 @@
             "Lifetime": "Persistent"
         },
         {
+            "Name": "Sky Pass Result",
+            "Type": "Texture",
+            "Size": "screen",
+            "DepthOrArraySize": 1,
+            "MipLevels": 1,
+            "Sampler": "Sampler2D",
+            "Usage": "ComputeOnly",
+            "PixelDataType": "Float16",
+            "PixelDataFormat": "RGBA",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
+        },
+        {
             "Name": "LuminanceHistogramGPUBuffer",
             "Type": "Buffer",
             "Imported": true
@@ -155,6 +168,38 @@
                     "Index": 1,
                     "BindingAccess": "ReadWrite",
                     "ResourceAccess": "ReadWrite",
+                    "Stage": "Compute"
+                }
+            ],
+            "Dispatch": { "X": 1, "Y": 1, "Z": 1 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "SkyPass",
+            "Queue": "Compute",
+            "Kernel": "ScreenTile",
+            "Shader": { "CS": "skyPass.comp" },
+            "Reads": [ "PerFrameCBuffer" ],
+            "Writes": [ "Sky Pass Result" ],
+            "Bindings": [
+                {
+                    "Resource": "PerFrameCBuffer",
+                    "Type": "Buffer",
+                    "Set": 0,
+                    "Index": 0,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "Sky Pass Result",
+                    "Type": "Image",
+                    "Set": 1,
+                    "Index": 0,
+                    "BindingAccess": "ReadWrite",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ColorAttachment",
                     "Stage": "Compute"
                 }
             ],

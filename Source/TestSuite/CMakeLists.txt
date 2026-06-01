@@ -18,6 +18,7 @@ set(TEST_SOURCES
     UnitTests/UnorderedSetTests.cpp
     UnitTests/DequeTests.cpp
     UnitTests/RenderGraphSerializerTests.cpp
+    UnitTests/RenderGraphSerializerTests_ScreenSized.cpp
     # Performance tests
     PerformanceTests/StringConversionPerf.cpp
     PerformanceTests/ContainerPerf.cpp
