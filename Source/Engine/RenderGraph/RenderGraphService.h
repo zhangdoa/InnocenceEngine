@@ -42,6 +42,7 @@ namespace Inno
 
 	private:
 		GPUResourceComponent* FindResource(const std::string& name);
+		GPUResourceComponent* ResolveImportedResource(const std::string& name);
 		bool CreateResource(const ResourceDesc& desc);
 		bool CreatePassNode(const PassNodeDesc& desc);
 		IRenderGraphKernel* ResolveKernel(const std::string& name);

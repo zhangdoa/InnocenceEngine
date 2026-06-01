@@ -12,12 +12,31 @@ namespace Inno
 	enum class RenderGraphResourceType { Texture, Buffer };
 	enum class RenderGraphResourceLifetime { Persistent };
 
+	// Fields a migrated buffer-owning pass sets on its GPUBufferComponent in
+	// Setup/Initialize (e.g. LuminanceAveragePass, ComputeCullingPass). Mirrors
+	// the imperative path's m_ElementCount/m_ElementSize/m_Usage/accessibility;
+	// no speculative fields are serialized.
+	struct BufferDesc
+	{
+		size_t m_ElementCount = 0;
+		size_t m_ElementSize = 0;
+		GPUBufferUsage m_Usage = GPUBufferUsage::Generic;
+		Accessibility m_CPUAccessibility = Accessibility(false, false);
+		Accessibility m_GPUAccessibility = Accessibility(true, true);
+	};
+
 	struct ResourceDesc
 	{
 		std::string m_Name;
 		RenderGraphResourceType m_Type = RenderGraphResourceType::Texture;
 		RenderGraphResourceLifetime m_Lifetime = RenderGraphResourceLifetime::Persistent;
+		// A resource produced by a still-imperative pass: not created/owned by
+		// the graph; resolved at bind time to the live engine resource by name
+		// via the matching *ResourceService (RFC §10 coexistence). Reads naming
+		// a resource absent from the graph's Resources list are also imported.
+		bool m_Imported = false;
 		TextureDesc m_TextureDesc = {};
+		BufferDesc m_BufferDesc = {};
 	};
 
 	struct BindingDesc

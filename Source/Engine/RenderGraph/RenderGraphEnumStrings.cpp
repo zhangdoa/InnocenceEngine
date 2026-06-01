@@ -76,6 +76,12 @@ namespace
 		{ ShaderStage::ClosestHit, "ClosestHit" }, { ShaderStage::AnyHit, "AnyHit" },
 		{ ShaderStage::Miss, "Miss" } };
 
+	const std::vector<Row<GPUBufferUsage>> g_GPUBufferUsage = {
+		{ GPUBufferUsage::Generic, "Generic" }, { GPUBufferUsage::IndirectDraw, "IndirectDraw" },
+		{ GPUBufferUsage::IndirectDispatch, "IndirectDispatch" }, { GPUBufferUsage::AtomicCounter, "AtomicCounter" },
+		{ GPUBufferUsage::TLAS, "TLAS" }, { GPUBufferUsage::ScratchBuffer, "ScratchBuffer" },
+		{ GPUBufferUsage::BindlessMeshVertex, "BindlessMeshVertex" }, { GPUBufferUsage::BindlessMeshIndex, "BindlessMeshIndex" } };
+
 	const std::vector<Row<RenderGraphResourceType>> g_ResourceType = {
 		{ RenderGraphResourceType::Texture, "Texture" }, { RenderGraphResourceType::Buffer, "Buffer" } };
 
@@ -112,14 +118,19 @@ namespace Inno
 		{
 			if (v == Accessibility::ReadWrite) return "ReadWrite";
 			if (v == Accessibility::WriteOnly) return "WriteOnly";
+			if (v == Accessibility::Immutable) return "Immutable";
 			return "ReadOnly";
 		}
 		Accessibility AccessibilityFromString(const std::string& s)
 		{
 			if (s == "ReadWrite") return Accessibility::ReadWrite;
 			if (s == "WriteOnly") return Accessibility::WriteOnly;
+			if (s == "Immutable") return Accessibility::Immutable;
 			return Accessibility::ReadOnly;
 		}
+
+		std::string ToString(GPUBufferUsage v) { return ToStringImpl(v, g_GPUBufferUsage, "Generic"); }
+		GPUBufferUsage GPUBufferUsageFromString(const std::string& s) { return FromStringImpl(s, g_GPUBufferUsage, GPUBufferUsage::Generic); }
 
 		std::string ToString(RenderGraphResourceType v) { return ToStringImpl(v, g_ResourceType, "Texture"); }
 		RenderGraphResourceType ResourceTypeFromString(const std::string& s) { return FromStringImpl(s, g_ResourceType, RenderGraphResourceType::Texture); }

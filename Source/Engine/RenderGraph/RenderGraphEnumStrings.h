@@ -34,6 +34,9 @@ namespace Inno
 		std::string ToString(Accessibility v);
 		Accessibility AccessibilityFromString(const std::string& s);
 
+		std::string ToString(GPUBufferUsage v);
+		GPUBufferUsage GPUBufferUsageFromString(const std::string& s);
+
 		std::string ToString(RenderGraphResourceType v);
 		RenderGraphResourceType ResourceTypeFromString(const std::string& s);
 

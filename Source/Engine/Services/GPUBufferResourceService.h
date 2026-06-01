@@ -20,6 +20,7 @@ namespace Inno
 		ObjectStatus GetStatus() override { return m_ObjectStatus; }
 
 		GPUBufferComponent* Add(const char* name);
+		GPUBufferComponent* Find(const char* name);
 		virtual bool Delete(GPUBufferComponent* ptr);
 
 		void ForEach(std::function<void(GPUBufferComponent*)> func);

@@ -7,6 +7,7 @@
 #include "../Services/ShaderProgramResourceService.h"
 #include "../Services/RenderPassResourceService.h"
 #include "../Services/TextureResourceService.h"
+#include "../Services/GPUBufferResourceService.h"
 #include "../Services/CommandListResourceService.h"
 
 using namespace Inno;
@@ -49,16 +50,52 @@ bool RenderGraphService::LoadGraph(const char* fileName)
 GPUResourceComponent* RenderGraphService::FindResource(const std::string& name)
 {
 	auto it = m_Resources.find(name);
-	return (it != m_Resources.end()) ? it->second : nullptr;
+	if (it != m_Resources.end())
+		return it->second;
+
+	return ResolveImportedResource(name);
+}
+
+GPUResourceComponent* RenderGraphService::ResolveImportedResource(const std::string& name)
+{
+	// Imported resources (and any Reads name not declared in Resources) are
+	// produced by a still-imperative pass: resolve to the live engine resource
+	// by name via the owning *ResourceService. The graph never creates or owns
+	// them, so the imperative consumer and the graph share one handle.
+	if (auto l_buffer = g_Engine->Get<GPUBufferResourceService>()->Find(name.c_str()))
+		return l_buffer;
+	if (auto l_texture = g_Engine->Get<TextureResourceService>()->Find(name.c_str()))
+		return l_texture;
+
+	Log(Error, "RenderGraphService: imported resource [", name.c_str(),
+		"] not found in any resource service.");
+	return nullptr;
 }
 
 bool RenderGraphService::CreateResource(const ResourceDesc& desc)
 {
-	if (desc.m_Type != RenderGraphResourceType::Texture)
+	// Imported resources are owned by an imperative pass; resolved live by name
+	// at bind time, never created here.
+	if (desc.m_Imported)
+		return true;
+
+	if (desc.m_Type == RenderGraphResourceType::Buffer)
 	{
-		Log(Error, "RenderGraphService: only Texture resources are supported in Phase 0 (got ",
-			desc.m_Name.c_str(), ").");
-		return false;
+		auto l_buffer = g_Engine->Get<GPUBufferResourceService>()->Add(desc.m_Name.c_str());
+		if (!l_buffer)
+		{
+			Log(Error, "RenderGraphService: failed to Add buffer [", desc.m_Name.c_str(), "].");
+			return false;
+		}
+
+		l_buffer->m_ElementCount = desc.m_BufferDesc.m_ElementCount;
+		l_buffer->m_ElementSize = desc.m_BufferDesc.m_ElementSize;
+		l_buffer->m_Usage = desc.m_BufferDesc.m_Usage;
+		l_buffer->m_CPUAccessibility = desc.m_BufferDesc.m_CPUAccessibility;
+		l_buffer->m_GPUAccessibility = desc.m_BufferDesc.m_GPUAccessibility;
+
+		m_Resources[desc.m_Name] = l_buffer;
+		return true;
 	}
 
 	auto l_texture = g_Engine->Get<TextureResourceService>()->Add(desc.m_Name.c_str());

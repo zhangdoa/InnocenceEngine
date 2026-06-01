@@ -29,12 +29,34 @@ namespace
 		d.GPUAccessibility = ES::AccessibilityFromString(j.value("GPUAccessibility", std::string("ReadOnly")));
 	}
 
+	json BufferDescToJson(const BufferDesc& d)
+	{
+		return json{
+			{ "ElementCount", d.m_ElementCount }, { "ElementSize", d.m_ElementSize },
+			{ "BufferUsage", ES::ToString(d.m_Usage) },
+			{ "CPUAccessibility", ES::ToString(d.m_CPUAccessibility) },
+			{ "GPUAccessibility", ES::ToString(d.m_GPUAccessibility) } };
+	}
+
+	void BufferDescFromJson(const json& j, BufferDesc& d)
+	{
+		d.m_ElementCount = j.value("ElementCount", size_t(0));
+		d.m_ElementSize = j.value("ElementSize", size_t(0));
+		d.m_Usage = ES::GPUBufferUsageFromString(j.value("BufferUsage", std::string("Generic")));
+		d.m_CPUAccessibility = ES::AccessibilityFromString(j.value("CPUAccessibility", std::string("Immutable")));
+		d.m_GPUAccessibility = ES::AccessibilityFromString(j.value("GPUAccessibility", std::string("ReadWrite")));
+	}
+
 	json ResourceToJson(const ResourceDesc& r)
 	{
-		json j = TextureDescToJson(r.m_TextureDesc);
+		json j = (r.m_Type == RenderGraphResourceType::Buffer)
+			? BufferDescToJson(r.m_BufferDesc)
+			: TextureDescToJson(r.m_TextureDesc);
 		j["Name"] = r.m_Name;
 		j["Type"] = ES::ToString(r.m_Type);
 		j["Lifetime"] = ES::ToString(r.m_Lifetime);
+		if (r.m_Imported)
+			j["Imported"] = true;
 		return j;
 	}
 
@@ -43,7 +65,11 @@ namespace
 		r.m_Name = j.value("Name", std::string());
 		r.m_Type = ES::ResourceTypeFromString(j.value("Type", std::string("Texture")));
 		r.m_Lifetime = ES::LifetimeFromString(j.value("Lifetime", std::string("Persistent")));
-		TextureDescFromJson(j, r.m_TextureDesc);
+		r.m_Imported = j.value("Imported", false);
+		if (r.m_Type == RenderGraphResourceType::Buffer)
+			BufferDescFromJson(j, r.m_BufferDesc);
+		else
+			TextureDescFromJson(j, r.m_TextureDesc);
 	}
 
 	json BindingToJson(const BindingDesc& b)

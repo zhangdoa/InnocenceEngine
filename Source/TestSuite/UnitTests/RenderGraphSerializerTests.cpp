@@ -118,10 +118,75 @@ static void TestGraphRoundTrip()
 	TestRunner::EndTest(passed);
 }
 
+static RenderGraphDesc MakeBufferGraph()
+{
+	// Mirrors LuminanceAveragePass: a graph-owned output buffer plus an
+	// imported input buffer produced by a still-imperative pass.
+	RenderGraphDesc l_graph;
+	l_graph.m_Name = "BufferGraph";
+
+	ResourceDesc l_owned;
+	l_owned.m_Name = "LuminanceAverageGPUBuffer";
+	l_owned.m_Type = RenderGraphResourceType::Buffer;
+	l_owned.m_BufferDesc.m_ElementCount = 16;
+	l_owned.m_BufferDesc.m_ElementSize = sizeof(float);
+	l_owned.m_BufferDesc.m_Usage = GPUBufferUsage::Generic;
+	l_owned.m_BufferDesc.m_CPUAccessibility = Accessibility::Immutable;
+	l_owned.m_BufferDesc.m_GPUAccessibility = Accessibility::ReadWrite;
+	l_graph.m_Resources.push_back(l_owned);
+
+	ResourceDesc l_imported;
+	l_imported.m_Name = "PerFrameCBuffer";
+	l_imported.m_Type = RenderGraphResourceType::Buffer;
+	l_imported.m_Imported = true;
+	l_graph.m_Resources.push_back(l_imported);
+
+	return l_graph;
+}
+
+static void TestBufferRoundTrip()
+{
+	TestRunner::StartTest("RenderGraph: buffer + imported resource survives round-trip");
+
+	RenderGraphDesc l_original = MakeBufferGraph();
+
+	json j;
+	RenderGraphSerializer::to_json(j, l_original);
+
+	RenderGraphDesc l_loaded;
+	RenderGraphSerializer::from_json(j, l_loaded);
+
+	bool passed = l_loaded.m_Resources.size() == 2;
+
+	if (passed)
+	{
+		const auto& r = l_loaded.m_Resources[0];
+		passed = r.m_Name == "LuminanceAverageGPUBuffer" &&
+			r.m_Type == RenderGraphResourceType::Buffer &&
+			r.m_Imported == false &&
+			r.m_BufferDesc.m_ElementCount == 16 &&
+			r.m_BufferDesc.m_ElementSize == sizeof(float) &&
+			r.m_BufferDesc.m_Usage == GPUBufferUsage::Generic &&
+			r.m_BufferDesc.m_CPUAccessibility == Accessibility::Immutable &&
+			r.m_BufferDesc.m_GPUAccessibility == Accessibility::ReadWrite;
+	}
+
+	if (passed)
+	{
+		const auto& r = l_loaded.m_Resources[1];
+		passed = r.m_Name == "PerFrameCBuffer" &&
+			r.m_Type == RenderGraphResourceType::Buffer &&
+			r.m_Imported == true;
+	}
+
+	TestRunner::EndTest(passed);
+}
+
 void RunRenderGraphSerializerUnitTests()
 {
 	TestRunner::StartTestSuite("RenderGraphSerializer");
 	TestEnumRoundTrip();
 	TestGraphRoundTrip();
+	TestBufferRoundTrip();
 	TestRunner::EndTestSuite();
 }

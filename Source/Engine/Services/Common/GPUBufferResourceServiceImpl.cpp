@@ -34,6 +34,11 @@ GPUBufferComponent* GPUBufferResourceService::Add(const char* name)
 	return m_Pool.Allocate(name);
 }
 
+GPUBufferComponent* GPUBufferResourceService::Find(const char* name)
+{
+	return m_Pool.Find(name);
+}
+
 bool GPUBufferResourceService::Delete(GPUBufferComponent* ptr)
 {
 	m_Pool.Release(ptr);
