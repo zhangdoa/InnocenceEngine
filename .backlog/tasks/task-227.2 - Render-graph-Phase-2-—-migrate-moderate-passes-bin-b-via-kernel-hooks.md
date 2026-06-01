@@ -1,9 +1,11 @@
 ---
 id: TASK-227.2
 title: Render-graph Phase 2 — migrate moderate passes (bin-b) via kernel hooks
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - code-impl
 created_date: '2026-05-31 12:53'
+updated_date: '2026-06-01 09:17'
 labels:
   - rendering
   - render-graph
@@ -35,3 +37,17 @@ Design reference: backlog doc-1 (TASK-227 Render-Graph Design RFC), kernel inter
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-06-01 — Activated early (ahead of strict dep order) because TASK-227.1 proved bin-a is exhausted at 2 passes: the bulk of the umbrella's LOC payoff sits behind bin-b kernel infra. Groundwork already landed under .1 (commit 74215eb3): Buffer-resource type + external-resource-import in the graph schema/loader/serializer + GPUBufferResourceService::Find.
+
+CORE bin-b problem #1 = PER-FRAME DYNAMIC RESOURCE RESOLUTION. Nearly every clean compute pass binds the DOUBLE-BUFFERED PerFrameCBuffer at slot 0: PerFrameDataService::GetCurrentFrameBuffer() returns a different GPUBufferComponent each frame by frame-parity ('PerFrameCBuffer'/'PerFrameCBufferPrev'). Current import-by-name resolves ONCE at node creation -> would pin one buffer -> stale every other frame. Need per-frame re-resolution at RecordNode time (kernel-hook or a 'dynamic import' resource flag).
+
+#2 = DYNAMIC DISPATCH: IRenderGraphKernel::ResolveDispatch override computing thread-group counts from resource dims / CPU state (OpaqueCullingPass ceil(modelCount/64), SSRC* from texture dims). #3 = deferred-RT (CreateRenderTargets hook) for SSRC/TAA/SSAO.
+
+First verifiable bin-b migrations once #1+#2 land: LuminanceAveragePass (static Dispatch(1,1,1), owns 1 buffer + reads 2 external incl. PerFrameCBuffer) and OpaqueCullingPass (dynamic dispatch + post-dispatch UAV state-tracker side effect). Then SSRC cluster with deferred-RT.
+
+ADVISORY (from .1 review A1): RenderGraphEnumStrings AccessibilityToString round-trips only {Immutable,ReadOnly,WriteOnly,ReadWrite}; drops m_CopySource/m_CopyDestination/m_CrossQueue. No current buffer sets them; extend the table when a pass needing copy/cross-queue accessibility is migrated.
+<!-- SECTION:NOTES:END -->
