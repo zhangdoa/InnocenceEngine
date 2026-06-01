@@ -6,7 +6,7 @@
 namespace Inno
 {
 	// String <-> enum for render-graph JSON: GraphicsPrimitive.h enums lack
-	// INNO_ENUM ToString, so the RFC's readable-string schema needs these tables.
+	// INNO_ENUM ToString, so the readable-string schema needs these tables.
 	// FromString falls back to the type's Invalid/default on an unknown token.
 	namespace RenderGraphEnumStrings
 	{

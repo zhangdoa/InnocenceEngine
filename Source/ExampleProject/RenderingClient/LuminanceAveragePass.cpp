@@ -17,11 +17,9 @@ using namespace Inno;
 
 namespace
 {
-	// TASK-227.2 coexistence seam (RFC §10, mirrors BRDFLUTMSPass): when true,
-	// LuminanceAveragePass is driven by the data-declared render graph. The graph
-	// file is already loaded by BRDFLUTPass::Setup (runs earlier), so this pass
-	// only adopts its node. The imperative path is preserved verbatim under the
-	// false branch, so the migration stays reversible and parity-verifiable.
+	// When true, LuminanceAveragePass is driven by the render graph. The graph file
+	// is loaded earlier by BRDFLUTPass::Setup, so this pass only adopts its node.
+	// The imperative path below is the fallback.
 	constexpr bool g_UseRenderGraph = true;
 }
 

@@ -14,11 +14,9 @@ using namespace Inno;
 
 namespace
 {
-	// TASK-227 Phase-0 coexistence seam (RFC §10): when true, BRDFLUTPass is
-	// driven by the data-declared render graph; consumers read GetResult() /
-	// GetRenderPassComp() unchanged. The imperative path below is preserved
-	// verbatim under the false branch, so the migration stays reversible and
-	// visual parity is verifiable against it.
+	// When true, BRDFLUTPass is driven by the render graph; consumers read
+	// GetResult() / GetRenderPassComp() unchanged. The imperative path below is
+	// the fallback.
 	constexpr bool g_UseRenderGraph = true;
 	const char* const g_GraphFile = "ExampleProject/RenderGraph/ExampleRenderGraph.json";
 }

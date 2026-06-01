@@ -16,11 +16,10 @@ using namespace Inno;
 
 namespace
 {
-	// TASK-227.2 coexistence seam (RFC §10): when true, a ComputeCulling subclass is
-	// graph-driven (binding table + dynamic dispatch via the ComputeCulling kernel);
-	// a subclass with no matching node falls back to the imperative path below. The
-	// indirect buffer stays imperative (runtime-config-sized, maxMeshes) and is
-	// imported into the graph by name.
+	// When true, a ComputeCulling subclass is graph-driven (binding table + dynamic
+	// dispatch via the ComputeCulling kernel); a subclass with no matching node uses
+	// the imperative path below. The indirect buffer stays imperative (its element
+	// count is a runtime config value, maxMeshes) and is imported into the graph by name.
 	constexpr bool g_UseRenderGraph = true;
 }
 

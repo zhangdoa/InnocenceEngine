@@ -20,8 +20,8 @@ namespace Inno
 	};
 
 	// A kernel supplies the command-recording body that data cannot express.
-	// The DefaultKernel covers clean passes; moderate/exotic passes (RFC §6
-	// bins b/c) override ResolveDispatch / CreateRenderTargets in later phases.
+	// The DefaultKernel covers fixed binding-table + static-dispatch passes; passes
+	// with dynamic dispatch or deferred RTs override the hooks below.
 	class IRenderGraphKernel
 	{
 	public:
@@ -29,10 +29,10 @@ namespace Inno
 
 		virtual bool Record(RenderGraphPassContext& ctx) = 0;
 
-		// Dynamic dispatch size (bin-b). Default: use the static DispatchDesc.
+		// Dynamic dispatch size. Default: use the static DispatchDesc.
 		virtual bool ResolveDispatch(RenderGraphPassContext&, uint32_t&, uint32_t&, uint32_t&) { return false; }
 
-		// Deferred render-target creation (bin-b). Default: none.
+		// Deferred render-target creation. Default: none.
 		virtual bool CreateRenderTargets(RenderGraphPassContext&) { return false; }
 	};
 }
