@@ -13,7 +13,7 @@ commit-guard's file-size gate (`.omp/extensions/commit-guard/`): a touched sourc
 
 No commit-message escape. Exemptions (`HARNESS_OR_VENDOR_RE` in
 `.omp/extensions/commit-guard/constants.ts`): `ThirdParty/`, `External/`, `Generated/`,
-`node_modules/`, `dist/`, and the harness dirs `.omp/` and `.claude/`.
+`node_modules/`, `dist/`, and the harness dir `.omp/`.
 
 ## C++ split shape
 

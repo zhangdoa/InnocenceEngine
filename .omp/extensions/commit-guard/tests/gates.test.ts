@@ -49,6 +49,9 @@ test("noNewMd: blocks new .md outside allowlist (renames/mods pass)", () => {
   assert.equal(g.noNewMd([{ status: "A", path: ".omp/skills/x/SKILL.md" }]), null);
   assert.equal(g.noNewMd([{ status: "A", path: ".backlog/tasks/task-1 - x.md" }]), null);
   assert.equal(g.noNewMd([{ status: "A", path: "README.md" }]), null);
+  assert.equal(g.noNewMd([{ status: "A", path: "AGENTS.md" }]), null);
+  assert.equal(g.noNewMd([{ status: "A", path: ".omp/agents/x.md" }]), null);
+  assert.ok(g.noNewMd([{ status: "A", path: ".claude/skills/x/SKILL.md" }])); // de-claude-codized: no longer allowlisted
   assert.equal(g.noNewMd([{ status: "M", path: "Notes/random.md" }]), null); // modify allowed
   assert.equal(g.noNewMd([{ status: "R", oldPath: "a.md", path: "b.md" }]), null); // rename allowed
 });

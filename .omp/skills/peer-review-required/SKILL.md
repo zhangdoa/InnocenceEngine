@@ -10,8 +10,8 @@ the `task` tool, never main-session-as-reviewer, never the implementer) before c
 
 ## Skip categories (`Review-Skipped: <reason>`)
 
-- `backlog-only` — `.backlog/`, `.md`, `.claude/`, `.omp/`, `.gitignore` only
-- `harness-internal` — `.omp/extensions/**` / `.omp/skills/**` / `.claude/**` self-edits
+- `backlog-only` — `.backlog/`, `.md`, `.omp/`, `.gitignore` only
+- `harness-internal` — `.omp/extensions/**` / `.omp/skills/**` / `.omp/agents/**` self-edits
 - `mechanical-rename` — single deterministic transformation (rename, file move)
 
 When unsure → required.

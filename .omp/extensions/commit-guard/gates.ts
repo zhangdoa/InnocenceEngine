@@ -63,7 +63,7 @@ export function noNewMd(nameStatus: NameStatusEntry[]): string | null {
     .filter((e) => e.status === "A" && e.path.endsWith(".md") && !C.NEW_MD_ALLOWLIST_RE.test(e.path))
     .map((e) => e.path);
   if (!bad.length) return null;
-  return `new .md outside allowlist:\n${fmtList(bad)}\nAllowed: .backlog/tasks/, .claude|.omp/{agents,skills,commands,state,extensions}/, CLAUDE/README/LICENSE.md. Audit/design content lives in task notes or the commit body.`;
+  return `new .md outside allowlist:\n${fmtList(bad)}\nAllowed: .backlog/tasks/, .omp/{agents,skills,commands,state,extensions}/, AGENTS/README/LICENSE.md. Audit/design content lives in task notes or the commit body.`;
 }
 
 export function dataGenerated(staged: string[], gitignoreDiffText: string): string | null {

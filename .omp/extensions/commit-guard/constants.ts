@@ -17,9 +17,9 @@ export const NO_IMAGES_EXCLUDE_RE = /^Data\/Engine\/Icons\/|^Source\/Editor-Next
 
 export const NEW_MD_ALLOWLIST_RE = new RegExp([
   "^\\.backlog/tasks/",
-  "^\\.claude/(agents|skills|commands|state)/",
   "^\\.omp/(agents|skills|commands|state|extensions)/",
-  "(^|/)CLAUDE\\.md$",
+  "(^|/)AGENTS\\.md$",
+  "(^|/)SYSTEM\\.md$",
   "(^|/)README\\.md$",
   "(^|/)LICENSES?\\.md$",
 ].join("|"));
@@ -30,11 +30,11 @@ export const UNIGNORE_ADDED_RE = /^\+!\/?Data\/Generated\//m;
 
 export const FILE_SIZE_LIMIT = 300;
 export const FILE_SIZE_EXT_RE = /\.(cpp|hpp|h|c|cc|cxx|inl|hlsl|hlsli|comp|py|js|mjs|ts|ps1|sh|bash|zsh)$/i;
-// Harness dirs (.omp / .claude) are config, not engine source — exempt from the
-// source-style size + comment gates, matching the old `harness-internal` skip.
-export const HARNESS_OR_VENDOR_RE = /(^|\/)(ThirdParty|External|node_modules|Generated|dist)\/|(^|\/)\.(omp|claude)\//;
+// Harness dir (.omp) is config, not engine source — exempt from the source-style
+// size + comment gates, matching the old `harness-internal` skip.
+export const HARNESS_OR_VENDOR_RE = /(^|\/)(ThirdParty|External|node_modules|Generated|dist)\/|(^|\/)\.omp\//;
 
-export const DOCS_ONLY_PATH = /^\.backlog\/|\.md$|^\.claude\/|^\.omp\/|\.gitignore$/;
+export const DOCS_ONLY_PATH = /^\.backlog\/|\.md$|^\.omp\/|\.gitignore$/;
 export const EDITOR_CODE_PATH = /^Source\/(Editor-Next\/src\/|Engine\/Services\/EditorService\.)/;
 export const SERIALIZER_CODE_PATH = /^Source\/Engine\/(ThirdParty\/JSONWrapper\/|Services\/(AssetService|SceneService)\.)/;
 
