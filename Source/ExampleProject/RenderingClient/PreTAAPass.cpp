@@ -1,4 +1,4 @@
-﻿#include "PreTAAPass.h"
+#include "PreTAAPass.h"
 #include "ScreenTileConstants.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
@@ -12,11 +12,46 @@
 #include "../../Engine/Services/TextureResourceService.h"
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
+#include "../../Engine/RenderGraph/RenderGraphService.h"
 
 using namespace Inno;
 
+namespace
+{
+	// When true, PreTAAPass is driven by the render graph: the graphics-queue
+	// state-transition prepass and the compute dispatch are recorded by the
+	// node's kernel, and its screen-sized Result is created by the writer node's
+	// RT init-func. The imperative path below is the fallback.
+	constexpr bool g_UseRenderGraph = true;
+}
+
+bool PreTAAPass::SetupFromRenderGraph()
+{
+	auto l_node = g_Engine->Get<RenderGraphService>()->FindNode("PreTAAPass");
+	if (!l_node)
+	{
+		Log(Error, "PreTAAPass: render graph has no PreTAAPass node.");
+		return false;
+	}
+
+	m_ShaderProgramComp = l_node->m_ShaderProgram;
+	m_RenderPassComp = l_node->m_RenderPass;
+	m_CommandListComp_Graphics = l_node->m_CommandList_Graphics;
+	m_CommandListComp_Compute = l_node->m_CommandList_Compute;
+
+	// The deferred screen-sized Result is created when InitializeComponents runs
+	// the node's RT init-func; resolved lazily in PrepareCommandList.
+	m_Result = nullptr;
+
+	m_ObjectStatus = ObjectStatus::Created;
+	return true;
+}
+
 bool PreTAAPass::Setup(IServiceConfig* systemConfig)
 {
+	if (g_UseRenderGraph)
+		return SetupFromRenderGraph();
+
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("PreTAAPass");
@@ -113,6 +148,21 @@ bool PreTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 	{
 		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
+
+	if (g_UseRenderGraph)
+	{
+		if (!m_Result)
+			m_Result = static_cast<TextureComponent*>(g_Engine->Get<RenderGraphService>()->GetResource("Pre-TAA Pass Result"));
+		if (!m_Result || m_Result->m_ObjectStatus != ObjectStatus::Activated)
+			return false;
+
+		auto l_node = g_Engine->Get<RenderGraphService>()->FindNode("PreTAAPass");
+		if (!g_Engine->Get<RenderGraphService>()->RecordNode(l_node))
+			return false;
+
+		m_ObjectStatus = ObjectStatus::Activated;
+		return true;
 	}
 
 	if (m_Result->m_ObjectStatus != ObjectStatus::Activated)

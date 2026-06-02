@@ -76,6 +76,24 @@
             "Name": "OpaqueCullingPass/IndirectDrawCommandBuffer",
             "Type": "Buffer",
             "Imported": true
+        },
+        {
+            "Name": "LightPass Luminance Result",
+            "Type": "Texture",
+            "Imported": true
+        },
+        {
+            "Name": "Pre-TAA Pass Result",
+            "Type": "Texture",
+            "Size": "screen",
+            "DepthOrArraySize": 1,
+            "MipLevels": 1,
+            "Sampler": "Sampler2D",
+            "Usage": "ComputeOnly",
+            "PixelDataType": "Float16",
+            "PixelDataFormat": "RGBA",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
         }
     ],
     "Passes": [
@@ -251,6 +269,54 @@
                     "ResourceAccess": "ReadWrite",
                     "Stage": "Compute"
                 }
+            ],
+            "Dispatch": { "X": 1, "Y": 1, "Z": 1 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "PreTAAPass",
+            "Queue": "Compute",
+            "Kernel": "ScreenTile",
+            "Shader": { "CS": "preTAAPass.comp" },
+            "Reads": [ "LightPass Luminance Result", "Sky Pass Result" ],
+            "Writes": [ "Pre-TAA Pass Result" ],
+            "Bindings": [
+                {
+                    "Resource": "LightPass Luminance Result",
+                    "Type": "Image",
+                    "Set": 1,
+                    "Index": 0,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ColorAttachment",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "Sky Pass Result",
+                    "Type": "Image",
+                    "Set": 1,
+                    "Index": 1,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ColorAttachment",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "Pre-TAA Pass Result",
+                    "Type": "Image",
+                    "Set": 2,
+                    "Index": 0,
+                    "BindingAccess": "ReadWrite",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ColorAttachment",
+                    "Stage": "Compute"
+                }
+            ],
+            "Transitions": [
+                { "Resource": "LightPass Luminance Result", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Sky Pass Result", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Pre-TAA Pass Result", "From": "ReadOnly", "To": "WriteOnly" }
             ],
             "Dispatch": { "X": 1, "Y": 1, "Z": 1 },
             "Bypass": { "Enabled": false, "ClearOnBypass": false },

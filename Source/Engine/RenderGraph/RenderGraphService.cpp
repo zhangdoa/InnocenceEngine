@@ -193,6 +193,7 @@ bool RenderGraphService::RecordNode(RenderGraphPassNode* node)
 	l_ctx.m_RenderPass = node->m_RenderPass;
 	l_ctx.m_CommandList = (node->m_Desc.m_Queue == GPUEngineType::Graphics)
 		? node->m_CommandList_Graphics : node->m_CommandList_Compute;
+	l_ctx.m_CommandList_Graphics = node->m_CommandList_Graphics;
 
 	l_ctx.m_BoundResources.reserve(node->m_Desc.m_Bindings.size());
 	for (const auto& l_binding : node->m_Desc.m_Bindings)

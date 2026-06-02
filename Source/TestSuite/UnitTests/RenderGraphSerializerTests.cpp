@@ -256,6 +256,10 @@ static void TestComputeCullingRoundTrip()
 // RenderGraphSerializerTests_ScreenSized.cpp.
 extern void TestScreenSizedRoundTrip();
 
+// State-transition prepass round-trip fixture lives in
+// RenderGraphTransitionTests.cpp.
+extern void TestTransitionRoundTrip();
+
 void RunRenderGraphSerializerUnitTests()
 {
 	TestRunner::StartTestSuite("RenderGraphSerializer");
@@ -264,5 +268,6 @@ void RunRenderGraphSerializerUnitTests()
 	TestBufferRoundTrip();
 	TestComputeCullingRoundTrip();
 	TestScreenSizedRoundTrip();
+	TestTransitionRoundTrip();
 	TestRunner::EndTestSuite();
 }

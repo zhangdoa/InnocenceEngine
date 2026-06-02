@@ -1,6 +1,7 @@
 #include "DefaultKernel.h"
 #include "../Engine.h"
 #include "../Services/FrameManagementService.h"
+#include "RenderGraphTransitions.h"
 
 using namespace Inno;
 
@@ -20,6 +21,12 @@ bool DefaultKernel::Record(RenderGraphPassContext& ctx)
 	}
 
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+
+	if (!ctx.m_Node->m_Transitions.empty())
+	{
+		if (!RecordTransitionPrepass(ctx, ctx.m_CommandList_Graphics, l_fmService))
+			return false;
+	}
 
 	l_fmService->CommandListBegin(ctx.m_RenderPass, ctx.m_CommandList, 0);
 	l_fmService->BindRenderPassComponent(ctx.m_RenderPass, ctx.m_CommandList);

@@ -97,6 +97,21 @@ namespace
 		b.m_ShaderStage = ES::ShaderStageFromString(j.value("Stage", std::string("Invalid")));
 	}
 
+	json TransitionToJson(const TransitionDesc& t)
+	{
+		return json{
+			{ "Resource", t.m_Resource },
+			{ "From", ES::ToString(t.m_From) },
+			{ "To", ES::ToString(t.m_To) } };
+	}
+
+	void TransitionFromJson(const json& j, TransitionDesc& t)
+	{
+		t.m_Resource = j.value("Resource", std::string());
+		t.m_From = ES::AccessibilityFromString(j.value("From", std::string("WriteOnly")));
+		t.m_To = ES::AccessibilityFromString(j.value("To", std::string("ReadOnly")));
+	}
+
 	json PassToJson(const PassNodeDesc& p)
 	{
 		json reads = json::array();
@@ -106,13 +121,20 @@ namespace
 		json bindings = json::array();
 		for (const auto& b : p.m_Bindings) bindings.push_back(BindingToJson(b));
 
-		return json{
+		json j = json{
 			{ "Name", p.m_Name }, { "Queue", ES::ToString(p.m_Queue) }, { "Kernel", p.m_Kernel },
 			{ "Shader", { { "CS", p.m_ShaderFilePaths.m_CSPath.c_str() } } },
 			{ "Reads", reads }, { "Writes", writes }, { "Bindings", bindings },
 			{ "Dispatch", { { "X", p.m_Dispatch.m_X }, { "Y", p.m_Dispatch.m_Y }, { "Z", p.m_Dispatch.m_Z } } },
 			{ "Bypass", { { "Enabled", p.m_BypassEnabled }, { "ClearOnBypass", p.m_ClearOnBypass } } },
 			{ "OneShot", p.m_OneShot } };
+		if (!p.m_Transitions.empty())
+		{
+			json transitions = json::array();
+			for (const auto& t : p.m_Transitions) transitions.push_back(TransitionToJson(t));
+			j["Transitions"] = transitions;
+		}
+		return j;
 	}
 
 	void PassFromJson(const json& j, PassNodeDesc& p)
@@ -128,6 +150,8 @@ namespace
 			for (const auto& w : j["Writes"]) p.m_Writes.push_back(w.get<std::string>());
 		if (j.contains("Bindings"))
 			for (const auto& bj : j["Bindings"]) { BindingDesc b; BindingFromJson(bj, b); p.m_Bindings.push_back(b); }
+		if (j.contains("Transitions"))
+			for (const auto& tj : j["Transitions"]) { TransitionDesc t; TransitionFromJson(tj, t); p.m_Transitions.push_back(t); }
 		if (j.contains("Dispatch"))
 		{
 			p.m_Dispatch.m_X = j["Dispatch"].value("X", 1u);

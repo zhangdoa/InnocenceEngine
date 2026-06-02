@@ -19,6 +19,7 @@ set(TEST_SOURCES
     UnitTests/DequeTests.cpp
     UnitTests/RenderGraphSerializerTests.cpp
     UnitTests/RenderGraphSerializerTests_ScreenSized.cpp
+    UnitTests/RenderGraphTransitionTests.cpp
     # Performance tests
     PerformanceTests/StringConversionPerf.cpp
     PerformanceTests/ContainerPerf.cpp

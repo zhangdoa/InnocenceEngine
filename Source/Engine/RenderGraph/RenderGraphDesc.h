@@ -56,6 +56,16 @@ namespace Inno
 		ShaderStage m_ShaderStage = ShaderStage::Invalid;
 	};
 
+	// An ordered render-target state transition recorded on the graphics queue
+	// before the pass body — the compute queue cannot transition a render target
+	// between ReadOnly and WriteOnly. Applied in array order.
+	struct TransitionDesc
+	{
+		std::string m_Resource;
+		Accessibility m_From = Accessibility::WriteOnly;
+		Accessibility m_To = Accessibility::ReadOnly;
+	};
+
 	struct DispatchDesc
 	{
 		uint32_t m_X = 1;
@@ -72,6 +82,7 @@ namespace Inno
 		Inno::Array<std::string> m_Reads;
 		Inno::Array<std::string> m_Writes;
 		Inno::Array<BindingDesc> m_Bindings;
+		Inno::Array<TransitionDesc> m_Transitions;
 		DispatchDesc m_Dispatch = {};
 		bool m_OneShot = false;
 		bool m_BypassEnabled = false;

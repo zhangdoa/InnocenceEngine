@@ -15,6 +15,9 @@ namespace Inno
 		const PassNodeDesc* m_Node = nullptr;
 		RenderPassComponent* m_RenderPass = nullptr;
 		CommandListComponent* m_CommandList = nullptr;
+		// The pass's graphics command list — carries the state-transition prepass
+		// (m_Node->m_Transitions) when present.
+		CommandListComponent* m_CommandList_Graphics = nullptr;
 		// 1:1 with m_Node->m_Bindings — the live resource for each binding slot.
 		Inno::Array<GPUResourceComponent*> m_BoundResources;
 	};

@@ -24,6 +24,7 @@ namespace Inno
 		ShaderProgramComponent* m_ShaderProgramComp;
 		TextureComponent* m_Result;
 
+		bool SetupFromRenderGraph();
 		bool RenderTargetsCreationFunc();
 	};
 } // namespace Inno
