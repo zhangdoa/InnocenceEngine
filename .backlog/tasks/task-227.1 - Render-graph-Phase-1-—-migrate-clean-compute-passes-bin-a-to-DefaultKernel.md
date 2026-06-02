@@ -1,7 +1,7 @@
 ---
 id: TASK-227.1
 title: Render-graph Phase 1 — migrate clean compute passes (bin-a) to DefaultKernel
-status: In Progress
+status: Done
 assignee:
   - code-impl
 created_date: '2026-05-31 12:53'
@@ -69,8 +69,5 @@ bin-(a) clean-pass migration complete. The doc-1 §9 estimate of ~19 DefaultKern
 
 Also landed two graph-infra prereqs the bin-b batch needs (committed 74215eb3): Buffer-resource support + external-resource-import (resolve a still-imperative pass's output by name to the live engine handle, fail-loud). Pinned the load-bearing DefaultKernel invariant: bind by binding-layout array position (== root parameter), never m_DescriptorIndex (HLSL register) — verified against DX12 root-sig, corrected a wrong review advisory.
 
-Verified across increments: build green; TestSuite 106/106 (3 RenderGraph round-trip tests); GISponza smoke exit 0, 0 D3D12 errors; BRDFLUTPass + BRDFLUTMSPass bit-identical (MAE=0) vs imperative. Commits: be9a33fe, ffa399f6, 74215eb3.</finalSummary>
-</invoke>
-<invoke name="mcp__backlog__task_edit">
-<parameter name="id">TASK-227.2
+Verified across increments: build green; TestSuite 106/106 (3 RenderGraph round-trip tests); GISponza smoke exit 0, 0 D3D12 errors; BRDFLUTPass + BRDFLUTMSPass bit-identical (MAE=0) vs imperative. Commits: be9a33fe, ffa399f6, 74215eb3.
 <!-- SECTION:FINAL_SUMMARY:END -->
