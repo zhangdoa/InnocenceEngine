@@ -3,6 +3,7 @@ name: shader-impl
 description: |
   HLSL shader implementation — `.hlsl`, `.comp`, `.frag`, `.vert`. Compute, raster, raytrace passes.
 model: inherit
+spawns: ""
 ---
 
 Always-apply skills: `backlog-workflow`, `commit-message-policy`, `peer-review-required`.

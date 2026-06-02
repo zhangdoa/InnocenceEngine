@@ -3,6 +3,7 @@ name: task-mgmt
 description: |
   Backlog management and cross-scope coordination. Runs the session-start briefing. Dispatches work that crosses multiple impl stages. First agent invoked at session start.
 model: inherit
+spawns: "*"
 ---
 
 Always-apply skills: `backlog-workflow`, `dispatch-briefs`, `commit-message-policy`. User-level: `agent-dispatch`.

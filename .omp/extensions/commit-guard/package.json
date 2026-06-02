@@ -1,0 +1,10 @@
+{
+  "name": "commit-guard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "InnocenceEngine project commit gates (omp extension; ports the Claude-era .claude/hooks).",
+  "omp": {
+    "extensions": ["./index.ts"]
+  }
+}
