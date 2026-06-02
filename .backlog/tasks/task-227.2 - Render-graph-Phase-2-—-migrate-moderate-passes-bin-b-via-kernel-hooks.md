@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - code-impl
 created_date: '2026-05-31 12:53'
-updated_date: '2026-06-01 17:57'
+updated_date: '2026-06-02'
 labels:
   - rendering
   - render-graph
@@ -78,4 +78,77 @@ REVIEW CAVEAT: the fresh code-review agent was cut off by the account session li
 Comment-discipline: stripped tracker/RFC/phase/bin refs from all render-graph comments (commit d8773d74) and added a content check to the comment-essay-cap gate (commit 168ff700, harness) so they cannot recur — the old gate only capped run length, not content.
 
 NEXT (the framed fork, needs decision): every remaining deferred-RT pass (SSAO/PreTAA/PostTAA/FinalBlend/SSRC filter/spatial/integration) carries a GRAPHICS-CL state-transition prepass (compute queue can't transition the result RT ReadOnly->WriteOnly) — a distinct primitive (graphics state-transition hook/attribute). PING-PONG (TAAPass history, SSRC Even/Odd) is a further separate primitive (may obsolete TASK-128). Both belong to the next increment.
+
+Fresh independent peer-review of ecf7aca9 (deferred-RT primitive + SkyPass migration) ran 2026-06-01 — verdict ADVISORY, commit stands (no revert). Two follow-up findings to carry forward so they aren't lost:
+
+1. IsMultiBuffer parity divergence. Imperative SkyPass Result inherited IsMultiBuffer=true from GetDefaultRenderPassDesc().m_RenderTargetDesc (RenderingConfigurationService.cpp:30). Graph path builds the texture from JSON TextureDesc; TextureDescFromJson never sets IsMultiBuffer (RenderGraphSerializer.cpp:18-29) so it falls to struct default false (GraphicsPrimitive.h:120). Effect: RT goes from N-per-swapchain physical resources to 1. Internally consistent today (bind keys off the texture's own flag; writer+same-frame reader PreTAAPass both hit handle 0), so MAE stays in band. Becomes a read-after-write/temporal hazard if any FUTURE consumer reads 'Sky Pass Result' across a frame boundary. Decide: round-trip IsMultiBuffer through the serializer if multi-buffering should be data-expressible, else it was incidental.
+
+2. SkyPass::Terminate deletes graph-owned resources (SkyPass.cpp:114-115, unchanged by migration). In graph path m_RenderPass/m_ShaderProgram/m_Result are the node's resources; RenderGraphService dtor is =default and frees only node structs, so node pointers dangle after SkyPass::Terminate. Shutdown-only single-delete (no double-free) — low impact now, widens as more passes migrate. Needs a teardown-ownership contract.
+
+3. (non-defect) Dropped ClearRenderTargets — no-op for full-screen ComputeOnly dispatch writing every tile. Noted for completeness.
+
+2026-06-01 — DESIGN (next increment, NOT yet built): graphics-CL state-transition PREPASS primitive. Audit + plan; no source diffs this stage.
+
+=== AUDIT ===
+Imperative shape (PreTAAPass.cpp:126-130, SSAOPass.cpp:220-223): a Graphics CL wraps an explicit ordered list — CommandListBegin(Graphics); TryToTransitState(input, WriteOnly->ReadOnly) [N inputs]; TryToTransitState(result, ReadOnly->WriteOnly); CommandListEnd. TryToTransitState (DX12FrameManagementService_RenderTargets.cpp:11-48) records a ResourceBarrier on the PASSED CL — it does NOT pick a queue; the 'must be graphics' rule is the HW constraint (compute queue can't do RT ReadOnly->WriteOnly), enforced by the CALLER choosing m_CommandListComp_Graphics. Direction is hand-authored per consuming pass.
+Execution/sync OWNED BY THE CLIENT, not the graph (ExampleRenderingClient_ExecuteCommands_Rasterizer.cpp:64-78,138-153): per pass — Execute(GraphicsCL,Graphics); SignalOnGPU(Graphics); WaitOnGPU(Compute waits Graphics); Execute(ComputeCL,Compute); SignalOnGPU(Compute). RecordNode (RenderGraphService.cpp:183-202) only RECORDS the compute CL via the kernel; never executes/fences. Migrated SkyPass has NO prepass (imperative SkyPass never transitioned its own Result — the CONSUMER PreTAA does), so SkyPass records only compute, client does a single compute Execute (client:130-136; SkyPass.cpp:146-148). KEY: the transition prepass is a property of the CONSUMING pass.
+
+=== FORK 1 (data shape) — DECISION: per-node 'Transitions' array, kernel-executed; NOT a distinct barrier node ===
+Rejected distinct barrier-node type and fully-inferred barriers: service has no scheduler/topo-sort (m_Schedule is load order, RenderGraphService.h:27) and no per-resource last-state tracking, so DIRECTION cannot be inferred yet — authored either way; a standalone node doubles node count for zero inferred benefit. Inferred barriers (FrameGraph/Granite-style) are the eventual target once the scheduler lands; this is a non-blocking stepping stone. Precedent: deferred-RT put per-node behavior on a node property + engine hook (RenderGraphService.cpp:113-133).
+Shape: each pass node gains an optional ORDERED array, entry = { Resource, From, To }; From/To are Accessibility enum strings (AccessibilityFromString already round-trips them). Authored in the SAME order as the imperative calls (inputs WriteOnly->ReadOnly first, result ReadOnly->WriteOnly last). Resource resolves via EXISTING FindResource (graph-owned + imported-by-name incl. PerFrameCBuffer special-case). Empty/absent => no prepass (SkyPass stays single-CL, unchanged).
+
+=== FORK 2 (execution/sync) — DECISION: client keeps owning Execute/Signal/Wait; RecordNode records BOTH CLs ===
+Rejected moving submission/fencing into RenderGraphService: all queue submission lives per-pass in the client, hand-sequenced via WaitIfActive against neighbors; relocating it is a larger refactor outside .2 scope. Pick: when a node has a non-empty Transitions array, RecordNode ALSO records the graphics-prepass CL (Begin(node->m_CommandList_Graphics); per-entry TryToTransitState; End) BEFORE the compute CL. The migrated pass's client block stays byte-for-byte the imperative graphics->Signal->compute-Wait->compute sequence — migration swaps only the RECORDING source, not submission topology.
+
+2026-06-01 — DESIGN cont'd (state-transition prepass, part 2/2).
+
+=== DATA SHAPE (JSON additions) ===
+PassNodeDesc gains Inno::Array<TransitionDesc> m_Transitions; new struct TransitionDesc { std::string m_Resource; Accessibility m_From; Accessibility m_To; } in RenderGraphDesc.h. Serializer: TransitionTo/FromJson (mirror BindingTo/FromJson, RenderGraphSerializer.cpp:78-98) wired into PassTo/FromJson under key 'Transitions'; omit when empty (sparse-key convention for Imported/Size at :58-61). No new enum-string entries (Accessibility table already covers ReadOnly/WriteOnly).
+
+=== PREPASS RECORDING LOCATION — code-organization ===
+DefaultKernel::Record is compute-only (DefaultKernel.cpp:7-61). Options: (i) inline prepass loop in Record guarded by non-empty transitions; (ii) reusable free fn RecordTransitionPrepass(ctx, graphicsCL, fmService) at top of Record. PICK (ii): prepass is orthogonal to dispatch and shared VERBATIM by Default AND ScreenTile (ScreenTile derives from Default; deferred-RT cluster passes are all ScreenTile-dispatch AND need the prepass). Inlining forces a copy/awkward override. Helper in NEW RenderGraphTransitions.{h,cpp} (engine RenderGraph dir) — one capability per file, DefaultKernel.cpp stays under budget. RenderGraphPassContext carries only single m_CommandList (IRenderGraphKernel.h:17); add m_CommandList_Graphics, populated in RecordNode from node->m_CommandList_Graphics.
+
+=== FILES CHANGED ===
+- RenderGraphDesc.h: + TransitionDesc, + m_Transitions on PassNodeDesc.
+- RenderGraphSerializer.cpp: + TransitionTo/FromJson, wire into Pass to/from.
+- IRenderGraphKernel.h: + m_CommandList_Graphics on RenderGraphPassContext.
+- RenderGraphService.cpp RecordNode: populate ctx.m_CommandList_Graphics.
+- RenderGraphTransitions.{h,cpp} (NEW): RecordTransitionPrepass.
+- DefaultKernel.cpp: call helper at top of Record when node has transitions.
+- RenderGraphTransitionTests.cpp (NEW, TestSuite explicit list): round-trip.
+- ExampleRenderGraph.json: + Transitions array on migrated consuming pass.
+- PreTAAPass.cpp (recommended): SetupFromRenderGraph + g_UseRenderGraph seam like SkyPass; PrepareCommandList delegates to RecordNode; client block UNCHANGED.
+
+=== RECOMMENDED NEXT TARGET: PreTAAPass ===
+Simplest deferred-RT pass carrying the prepass. 3 transitions (LightPass luminance + Sky Pass Result WriteOnly->ReadOnly; own Result ReadOnly->WriteOnly); all 3 inputs already-existing graph/engine resources (Sky Pass Result graph-owned since ecf7aca9; LightPass luminance imports by name). No ping-pong, no raytracing, ScreenTile dispatch. Proves the primitive with a real graphics-queue ReadOnly->WriteOnly RT transition. SSAO deferred (extra Kernel buffer + noise tex + OpaquePass MRT reads = more bindings; after PreTAA).
+
+2026-06-01 — DESIGN cont'd (state-transition prepass, part 3/3: interactions + verification).
+
+=== SkyPass INTERACTION ===
+SkyPass already migrated, writes 'Sky Pass Result', NO prepass — correct (it never transitioned its own output imperatively). When PreTAA migrates, PreTAA's prepass transitions 'Sky Pass Result' WriteOnly->ReadOnly via FindResource on the graph-owned texture. No change to SkyPass.
+
+=== SINGLE- vs MULTI-BUFFER (review caveat #1) ===
+Graph RTs are single-buffered (IsMultiBuffer drops in TextureDescFromJson, RenderGraphSerializer.cpp:18-29). TryToTransitState operates per-frame-index on the texture's own resources (DX12FrameManagementService_RenderTargets.cpp:14-16,44). For SAME-FRAME producer->consumer (Sky writes, PreTAA reads same frame) single-buffer + a correct WriteOnly->ReadOnly barrier suffices — no RAW hazard. This primitive does NOT fix cross-frame temporal hazards; a future CROSS-FRAME temporal consumer (TAA history / ping-pong) needs IsMultiBuffer round-tripped first. Ping-pong is the SEPARATE next primitive — do not conflate.
+
+=== BUILD SEQUENCE ===
+1. TransitionDesc + serializer + round-trip test (data only) -> TestSuite green.
+2. ctx.m_CommandList_Graphics + RecordTransitionPrepass helper + DefaultKernel call (behavior, no migrated pass) -> build green.
+3. PreTAA Transitions in JSON + migrate PreTAAPass behind g_UseRenderGraph; client block unchanged.
+4. Verify (below).
+
+=== RUNTIME VERIFICATION (what CAN exercise it) ===
+Unlike deferred-RT resize (offscreen smoke can't trigger PostResize), the prepass runs EVERY FRAME. GISponza -gpu_validation -total_frames 120 exercises the graphics-CL ReadOnly->WriteOnly RT barrier every frame; GBV flags an illegal compute-queue transition or a missing/wrong barrier. So the 120-frame smoke is a REAL exercise of this primitive (contrast: deferred-RT was correct-by-construction only). TestGIScene MAE confirms PreTAA output parity vs imperative (clean-baseline band ~0.50; the 0.45 FAIL is pre-existing/accepted). Expected: BuildWin exit 0; TestSuite incl new round-trip; GISponza exit 0, 0 D3D12 errors, graph +1 pass. NOT verifiable here: actual window-resize RT re-creation (offscreen, as before); RenderDoc visual capture (parity by MAE band only).
+
+NOT building this stage — design only. Handing back to dispatcher to route to code-impl. PING-PONG remains the separate primitive after this one. [task-stays-open]
+
+2026-06-02 — Increment 3 LANDED (commit ce4a62c3, peer-reviewed PASS by fresh code-review agent). Built the graphics-CL state-transition prepass primitive as per-node data and migrated PreTAAPass. Shape exactly as designed: TransitionDesc{m_Resource,m_From,m_To} + Inno::Array<TransitionDesc> m_Transitions on PassNodeDesc; TransitionTo/FromJson mirror the binding serializer (sparse key, omitted when empty, enums via existing Accessibility table — no new enum entries); ctx.m_CommandList_Graphics added + populated in RecordNode; RecordTransitionPrepass in new RenderGraphTransitions.{h,cpp}; DefaultKernel calls it at top of Record when transitions non-empty (ScreenTileKernel inherits). PreTAAPass behind g_UseRenderGraph (imperative body verbatim under false), 3 transitions (luminance + Sky Pass Result WriteOnly->ReadOnly; own Result ReadOnly->WriteOnly), Result resolved lazily in PrepareCommandList; client submission/fencing block UNCHANGED.
+
+POST-REVIEW HARDENING (folded into ce4a62c3, not a separate commit): RecordTransitionPrepass now PRE-VALIDATES every transition resource before opening the graphics CL and aborts the pass loud (Log Error, return false) if any is unresolved — was previously log-Warning + continue, which would dispatch with a missing barrier (review advisory-low). Also corrected the stale m_CommandList_Graphics comment (review nit).
+
+Verified (main session): BuildWin exit 0 (Main + RenderTest); TestSuite 6/6 RenderGraph incl new transition round-trip, 0 failures; GISponza -gpu_validation -total_frames 120 exit 0, graph loads 11 resources/6 passes, PTReadback nonZero=921600, zero real D3D12 errors (only the pre-existing engine-wide non-fatal GBV Release-shader false positives on lightPass/skyPass/lightCulling/finalBlendPass — none on PreTAA; classifier upgrades real GBV errors to fatal exit-1 when total_frames>0, so exit 0 == zero real errors). The 120-frame GBV run is a REAL per-frame exercise of the graphics-CL ReadOnly->WriteOnly barrier. NOT verified: runtime window-resize RT re-creation (offscreen can't trigger PostResize; correct-by-construction); no committed capture A/B (flag-flip alone double-registers Pre-TAA Pass Result — parity argued by construction: identical transitions/bindings/dispatch, ClearRenderTargets no-op, unchanged submission). MAE band ~0.52 (the 0.45 FAIL is pre-existing/accepted).
+
+CARRY-FORWARD (review, non-blocking): (1) IsMultiBuffer drops through TextureDescFromJson so graph RTs incl. Pre-TAA Pass Result are single-buffered — safe today (PreTAA->TAA same-frame, no cross-frame consumer) but must be round-tripped before any cross-frame/temporal consumer; (2) Terminate-ownership: migrated passes delete graph-owned resources in their Terminate (shutdown-only single-delete now, widens as more passes migrate — needs a teardown-ownership contract).
+
+NEXT: ping-pong primitive (TAAPass history, SSRC Even/Odd — may obsolete TASK-128) and the remaining deferred-RT passes that also need this prepass (SSAO/PostTAA/FinalBlend/SSRC filter/spatial/integration). Per-frame import + dynamic dispatch + deferred-RT + state-transition prepass primitives all now exist; ping-pong is the last bin-b primitive. [task-stays-open]
+
 <!-- SECTION:NOTES:END -->
