@@ -35,6 +35,9 @@ namespace Inno
 		TextureComponent *m_NoiseTexture;
 		TextureComponent* m_Result;
 
+		bool SetupFromRenderGraph();
+		bool SetupImperative();
+		bool SetupOwnedResources();
 		bool RenderTargetsCreationFunc();
 	};
 } // namespace Inno

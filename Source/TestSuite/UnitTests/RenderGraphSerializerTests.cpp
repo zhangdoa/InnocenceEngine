@@ -260,6 +260,10 @@ extern void TestScreenSizedRoundTrip();
 // RenderGraphTransitionTests.cpp.
 extern void TestTransitionRoundTrip();
 
+// SSAO node fixture (sampler bindings + 2-entry transition prepass + deferred
+// screen Result) lives in RenderGraphSerializerTests_SSAO.cpp.
+extern void TestSSAONodeRoundTrip();
+
 void RunRenderGraphSerializerUnitTests()
 {
 	TestRunner::StartTestSuite("RenderGraphSerializer");
@@ -269,5 +273,6 @@ void RunRenderGraphSerializerUnitTests()
 	TestComputeCullingRoundTrip();
 	TestScreenSizedRoundTrip();
 	TestTransitionRoundTrip();
+	TestSSAONodeRoundTrip();
 	TestRunner::EndTestSuite();
 }

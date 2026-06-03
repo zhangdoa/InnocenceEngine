@@ -31,6 +31,11 @@ bool SamplerResourceService::Delete(SamplerComponent* ptr)
 	return true;
 }
 
+SamplerComponent* SamplerResourceService::Find(const char* name)
+{
+	return m_Pool.Find(name);
+}
+
 void SamplerResourceService::Initialize(SamplerComponent* sampler)
 {
 	InitializeImpl(sampler);

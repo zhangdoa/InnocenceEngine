@@ -4,6 +4,7 @@
 #include "../Services/RenderingConfigurationService.h"
 #include "../Services/TextureResourceService.h"
 #include "../Services/GPUBufferResourceService.h"
+#include "../Services/SamplerResourceService.h"
 #include "../Services/PerFrameDataService.h"
 
 using namespace Inno;
@@ -42,6 +43,8 @@ GPUResourceComponent* RenderGraphService::ResolveImportedResource(const std::str
 		return l_buffer;
 	if (auto l_texture = g_Engine->Get<TextureResourceService>()->Find(name.c_str()))
 		return l_texture;
+	if (auto l_sampler = g_Engine->Get<SamplerResourceService>()->Find(name.c_str()))
+		return l_sampler;
 
 	Log(Error, "RenderGraphService: imported resource [", name.c_str(),
 		"] not found in any resource service.");

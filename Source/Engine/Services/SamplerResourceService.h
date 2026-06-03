@@ -18,6 +18,7 @@ namespace Inno
 
 		SamplerComponent* Add(const char* name);
 		virtual bool Delete(SamplerComponent* ptr);
+		SamplerComponent* Find(const char* name);
 
 		void Initialize(SamplerComponent* sampler);
 

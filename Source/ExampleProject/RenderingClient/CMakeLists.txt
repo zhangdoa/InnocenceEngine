@@ -1,5 +1,5 @@
-file(GLOB HEADERS "*.h")
-file(GLOB SOURCES "*.cpp")
+file(GLOB HEADERS CONFIGURE_DEPENDS "*.h")
+file(GLOB SOURCES CONFIGURE_DEPENDS "*.cpp")
 
 add_library(ExampleRenderingClient ${HEADERS} ${SOURCES})
 set_target_properties(ExampleRenderingClient PROPERTIES FOLDER ExampleProject)

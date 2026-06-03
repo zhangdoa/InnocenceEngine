@@ -94,6 +94,39 @@
             "PixelDataFormat": "RGBA",
             "GPUAccessibility": "ReadWrite",
             "Lifetime": "Persistent"
+        },
+        {
+            "Name": "OpaquePass_RT_0",
+            "Type": "Texture",
+            "Imported": true
+        },
+        {
+            "Name": "OpaquePass_RT_1",
+            "Type": "Texture",
+            "Imported": true
+        },
+        {
+            "Name": "SSAO_Kernel",
+            "Type": "Buffer",
+            "Imported": true
+        },
+        {
+            "Name": "SSAO_Noise",
+            "Type": "Texture",
+            "Imported": true
+        },
+        {
+            "Name": "SSAO_Result",
+            "Type": "Texture",
+            "Size": "screen",
+            "DepthOrArraySize": 1,
+            "MipLevels": 1,
+            "Sampler": "Sampler2D",
+            "Usage": "ComputeOnly",
+            "PixelDataType": "Float16",
+            "PixelDataFormat": "RGBA",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
         }
     ],
     "Passes": [
@@ -317,6 +350,99 @@
                 { "Resource": "LightPass Luminance Result", "From": "WriteOnly", "To": "ReadOnly" },
                 { "Resource": "Sky Pass Result", "From": "WriteOnly", "To": "ReadOnly" },
                 { "Resource": "Pre-TAA Pass Result", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "X": 1, "Y": 1, "Z": 1 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "SSAONoisePass",
+            "Queue": "Compute",
+            "Kernel": "ScreenTile",
+            "Shader": { "CS": "SSAONoisePass.comp" },
+            "Reads": [ "PerFrameCBuffer", "SSAO_Kernel", "OpaquePass_RT_0", "OpaquePass_RT_1", "SSAO_Noise" ],
+            "Writes": [ "SSAO_Result" ],
+            "Bindings": [
+                {
+                    "Resource": "PerFrameCBuffer",
+                    "Type": "Buffer",
+                    "Set": 0,
+                    "Index": 0,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "SSAO_Kernel",
+                    "Type": "Buffer",
+                    "Set": 0,
+                    "Index": 1,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "OpaquePass_RT_0",
+                    "Type": "Image",
+                    "Set": 1,
+                    "Index": 0,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "TextureUsage": "ColorAttachment",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "OpaquePass_RT_1",
+                    "Type": "Image",
+                    "Set": 1,
+                    "Index": 1,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "TextureUsage": "ColorAttachment",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "SSAO_Noise",
+                    "Type": "Image",
+                    "Set": 1,
+                    "Index": 2,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "TextureUsage": "ComputeOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "SSAONoisePass",
+                    "Type": "Sampler",
+                    "Set": 2,
+                    "Index": 0,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "SSAONoisePass_RandomRot",
+                    "Type": "Sampler",
+                    "Set": 2,
+                    "Index": 1,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "SSAO_Result",
+                    "Type": "Image",
+                    "Set": 3,
+                    "Index": 0,
+                    "BindingAccess": "ReadWrite",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ComputeOnly",
+                    "Stage": "Compute"
+                }
+            ],
+            "Transitions": [
+                { "Resource": "SSAO_Noise", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "SSAO_Result", "From": "ReadOnly", "To": "WriteOnly" }
             ],
             "Dispatch": { "X": 1, "Y": 1, "Z": 1 },
             "Bypass": { "Enabled": false, "ClearOnBypass": false },

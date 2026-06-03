@@ -20,6 +20,7 @@ set(TEST_SOURCES
     UnitTests/RenderGraphSerializerTests.cpp
     UnitTests/RenderGraphSerializerTests_ScreenSized.cpp
     UnitTests/RenderGraphTransitionTests.cpp
+    UnitTests/RenderGraphSerializerTests_SSAO.cpp
     # Performance tests
     PerformanceTests/StringConversionPerf.cpp
     PerformanceTests/ContainerPerf.cpp
