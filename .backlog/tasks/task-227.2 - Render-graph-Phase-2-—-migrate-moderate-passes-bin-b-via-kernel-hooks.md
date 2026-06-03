@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - code-impl
 created_date: '2026-05-31 12:53'
-updated_date: '2026-06-02'
+updated_date: '2026-06-03'
 labels:
   - rendering
   - render-graph
@@ -150,5 +150,12 @@ Verified (main session): BuildWin exit 0 (Main + RenderTest); TestSuite 6/6 Rend
 CARRY-FORWARD (review, non-blocking): (1) IsMultiBuffer drops through TextureDescFromJson so graph RTs incl. Pre-TAA Pass Result are single-buffered — safe today (PreTAA->TAA same-frame, no cross-frame consumer) but must be round-tripped before any cross-frame/temporal consumer; (2) Terminate-ownership: migrated passes delete graph-owned resources in their Terminate (shutdown-only single-delete now, widens as more passes migrate — needs a teardown-ownership contract).
 
 NEXT: ping-pong primitive (TAAPass history, SSRC Even/Odd — may obsolete TASK-128) and the remaining deferred-RT passes that also need this prepass (SSAO/PostTAA/FinalBlend/SSRC filter/spatial/integration). Per-frame import + dynamic dispatch + deferred-RT + state-transition prepass primitives all now exist; ping-pong is the last bin-b primitive. [task-stays-open]
+
+
+2026-06-03 — Increment 4 LANDED (commit 8fd2e7a6, peer-reviewed PASS). Migrated SSAOPass — the first CLEAN-REUSE of the state-transition prepass primitive (no new primitive). 7 passes now graph-driven; graph loads 16 resources / 7 passes. SSAOPass behind g_UseRenderGraph: 2-entry prepass (SSAO_Noise WriteOnly->ReadOnly, SSAO_Result ReadOnly->WriteOnly), 8 bindings in layout-array order, SSAO_Result the lone graph-owned deferred screen RT; kernel buffer / noise texture / 2 samplers stay imperatively created+filled (SetupOwnedResources, both paths) and imported by name (graph never allocates them). SSAOPass.cpp split 273->178 with binding-layout in SSAOPass_Setup.cpp (300-gate). Engine: ResolveImportedResource now also resolves SamplerResourceService (new Find -> NamedObjectPool::Find); SSAO was the first pass importing samplers by name.
+
+Verified (main session): BuildWin exit 0 (Main+RenderTest); TestSuite 110/110 incl. new SSAO-node round-trip (binding order + imported flags + transition order/dir); GISponza -gpu_validation -total_frames 120 exit 0, 16 res/7 passes, PTReadback nonZero=921600, 0 real D3D12 errors; TestGIScene MAE 0.493 (clean-baseline band). Not verified: window-resize RT re-creation offscreen; no committed capture A/B (parity by construction + MAE band + per-frame GBV barrier exercise).
+
+NEXT: remaining CLEAN-REUSE passes (audited, ready, same pattern) = the SSRC chain (SSRCFilterHorizontal/Vertical, SSRCSpatialHorizontal/Vertical, SSRCIntegration) — all inputs statically named from prior passes/SSRCReprojection; deferred RTs (SSRCIntegration RT is probe-grid-sized). Migrate next, small batches. BLOCKED on new primitives: PostTAA + FinalBlend (NEEDS-DYNAMIC-INPUT: runtime renderingContext->m_input, no stable graph name; dynamic-dispatch covers size only), TAA (that + ping-pong Even/Odd). MotionBlur bypassed (returns false). [task-stays-open]
 
 <!-- SECTION:NOTES:END -->
