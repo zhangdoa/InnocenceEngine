@@ -127,3 +127,17 @@ test("classifyTestCommand: qualifying / live / serialize / playwright spec", () 
 test("parseTaskRefs: dedupes TASK ids", () => {
   assert.deepEqual(g.parseTaskRefs("TASK-1 and TASK-1 and TASK-23").sort((a, b) => a - b), [1, 23]);
 });
+
+test("unsafeCommitInvocation: rejects chained staging + auto-stage, allows bare commit", () => {
+  assert.ok(g.unsafeCommitInvocation("git add . && git commit -m x"));
+  assert.ok(g.unsafeCommitInvocation("git stage foo; git commit -F m"));
+  assert.ok(g.unsafeCommitInvocation("git restore --staged a && git commit -m x"));
+  assert.ok(g.unsafeCommitInvocation("git commit -am 'x'"));
+  assert.ok(g.unsafeCommitInvocation("git commit -a -m x"));
+  assert.ok(g.unsafeCommitInvocation("git commit --all -m x"));
+  assert.equal(g.unsafeCommitInvocation("git commit -m x"), null);
+  assert.equal(g.unsafeCommitInvocation("git commit -F Build/commit-message.txt"), null);
+  assert.equal(g.unsafeCommitInvocation("git commit --amend -m x"), null);
+  assert.equal(g.unsafeCommitInvocation('git commit -m "remember to git add later"'), null);
+  assert.equal(g.unsafeCommitInvocation("cd src && git commit -m x"), null);
+});

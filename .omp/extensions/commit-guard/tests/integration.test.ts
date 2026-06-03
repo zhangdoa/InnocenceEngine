@@ -96,3 +96,13 @@ test("turn flag lets a code commit through after a test command", async () => {
     rmSync(repo, { recursive: true, force: true });
   }
 });
+
+test("blocks chained staging + commit and auto-stage before touching git", async () => {
+  const cap = loadGuard();
+  const r1 = await cap.tool!({ toolName: "bash", input: { command: "git add . && git commit -m x" } }, { cwd: "." });
+  assert.equal(r1?.block, true);
+  assert.match(r1!.reason!, /separate command/);
+  const r2 = await cap.tool!({ toolName: "bash", input: { command: "git commit -am wip" } }, { cwd: "." });
+  assert.equal(r2?.block, true);
+  assert.match(r2!.reason!, /commit -a/);
+});

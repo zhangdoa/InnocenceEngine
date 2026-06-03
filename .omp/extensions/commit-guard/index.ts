@@ -27,6 +27,7 @@ function isGitCommit(cmd: string): boolean {
 function evaluate(cmd: string, cwd: string, turn: TurnState): string | null {
   const messageText = collect.extractMessage(cmd, cwd);
   const staged = collect.stagedNameOnly(cwd);
+  if (staged.length === 0) return null; // nothing staged → let git reject the empty commit
   const nameStatus = collect.stagedNameStatus(cwd);
   const closingTasks = collect.detectClosingTasks(cwd, staged);
 
@@ -76,6 +77,9 @@ export default function commitGuard(pi: ExtensionAPI): void {
     if (cls.serialize) turn.serializeTestRan = true;
 
     if (!isGitCommit(cmd)) return;
+
+    const unsafe = gates.unsafeCommitInvocation(cmd);
+    if (unsafe) return { block: true, reason: `[commit-guard] git commit blocked —\n${unsafe}` };
 
     let reason: string | null = null;
     try {

@@ -193,3 +193,23 @@ export function classifyTestCommand(cmd: string, readSpec: (rel: string) => stri
   }
   return { qualifying, live, serialize };
 }
+
+// ---- untrustworthy commit invocations --------------------------------------
+// The gate reads the staged index (`git diff --cached`) at the moment it intercepts
+// the bash `git commit`. Two shapes make that view a lie:
+//   1. chained staging — `git add … && git commit …` runs add AFTER interception;
+//   2. auto-stage — `git commit -a/--all` commits unstaged tracked changes too.
+// Both are rejected so staging is explicit and the gate's index view is authoritative.
+const STAGING_VERB_RE = /\bgit\s+(?:add|stage|rm|mv|restore|reset)\b/;
+const AUTO_STAGE_RE = /(?:^|\s)-[A-Za-z]*a[A-Za-z]*(?=\s|=|$)|--all\b/;
+
+export function unsafeCommitInvocation(cmd: string): string | null {
+  const u = cmd.replace(/"(?:\\.|[^"\\])*"/g, '""').replace(/'(?:[^'])*'/g, "''");
+  if (STAGING_VERB_RE.test(u)) {
+    return "stage in a separate command, then commit. A chained `git add … && git commit …` is intercepted before the staging runs, so commit-guard would gate a stale index. Run the staging step alone, then a bare `git commit`.";
+  }
+  if (AUTO_STAGE_RE.test(u)) {
+    return "avoid `git commit -a` / `--all` — it commits unstaged tracked changes that commit-guard (which reads the staged index) cannot see. Stage explicitly with `git add …`, then a bare `git commit`.";
+  }
+  return null;
+}
