@@ -1,4 +1,4 @@
-﻿#include "TiledFrustumGenerationPass.h"
+#include "TiledFrustumGenerationPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -9,17 +9,73 @@
 #include "../../Engine/Services/GPUBufferResourceService.h"
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
+#include "../../Engine/RenderGraph/RenderGraphService.h"
 
 using namespace Inno;
 
+namespace
+{
+	// Graph mode records bind + the two-level tiled dispatch via the TiledFrustum
+	// kernel. The DispatchParams cbuffer and the resize-sized frustum buffer have
+	// init/resize lifecycles the graph does not model, so they stay imperatively
+	// created (SetupOwnedResources + RenderTargetsCreationFunc) and imported by
+	// name; the graph never allocates them. The imperative path is the fallback.
+	constexpr bool g_UseRenderGraph = true;
+}
+
+bool TiledFrustumGenerationPass::SetupFromRenderGraph()
+{
+	auto l_node = g_Engine->Get<RenderGraphService>()->FindNode("TiledFrustumGenerationPass");
+	if (!l_node)
+	{
+		Log(Error, "TiledFrustumGenerationPass: render graph has no TiledFrustumGenerationPass node.");
+		return false;
+	}
+
+	m_ShaderProgramComp = l_node->m_ShaderProgram;
+	m_RenderPassComp = l_node->m_RenderPass;
+	m_CommandListComp_Compute = l_node->m_CommandList_Compute;
+
+	// The graph imports the frustum buffer rather than allocating it: re-install
+	// the pass's RT-init-func + resizable flag on the graph node's RenderPass so
+	// the buffer is created at Initialize and resized through PostResize exactly as
+	// the imperative path did.
+	m_RenderPassComp->m_RenderPassDesc.m_UseOutputMerger = false;
+	m_RenderPassComp->m_RenderPassDesc.m_Resizable = true;
+	m_RenderPassComp->m_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&TiledFrustumGenerationPass::RenderTargetsCreationFunc, this);
+
+	if (!SetupOwnedResources())
+		return false;
+
+	m_TiledFrustum = nullptr;
+
+	m_ObjectStatus = ObjectStatus::Created;
+	return true;
+}
+
 bool TiledFrustumGenerationPass::Setup(IServiceConfig* systemConfig)
+{
+	if (g_UseRenderGraph)
+		return SetupFromRenderGraph();
+
+	return SetupImperative();
+}
+
+bool TiledFrustumGenerationPass::SetupOwnedResources()
+{
+	m_DispatchParamsGPUBufferComp = g_Engine->Get<GPUBufferResourceService>()->Add("TiledFrustumDispatchParams");
+	return true;
+}
+
+bool TiledFrustumGenerationPass::SetupImperative()
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("TiledFrustumGenerationPass");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp";
 
-	m_DispatchParamsGPUBufferComp = g_Engine->Get<GPUBufferResourceService>()->Add("TiledFrustumDispatchParams");
+	if (!SetupOwnedResources())
+		return false;
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
@@ -114,6 +170,19 @@ bool TiledFrustumGenerationPass::PrepareCommandList(IRenderingContext* rendering
 	{
 		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
+
+	if (g_UseRenderGraph)
+	{
+		if (!m_TiledFrustum || m_TiledFrustum->m_ObjectStatus != ObjectStatus::Activated)
+			return false;
+
+		auto l_node = g_Engine->Get<RenderGraphService>()->FindNode("TiledFrustumGenerationPass");
+		if (!g_Engine->Get<RenderGraphService>()->RecordNode(l_node))
+			return false;
+
+		m_ObjectStatus = ObjectStatus::Activated;
+		return true;
 	}
 
 	if (m_TiledFrustum->m_ObjectStatus != ObjectStatus::Activated)

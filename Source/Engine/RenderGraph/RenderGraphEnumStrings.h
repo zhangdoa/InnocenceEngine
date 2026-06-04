@@ -42,5 +42,8 @@ namespace Inno
 
 		std::string ToString(RenderGraphResourceLifetime v);
 		RenderGraphResourceLifetime LifetimeFromString(const std::string& s);
+
+		std::string ToString(DispatchMode v);
+		DispatchMode DispatchModeFromString(const std::string& s);
 	}
 }

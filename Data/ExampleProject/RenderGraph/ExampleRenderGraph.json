@@ -127,13 +127,22 @@
             "PixelDataFormat": "RGBA",
             "GPUAccessibility": "ReadWrite",
             "Lifetime": "Persistent"
+        },
+        {
+            "Name": "TiledFrustumGPUBuffer",
+            "Type": "Buffer",
+            "Imported": true
+        },
+        {
+            "Name": "TiledFrustumDispatchParams",
+            "Type": "Buffer",
+            "Imported": true
         }
     ],
     "Passes": [
         {
             "Name": "BRDFLUTPass",
             "Queue": "Compute",
-            "Kernel": "Default",
             "Shader": { "CS": "BRDFLUTPass.comp" },
             "Reads": [],
             "Writes": [ "BRDF LUT" ],
@@ -156,7 +165,6 @@
         {
             "Name": "BRDFLUTMSPass",
             "Queue": "Compute",
-            "Kernel": "Default",
             "Shader": { "CS": "BRDFLUTMSPass.comp" },
             "Reads": [ "BRDF LUT" ],
             "Writes": [ "BRDF MS LUT" ],
@@ -189,7 +197,6 @@
         {
             "Name": "LuminanceAveragePass",
             "Queue": "Compute",
-            "Kernel": "Default",
             "Shader": { "CS": "luminanceAveragePass.comp" },
             "Reads": [ "PerFrameCBuffer", "LuminanceHistogramGPUBuffer" ],
             "Writes": [ "LuminanceAverageGPUBuffer" ],
@@ -229,7 +236,6 @@
         {
             "Name": "SkyPass",
             "Queue": "Compute",
-            "Kernel": "ScreenTile",
             "Shader": { "CS": "skyPass.comp" },
             "Reads": [ "PerFrameCBuffer" ],
             "Writes": [ "Sky Pass Result" ],
@@ -254,14 +260,13 @@
                     "Stage": "Compute"
                 }
             ],
-            "Dispatch": { "X": 1, "Y": 1, "Z": 1 },
+            "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
             "Bypass": { "Enabled": false, "ClearOnBypass": false },
             "OneShot": false
         },
         {
             "Name": "OpaqueCullingPass",
             "Queue": "Compute",
-            "Kernel": "ComputeCulling",
             "Shader": { "CS": "opaqueGPUCulling.comp" },
             "Reads": [ "PerFrameCBuffer", "GPUModelDataBuffer", "MaterialCBuffer" ],
             "Writes": [ "OpaqueCullingPass/IndirectDrawCommandBuffer" ],
@@ -303,14 +308,14 @@
                     "Stage": "Compute"
                 }
             ],
-            "Dispatch": { "X": 1, "Y": 1, "Z": 1 },
+            "Dispatch": { "Mode": "DrawModelGroups", "X": 1, "Y": 1, "Z": 1, "TileSize": 64 },
+            "TrackWriteState": true,
             "Bypass": { "Enabled": false, "ClearOnBypass": false },
             "OneShot": false
         },
         {
             "Name": "PreTAAPass",
             "Queue": "Compute",
-            "Kernel": "ScreenTile",
             "Shader": { "CS": "preTAAPass.comp" },
             "Reads": [ "LightPass Luminance Result", "Sky Pass Result" ],
             "Writes": [ "Pre-TAA Pass Result" ],
@@ -351,14 +356,13 @@
                 { "Resource": "Sky Pass Result", "From": "WriteOnly", "To": "ReadOnly" },
                 { "Resource": "Pre-TAA Pass Result", "From": "ReadOnly", "To": "WriteOnly" }
             ],
-            "Dispatch": { "X": 1, "Y": 1, "Z": 1 },
+            "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
             "Bypass": { "Enabled": false, "ClearOnBypass": false },
             "OneShot": false
         },
         {
             "Name": "SSAONoisePass",
             "Queue": "Compute",
-            "Kernel": "ScreenTile",
             "Shader": { "CS": "SSAONoisePass.comp" },
             "Reads": [ "PerFrameCBuffer", "SSAO_Kernel", "OpaquePass_RT_0", "OpaquePass_RT_1", "SSAO_Noise" ],
             "Writes": [ "SSAO_Result" ],
@@ -444,7 +448,46 @@
                 { "Resource": "SSAO_Noise", "From": "WriteOnly", "To": "ReadOnly" },
                 { "Resource": "SSAO_Result", "From": "ReadOnly", "To": "WriteOnly" }
             ],
-            "Dispatch": { "X": 1, "Y": 1, "Z": 1 },
+            "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "TiledFrustumGenerationPass",
+            "Queue": "Compute",
+            "Shader": { "CS": "tileFrustum.comp" },
+            "Reads": [ "PerFrameCBuffer", "TiledFrustumDispatchParams" ],
+            "Writes": [ "TiledFrustumGPUBuffer" ],
+            "Bindings": [
+                {
+                    "Resource": "PerFrameCBuffer",
+                    "Type": "Buffer",
+                    "Set": 0,
+                    "Index": 0,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "TiledFrustumDispatchParams",
+                    "Type": "Buffer",
+                    "Set": 0,
+                    "Index": 1,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "TiledFrustumGPUBuffer",
+                    "Type": "Buffer",
+                    "Set": 1,
+                    "Index": 0,
+                    "BindingAccess": "ReadWrite",
+                    "ResourceAccess": "ReadWrite",
+                    "Stage": "Compute"
+                }
+            ],
+            "Dispatch": { "Mode": "TiledTwoLevel", "X": 1, "Y": 1, "Z": 1, "TileSize": 16 },
             "Bypass": { "Enabled": false, "ClearOnBypass": false },
             "OneShot": false
         }

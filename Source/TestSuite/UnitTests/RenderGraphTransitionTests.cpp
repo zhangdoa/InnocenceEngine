@@ -13,7 +13,6 @@ static RenderGraphDesc MakeTransitionGraph()
 
 	PassNodeDesc l_pass;
 	l_pass.m_Name = "PreTAAPass";
-	l_pass.m_Kernel = "ScreenTile";
 	l_pass.m_Queue = GPUEngineType::Compute;
 	l_pass.m_ShaderFilePaths.m_CSPath = "preTAAPass.comp";
 

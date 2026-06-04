@@ -122,12 +122,16 @@ namespace
 		for (const auto& b : p.m_Bindings) bindings.push_back(BindingToJson(b));
 
 		json j = json{
-			{ "Name", p.m_Name }, { "Queue", ES::ToString(p.m_Queue) }, { "Kernel", p.m_Kernel },
+			{ "Name", p.m_Name }, { "Queue", ES::ToString(p.m_Queue) },
 			{ "Shader", { { "CS", p.m_ShaderFilePaths.m_CSPath.c_str() } } },
 			{ "Reads", reads }, { "Writes", writes }, { "Bindings", bindings },
-			{ "Dispatch", { { "X", p.m_Dispatch.m_X }, { "Y", p.m_Dispatch.m_Y }, { "Z", p.m_Dispatch.m_Z } } },
+			{ "Dispatch", { { "Mode", ES::ToString(p.m_Dispatch.m_Mode) },
+				{ "X", p.m_Dispatch.m_X }, { "Y", p.m_Dispatch.m_Y }, { "Z", p.m_Dispatch.m_Z },
+				{ "TileSize", p.m_Dispatch.m_TileSize } } },
 			{ "Bypass", { { "Enabled", p.m_BypassEnabled }, { "ClearOnBypass", p.m_ClearOnBypass } } },
 			{ "OneShot", p.m_OneShot } };
+		if (p.m_TrackWriteState)
+			j["TrackWriteState"] = true;
 		if (!p.m_Transitions.empty())
 		{
 			json transitions = json::array();
@@ -140,7 +144,6 @@ namespace
 	void PassFromJson(const json& j, PassNodeDesc& p)
 	{
 		p.m_Name = j.value("Name", std::string());
-		p.m_Kernel = j.value("Kernel", std::string("Default"));
 		p.m_Queue = ES::GPUEngineTypeFromString(j.value("Queue", std::string("Compute")));
 		if (j.contains("Shader"))
 			p.m_ShaderFilePaths.m_CSPath = j["Shader"].value("CS", std::string()).c_str();
@@ -154,15 +157,18 @@ namespace
 			for (const auto& tj : j["Transitions"]) { TransitionDesc t; TransitionFromJson(tj, t); p.m_Transitions.push_back(t); }
 		if (j.contains("Dispatch"))
 		{
+			p.m_Dispatch.m_Mode = ES::DispatchModeFromString(j["Dispatch"].value("Mode", std::string("Static")));
 			p.m_Dispatch.m_X = j["Dispatch"].value("X", 1u);
 			p.m_Dispatch.m_Y = j["Dispatch"].value("Y", 1u);
 			p.m_Dispatch.m_Z = j["Dispatch"].value("Z", 1u);
+			p.m_Dispatch.m_TileSize = j["Dispatch"].value("TileSize", 0u);
 		}
 		if (j.contains("Bypass"))
 		{
 			p.m_BypassEnabled = j["Bypass"].value("Enabled", false);
 			p.m_ClearOnBypass = j["Bypass"].value("ClearOnBypass", false);
 		}
+		p.m_TrackWriteState = j.value("TrackWriteState", false);
 		p.m_OneShot = j.value("OneShot", false);
 	}
 }

@@ -2,14 +2,13 @@
 #include <memory>
 #include <unordered_map>
 #include "RenderGraphDesc.h"
-#include "IRenderGraphKernel.h"
+#include "RenderGraphPassRecorder.h"
 #include "../Component/TextureComponent.h"
 #include "../Component/ShaderProgramComponent.h"
 
 namespace Inno
 {
-	// A compiled pass node: the engine components the graph built from a
-	// PassNodeDesc, plus the kernel that records its command list.
+	// A compiled pass node: the engine components the graph built from a PassNodeDesc.
 	struct RenderGraphPassNode
 	{
 		PassNodeDesc m_Desc;
@@ -17,7 +16,7 @@ namespace Inno
 		ShaderProgramComponent* m_ShaderProgram = nullptr;
 		CommandListComponent* m_CommandList_Compute = nullptr;
 		CommandListComponent* m_CommandList_Graphics = nullptr;
-		IRenderGraphKernel* m_Kernel = nullptr;
+
 		// First Writes resource — the node's primary output (parity with GetResult()).
 		GPUResourceComponent* m_PrimaryOutput = nullptr;
 	};
@@ -49,7 +48,6 @@ namespace Inno
 		GPUResourceComponent* ResolveImportedResource(const std::string& name);
 		bool CreateResource(const ResourceDesc& desc);
 		bool CreatePassNode(const PassNodeDesc& desc);
-		IRenderGraphKernel* ResolveKernel(const std::string& name);
 		// (Re)creates a screen-sized texture at the current resolution. Installed as
 		// the writer node's RenderPass init-func so the engine's PostResize loop
 		// drives resize through the same path the imperative passes used.
@@ -61,7 +59,6 @@ namespace Inno
 		// node's RT-init-func, not eagerly in CreateResource.
 		std::unordered_map<std::string, ResourceDesc> m_DeferredScreenTextures;
 		std::unordered_map<std::string, std::unique_ptr<RenderGraphPassNode>> m_Nodes;
-		std::unordered_map<std::string, std::unique_ptr<IRenderGraphKernel>> m_Kernels;
 		Inno::Array<RenderGraphPassNode*> m_Schedule;
 		bool m_Loaded = false;
 	};

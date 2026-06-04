@@ -24,10 +24,11 @@ static RenderGraphDesc MakeScreenSizedGraph()
 
 	PassNodeDesc l_pass;
 	l_pass.m_Name = "SkyPass";
-	l_pass.m_Kernel = "ScreenTile";
 	l_pass.m_Queue = GPUEngineType::Compute;
 	l_pass.m_ShaderFilePaths.m_CSPath = "skyPass.comp";
 	l_pass.m_Writes.push_back("Sky Pass Result");
+	l_pass.m_Dispatch.m_Mode = DispatchMode::ScreenTile;
+	l_pass.m_Dispatch.m_TileSize = 8;
 	l_graph.m_Passes.push_back(l_pass);
 
 	return l_graph;
@@ -35,7 +36,7 @@ static RenderGraphDesc MakeScreenSizedGraph()
 
 void TestScreenSizedRoundTrip()
 {
-	TestRunner::StartTest("RenderGraph: screen-sized RT + ScreenTile kernel survives round-trip");
+	TestRunner::StartTest("RenderGraph: screen-sized RT + ScreenTile dispatch survives round-trip");
 
 	RenderGraphDesc l_original = MakeScreenSizedGraph();
 
@@ -57,7 +58,8 @@ void TestScreenSizedRoundTrip()
 	}
 
 	if (passed)
-		passed = l_loaded.m_Passes[0].m_Kernel == "ScreenTile";
+		passed = l_loaded.m_Passes[0].m_Dispatch.m_Mode == DispatchMode::ScreenTile &&
+			l_loaded.m_Passes[0].m_Dispatch.m_TileSize == 8;
 
 	TestRunner::EndTest(passed);
 }

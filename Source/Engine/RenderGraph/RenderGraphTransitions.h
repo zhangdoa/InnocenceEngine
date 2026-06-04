@@ -1,5 +1,5 @@
 #pragma once
-#include "IRenderGraphKernel.h"
+#include "RenderGraphPassRecorder.h"
 
 namespace Inno
 {

@@ -66,17 +66,25 @@ namespace Inno
 		Accessibility m_To = Accessibility::ReadOnly;
 	};
 
+	// How the dispatch thread-group count is derived. Static uses the literal
+	// X/Y/Z; ScreenTile floors viewport/m_TileSize; TiledTwoLevel applies the
+	// light-culling floor-then-ceil reduction; DrawModelGroups packs the live
+	// draw-model count into groups of m_TileSize. A dispatch variant is data,
+	// not a code path.
+	enum class DispatchMode { Static, ScreenTile, TiledTwoLevel, DrawModelGroups };
+
 	struct DispatchDesc
 	{
 		uint32_t m_X = 1;
 		uint32_t m_Y = 1;
 		uint32_t m_Z = 1;
+		DispatchMode m_Mode = DispatchMode::Static;
+		uint32_t m_TileSize = 0;
 	};
 
 	struct PassNodeDesc
 	{
 		std::string m_Name;
-		std::string m_Kernel = "Default";
 		GPUEngineType m_Queue = GPUEngineType::Compute;
 		ShaderFilePaths m_ShaderFilePaths = {};
 		Inno::Array<std::string> m_Reads;
@@ -87,6 +95,9 @@ namespace Inno
 		bool m_OneShot = false;
 		bool m_BypassEnabled = false;
 		bool m_ClearOnBypass = false;
+		// Publish the first Writes resource's post-write state after recording so a
+		// downstream consumer emits the correct barrier (e.g. culling -> ExecuteIndirect).
+		bool m_TrackWriteState = false;
 	};
 
 	struct RenderGraphDesc

@@ -33,7 +33,6 @@ static RenderGraphDesc MakeSSAOGraph()
 
 	PassNodeDesc l_pass;
 	l_pass.m_Name = "SSAONoisePass";
-	l_pass.m_Kernel = "ScreenTile";
 	l_pass.m_Queue = GPUEngineType::Compute;
 	l_pass.m_ShaderFilePaths.m_CSPath = "SSAONoisePass.comp";
 	l_pass.m_Reads.push_back("PerFrameCBuffer");
@@ -79,7 +78,7 @@ static RenderGraphDesc MakeSSAOGraph()
 	l_t1.m_To = Accessibility::WriteOnly;
 	l_pass.m_Transitions.push_back(l_t1);
 
-	l_pass.m_Dispatch = { 1, 1, 1 };
+	l_pass.m_Dispatch = { 1, 1, 1, DispatchMode::ScreenTile, 8 };
 	l_pass.m_OneShot = false;
 	l_graph.m_Passes.push_back(l_pass);
 
@@ -125,7 +124,7 @@ void TestSSAONodeRoundTrip()
 	{
 		const auto& p = l_loaded.m_Passes[0];
 		passed = p.m_Name == "SSAONoisePass" &&
-			p.m_Kernel == "ScreenTile" &&
+			p.m_Dispatch.m_Mode == DispatchMode::ScreenTile && p.m_Dispatch.m_TileSize == 8 &&
 			p.m_Queue == GPUEngineType::Compute &&
 			std::string(p.m_ShaderFilePaths.m_CSPath.c_str()) == "SSAONoisePass.comp" &&
 			p.m_Writes.size() == 1 && p.m_Writes[0] == "SSAO_Result" &&

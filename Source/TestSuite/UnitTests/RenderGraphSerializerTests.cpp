@@ -95,7 +95,6 @@ static void TestGraphRoundTrip()
 		const auto& p = l_loaded.m_Passes[0];
 		passed = p.m_Name == "BRDFLUTPass" &&
 			p.m_Queue == GPUEngineType::Compute &&
-			p.m_Kernel == "Default" &&
 			std::string(p.m_ShaderFilePaths.m_CSPath.c_str()) == "BRDFLUTPass.comp" &&
 			p.m_Writes.size() == 1 && p.m_Writes[0] == "BRDF LUT" &&
 			p.m_Bindings.size() == 1 &&
@@ -184,14 +183,13 @@ static void TestBufferRoundTrip()
 
 static RenderGraphDesc MakeComputeCullingGraph()
 {
-	// Mirrors OpaqueCullingPass: a non-Default kernel name plus a pass that binds
-	// only imported/dynamic buffers (no graph-owned output resource of its own).
+	// Mirrors OpaqueCullingPass: a draw-model-count dispatch + write-state publish,
+	// binding only imported/dynamic buffers (no graph-owned output of its own).
 	RenderGraphDesc l_graph;
 	l_graph.m_Name = "CullingGraph";
 
 	PassNodeDesc l_pass;
 	l_pass.m_Name = "OpaqueCullingPass";
-	l_pass.m_Kernel = "ComputeCulling";
 	l_pass.m_Queue = GPUEngineType::Compute;
 	l_pass.m_ShaderFilePaths.m_CSPath = "opaqueGPUCulling.comp";
 	l_pass.m_Reads.push_back("PerFrameCBuffer");
@@ -205,7 +203,8 @@ static RenderGraphDesc MakeComputeCullingGraph()
 	l_output.m_ResourceAccessibility = Accessibility::ReadWrite;
 	l_output.m_ShaderStage = ShaderStage::Compute;
 	l_pass.m_Bindings.push_back(l_output);
-	l_pass.m_Dispatch = { 1, 1, 1 };
+	l_pass.m_Dispatch = { 1, 1, 1, DispatchMode::DrawModelGroups, 64 };
+	l_pass.m_TrackWriteState = true;
 	l_pass.m_OneShot = false;
 	l_graph.m_Passes.push_back(l_pass);
 
@@ -214,7 +213,7 @@ static RenderGraphDesc MakeComputeCullingGraph()
 
 static void TestComputeCullingRoundTrip()
 {
-	TestRunner::StartTest("RenderGraph: ComputeCulling kernel + buffer binding survives round-trip");
+	TestRunner::StartTest("RenderGraph: DrawModelGroups dispatch + write-state publish survives round-trip");
 
 	RenderGraphDesc l_original = MakeComputeCullingGraph();
 
@@ -230,7 +229,8 @@ static void TestComputeCullingRoundTrip()
 	{
 		const auto& p = l_loaded.m_Passes[0];
 		passed = p.m_Name == "OpaqueCullingPass" &&
-			p.m_Kernel == "ComputeCulling" &&
+			p.m_Dispatch.m_Mode == DispatchMode::DrawModelGroups && p.m_Dispatch.m_TileSize == 64 &&
+			p.m_TrackWriteState &&
 			p.m_Reads.size() == 1 && p.m_Reads[0] == "PerFrameCBuffer" &&
 			p.m_Writes.size() == 1 &&
 			p.m_Writes[0] == "OpaqueCullingPass/IndirectDrawCommandBuffer" &&
@@ -252,7 +252,7 @@ static void TestComputeCullingRoundTrip()
 	TestRunner::EndTest(passed);
 }
 
-// Deferred-RT / screen-sized + ScreenTile-kernel round-trip fixtures live in
+// Deferred-RT / screen-sized + ScreenTile-dispatch round-trip fixtures live in
 // RenderGraphSerializerTests_ScreenSized.cpp.
 extern void TestScreenSizedRoundTrip();
 
@@ -264,6 +264,11 @@ extern void TestTransitionRoundTrip();
 // screen Result) lives in RenderGraphSerializerTests_SSAO.cpp.
 extern void TestSSAONodeRoundTrip();
 
+// TiledFrustum node fixture (TiledTwoLevel dispatch mode + imported owned
+// buffers + omitted transition set) lives in
+// RenderGraphSerializerTests_TiledFrustum.cpp.
+extern void TestTiledFrustumNodeRoundTrip();
+
 void RunRenderGraphSerializerUnitTests()
 {
 	TestRunner::StartTestSuite("RenderGraphSerializer");
@@ -274,5 +279,6 @@ void RunRenderGraphSerializerUnitTests()
 	TestScreenSizedRoundTrip();
 	TestTransitionRoundTrip();
 	TestSSAONodeRoundTrip();
+	TestTiledFrustumNodeRoundTrip();
 	TestRunner::EndTestSuite();
 }

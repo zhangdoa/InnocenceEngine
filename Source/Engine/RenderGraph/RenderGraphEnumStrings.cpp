@@ -87,6 +87,10 @@ namespace
 
 	const std::vector<Row<RenderGraphResourceLifetime>> g_Lifetime = {
 		{ RenderGraphResourceLifetime::Persistent, "Persistent" } };
+
+	const std::vector<Row<DispatchMode>> g_DispatchMode = {
+		{ DispatchMode::Static, "Static" }, { DispatchMode::ScreenTile, "ScreenTile" },
+		{ DispatchMode::TiledTwoLevel, "TiledTwoLevel" }, { DispatchMode::DrawModelGroups, "DrawModelGroups" } };
 }
 
 namespace Inno
@@ -137,5 +141,8 @@ namespace Inno
 
 		std::string ToString(RenderGraphResourceLifetime v) { return ToStringImpl(v, g_Lifetime, "Persistent"); }
 		RenderGraphResourceLifetime LifetimeFromString(const std::string& s) { return FromStringImpl(s, g_Lifetime, RenderGraphResourceLifetime::Persistent); }
+
+		std::string ToString(DispatchMode v) { return ToStringImpl(v, g_DispatchMode, "Static"); }
+		DispatchMode DispatchModeFromString(const std::string& s) { return FromStringImpl(s, g_DispatchMode, DispatchMode::Static); }
 	}
 }

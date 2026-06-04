@@ -1,14 +1,12 @@
 #include "RenderGraphService.h"
 #include "RenderGraphSerializer.h"
-#include "DefaultKernel.h"
+#include "RenderGraphPassRecorder.h"
 
 #include "../Engine.h"
 #include "../Services/RenderingConfigurationService.h"
 #include "../Services/ShaderProgramResourceService.h"
 #include "../Services/RenderPassResourceService.h"
 #include "../Services/CommandListResourceService.h"
-#include "ComputeCullingKernel.h"
-#include "ScreenTileKernel.h"
 
 using namespace Inno;
 
@@ -51,49 +49,11 @@ bool RenderGraphService::LoadGraph(const char* fileName)
 	return true;
 }
 
-IRenderGraphKernel* RenderGraphService::ResolveKernel(const std::string& name)
-{
-	auto it = m_Kernels.find(name);
-	if (it != m_Kernels.end())
-		return it->second.get();
-
-	if (name == "Default")
-	{
-		auto l_kernel = std::make_unique<DefaultKernel>();
-		auto l_raw = l_kernel.get();
-		m_Kernels[name] = std::move(l_kernel);
-		return l_raw;
-	}
-
-	if (name == "ComputeCulling")
-	{
-		auto l_kernel = std::make_unique<ComputeCullingKernel>();
-		auto l_raw = l_kernel.get();
-		m_Kernels[name] = std::move(l_kernel);
-		return l_raw;
-	}
-
-	if (name == "ScreenTile")
-	{
-		auto l_kernel = std::make_unique<ScreenTileKernel>();
-		auto l_raw = l_kernel.get();
-		m_Kernels[name] = std::move(l_kernel);
-		return l_raw;
-	}
-
-	Log(Error, "RenderGraphService: unknown kernel [", name.c_str(), "].");
-	return nullptr;
-}
-
 bool RenderGraphService::CreatePassNode(const PassNodeDesc& desc)
 {
-	auto l_kernel = ResolveKernel(desc.m_Kernel);
-	if (!l_kernel)
-		return false;
-
 	auto l_node = std::make_unique<RenderGraphPassNode>();
 	l_node->m_Desc = desc;
-	l_node->m_Kernel = l_kernel;
+
 
 	l_node->m_ShaderProgram = g_Engine->Get<ShaderProgramResourceService>()->Add(desc.m_Name.c_str());
 	l_node->m_ShaderProgram->m_ShaderFilePaths = desc.m_ShaderFilePaths;
@@ -182,9 +142,9 @@ RenderGraphPassNode* RenderGraphService::FindNode(const char* name)
 
 bool RenderGraphService::RecordNode(RenderGraphPassNode* node)
 {
-	if (!node || !node->m_Kernel)
+	if (!node)
 	{
-		Log(Warning, "RenderGraphService::RecordNode rejected: null node or kernel.");
+		Log(Warning, "RenderGraphService::RecordNode rejected: null node.");
 		return false;
 	}
 
@@ -199,5 +159,5 @@ bool RenderGraphService::RecordNode(RenderGraphPassNode* node)
 	for (const auto& l_binding : node->m_Desc.m_Bindings)
 		l_ctx.m_BoundResources.push_back(FindResource(l_binding.m_Resource));
 
-	return node->m_Kernel->Record(l_ctx);
+	return RecordPass(l_ctx);
 }

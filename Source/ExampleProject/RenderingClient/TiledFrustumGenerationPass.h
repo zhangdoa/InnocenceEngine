@@ -21,6 +21,10 @@ namespace Inno
 		GPUResourceComponent *GetTiledFrustum();
 
 	private:
+		bool SetupFromRenderGraph();
+		bool SetupImperative();
+		bool SetupOwnedResources();
+
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_ShaderProgramComp;
