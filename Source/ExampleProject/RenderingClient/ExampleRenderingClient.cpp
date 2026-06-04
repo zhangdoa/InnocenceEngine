@@ -2,36 +2,12 @@
 #include "../../Engine/Common/Array.h"
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
-#include "SunShadowRTPass.h"
 #include "OpaqueCullingPass.h"
-#include "OpaquePass.h"
 #include "SSAOPass.h"
-#include "SSRCReprojectionPass.h"
-#include "SSRCRaytracingPass.h"
-#include "SSRCFilterHorizontalPass.h"
-#include "SSRCFilterVerticalPass.h"
-#include "SSRCIntegrationPass.h"
-#include "SSRCTemporalPass.h"
-#include "SSRCSpatialHorizontalPass.h"
-#include "SSRCSpatialVerticalPass.h"
 #include "TiledFrustumGenerationPass.h"
-#include "LightCullingPass.h"
-#include "LightPass.h"
 #include "SkyPass.h"
 #include "PreTAAPass.h"
-#include "TAAPass.h"
-#include "LuminanceHistogramPass.h"
 #include "LuminanceAveragePass.h"
-#include "FinalBlendPass.h"
-#include "PTPass.h"
-#include "PTHashGridCachePurgeTilesPass.h"
-#include "PTHashGridCacheUpdateTilesPass.h"
-#include "PTHashGridCacheMipCascadeBuildPass.h"
-#include "PTNRDFormatConvertPass.h"
-#include "PTNRDDenoisePass.h"
-#include "PTNRDCompositionPass.h"
-#include "HashGridCacheConstants.h"
-#include "NRDConstants.h"
 
 #include "../../Engine/Services/DevToggleRegistry.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
@@ -48,49 +24,17 @@ namespace Inno
 		BRDFLUTPass::Get().Initialize();
 		BRDFLUTMSPass::Get().Initialize();
 
-		SunShadowRTPass::Get().Initialize();
-
 		OpaqueCullingPass::Get().Initialize();
-		OpaquePass::Get().Initialize();
-
-		SSRCReprojectionPass::Get().Initialize();
-		SSRCRaytracingPass::Get().Initialize();
-		SSRCFilterHorizontalPass::Get().Initialize();
-		SSRCFilterVerticalPass::Get().Initialize();
-		SSRCIntegrationPass::Get().Initialize();
-		SSRCTemporalPass::Get().Initialize();
-		SSRCSpatialHorizontalPass::Get().Initialize();
-		SSRCSpatialVerticalPass::Get().Initialize();
 
 		SSAOPass::Get().Initialize();
 
 		TiledFrustumGenerationPass::Get().Initialize();
-		LightCullingPass::Get().Initialize();
-
-		LightPass::Get().Initialize();
 
 		SkyPass::Get().Initialize();
 
 		PreTAAPass::Get().Initialize();
-		TAAPass::Get().Initialize();
 
-		LuminanceHistogramPass::Get().Initialize();
 		LuminanceAveragePass::Get().Initialize();
-
-		FinalBlendPass::Get().Initialize();
-		PTPass::Get().Initialize();
-		if constexpr (Inno::PTHashGridCache::ENABLED)
-		{
-			PTHashGridCachePurgeTilesPass::Get().Initialize();
-			PTHashGridCacheUpdateTilesPass::Get().Initialize();
-			PTHashGridCacheMipCascadeBuildPass::Get().Initialize();
-		}
-		if constexpr (Inno::NRD::ENABLED)
-		{
-			PTNRDFormatConvertPass::Get().Initialize();
-			PTNRDDenoisePass::Get().Initialize();
-			PTNRDCompositionPass::Get().Initialize();
-		}
 
 		m_ObjectStatus = ObjectStatus::Activated;
 
@@ -99,27 +43,8 @@ namespace Inno
 
 	bool ExampleRenderingClientImpl::Update()
 	{
-		SSRCReprojectionPass::Get().Update();
 		TiledFrustumGenerationPass::Get().Update();
-		LightCullingPass::Get().Update();
 		LuminanceAveragePass::Get().Update();
-
-		if (m_PTActive)
-		{
-			PTPass::Get().Update();
-			if constexpr (Inno::PTHashGridCache::ENABLED)
-			{
-				PTHashGridCachePurgeTilesPass::Get().Update();
-				PTHashGridCacheUpdateTilesPass::Get().Update();
-				PTHashGridCacheMipCascadeBuildPass::Get().Update();
-			}
-			if constexpr (Inno::NRD::ENABLED)
-			{
-				PTNRDFormatConvertPass::Get().Update();
-				PTNRDDenoisePass::Get().Update();
-				PTNRDCompositionPass::Get().Update();
-			}
-		}
 
 		return true;
 	}
@@ -153,51 +78,17 @@ namespace Inno
 		l_hwService->WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
 		l_hwService->WaitOnCPU(l_graphicsSemaphoreValue, GPUEngineType::Graphics);
 
-		// Auto-capture readback now happens in Update() on the last frame,
-		// before the CPU path tracer runs and causes a GPU device timeout.
-
-		// NRD chain (TASK-77.4 CL-2 + CL-3) terminates before any consumer
-		// pass — Composition reads NRD outputs, Denoise owns the adapter
-		// (which holds raw ID3D12Resource* allocations and must release them
-		// before the device dies). Order: composition → denoise → format-
-		// convert (reverse of frame execution: consumer → producer).
-		if constexpr (Inno::NRD::ENABLED)
-		{
-			PTNRDCompositionPass::Get().Terminate();
-			PTNRDDenoisePass::Get().Terminate();
-			PTNRDFormatConvertPass::Get().Terminate();
-		}
-
-		FinalBlendPass::Get().Terminate();
-
 		LuminanceAveragePass::Get().Terminate();
-		LuminanceHistogramPass::Get().Terminate();
 
-		TAAPass::Get().Terminate();
 		PreTAAPass::Get().Terminate();
 
 		SkyPass::Get().Terminate();
 
-		LightPass::Get().Terminate();
-		SSRCSpatialVerticalPass::Get().Terminate();
-		SSRCSpatialHorizontalPass::Get().Terminate();
-		SSRCTemporalPass::Get().Terminate();
-
-		LightCullingPass::Get().Terminate();
 		TiledFrustumGenerationPass::Get().Terminate();
 
 		SSAOPass::Get().Terminate();
 
-		SSRCIntegrationPass::Get().Terminate();
-		SSRCFilterHorizontalPass::Get().Terminate();
-		SSRCFilterVerticalPass::Get().Terminate();
-		SSRCRaytracingPass::Get().Terminate();
-		SSRCReprojectionPass::Get().Terminate();
-
 		OpaqueCullingPass::Get().Terminate();
-		OpaquePass::Get().Terminate();
-
-		SunShadowRTPass::Get().Terminate();
 
 		BRDFLUTMSPass::Get().Terminate();
 		BRDFLUTPass::Get().Terminate();
@@ -265,50 +156,19 @@ Inno::Array<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
 	Inno::Array<IRenderPass*> l_passes;
 	l_passes.reserve(32);
 
-	l_passes.push_back(&PTPass::Get());
-	if constexpr (Inno::PTHashGridCache::ENABLED)
-	{
-		l_passes.push_back(&PTHashGridCachePurgeTilesPass::Get());
-		l_passes.push_back(&PTHashGridCacheUpdateTilesPass::Get());
-		l_passes.push_back(&PTHashGridCacheMipCascadeBuildPass::Get());
-	}
-	if constexpr (Inno::NRD::ENABLED)
-	{
-		l_passes.push_back(&PTNRDFormatConvertPass::Get());
-		l_passes.push_back(&PTNRDDenoisePass::Get());
-		l_passes.push_back(&PTNRDCompositionPass::Get());
-	}
-
 	l_passes.push_back(&BRDFLUTPass::Get());
 	l_passes.push_back(&BRDFLUTMSPass::Get());
 
-	l_passes.push_back(&SunShadowRTPass::Get());
-
 	l_passes.push_back(&OpaqueCullingPass::Get());
-	l_passes.push_back(&OpaquePass::Get());
-
-	l_passes.push_back(&SSRCReprojectionPass::Get());
-	l_passes.push_back(&SSRCRaytracingPass::Get());
-	l_passes.push_back(&SSRCFilterHorizontalPass::Get());
-	l_passes.push_back(&SSRCFilterVerticalPass::Get());
-	l_passes.push_back(&SSRCIntegrationPass::Get());
-	l_passes.push_back(&SSRCTemporalPass::Get());
-	l_passes.push_back(&SSRCSpatialHorizontalPass::Get());
-	l_passes.push_back(&SSRCSpatialVerticalPass::Get());
 
 	l_passes.push_back(&SSAOPass::Get());
 
 	l_passes.push_back(&TiledFrustumGenerationPass::Get());
-	l_passes.push_back(&LightCullingPass::Get());
-	l_passes.push_back(&LightPass::Get());
 	l_passes.push_back(&SkyPass::Get());
 
 	l_passes.push_back(&PreTAAPass::Get());
-	l_passes.push_back(&TAAPass::Get());
 
-	l_passes.push_back(&LuminanceHistogramPass::Get());
 	l_passes.push_back(&LuminanceAveragePass::Get());
-	l_passes.push_back(&FinalBlendPass::Get());
 
 	return l_passes;
 }

@@ -1,36 +1,12 @@
 #include "ExampleRenderingClient_Internal.h"
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
-#include "SunShadowRTPass.h"
 #include "OpaqueCullingPass.h"
-#include "OpaquePass.h"
 #include "SSAOPass.h"
-#include "SSRCReprojectionPass.h"
-#include "SSRCRaytracingPass.h"
-#include "SSRCFilterHorizontalPass.h"
-#include "SSRCFilterVerticalPass.h"
-#include "SSRCIntegrationPass.h"
-#include "SSRCTemporalPass.h"
-#include "SSRCSpatialHorizontalPass.h"
-#include "SSRCSpatialVerticalPass.h"
 #include "TiledFrustumGenerationPass.h"
-#include "LightCullingPass.h"
-#include "LightPass.h"
 #include "SkyPass.h"
 #include "PreTAAPass.h"
-#include "TAAPass.h"
-#include "LuminanceHistogramPass.h"
 #include "LuminanceAveragePass.h"
-#include "FinalBlendPass.h"
-#include "PTPass.h"
-#include "PTHashGridCachePurgeTilesPass.h"
-#include "PTHashGridCacheUpdateTilesPass.h"
-#include "PTHashGridCacheMipCascadeBuildPass.h"
-#include "PTNRDFormatConvertPass.h"
-#include "PTNRDDenoisePass.h"
-#include "PTNRDCompositionPass.h"
-#include "HashGridCacheConstants.h"
-#include "NRDConstants.h"
 
 #include "../../Engine/Services/DevToggleRegistry.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -47,34 +23,6 @@ namespace Inno
 {
 	void ExampleRenderingClientImpl::RegisterDevToggles()
 	{
-		// Getter reports the desired state — i.e. what the user's last click
-		// asked for — so callers that read back immediately after Set() (the
-		// IPC setter-reply convention) see their own write, not yesterday's
-		// frame state. The frame loop reconciles Active with Desired at the
-		// next boundary so the toggle never lands mid-frame.
-		DevToggleRegistry::RegisterToggle("PT",
-			[this]() { return m_PTDesired; },
-			[this](bool desired) { m_PTDesired = desired; });
-
-		// "GI on" reads/writes m_Bypassed across the rasterized-GI pass group.
-		// Bypass landing per-frame (TASK-171); no Desired/Active reconciliation
-		// needed because m_Bypassed is the source of truth read at dispatch.
-		DevToggleRegistry::RegisterToggle("RasterizedGI",
-			[]() {
-				return !SSRCRaytracingPass::Get().m_Bypassed.load(std::memory_order_relaxed);
-			},
-			[](bool desired) {
-				const bool l_bypass = !desired;
-				SSRCReprojectionPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				SSRCRaytracingPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				SSRCFilterHorizontalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				SSRCFilterVerticalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				SSRCIntegrationPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				SSRCTemporalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				SSRCSpatialHorizontalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-				SSRCSpatialVerticalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
-			});
-
 		DevToggleRegistry::RegisterAction("Screenshot", [this]() { m_saveScreenCapture = true; });
 
 		// TASK-183 runtime visualization-mode picker. One bool toggle per
@@ -171,115 +119,28 @@ namespace Inno
 					"' is not a registered DebugView toggle; ignoring.");
 			}
 		}
-
-		// TASK-182 env-var hookup so the clear-on-bypass path can be smoke-
-		// tested without the editor in the loop. INNO_RASTERIZED_GI=0 / "off"
-		// / "false" disables the rasterized-GI group at startup, exercising
-		// the bypass dispatch + RecordClearCommandList path the user
-		// observed as "frozen GI on screen" before the fix.
-		if (const char* l_RasterizedGIEnv = std::getenv("INNO_RASTERIZED_GI"))
-		{
-			const bool l_OnRequested = !(strcmp(l_RasterizedGIEnv, "0") == 0
-				|| strcmp(l_RasterizedGIEnv, "off") == 0
-				|| strcmp(l_RasterizedGIEnv, "false") == 0);
-			DevToggleRegistry::Set("RasterizedGI", l_OnRequested);
-			Log(Success, "TASK-182 INNO_RASTERIZED_GI='", l_RasterizedGIEnv,
-				"' applied; RasterizedGI = ", l_OnRequested ? "ON" : "OFF (clear-on-bypass active).");
-		}
-
-		// TASK-77.4 CL-4 NRD anti-firefly live A/B. The setter writes through
-		// to the dispatch-site read venue (NRDConstants.h::g_DenoiserSettings)
-		// so the next frame's SetDenoiserSettings picks up the new value. The
-		// other ReBLUR knobs (HitDistParams, MaxAccumulatedFrameNum,
-		// LobeAngleFraction, RoughnessFraction) are not bool and thus not
-		// representable through DevToggleRegistry's bool-only API; they are
-		// edit-and-recompile tunables (see g_DenoiserSettings comment).
-		// Registered unconditionally so the toggle list is stable across
-		// NRD ON/OFF builds; the setter is a no-op write to a header-only
-		// inline storage and stays valid even when ENABLED is false (the
-		// engine just won't read the field on the OFF path).
-		DevToggleRegistry::RegisterToggle("NRDAntiFirefly",
-			[]() { return Inno::NRD::g_DenoiserSettings.EnableAntiFirefly; },
-			[](bool desired) { Inno::NRD::g_DenoiserSettings.EnableAntiFirefly = desired; });
 	}
 
 	bool ExampleRenderingClientImpl::Setup(IServiceConfig* systemConfig)
 	{
 		RegisterDevToggles();
 
-		if (strcmp(g_Engine->getInitConfig().testCase, "gpu_path_tracer") == 0)
-		{
-			m_PTDesired = true;
-			m_PTActive  = true;
-		}
-
 		BootstrapAmbientCGTextures();
 
 		BRDFLUTPass::Get().Setup();
 		BRDFLUTMSPass::Get().Setup();
 
-		SunShadowRTPass::Get().Setup();
-
 		OpaqueCullingPass::Get().Setup();
-		OpaquePass::Get().Setup();
-
-		SSRCReprojectionPass::Get().Setup();
-		SSRCRaytracingPass::Get().Setup();
-		SSRCFilterHorizontalPass::Get().Setup();
-		SSRCFilterVerticalPass::Get().Setup();
-		SSRCIntegrationPass::Get().Setup();
-		SSRCTemporalPass::Get().Setup();
-		SSRCSpatialHorizontalPass::Get().Setup();
-		SSRCSpatialVerticalPass::Get().Setup();
 
 		SSAOPass::Get().Setup();
 
 		TiledFrustumGenerationPass::Get().Setup();
-		LightCullingPass::Get().Setup();
-
-		LightPass::Get().Setup();
 
 		SkyPass::Get().Setup();
 
 		PreTAAPass::Get().Setup();
-		TAAPass::Get().Setup();
 
-		LuminanceHistogramPass::Get().Setup();
 		LuminanceAveragePass::Get().Setup();
-
-		FinalBlendPass::Get().Setup();
-		PTPass::Get().Setup();
-		// PurgeTiles runs first each frame to free 50-frame-stale slots, so
-		// the path tracer's InsertCell can claim them and UpdateTiles' early-
-		// out skips them; UpdateTiles then resolves the path tracer's per-cell
-		// scratch sums into the persistent ValueBuffer with a 16-sample-cap
-		// running mean. `if constexpr` inside each pass elides everything when
-		// the cache toggle is off, but the call still runs so the singleton
-		// state flips to a benign Terminated.
-		if constexpr (Inno::PTHashGridCache::ENABLED)
-		{
-			PTHashGridCachePurgeTilesPass::Get().Setup();
-			PTHashGridCacheUpdateTilesPass::Get().Setup();
-			PTHashGridCacheMipCascadeBuildPass::Get().Setup();
-		}
-		if constexpr (Inno::NRD::ENABLED)
-		{
-			PTNRDFormatConvertPass::Get().Setup();
-			PTNRDDenoisePass::Get().Setup();
-			PTNRDCompositionPass::Get().Setup();
-		}
-
-		// AnimationPass::Get().Setup();
-
-		// TransparentGeometryProcessPass::Get().Setup();
-		// TransparentBlendPass::Get().Setup();
-		// VolumetricPass::Setup();
-
-		// MotionBlurPass::Get().Setup();
-		// BillboardPass::Get().Setup();
-		// DebugPass::Get().Setup();
-
-		// BSDFTestPass::Get().Setup();
 
 		auto f_getUserPipelineOutputFunc = [this]()
 			{

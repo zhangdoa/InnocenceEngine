@@ -55,7 +55,12 @@
         {
             "Name": "LuminanceHistogramGPUBuffer",
             "Type": "Buffer",
-            "Imported": true
+            "ElementCount": 256,
+            "ElementSize": 4,
+            "BufferUsage": "Generic",
+            "CPUAccessibility": "Immutable",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
         },
         {
             "Name": "PerFrameCBuffer",
@@ -80,7 +85,15 @@
         {
             "Name": "LightPass Luminance Result",
             "Type": "Texture",
-            "Imported": true
+            "Size": "screen",
+            "DepthOrArraySize": 1,
+            "MipLevels": 1,
+            "Sampler": "Sampler2D",
+            "Usage": "ComputeOnly",
+            "PixelDataType": "Float16",
+            "PixelDataFormat": "RGBA",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
         },
         {
             "Name": "Pre-TAA Pass Result",
@@ -98,12 +111,28 @@
         {
             "Name": "OpaquePass_RT_0",
             "Type": "Texture",
-            "Imported": true
+            "Size": "screen",
+            "DepthOrArraySize": 1,
+            "MipLevels": 1,
+            "Sampler": "Sampler2D",
+            "Usage": "ComputeOnly",
+            "PixelDataType": "Float16",
+            "PixelDataFormat": "RGBA",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
         },
         {
             "Name": "OpaquePass_RT_1",
             "Type": "Texture",
-            "Imported": true
+            "Size": "screen",
+            "DepthOrArraySize": 1,
+            "MipLevels": 1,
+            "Sampler": "Sampler2D",
+            "Usage": "ComputeOnly",
+            "PixelDataType": "Float16",
+            "PixelDataFormat": "RGBA",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
         },
         {
             "Name": "SSAO_Kernel",

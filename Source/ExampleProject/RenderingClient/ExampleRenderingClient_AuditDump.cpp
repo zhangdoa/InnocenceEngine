@@ -1,13 +1,8 @@
 #include "ExampleRenderingClient_Internal.h"
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
-#include "SunShadowRTPass.h"
-#include "OpaquePass.h"
 #include "SSAOPass.h"
-#include "LightPass.h"
 #include "SkyPass.h"
-#include "TAAPass.h"
-#include "FinalBlendPass.h"
 
 #include "../../Engine/Services/AssetService.h"
 #include "../../Engine/Services/FrameManagementService.h"
@@ -60,43 +55,11 @@ namespace Inno
 		Dump("audit_01_BRDFLUTPass.hdr",   BRDFLUTPass::Get().GetRenderPassComp(),   static_cast<TextureComponent*>(BRDFLUTPass::Get().GetResult()));
 		Dump("audit_02_BRDFLUTMSPass.hdr",  BRDFLUTMSPass::Get().GetRenderPassComp(), static_cast<TextureComponent*>(BRDFLUTMSPass::Get().GetResult()));
 
-		// 3: Sun shadow R8 visibility texture from SunShadowRTPass.
-		if (SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated)
-			Dump("audit_03c_SunShadowRT.hdr",
-				SunShadowRTPass::Get().GetRenderPassComp(),
-				SunShadowRTPass::Get().GetResult());
-
-		// 4: Opaque G-buffer
-		DumpRP("audit_04a_Opaque_RT0.hdr", OpaquePass::Get().GetRenderPassComp(), 0);
-		DumpRP("audit_04b_Opaque_RT1.hdr", OpaquePass::Get().GetRenderPassComp(), 1);
-		DumpRP("audit_04c_Opaque_RT2.hdr", OpaquePass::Get().GetRenderPassComp(), 2);
-
 		// 5: SSAO
 		Dump("audit_05_SSAO.hdr", SSAOPass::Get().GetRenderPassComp(), static_cast<TextureComponent*>(SSAOPass::Get().GetResult()));
 
-		// 8: Light
-		Dump("audit_08a_Light_Luminance.hdr",   LightPass::Get().GetRenderPassComp(), LightPass::Get().GetLuminanceResult());
-		Dump("audit_08b_Light_Illuminance.hdr",  LightPass::Get().GetRenderPassComp(), LightPass::Get().GetIlluminanceResult());
-
 		// 9: Sky
 		Dump("audit_09_Sky.hdr",     SkyPass::Get().GetRenderPassComp(),  static_cast<TextureComponent*>(SkyPass::Get().GetResult()));
-
-		// 10: TAA
-		Dump("audit_10_TAAPass.hdr", TAAPass::Get().GetRenderPassComp(), static_cast<TextureComponent*>(TAAPass::Get().GetResult()));
-
-		// 11: Final blend
-		// PrepareSwapChainCommands (which runs before ExecuteCommands) speculatively
-		// transitions FinalBlend result to SRV in the state tracker. At AuditDump time
-		// the actual GPU state is UAV (compute wrote, swap chain hasn't executed yet).
-		// Temporarily correct the tracker, dump, then restore so the swap chain CL works.
-		{
-			auto* l_fbTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
-			auto l_fbIdx = l_fbTex->m_TextureDesc.IsMultiBuffer ? g_Engine->Get<FrameManagementService>()->GetCurrentFrame() : 0u;
-			auto l_savedState = l_fbTex->GetCurrentState(l_fbIdx);
-			l_fbTex->SetCurrentState(l_fbIdx, l_fbTex->m_WriteState);
-			Dump("audit_11_FinalBlend.hdr", FinalBlendPass::Get().GetRenderPassComp(), l_fbTex);
-			l_fbTex->SetCurrentState(l_fbIdx, l_savedState);
-		}
 
 		Log(Success, "AuditDump complete. Check Bin/*.hdr");
 		std::exit(0);

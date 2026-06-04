@@ -52,6 +52,9 @@ namespace Inno
 		// the writer node's RenderPass init-func so the engine's PostResize loop
 		// drives resize through the same path the imperative passes used.
 		bool CreateScreenSizedTexture(const ResourceDesc& desc);
+		// Initializes graph-owned resources that no pass writes (their producer
+		// isn't a graph node yet) so consumers bind valid zeroed inputs.
+		void CreateOrphanResources();
 
 		RenderGraphDesc m_Desc;
 		std::unordered_map<std::string, GPUResourceComponent*> m_Resources;

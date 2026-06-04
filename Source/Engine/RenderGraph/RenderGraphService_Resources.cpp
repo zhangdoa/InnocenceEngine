@@ -126,3 +126,37 @@ bool RenderGraphService::CreateScreenSizedTexture(const ResourceDesc& desc)
 	m_Resources[desc.m_Name] = l_texture;
 	return true;
 }
+
+void RenderGraphService::CreateOrphanResources()
+{
+	for (const auto& l_desc : m_Desc.m_Resources)
+	{
+		if (l_desc.m_Imported)
+			continue;
+
+		bool l_hasWriter = false;
+		for (const auto& l_pass : m_Desc.m_Passes)
+		{
+			for (const auto& l_write : l_pass.m_Writes)
+				if (l_write == l_desc.m_Name) { l_hasWriter = true; break; }
+			if (l_hasWriter)
+				break;
+		}
+		if (l_hasWriter)
+			continue;
+
+		if (l_desc.m_SizeExpr == "screen")
+		{
+			CreateScreenSizedTexture(l_desc);
+			continue;
+		}
+
+		auto it = m_Resources.find(l_desc.m_Name);
+		if (it == m_Resources.end() || !it->second)
+			continue;
+		if (l_desc.m_Type == RenderGraphResourceType::Buffer)
+			g_Engine->Get<GPUBufferResourceService>()->Initialize(static_cast<GPUBufferComponent*>(it->second));
+		else
+			g_Engine->Get<TextureResourceService>()->Initialize(static_cast<TextureComponent*>(it->second));
+	}
+}

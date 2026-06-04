@@ -42,6 +42,10 @@ bool RenderGraphService::LoadGraph(const char* fileName)
 		if (!CreatePassNode(l_pass))
 			return false;
 	}
+	// Graph-owned resources whose producing pass isn't a graph node yet have no
+	// node to create/initialize them; the factory does it so consumers bind a
+	// valid (zeroed) input. Resources WITH a producing node are owned by it.
+	CreateOrphanResources();
 
 	m_Loaded = true;
 	Log(Success, "RenderGraphService loaded graph [", m_Desc.m_Name.c_str(), "] with ",
