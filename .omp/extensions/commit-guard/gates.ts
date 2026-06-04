@@ -135,11 +135,19 @@ export function scanDiff(diff: string): { essay: number; refs: number } {
   return { essay, refs };
 }
 
-export function commentEssayCap(staged: string[], diffOf: (f: string) => string): string | null {
+export function commentEssayCap(
+  staged: string[],
+  diffOf: (f: string) => string,
+  renames?: Map<string, string>,
+): string | null {
   let essay = 0;
   let refs = 0;
   for (const f of staged) {
     if (!C.COMMENT_CODE_EXT_RE.test(f) || C.HARNESS_OR_VENDOR_RE.test(f)) continue;
+    // A rename's per-file diff (pathspec defeats rename pairing) shows the moved
+    // file as a full add; its pre-existing comments are not newly authored, so
+    // scanning them is a false positive. Skip renamed paths.
+    if (renames?.has(f)) continue;
     const r = scanDiff(diffOf(f));
     essay += r.essay;
     refs += r.refs;

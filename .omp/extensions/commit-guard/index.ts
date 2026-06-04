@@ -42,7 +42,7 @@ function evaluate(cmd: string, cwd: string, turn: TurnState): string | null {
     gates.noImages(nameStatus) ??
     gates.noNewMd(nameStatus) ??
     gates.commitBodyCap(messageText) ??
-    gates.commentEssayCap(staged, (f) => collect.fileDiffCached(cwd, f)) ??
+    gates.commentEssayCap(staged, (f) => collect.fileDiffCached(cwd, f), renames) ??
     gates.fileSize(staged, (spec) => collect.blobLineCount(cwd, spec), renames) ??
     gates.closureStaleness(messageText, staged, (id) => collect.taskStatus(cwd, staged, id)) ??
     gates.peerReview(messageText) ??

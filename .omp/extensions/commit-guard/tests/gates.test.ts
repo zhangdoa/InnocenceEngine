@@ -96,6 +96,9 @@ test("commentEssayCap: skips harness/vendor, flags code", () => {
   assert.ok(g.commentEssayCap(["Source/a.cpp"], () => bad));
   assert.equal(g.commentEssayCap([".omp/extensions/commit-guard/index.ts"], () => bad), null);
   assert.equal(g.commentEssayCap(["Source/a.cpp"], () => "@@ -1 +1 @@\n+int x;"), null);
+  // renamed paths are skipped: a moved file's pre-existing comments are not new essays
+  const ren = new Map([["Source/_Archive/a.cpp", "Source/a.cpp"]]);
+  assert.equal(g.commentEssayCap(["Source/_Archive/a.cpp"], () => bad, ren), null);
 });
 
 test("testRun: docs-only skip, closure exemption, turn flag", () => {
