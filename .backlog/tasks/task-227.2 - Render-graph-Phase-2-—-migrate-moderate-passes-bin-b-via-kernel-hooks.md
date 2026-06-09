@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - code-impl
 created_date: '2026-05-31 12:53'
-updated_date: '2026-06-03'
+updated_date: '2026-06-09'
 labels:
   - rendering
   - render-graph
@@ -157,5 +157,16 @@ NEXT: ping-pong primitive (TAAPass history, SSRC Even/Odd — may obsolete TASK-
 Verified (main session): BuildWin exit 0 (Main+RenderTest); TestSuite 110/110 incl. new SSAO-node round-trip (binding order + imported flags + transition order/dir); GISponza -gpu_validation -total_frames 120 exit 0, 16 res/7 passes, PTReadback nonZero=921600, 0 real D3D12 errors; TestGIScene MAE 0.493 (clean-baseline band). Not verified: window-resize RT re-creation offscreen; no committed capture A/B (parity by construction + MAE band + per-frame GBV barrier exercise).
 
 NEXT: remaining CLEAN-REUSE passes (audited, ready, same pattern) = the SSRC chain (SSRCFilterHorizontal/Vertical, SSRCSpatialHorizontal/Vertical, SSRCIntegration) — all inputs statically named from prior passes/SSRCReprojection; deferred RTs (SSRCIntegration RT is probe-grid-sized). Migrate next, small batches. BLOCKED on new primitives: PostTAA + FinalBlend (NEEDS-DYNAMIC-INPUT: runtime renderingContext->m_input, no stable graph name; dynamic-dispatch covers size only), TAA (that + ping-pong Even/Odd). MotionBlur bypassed (returns false). [task-stays-open]
+
+
+2026-06-09 — Core rebuild progress (first-principles render graph; supersedes the incremental retrofit). Commits on ecs-overhaul:
+- 6c989947: executor collapsed to a single data-driven RecordPass; IRenderGraphKernel/DefaultKernel/ComputeCullingKernel/ScreenTileKernel deleted; dispatch is DispatchDesc Mode (Static/ScreenTile/TiledTwoLevel/DrawModelGroups); Kernel JSON field removed.
+- e259d0e0: archived all non-graph-ready passes to RenderingClient/_Archive/ (87 renames); kept 8 graph passes; gutted client orchestration + the 3 passes' dead g_UseRenderGraph fallbacks. Factory CreateOrphanResources inits resources whose producer is archived (zeroed inputs). Degraded render intentional for core dev.
+- d2059314: commit-guard fix — comment-essay-cap skips rename targets (false positive that blocked archival/move commits).
+- ad51eb47: graph OWNS component+resource init (CreatePassNode inits node shader/renderpass/CLs; CreateResource inits graph-owned buffers+non-screen textures; screen RTs via writer RT-init-func or orphan loop). Every graph-owned resource/component initialized exactly once by the factory, never by a pass (no double-init, reviewed PASS). ComputeCullingPass de-specialized: its IndirectDrawCommandBuffer is graph-owned; the pass is a thin shell (adopt + RecordNode + GetResult-by-name); its bespoke dynamic-dispatch/empty-out/UAV-state logic is now node data (DrawModelGroups + TrackWriteState).
+
+State of the "nuke the cpp" goal: the 8 keep-set pass classes are now thin shells — SetupFromRenderGraph (adopt node components) + empty/imported-only Initialize/Terminate + PrepareCommandList (FindNode+RecordNode) + GetResult/GetRenderPassComp accessors. They CANNOT be deleted yet because the client's per-pass submission (ExampleRenderingClient_ExecuteCommands_Rasterizer.cpp) still calls Pass::Get().GetCommandListComp()/GetRenderPassComp() for Execute/Signal/Wait.
+
+NEXT: P4 — graph-owned submission (derive Execute/Signal/Wait per node from the schedule + reads-to-producer edges + queue) + named init/update hooks for the remaining pass-owned imported resources (SSAO kernel/noise/samplers, TiledFrustum dispatch-params). Once the graph owns submission, the keep-set pass classes become unreferenced and can be deleted, making migrated passes pure JSON. THEN migrate more passes (LightPass/OpaquePass need multi-RT output; PostTAA/FinalBlend need dynamic-input; TAA needs ping-pong). Known limitation: indirect buffer ElementCount hardcoded 1024 (=maxMeshes default) in JSON. Full plan: local plan file render-graph-rebuild.md + basic-memory note innocence-engine/render-graph/task-227-render-graph-state-resume-point-1. [task-stays-open]
 
 <!-- SECTION:NOTES:END -->
