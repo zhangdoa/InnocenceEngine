@@ -80,7 +80,12 @@
         {
             "Name": "OpaqueCullingPass/IndirectDrawCommandBuffer",
             "Type": "Buffer",
-            "Imported": true
+            "ElementCount": 1024,
+            "ElementSize": 0,
+            "BufferUsage": "IndirectDraw",
+            "CPUAccessibility": "Immutable",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
         },
         {
             "Name": "LightPass Luminance Result",

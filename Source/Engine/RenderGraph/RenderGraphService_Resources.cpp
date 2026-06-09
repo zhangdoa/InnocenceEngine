@@ -72,6 +72,7 @@ bool RenderGraphService::CreateResource(const ResourceDesc& desc)
 		l_buffer->m_Usage = desc.m_BufferDesc.m_Usage;
 		l_buffer->m_CPUAccessibility = desc.m_BufferDesc.m_CPUAccessibility;
 		l_buffer->m_GPUAccessibility = desc.m_BufferDesc.m_GPUAccessibility;
+		g_Engine->Get<GPUBufferResourceService>()->Initialize(l_buffer);
 
 		m_Resources[desc.m_Name] = l_buffer;
 		return true;
@@ -94,6 +95,7 @@ bool RenderGraphService::CreateResource(const ResourceDesc& desc)
 	}
 
 	l_texture->m_TextureDesc = desc.m_TextureDesc;
+	g_Engine->Get<TextureResourceService>()->Initialize(l_texture);
 
 	m_Resources[desc.m_Name] = l_texture;
 	return true;
@@ -129,9 +131,13 @@ bool RenderGraphService::CreateScreenSizedTexture(const ResourceDesc& desc)
 
 void RenderGraphService::CreateOrphanResources()
 {
+	// Screen-sized resources with no producing node have no RT-init-func to create
+	// them; the factory does (zeroed input until a producer exists). Non-screen
+	// resources are already created+initialized in CreateResource; writer-owned
+	// screen RTs are created by the writer node's RT-init-func.
 	for (const auto& l_desc : m_Desc.m_Resources)
 	{
-		if (l_desc.m_Imported)
+		if (l_desc.m_Imported || l_desc.m_SizeExpr != "screen")
 			continue;
 
 		bool l_hasWriter = false;
@@ -142,21 +148,7 @@ void RenderGraphService::CreateOrphanResources()
 			if (l_hasWriter)
 				break;
 		}
-		if (l_hasWriter)
-			continue;
-
-		if (l_desc.m_SizeExpr == "screen")
-		{
+		if (!l_hasWriter)
 			CreateScreenSizedTexture(l_desc);
-			continue;
-		}
-
-		auto it = m_Resources.find(l_desc.m_Name);
-		if (it == m_Resources.end() || !it->second)
-			continue;
-		if (l_desc.m_Type == RenderGraphResourceType::Buffer)
-			g_Engine->Get<GPUBufferResourceService>()->Initialize(static_cast<GPUBufferComponent*>(it->second));
-		else
-			g_Engine->Get<TextureResourceService>()->Initialize(static_cast<TextureComponent*>(it->second));
 	}
 }

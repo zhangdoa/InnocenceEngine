@@ -132,6 +132,13 @@ bool RenderGraphService::CreatePassNode(const PassNodeDesc& desc)
 			l_node->m_PrimaryOutput = it->second;
 	}
 
+	// The graph owns its components' lifetime: initialize them here so passes
+	// don't. Initializing the render pass fires its RT-init-func, creating any
+	// screen-sized output it writes.
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(l_node->m_ShaderProgram);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(l_node->m_RenderPass);
+	g_Engine->Get<CommandListResourceService>()->Initialize(l_node->m_CommandList_Compute);
+	g_Engine->Get<CommandListResourceService>()->Initialize(l_node->m_CommandList_Graphics);
 	auto l_raw = l_node.get();
 	m_Nodes[desc.m_Name] = std::move(l_node);
 	m_Schedule.push_back(l_raw);

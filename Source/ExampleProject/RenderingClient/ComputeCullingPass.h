@@ -28,6 +28,5 @@ namespace Inno
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 		RenderPassComponent* m_RenderPassComp = nullptr;
 		ShaderProgramComponent* m_ShaderProgramComp = nullptr;
-		GPUBufferComponent* m_IndirectDrawCommandBuffer = nullptr;
 	};
 }
