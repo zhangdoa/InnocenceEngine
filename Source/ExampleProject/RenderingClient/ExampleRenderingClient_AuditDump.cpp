@@ -1,8 +1,5 @@
 #include "ExampleRenderingClient_Internal.h"
-#include "BRDFLUTPass.h"
-#include "BRDFLUTMSPass.h"
-#include "SSAOPass.h"
-#include "SkyPass.h"
+#include "../../Engine/RenderGraph/RenderGraphService.h"
 
 #include "../../Engine/Services/AssetService.h"
 #include "../../Engine/Services/FrameManagementService.h"
@@ -51,15 +48,14 @@ namespace Inno
 			Dump(filename, rp, rp->m_OutputMergerTarget->m_ColorOutputs[colorIndex]);
 		};
 
-		// 1-2: BRDF LUTs
-		Dump("audit_01_BRDFLUTPass.hdr",   BRDFLUTPass::Get().GetRenderPassComp(),   static_cast<TextureComponent*>(BRDFLUTPass::Get().GetResult()));
-		Dump("audit_02_BRDFLUTMSPass.hdr",  BRDFLUTMSPass::Get().GetRenderPassComp(), static_cast<TextureComponent*>(BRDFLUTMSPass::Get().GetResult()));
-
-		// 5: SSAO
-		Dump("audit_05_SSAO.hdr", SSAOPass::Get().GetRenderPassComp(), static_cast<TextureComponent*>(SSAOPass::Get().GetResult()));
-
-		// 9: Sky
-		Dump("audit_09_Sky.hdr",     SkyPass::Get().GetRenderPassComp(),  static_cast<TextureComponent*>(SkyPass::Get().GetResult()));
+		// Resolve audited outputs from the graph (the passes are JSON nodes now).
+		auto l_graph = g_Engine->Get<RenderGraphService>();
+		auto NodeRP = [&](const char* n) -> RenderPassComponent* { auto l_n = l_graph->FindNode(n); return l_n ? l_n->m_RenderPass : nullptr; };
+		auto Res = [&](const char* n) { return static_cast<TextureComponent*>(l_graph->GetResource(n)); };
+		Dump("audit_01_BRDFLUTPass.hdr",  NodeRP("BRDFLUTPass"),   Res("BRDF LUT"));
+		Dump("audit_02_BRDFLUTMSPass.hdr", NodeRP("BRDFLUTMSPass"), Res("BRDF MS LUT"));
+		Dump("audit_05_SSAO.hdr",          NodeRP("SSAONoisePass"), Res("SSAO_Result"));
+		Dump("audit_09_Sky.hdr",           NodeRP("SkyPass"),       Res("Sky Pass Result"));
 
 		Log(Success, "AuditDump complete. Check Bin/*.hdr");
 		std::exit(0);

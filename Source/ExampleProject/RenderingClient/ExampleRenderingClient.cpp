@@ -1,13 +1,7 @@
 #include "ExampleRenderingClient_Internal.h"
 #include "../../Engine/Common/Array.h"
-#include "BRDFLUTPass.h"
-#include "BRDFLUTMSPass.h"
-#include "OpaqueCullingPass.h"
 #include "SSAOPass.h"
 #include "TiledFrustumGenerationPass.h"
-#include "SkyPass.h"
-#include "PreTAAPass.h"
-#include "LuminanceAveragePass.h"
 
 #include "../../Engine/Services/DevToggleRegistry.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
@@ -20,32 +14,19 @@ namespace Inno
 {
 	bool ExampleRenderingClientImpl::Initialize()
 	{
-
-		BRDFLUTPass::Get().Initialize();
-		BRDFLUTMSPass::Get().Initialize();
-
-		OpaqueCullingPass::Get().Initialize();
-
+		// The render graph owns all node component/resource init (CreatePassNode +
+		// CreateResource). These two passes still own imported resources carrying
+		// init data (SSAO noise/kernel/samplers, TiledFrustum dispatch-params).
 		SSAOPass::Get().Initialize();
-
 		TiledFrustumGenerationPass::Get().Initialize();
 
-		SkyPass::Get().Initialize();
-
-		PreTAAPass::Get().Initialize();
-
-		LuminanceAveragePass::Get().Initialize();
-
 		m_ObjectStatus = ObjectStatus::Activated;
-
 		return true;
 	}
 
 	bool ExampleRenderingClientImpl::Update()
 	{
 		TiledFrustumGenerationPass::Get().Update();
-		LuminanceAveragePass::Get().Update();
-
 		return true;
 	}
 
@@ -78,20 +59,8 @@ namespace Inno
 		l_hwService->WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
 		l_hwService->WaitOnCPU(l_graphicsSemaphoreValue, GPUEngineType::Graphics);
 
-		LuminanceAveragePass::Get().Terminate();
-
-		PreTAAPass::Get().Terminate();
-
-		SkyPass::Get().Terminate();
-
-		TiledFrustumGenerationPass::Get().Terminate();
-
 		SSAOPass::Get().Terminate();
-
-		OpaqueCullingPass::Get().Terminate();
-
-		BRDFLUTMSPass::Get().Terminate();
-		BRDFLUTPass::Get().Terminate();
+		TiledFrustumGenerationPass::Get().Terminate();
 
 		m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -148,28 +117,12 @@ bool ExampleRenderingClient::Terminate()
 
 Inno::Array<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
 {
-	// Order mirrors ExampleRenderingClientImpl::PrepareCommands. Both the
-	// rasterizer fork and the GPU-path-tracer fork are listed because the
-	// bypass flag on each pass persists across the active toggle — the editor
-	// inspector wants to reach every pass the client owns. One-shot passes
-	// (BRDFLUT*) are included for the same reason.
+	// The render graph owns the migrated passes (run as JSON nodes, not C++
+	// classes). Only the passes still backed by a C++ class — those owning
+	// imported resources — are exposed to the editor inspector here.
 	Inno::Array<IRenderPass*> l_passes;
-	l_passes.reserve(32);
-
-	l_passes.push_back(&BRDFLUTPass::Get());
-	l_passes.push_back(&BRDFLUTMSPass::Get());
-
-	l_passes.push_back(&OpaqueCullingPass::Get());
-
 	l_passes.push_back(&SSAOPass::Get());
-
 	l_passes.push_back(&TiledFrustumGenerationPass::Get());
-	l_passes.push_back(&SkyPass::Get());
-
-	l_passes.push_back(&PreTAAPass::Get());
-
-	l_passes.push_back(&LuminanceAveragePass::Get());
-
 	return l_passes;
 }
 

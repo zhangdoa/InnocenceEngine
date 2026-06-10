@@ -1,12 +1,8 @@
 #include "ExampleRenderingClient_Internal.h"
-#include "BRDFLUTPass.h"
-#include "BRDFLUTMSPass.h"
-#include "OpaqueCullingPass.h"
 #include "SSAOPass.h"
 #include "TiledFrustumGenerationPass.h"
-#include "SkyPass.h"
-#include "PreTAAPass.h"
-#include "LuminanceAveragePass.h"
+
+#include "../../Engine/RenderGraph/RenderGraphService.h"
 
 #include "../../Engine/Services/DevToggleRegistry.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -127,20 +123,13 @@ namespace Inno
 
 		BootstrapAmbientCGTextures();
 
-		BRDFLUTPass::Get().Setup();
-		BRDFLUTMSPass::Get().Setup();
-
-		OpaqueCullingPass::Get().Setup();
+		// The graph (loaded here, formerly in BRDFLUTPass::Setup) creates + owns
+		// every node + resource. Only these two passes still run C++ Setup — to
+		// create the imported resources that carry CPU init data.
+		g_Engine->Get<RenderGraphService>()->LoadGraph("ExampleProject/RenderGraph/ExampleRenderGraph.json");
 
 		SSAOPass::Get().Setup();
-
 		TiledFrustumGenerationPass::Get().Setup();
-
-		SkyPass::Get().Setup();
-
-		PreTAAPass::Get().Setup();
-
-		LuminanceAveragePass::Get().Setup();
 
 		auto f_getUserPipelineOutputFunc = [this]()
 			{
