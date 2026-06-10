@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <functional>
 #include <unordered_map>
 #include "RenderGraphDesc.h"
 #include "RenderGraphPassRecorder.h"
@@ -48,6 +49,13 @@ namespace Inno
 		// Initialize runs the writer node's RT-init-func).
 		GPUResourceComponent* GetResource(const std::string& name) { return FindResource(name); }
 
+		// Named hooks for the residual CPU work a pure-data node can't express:
+		// an init hook creates+fills a node's imported resources (run once after
+		// load); an update hook refreshes per-frame data before the node records.
+		// Keyed by node name; the client registers them in Setup.
+		void RegisterInitHook(const std::string& nodeName, std::function<void()> fn) { m_InitHooks[nodeName] = std::move(fn); }
+		void RegisterUpdateHook(const std::string& nodeName, std::function<void()> fn) { m_UpdateHooks[nodeName] = std::move(fn); }
+
 	private:
 		GPUResourceComponent* FindResource(const std::string& name);
 		GPUResourceComponent* ResolveImportedResource(const std::string& name);
@@ -70,5 +78,7 @@ namespace Inno
 		Inno::Array<RenderGraphPassNode*> m_Schedule;
 		bool m_Loaded = false;
 		bool m_OneShotDone = false;
+		std::unordered_map<std::string, std::function<void()>> m_InitHooks;
+		std::unordered_map<std::string, std::function<void()>> m_UpdateHooks;
 	};
 }

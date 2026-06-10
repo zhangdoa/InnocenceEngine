@@ -47,6 +47,16 @@ bool RenderGraphService::LoadGraph(const char* fileName)
 	// valid (zeroed) input. Resources WITH a producing node are owned by it.
 	CreateOrphanResources();
 
+	// Named init hooks: residual CPU resource creation/fill a pure-data node can't
+	// express (SSAO noise/kernel/samplers, tiled-frustum buffers). The client
+	// registered these before LoadGraph; run each once now that the nodes exist.
+	for (const auto& l_pass : m_Desc.m_Passes)
+	{
+		auto l_hook = m_InitHooks.find(l_pass.m_Name);
+		if (l_hook != m_InitHooks.end())
+			l_hook->second();
+	}
+
 	m_Loaded = true;
 	Log(Success, "RenderGraphService loaded graph [", m_Desc.m_Name.c_str(), "] with ",
 		m_Desc.m_Resources.size(), " resources and ", m_Desc.m_Passes.size(), " passes.");

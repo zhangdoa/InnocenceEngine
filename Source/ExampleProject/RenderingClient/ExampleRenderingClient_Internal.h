@@ -93,6 +93,10 @@ namespace Inno
 		// AmbientCG PBR sets the example scenes reference.
 		void RegisterDevToggles();
 		void BootstrapAmbientCGTextures();
+		// Registers the named render-graph init/update hooks (imported-resource
+		// creation + per-frame uploads) that let migrated passes be pure JSON
+		// nodes. Called in Setup before LoadGraph. Lives in _Hooks.cpp.
+		void RegisterGraphHooks();
 		// ExecuteCommands tail seams — screenshot consumer + auto-capture
 		// triggers (per-frame frame-dump and one-shot trigger). Live in
 		// _Capture.cpp with the readback writers.

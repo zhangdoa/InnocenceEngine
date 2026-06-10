@@ -36,6 +36,9 @@ bool RenderGraphService::Render()
 			continue;
 		if (!l_node->m_RenderPass || l_node->m_RenderPass->m_ObjectStatus != ObjectStatus::Activated)
 			continue;
+		auto l_update = m_UpdateHooks.find(l_node->m_Desc.m_Name);
+		if (l_update != m_UpdateHooks.end())
+			l_update->second();
 		if (RecordNode(l_node))
 			l_recorded.push_back(l_node);
 	}

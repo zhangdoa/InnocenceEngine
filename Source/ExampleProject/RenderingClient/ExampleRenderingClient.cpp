@@ -1,7 +1,5 @@
 #include "ExampleRenderingClient_Internal.h"
 #include "../../Engine/Common/Array.h"
-#include "SSAOPass.h"
-#include "TiledFrustumGenerationPass.h"
 
 #include "../../Engine/Services/DevToggleRegistry.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
@@ -14,19 +12,14 @@ namespace Inno
 {
 	bool ExampleRenderingClientImpl::Initialize()
 	{
-		// The render graph owns all node component/resource init (CreatePassNode +
-		// CreateResource). These two passes still own imported resources carrying
-		// init data (SSAO noise/kernel/samplers, TiledFrustum dispatch-params).
-		SSAOPass::Get().Initialize();
-		TiledFrustumGenerationPass::Get().Initialize();
-
+		// The render graph owns every node, resource, and per-frame update (via
+		// node data + registered init/update hooks). No render-pass C++ classes.
 		m_ObjectStatus = ObjectStatus::Activated;
 		return true;
 	}
 
 	bool ExampleRenderingClientImpl::Update()
 	{
-		TiledFrustumGenerationPass::Get().Update();
 		return true;
 	}
 
@@ -59,8 +52,7 @@ namespace Inno
 		l_hwService->WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
 		l_hwService->WaitOnCPU(l_graphicsSemaphoreValue, GPUEngineType::Graphics);
 
-		SSAOPass::Get().Terminate();
-		TiledFrustumGenerationPass::Get().Terminate();
+
 
 		m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -117,13 +109,9 @@ bool ExampleRenderingClient::Terminate()
 
 Inno::Array<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
 {
-	// The render graph owns the migrated passes (run as JSON nodes, not C++
-	// classes). Only the passes still backed by a C++ class — those owning
-	// imported resources — are exposed to the editor inspector here.
-	Inno::Array<IRenderPass*> l_passes;
-	l_passes.push_back(&SSAOPass::Get());
-	l_passes.push_back(&TiledFrustumGenerationPass::Get());
-	return l_passes;
+	// All render passes are now graph JSON nodes with no C++ class, so there are
+	// no IRenderPass objects to expose to the editor inspector.
+	return {};
 }
 
 ObjectStatus ExampleRenderingClient::GetStatus()

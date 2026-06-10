@@ -1,6 +1,4 @@
 #include "ExampleRenderingClient_Internal.h"
-#include "SSAOPass.h"
-#include "TiledFrustumGenerationPass.h"
 
 #include "../../Engine/RenderGraph/RenderGraphService.h"
 
@@ -123,13 +121,11 @@ namespace Inno
 
 		BootstrapAmbientCGTextures();
 
-		// The graph (loaded here, formerly in BRDFLUTPass::Setup) creates + owns
-		// every node + resource. Only these two passes still run C++ Setup — to
-		// create the imported resources that carry CPU init data.
+		// The graph owns every node + resource. RegisterGraphHooks installs the
+		// named init/update hooks (imported-resource creation, per-frame uploads)
+		// the data model can't express; LoadGraph then runs the init hooks.
+		RegisterGraphHooks();
 		g_Engine->Get<RenderGraphService>()->LoadGraph("ExampleProject/RenderGraph/ExampleRenderGraph.json");
-
-		SSAOPass::Get().Setup();
-		TiledFrustumGenerationPass::Get().Setup();
 
 		auto f_getUserPipelineOutputFunc = [this]()
 			{
