@@ -61,8 +61,8 @@ namespace Inno
 		uint32_t m_autoCaptureFrameCount = 0;
 		bool m_autoCaptureWritten = false;
 
-		GPUResourceComponent* m_Canvas;
-		RenderPassComponent* m_CanvasOwner;
+		GPUResourceComponent* m_Canvas = nullptr;
+		RenderPassComponent* m_CanvasOwner = nullptr;
 
 		bool m_ExecuteOneShotCommands = true;
 

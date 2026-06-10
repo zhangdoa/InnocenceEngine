@@ -171,6 +171,19 @@
             "Name": "TiledFrustumDispatchParams",
             "Type": "Buffer",
             "Imported": true
+        },
+        {
+            "Name": "Final Blend Pass Result",
+            "Type": "Texture",
+            "Size": "screen",
+            "DepthOrArraySize": 1,
+            "MipLevels": 1,
+            "Sampler": "Sampler2D",
+            "Usage": "ComputeOnly",
+            "PixelDataType": "Float16",
+            "PixelDataFormat": "RGBA",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
         }
     ],
     "Passes": [
@@ -479,6 +492,8 @@
                 }
             ],
             "Transitions": [
+                { "Resource": "OpaquePass_RT_0", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "OpaquePass_RT_1", "From": "WriteOnly", "To": "ReadOnly" },
                 { "Resource": "SSAO_Noise", "From": "WriteOnly", "To": "ReadOnly" },
                 { "Resource": "SSAO_Result", "From": "ReadOnly", "To": "WriteOnly" }
             ],
@@ -522,6 +537,60 @@
                 }
             ],
             "Dispatch": { "Mode": "TiledTwoLevel", "X": 1, "Y": 1, "Z": 1, "TileSize": 16 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "FinalBlendPass",
+            "Queue": "Compute",
+            "Shader": { "CS": "finalBlendPass.comp" },
+            "Reads": [ "PerFrameCBuffer", "Pre-TAA Pass Result", "LuminanceAverageGPUBuffer" ],
+            "Writes": [ "Final Blend Pass Result" ],
+            "Bindings": [
+                {
+                    "Resource": "PerFrameCBuffer",
+                    "Type": "Buffer",
+                    "Set": 0,
+                    "Index": 0,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "Pre-TAA Pass Result",
+                    "Type": "Image",
+                    "Set": 1,
+                    "Index": 0,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ColorAttachment",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "LuminanceAverageGPUBuffer",
+                    "Type": "Buffer",
+                    "Set": 2,
+                    "Index": 0,
+                    "BindingAccess": "ReadWrite",
+                    "ResourceAccess": "ReadWrite",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "Final Blend Pass Result",
+                    "Type": "Image",
+                    "Set": 2,
+                    "Index": 1,
+                    "BindingAccess": "ReadWrite",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ComputeOnly",
+                    "Stage": "Compute"
+                }
+            ],
+            "Transitions": [
+                { "Resource": "Pre-TAA Pass Result", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Final Blend Pass Result", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
             "Bypass": { "Enabled": false, "ClearOnBypass": false },
             "OneShot": false
         }

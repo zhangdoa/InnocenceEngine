@@ -27,10 +27,6 @@ cbuffer PerFrameConstantBuffer : register(b0)
 
 [[vk::binding(0, 1)]]
 Texture2D in_basePassRT0 : register(t0);
-[[vk::binding(1, 1)]]
-Texture2D in_billboardPassRT0 : register(t1);
-[[vk::binding(2, 1)]]
-Texture2D in_debugPassRT0 : register(t2);
 [[vk::binding(0, 2)]]
 RWStructuredBuffer<float> in_luminanceAverage : register(u0);
 [[vk::binding(1, 2)]]
@@ -58,8 +54,6 @@ float ConvertEV100ToExposure(float EV100)
 void main(ComputeInputType input)
 {
 	float3 basePass = in_basePassRT0[input.dispatchThreadID.xy].xyz;
-	float4 billboardPass = in_billboardPassRT0[input.dispatchThreadID.xy];
-	float4 debugPass = in_debugPassRT0[input.dispatchThreadID.xy];
 
 	// HDR to LDR. Mode + key now data-driven from CameraComponent
 	// (TASK-144); see PerFrame_CB.exposureMode / autoExposureKey /
@@ -94,15 +88,6 @@ void main(ComputeInputType input)
 	// (pow(2.2) is applied inside the function per Filament/Three.js canonical
 	// AgX). Do NOT re-encode here - that was the TASK-141 double-gamma bug.
 	float3 finalColor = TonemapAGX(basePass);
-
-	// billboard overlay
-	finalColor += billboardPass.rgb;
-
-	// debug overlay
-	if (debugPass.a == 1.0)
-	{
-		finalColor = debugPass.rgb;
-	}
 
 	out_finalBlendPassRT0[input.dispatchThreadID.xy] = float4(finalColor, 1.0f);
 	DeviceMemoryBarrier();

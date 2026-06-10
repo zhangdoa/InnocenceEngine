@@ -12,8 +12,8 @@ namespace Inno
 		// The render graph owns recording + submission (ExecuteCommands -> Render()).
 		// Here we only resolve the present target by name from the graph.
 		auto l_graph = g_Engine->Get<RenderGraphService>();
-		m_Canvas = l_graph->GetResource("Pre-TAA Pass Result");
-		auto l_node = l_graph->FindNode("PreTAAPass");
+		m_Canvas = l_graph->GetResource("Final Blend Pass Result");
+		auto l_node = l_graph->FindNode("FinalBlendPass");
 		m_CanvasOwner = l_node ? l_node->m_RenderPass : nullptr;
 		return true;
 	}
