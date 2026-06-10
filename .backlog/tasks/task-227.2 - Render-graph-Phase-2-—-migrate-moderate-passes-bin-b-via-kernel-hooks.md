@@ -191,4 +191,17 @@ REMAINING to finish "pure JSON" goal:
 - THEN migrate more passes (LightPass/OpaquePass need multi-RT output; PostTAA/FinalBlend need a dynamic-input primitive; TAA needs ping-pong). Re-migrating FinalBlend also clears the known GBV capture-barrier issue (present target stops being a per-frame graph RT).
 [task-stays-open]
 
+
+2026-06-10 (cont.) — NAMED HOOKS landed (commit 173a5b79): ALL 8 migrated passes are now pure JSON nodes; the rendering client has ZERO render-pass C++ classes. The core-rebuild goal ("just load the JSON, no cpp") is achieved for the keep-set.
+- Hook mechanism: RenderGraphService::RegisterInitHook/RegisterUpdateHook (keyed by node name). LoadGraph runs each node's init hook once (after nodes+resources created); Render() runs a node's update hook each frame before recording it. Client registers hooks in Setup before LoadGraph.
+- SSAONoisePass init hook = kernel + 4x4 noise + 2 samplers (moved from deleted SSAOPass). TiledFrustumGenerationPass init hook = dispatch-params + viewport-sized frustum buffer + extent; update hook = per-frame extent upload (moved from deleted class). Deleted SSAOPass.{h,cpp}+_Setup, TiledFrustumGenerationPass.{h,cpp}.
+- Client: Setup = RegisterGraphHooks()+LoadGraph(); Initialize/Update empty; GetDispatchedPasses returns {}.
+- code-review caught a real BLOCKER (fixed): SSAO kernel/noise must be PERSISTED (file-static, not lambda-locals) because resource Initialize is DEFERRED — the upload memcpy reads the pointer from the frame loop after the hook returns; locals = use-after-free. The deleted class kept them as members for the same reason.
+- Known limitation: TiledFrustum viewport-derived buffer sized once (no offscreen resize hook yet).
+- Verified: BuildWin exit 0; GISponza -total_frames 30 exit 0 / 0 [Error] / 18 res 8 passes (init+update hooks exercised).
+
+FULL COMMIT SEQUENCE (core rebuild, ecs-overhaul): 6c989947 (no kernel types) -> d2059314 (gate fix) -> e259d0e0 (archive non-graph passes) -> ad51eb47 (graph owns init + ComputeCulling de-spec) -> dac9eaa1 (P4 graph owns submission) -> 9361b9f8 (delete 6 pass classes) -> 173a5b79 (named hooks, delete last 2). Plus docs commits.
+
+NEXT (separate phase — NOT done): migrate MORE passes from _Archive back into the graph. Needs new primitives: LightPass/OpaquePass = multi-render-target output (graph node Writes model + serializer support >1 RT); PostTAA/FinalBlend = dynamic-input (runtime renderingContext->m_input, no stable graph name); TAA = ping-pong (frame-parity Even/Odd history). Re-migrating FinalBlend also clears the known GBV capture-barrier issue (present target stops being a per-frame graph RT). [task-stays-open]
+
 <!-- SECTION:NOTES:END -->
