@@ -48,12 +48,6 @@ bool SSAOPass::Setup(IServiceConfig* systemConfig)
 
 bool SSAOPass::Initialize()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-
-	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
-	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
-	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
-	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
 	g_Engine->Get<SamplerResourceService>()->Initialize(m_SamplerComp);
 	g_Engine->Get<SamplerResourceService>()->Initialize(m_SamplerComp_RandomRot);
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_KernelGPUBuffer);
@@ -66,17 +60,10 @@ bool SSAOPass::Initialize()
 
 bool SSAOPass::Terminate()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-
-	g_Engine->Get<TextureResourceService>()->Delete(m_Result);
 	g_Engine->Get<TextureResourceService>()->Delete(m_NoiseTexture);
 	g_Engine->Get<GPUBufferResourceService>()->Delete(m_KernelGPUBuffer);
 	g_Engine->Get<SamplerResourceService>()->Delete(m_SamplerComp_RandomRot);
 	g_Engine->Get<SamplerResourceService>()->Delete(m_SamplerComp);
-	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Compute);
-	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Graphics);
-	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
-	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 	
 	m_ObjectStatus = ObjectStatus::Terminated;
 

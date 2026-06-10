@@ -116,16 +116,11 @@ bool TiledFrustumGenerationPass::SetupImperative()
 
 bool TiledFrustumGenerationPass::Initialize()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-
 	m_DispatchParamsGPUBufferComp->m_ElementCount = 1;
 	m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
 	m_DispatchParamsGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
 
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_DispatchParamsGPUBufferComp);
-	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
-	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
-	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -147,12 +142,8 @@ bool TiledFrustumGenerationPass::Update()
 
 bool TiledFrustumGenerationPass::Terminate()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-
 	g_Engine->Get<GPUBufferResourceService>()->Delete(m_TiledFrustum);
 	g_Engine->Get<GPUBufferResourceService>()->Delete(m_DispatchParamsGPUBufferComp);
-	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
-	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 

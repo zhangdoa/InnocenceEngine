@@ -1,4 +1,4 @@
-﻿#include "BRDFLUTMSPass.h"
+#include "BRDFLUTMSPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 
@@ -98,12 +98,6 @@ bool BRDFLUTMSPass::Setup(IServiceConfig *systemConfig)
 
 bool BRDFLUTMSPass::Initialize()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-
-	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
-	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
-	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
-	g_Engine->Get<TextureResourceService>()->Initialize(m_Result);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -112,11 +106,6 @@ bool BRDFLUTMSPass::Initialize()
 
 bool BRDFLUTMSPass::Terminate()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-
-	g_Engine->Get<TextureResourceService>()->Delete(m_Result);
-	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
-	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 

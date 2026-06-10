@@ -44,12 +44,6 @@ bool PreTAAPass::Setup(IServiceConfig* systemConfig)
 
 bool PreTAAPass::Initialize()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-
-	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
-	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
-	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
-	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -58,13 +52,6 @@ bool PreTAAPass::Initialize()
 
 bool PreTAAPass::Terminate()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-
-	g_Engine->Get<TextureResourceService>()->Delete(m_Result);
-	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Compute);
-	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Graphics);	
-	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
-	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 

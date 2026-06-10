@@ -93,18 +93,6 @@ namespace Inno
 		// AmbientCG PBR sets the example scenes reference.
 		void RegisterDevToggles();
 		void BootstrapAmbientCGTextures();
-
-		// ExecuteCommands seam — the rasterizer-only pass chain runs only
-		// when PT is inactive. Lives in
-		// _ExecuteCommands_Rasterizer.cpp to keep both TUs under the ratchet.
-		void ExecuteRasterizerPasses();
-
-		// Sub-seam of the rasterizer chain — SSRC reproject /
-		// raytrace / filter / integrate + GI denoise + GI filter. Pulled
-		// into a dedicated TU so _ExecuteCommands_Rasterizer.cpp stays
-		// under the file-size ratchet.
-		void ExecuteGIPasses();
-
 		// ExecuteCommands tail seams — screenshot consumer + auto-capture
 		// triggers (per-frame frame-dump and one-shot trigger). Live in
 		// _Capture.cpp with the readback writers.

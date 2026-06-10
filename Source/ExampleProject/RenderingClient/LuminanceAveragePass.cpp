@@ -38,17 +38,6 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 
 bool LuminanceAveragePass::Initialize()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-
-	// Graph-driven path adopts components the RenderGraphService Added (resource +
-	// render pass + command list); the graph does not Initialize them, so the
-	// adopted pointers go through the same Initialize calls as the imperative path.
-	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
-	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
-	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
-
-	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_luminanceAverage);
-
 	m_ObjectStatus = ObjectStatus::Suspended;
 
 	return true;
@@ -62,13 +51,6 @@ bool LuminanceAveragePass::Update()
 
 bool LuminanceAveragePass::Terminate()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-
-	g_Engine->Get<GPUBufferResourceService>()->Delete(m_luminanceAverage);
-	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Compute);
-	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
-	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
-
 	m_ObjectStatus = ObjectStatus::Terminated;
 
 	return true;

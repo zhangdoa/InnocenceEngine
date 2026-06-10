@@ -1,4 +1,4 @@
-﻿#include "SkyPass.h"
+#include "SkyPass.h"
 #include "ScreenTileConstants.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
@@ -93,15 +93,6 @@ bool SkyPass::Setup(IServiceConfig* systemConfig)
 
 bool SkyPass::Initialize()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-
-	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
-	// RenderPassResourceService::Initialize is deferred — the node's RT-init-func
-	// (which creates the screen-sized Result) runs later in InitializeComponents,
-	// so m_Result is resolved lazily in PrepareCommandList, not here.
-	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
-	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
-
 	m_ObjectStatus = ObjectStatus::Suspended;
 
 	return true;
@@ -109,11 +100,6 @@ bool SkyPass::Initialize()
 
 bool SkyPass::Terminate()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-
-	g_Engine->Get<TextureResourceService>()->Delete(m_Result);
-	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
-	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 

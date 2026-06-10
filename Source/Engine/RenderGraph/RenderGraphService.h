@@ -35,8 +35,13 @@ namespace Inno
 		RenderGraphPassNode* FindNode(const char* name);
 		const Inno::Array<RenderGraphPassNode*>& ScheduledNodes() const { return m_Schedule; }
 
-		// Record a node's command list via its kernel (per-frame / one-shot).
-		bool RecordNode(RenderGraphPassNode* node);
+	// Record a node's command list from its data (per-frame / one-shot).
+	bool RecordNode(RenderGraphPassNode* node);
+
+	// Record every scheduled node, then submit + fence them (graph owns the
+	// queue/sync topology, derived from each node's queue, transition prepass,
+	// reads->producer edges, and one-shot flag). Replaces per-pass client submission.
+	bool Render();
 
 		// Live resolved resource by name — for a migrated pass adopting a
 		// graph-owned resource (e.g. a deferred screen-sized RT created after
@@ -64,5 +69,6 @@ namespace Inno
 		std::unordered_map<std::string, std::unique_ptr<RenderGraphPassNode>> m_Nodes;
 		Inno::Array<RenderGraphPassNode*> m_Schedule;
 		bool m_Loaded = false;
+		bool m_OneShotDone = false;
 	};
 }
