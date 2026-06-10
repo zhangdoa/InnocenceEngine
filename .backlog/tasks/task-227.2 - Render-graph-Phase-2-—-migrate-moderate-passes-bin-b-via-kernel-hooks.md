@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - code-impl
 created_date: '2026-05-31 12:53'
-updated_date: '2026-06-09'
+updated_date: '2026-06-10'
 labels:
   - rendering
   - render-graph
@@ -177,5 +177,18 @@ NEXT: P4 — graph-owned submission (derive Execute/Signal/Wait per node from th
 KNOWN ISSUE (pre-existing since the archival e259d0e0, NOT P4): Main.exe -gpu_validation reports a ResourceBarrier before-state mismatch on PreTAAPass/Graphics prepass (before-state includes COPY_SOURCE). Cause: the present/capture target became "Pre-TAA Pass Result" when FinalBlendPass was archived; the screen-capture readback (HandleScreenCapture/WriteCaptureToFile/AlignTrackerForMidFrameReadback) transitions that graph RT to COPY_SOURCE, desyncing PreTAA's per-frame prepass tracker. Capture path + target are unchanged by P4 (barrier before-state is recorded from the prior frame's capture in both old and new flows), so it predates P4. RESOLVES when FinalBlendPass is re-migrated (capture target stops being a per-frame-transitioned graph RT) OR by giving capture a dedicated readback-state alignment for the canvas. Tracked here; non-blocking for core dev (prior smokes used -total_frames 30 without -gpu_validation).
 
 NEXT (toward pure-JSON passes): P5 — move the remaining pass-owned IMPORTED resources to named init/update hooks registered with the graph (SSAO kernel/noise/samplers + SetupOwnedResources, TiledFrustum dispatch-params + RenderTargetsCreationFunc, ComputeCulling none left). Then the inert shells become fully unreferenced (graph loads the JSON in BRDFLUTPass::SetupFromRenderGraph -> move LoadGraph to client Setup) and can be DELETED -> migrated passes are pure JSON. THEN migrate more passes (LightPass/OpaquePass multi-RT; PostTAA/FinalBlend dynamic-input; TAA ping-pong). [task-stays-open]
+
+
+2026-06-10 — P5 (partial) LANDED: 6 of 8 migrated passes are now PURE JSON NODES (no C++ class). Commit 9361b9f8.
+- Deleted BRDFLUTPass, BRDFLUTMSPass, OpaqueCullingPass (+ComputeCullingPass base), SkyPass, PreTAAPass, LuminanceAveragePass (.h+.cpp). Their nodes remain in ExampleRenderGraph.json; the graph owns create/init/record/submit/fence.
+- LoadGraph moved from BRDFLUTPass::SetupFromRenderGraph to client Setup (runs before the 2 remaining passes' Setup).
+- Client lifecycle (Initialize/Update/Terminate/GetDispatchedPasses) reduced to SSAOPass + TiledFrustumGenerationPass. AuditDump repointed to graph (FindNode + GetResource by name).
+- Verified: BuildWin exit 0; GISponza -total_frames 30 exit 0 / 0 [Error] / 18 res 8 passes; TestSuite RenderGraph unit tests 8/8. Reviewed PASS.
+- Pre-existing unrelated: TestSuite AssetConversion integration test exits 9 (file-I/O; TestSuite does not link the client). Not caused by the rebuild.
+
+REMAINING to finish "pure JSON" goal:
+- SSAOPass + TiledFrustumGenerationPass still have C++ classes ONLY because they own IMPORTED resources carrying CPU init data: SSAO noise texture (random rotations) + sample-kernel buffer + 2 samplers (SetupOwnedResources + Initialize fill); TiledFrustum dispatch-params buffer (Initialize + per-frame Update upload). To delete them: add named init/update HOOKS registered with the graph (graph calls them when creating the node / per frame), move that resource gen+upload into client-registered callbacks, then delete the 2 classes.
+- THEN migrate more passes (LightPass/OpaquePass need multi-RT output; PostTAA/FinalBlend need a dynamic-input primitive; TAA needs ping-pong). Re-migrating FinalBlend also clears the known GBV capture-barrier issue (present target stops being a per-frame graph RT).
+[task-stays-open]
 
 <!-- SECTION:NOTES:END -->
