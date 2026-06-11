@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - code-impl
 created_date: '2026-05-31 12:53'
-updated_date: '2026-06-10'
+updated_date: '2026-06-11'
 labels:
   - rendering
   - render-graph
@@ -41,6 +41,34 @@ Design reference: backlog doc-1 (TASK-227 Render-Graph Design RFC), kernel inter
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
+### CURRENT STATE (2026-06-11) — at-a-glance anchor for a fresh session
+
+Keep-set is **11 pure-JSON graph passes**, ZERO render-pass C++ classes. Present chain:
+`Sky → PreTAA → TAA → PostTAA → FinalBlend` (+ BRDFLUT, BRDFLUTMS, LuminanceAverage,
+OpaqueCulling, SSAONoise, TiledFrustumGeneration off to the side). Graph: 22 resources / 11 passes.
+
+Primitives PROVEN (data-driven, no per-pass C++): per-frame dynamic resolution (PerFrameCBuffer
+frame-parity), dynamic dispatch (Static / ScreenTile / TiledTwoLevel / DrawModelGroups), deferred
+screen RT, ordered transition prepass, TrackWriteState (culling→indirect), named init/update hooks,
+and **frame-parity ping-pong** (TAA, commit c67bde3a).
+
+Primitives STILL NEEDED (each gates a cluster of archived passes):
+- **raster / multi-RT + depth + indirect-draw + root-constants** → OpaquePass (GBuffer). Foundational;
+  populates the real GBuffer + motion vector, retiring the OpaquePass_RT_0/1/3 zeroed orphans. INVISIBLE
+  until LightPass. Integration linchpin confirmed (auto-named OutputMergerTarget RTs resolve via import).
+- **raytracing** (TLAS / RayQuery / shader tables) → SunShadowRTPass, PT/NRD denoise chain.
+- LightPass is compute but BLOCKED: reads SSRC GI (t10 Illuminance from Radiance Cache) + uses inline
+  RayQuery + Volumetric + LightCulling. Needs SSRC (excluded) or accepting zeroed GI.
+
+Verification bar for this track: BuildWin exit 0; TestGIScene (non-GBV) exit 0 + 0 D3D12 errors +
+pixel MAE ≤ 0.45 (currently 0.103); RenderGraph unit tests green. GBV is NOT clean — the sole residual
+is the pre-existing **TASK-163** FinalBlend present-target readback barrier (separate ticket).
+
+RECOMMENDED NEXT: either the **SSRC clean-reuse chain** (audited ready, low risk, but consumed only by
+the blocked LightPass) or the **OpaquePass raster/multi-RT primitive** (the big foundational primitive).
+Resume note in the `InnocenceEngine` basic-memory project has the same state + gotchas. Per-pass detail
+in the dated entries below.
+
 2026-06-01 — Activated early (ahead of strict dep order) because TASK-227.1 proved bin-a is exhausted at 2 passes: the bulk of the umbrella's LOC payoff sits behind bin-b kernel infra. Groundwork already landed under .1 (commit 74215eb3): Buffer-resource type + external-resource-import in the graph schema/loader/serializer + GPUBufferResourceService::Find.
 
 CORE bin-b problem #1 = PER-FRAME DYNAMIC RESOURCE RESOLUTION. Nearly every clean compute pass binds the DOUBLE-BUFFERED PerFrameCBuffer at slot 0: PerFrameDataService::GetCurrentFrameBuffer() returns a different GPUBufferComponent each frame by frame-parity ('PerFrameCBuffer'/'PerFrameCBufferPrev'). Current import-by-name resolves ONCE at node creation -> would pin one buffer -> stale every other frame. Need per-frame re-resolution at RecordNode time (kernel-hook or a 'dynamic import' resource flag).
