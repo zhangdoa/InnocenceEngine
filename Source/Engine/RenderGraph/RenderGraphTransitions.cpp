@@ -31,7 +31,9 @@ bool Inno::RecordTransitionPrepass(RenderGraphPassContext& ctx, CommandListCompo
 	fmService->CommandListBegin(ctx.m_RenderPass, graphicsCL, 0);
 	for (const auto& l_transition : ctx.m_Node->m_Transitions)
 	{
-		auto l_resource = l_graphService->GetResource(l_transition.m_Resource);
+		auto l_resource = l_transition.m_PingPongHistory
+			? l_graphService->GetHistoryResource(l_transition.m_Resource)
+			: l_graphService->GetResource(l_transition.m_Resource);
 		fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(l_resource),
 			graphicsCL, l_transition.m_From, l_transition.m_To);
 	}

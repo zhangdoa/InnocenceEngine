@@ -140,6 +140,46 @@
             "Lifetime": "Persistent"
         },
         {
+            "Name": "OpaquePass_RT_3",
+            "Type": "Texture",
+            "Size": "screen",
+            "DepthOrArraySize": 1,
+            "MipLevels": 1,
+            "Sampler": "Sampler2D",
+            "Usage": "ComputeOnly",
+            "PixelDataType": "Float16",
+            "PixelDataFormat": "RGBA",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
+        },
+        {
+            "Name": "TAA Pass Result",
+            "Type": "Texture",
+            "Size": "screen",
+            "PingPong": true,
+            "DepthOrArraySize": 1,
+            "MipLevels": 1,
+            "Sampler": "Sampler2D",
+            "Usage": "ComputeOnly",
+            "PixelDataType": "Float16",
+            "PixelDataFormat": "RGBA",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
+        },
+        {
+            "Name": "Post-TAA Pass Result",
+            "Type": "Texture",
+            "Size": "screen",
+            "DepthOrArraySize": 1,
+            "MipLevels": 1,
+            "Sampler": "Sampler2D",
+            "Usage": "ComputeOnly",
+            "PixelDataType": "Float16",
+            "PixelDataFormat": "RGBA",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
+        },
+        {
             "Name": "SSAO_Kernel",
             "Type": "Buffer",
             "Imported": true
@@ -541,10 +581,51 @@
             "OneShot": false
         },
         {
+            "Name": "TAAPass",
+            "Queue": "Compute",
+            "Shader": { "CS": "TAAPass.comp" },
+            "Reads": [ "PerFrameCBuffer", "Pre-TAA Pass Result", "OpaquePass_RT_3" ],
+            "Writes": [ "TAA Pass Result" ],
+            "Bindings": [
+                { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
+                { "Resource": "Pre-TAA Pass Result", "Type": "Image", "Set": 1, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "TAA Pass Result", "Type": "Image", "Set": 1, "Index": 1, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ColorAttachment", "Stage": "Compute", "PingPongHistory": true },
+                { "Resource": "OpaquePass_RT_3", "Type": "Image", "Set": 1, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "TAA Pass Result", "Type": "Image", "Set": 2, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" }
+            ],
+            "Transitions": [
+                { "Resource": "Pre-TAA Pass Result", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "TAA Pass Result", "From": "WriteOnly", "To": "ReadOnly", "PingPongHistory": true },
+                { "Resource": "OpaquePass_RT_3", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "TAA Pass Result", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "PostTAAPass",
+            "Queue": "Compute",
+            "Shader": { "CS": "postTAAPass.comp" },
+            "Reads": [ "TAA Pass Result" ],
+            "Writes": [ "Post-TAA Pass Result" ],
+            "Bindings": [
+                { "Resource": "TAA Pass Result", "Type": "Image", "Set": 1, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "Post-TAA Pass Result", "Type": "Image", "Set": 2, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" }
+            ],
+            "Transitions": [
+                { "Resource": "TAA Pass Result", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Post-TAA Pass Result", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
             "Name": "FinalBlendPass",
             "Queue": "Compute",
             "Shader": { "CS": "finalBlendPass.comp" },
-            "Reads": [ "PerFrameCBuffer", "Pre-TAA Pass Result", "LuminanceAverageGPUBuffer" ],
+            "Reads": [ "PerFrameCBuffer", "Post-TAA Pass Result", "LuminanceAverageGPUBuffer" ],
             "Writes": [ "Final Blend Pass Result" ],
             "Bindings": [
                 {
@@ -557,7 +638,7 @@
                     "Stage": "Compute"
                 },
                 {
-                    "Resource": "Pre-TAA Pass Result",
+                    "Resource": "Post-TAA Pass Result",
                     "Type": "Image",
                     "Set": 1,
                     "Index": 0,
@@ -587,7 +668,7 @@
                 }
             ],
             "Transitions": [
-                { "Resource": "Pre-TAA Pass Result", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Post-TAA Pass Result", "From": "WriteOnly", "To": "ReadOnly" },
                 { "Resource": "Final Blend Pass Result", "From": "ReadOnly", "To": "WriteOnly" }
             ],
             "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },

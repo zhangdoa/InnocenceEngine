@@ -49,6 +49,11 @@ namespace Inno
 		// Initialize runs the writer node's RT-init-func).
 		GPUResourceComponent* GetResource(const std::string& name) { return FindResource(name); }
 
+		// The OTHER-parity (history) texture of a ping-pong resource — the previous
+		// frame's output a node reads back. A plain GetResource of the same name
+		// hands back the current-parity texture (this frame's output).
+		GPUResourceComponent* GetHistoryResource(const std::string& name) { return PingPongTexture(name, true); }
+
 		// Named hooks for the residual CPU work a pure-data node can't express:
 		// an init hook creates+fills a node's imported resources (run once after
 		// load); an update hook refreshes per-frame data before the node records.
@@ -68,12 +73,19 @@ namespace Inno
 		// Initializes graph-owned resources that no pass writes (their producer
 		// isn't a graph node yet) so consumers bind valid zeroed inputs.
 		void CreateOrphanResources();
+		// Resolves a ping-pong pair to one physical texture by frame parity:
+		// history=false -> current-frame output (odd frame -> Odd), history=true ->
+		// the other parity (previous frame's output). Null if name isn't ping-pong.
+		TextureComponent* PingPongTexture(const std::string& name, bool history);
 
 		RenderGraphDesc m_Desc;
 		std::unordered_map<std::string, GPUResourceComponent*> m_Resources;
 		// Texture resources whose size is "screen" — created lazily by the writer
 		// node's RT-init-func, not eagerly in CreateResource.
 		std::unordered_map<std::string, ResourceDesc> m_DeferredScreenTextures;
+		// Ping-pong pairs keyed by logical name: { Even, Odd } physical textures.
+		// The writer node's RT-init-func (re)creates both via CreateScreenSizedTexture.
+		std::unordered_map<std::string, std::pair<TextureComponent*, TextureComponent*>> m_PingPong;
 		std::unordered_map<std::string, std::unique_ptr<RenderGraphPassNode>> m_Nodes;
 		Inno::Array<RenderGraphPassNode*> m_Schedule;
 		bool m_Loaded = false;

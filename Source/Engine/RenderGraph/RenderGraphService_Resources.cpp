@@ -6,6 +6,7 @@
 #include "../Services/GPUBufferResourceService.h"
 #include "../Services/SamplerResourceService.h"
 #include "../Services/PerFrameDataService.h"
+#include "../Services/FrameManagementService.h"
 
 using namespace Inno;
 
@@ -25,6 +26,11 @@ GPUResourceComponent* RenderGraphService::FindResource(const std::string& name)
 	// handle without per-pass C++.
 	if (name == g_PerFrameCBufferName)
 		return g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
+
+	// A plain read of a ping-pong name resolves to the current-frame output
+	// (parity with the imperative pass's GetResult()).
+	if (auto l_pingPong = PingPongTexture(name, false))
+		return l_pingPong;
 
 	auto it = m_Resources.find(name);
 	if (it != m_Resources.end())
@@ -105,6 +111,38 @@ bool RenderGraphService::CreateScreenSizedTexture(const ResourceDesc& desc)
 {
 	auto l_textureService = g_Engine->Get<TextureResourceService>();
 
+	// Ping-pong: (re)create BOTH parity textures. The logical name stays out of
+	// m_Resources (resolved per-frame via m_PingPong); the physical names go in so
+	// resize can delete them and a physical-name lookup still works.
+	if (desc.m_PingPong)
+	{
+		auto l_res = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+		auto l_make = [&](const std::string& physName) -> TextureComponent*
+		{
+			auto l_prior = m_Resources.find(physName);
+			if (l_prior != m_Resources.end() && l_prior->second)
+				l_textureService->Delete(static_cast<TextureComponent*>(l_prior->second));
+			auto l_tex = l_textureService->Add(physName.c_str());
+			if (!l_tex)
+			{
+				Log(Error, "RenderGraphService: failed to Add ping-pong texture [", physName.c_str(), "].");
+				return nullptr;
+			}
+			l_tex->m_TextureDesc = desc.m_TextureDesc;
+			l_tex->m_TextureDesc.Width = l_res.x;
+			l_tex->m_TextureDesc.Height = l_res.y;
+			l_textureService->Initialize(l_tex);
+			m_Resources[physName] = l_tex;
+			return l_tex;
+		};
+		auto l_even = l_make(desc.m_Name + " (Even)");
+		auto l_odd = l_make(desc.m_Name + " (Odd)");
+		if (!l_even || !l_odd)
+			return false;
+		m_PingPong[desc.m_Name] = { l_even, l_odd };
+		return true;
+	}
+
 	// Resize re-invokes this func: delete the prior texture before recreating.
 	auto it = m_Resources.find(desc.m_Name);
 	if (it != m_Resources.end() && it->second)
@@ -127,6 +165,19 @@ bool RenderGraphService::CreateScreenSizedTexture(const ResourceDesc& desc)
 
 	m_Resources[desc.m_Name] = l_texture;
 	return true;
+}
+
+TextureComponent* RenderGraphService::PingPongTexture(const std::string& name, bool history)
+{
+	auto it = m_PingPong.find(name);
+	if (it == m_PingPong.end())
+		return nullptr;
+
+	// Odd frame -> the current-frame output is the Odd texture; history is the
+	// other parity (last frame's output). { first = Even, second = Odd }.
+	bool l_odd = (g_Engine->Get<FrameManagementService>()->GetFrameCountSinceLaunch() % 2) == 1;
+	bool l_wantOdd = history ? !l_odd : l_odd;
+	return l_wantOdd ? it->second.second : it->second.first;
 }
 
 void RenderGraphService::CreateOrphanResources()

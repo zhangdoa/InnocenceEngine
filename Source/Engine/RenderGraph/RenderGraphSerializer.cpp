@@ -59,6 +59,8 @@ namespace
 			j["Imported"] = true;
 		if (!r.m_SizeExpr.empty())
 			j["Size"] = r.m_SizeExpr;
+		if (r.m_PingPong)
+			j["PingPong"] = true;
 		return j;
 	}
 
@@ -69,6 +71,7 @@ namespace
 		r.m_Lifetime = ES::LifetimeFromString(j.value("Lifetime", std::string("Persistent")));
 		r.m_Imported = j.value("Imported", false);
 		r.m_SizeExpr = j.value("Size", std::string());
+		r.m_PingPong = j.value("PingPong", false);
 		if (r.m_Type == RenderGraphResourceType::Buffer)
 			BufferDescFromJson(j, r.m_BufferDesc);
 		else
@@ -77,12 +80,15 @@ namespace
 
 	json BindingToJson(const BindingDesc& b)
 	{
-		return json{
+		json j = json{
 			{ "Resource", b.m_Resource }, { "Type", ES::ToString(b.m_GPUResourceType) },
 			{ "Set", b.m_DescriptorSetIndex }, { "Index", b.m_DescriptorIndex },
 			{ "BindingAccess", ES::ToString(b.m_BindingAccessibility) },
 			{ "ResourceAccess", ES::ToString(b.m_ResourceAccessibility) },
 			{ "TextureUsage", ES::ToString(b.m_TextureUsage) }, { "Stage", ES::ToString(b.m_ShaderStage) } };
+		if (b.m_PingPongHistory)
+			j["PingPongHistory"] = true;
+		return j;
 	}
 
 	void BindingFromJson(const json& j, BindingDesc& b)
@@ -95,14 +101,18 @@ namespace
 		b.m_ResourceAccessibility = ES::AccessibilityFromString(j.value("ResourceAccess", std::string("ReadOnly")));
 		b.m_TextureUsage = ES::TextureUsageFromString(j.value("TextureUsage", std::string("Invalid")));
 		b.m_ShaderStage = ES::ShaderStageFromString(j.value("Stage", std::string("Invalid")));
+		b.m_PingPongHistory = j.value("PingPongHistory", false);
 	}
 
 	json TransitionToJson(const TransitionDesc& t)
 	{
-		return json{
+		json j = json{
 			{ "Resource", t.m_Resource },
 			{ "From", ES::ToString(t.m_From) },
 			{ "To", ES::ToString(t.m_To) } };
+		if (t.m_PingPongHistory)
+			j["PingPongHistory"] = true;
+		return j;
 	}
 
 	void TransitionFromJson(const json& j, TransitionDesc& t)
@@ -110,6 +120,7 @@ namespace
 		t.m_Resource = j.value("Resource", std::string());
 		t.m_From = ES::AccessibilityFromString(j.value("From", std::string("WriteOnly")));
 		t.m_To = ES::AccessibilityFromString(j.value("To", std::string("ReadOnly")));
+		t.m_PingPongHistory = j.value("PingPongHistory", false);
 	}
 
 	json PassToJson(const PassNodeDesc& p)

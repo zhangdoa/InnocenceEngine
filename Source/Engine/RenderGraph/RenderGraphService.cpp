@@ -178,7 +178,9 @@ bool RenderGraphService::RecordNode(RenderGraphPassNode* node)
 
 	l_ctx.m_BoundResources.reserve(node->m_Desc.m_Bindings.size());
 	for (const auto& l_binding : node->m_Desc.m_Bindings)
-		l_ctx.m_BoundResources.push_back(FindResource(l_binding.m_Resource));
+		l_ctx.m_BoundResources.push_back(l_binding.m_PingPongHistory
+			? PingPongTexture(l_binding.m_Resource, true)
+			: FindResource(l_binding.m_Resource));
 
 	return RecordPass(l_ctx);
 }

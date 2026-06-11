@@ -40,6 +40,12 @@ namespace Inno
 		// matching *ResourceService. Reads naming a resource absent from the graph's
 		// Resources list are also imported.
 		bool m_Imported = false;
+		// A frame-parity ping-pong resource: the graph creates TWO screen-sized
+		// textures ("<Name> (Even)" / "<Name> (Odd)"). Each frame the writer node
+		// writes the current-parity one and reads the other-parity one as history
+		// (temporal reuse). A plain read of <Name> resolves to the current-parity
+		// texture (the frame's output), matching the imperative pass's GetResult().
+		bool m_PingPong = false;
 		TextureDesc m_TextureDesc = {};
 		BufferDesc m_BufferDesc = {};
 	};
@@ -54,6 +60,10 @@ namespace Inno
 		Accessibility m_ResourceAccessibility = Accessibility::ReadOnly;
 		TextureUsage m_TextureUsage = TextureUsage::Invalid;
 		ShaderStage m_ShaderStage = ShaderStage::Invalid;
+		// Bind the OTHER-parity (history) texture of a ping-pong resource named in
+		// m_Resource — the previous frame's output the node reads back. Plain
+		// (false) bindings of a ping-pong name get the current-parity texture.
+		bool m_PingPongHistory = false;
 	};
 
 	// An ordered render-target state transition recorded on the graphics queue
@@ -64,6 +74,9 @@ namespace Inno
 		std::string m_Resource;
 		Accessibility m_From = Accessibility::WriteOnly;
 		Accessibility m_To = Accessibility::ReadOnly;
+		// Transition the OTHER-parity (history) texture of a ping-pong resource
+		// (parity with the m_PingPongHistory binding that reads it).
+		bool m_PingPongHistory = false;
 	};
 
 	// How the dispatch thread-group count is derived. Static uses the literal

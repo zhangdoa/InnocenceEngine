@@ -269,6 +269,10 @@ extern void TestSSAONodeRoundTrip();
 // RenderGraphSerializerTests_TiledFrustum.cpp.
 extern void TestTiledFrustumNodeRoundTrip();
 
+// Ping-pong fixture (m_PingPong resource + m_PingPongHistory binding/transition)
+// lives in RenderGraphSerializerTests_PingPong.cpp.
+extern void TestPingPongNodeRoundTrip();
+
 void RunRenderGraphSerializerUnitTests()
 {
 	TestRunner::StartTestSuite("RenderGraphSerializer");
@@ -280,5 +284,6 @@ void RunRenderGraphSerializerUnitTests()
 	TestTransitionRoundTrip();
 	TestSSAONodeRoundTrip();
 	TestTiledFrustumNodeRoundTrip();
+	TestPingPongNodeRoundTrip();
 	TestRunner::EndTestSuite();
 }
