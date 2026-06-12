@@ -41,21 +41,22 @@ Design reference: backlog doc-1 (TASK-227 Render-Graph Design RFC), kernel inter
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-### CURRENT STATE (2026-06-11) — at-a-glance anchor for a fresh session
+### CURRENT STATE (2026-06-12) — at-a-glance anchor for a fresh session
 
-Keep-set is **11 pure-JSON graph passes**, ZERO render-pass C++ classes. Present chain:
-`Sky → PreTAA → TAA → PostTAA → FinalBlend` (+ BRDFLUT, BRDFLUTMS, LuminanceAverage,
-OpaqueCulling, SSAONoise, TiledFrustumGeneration off to the side). Graph: 22 resources / 11 passes.
+Keep-set is **12 pure-JSON graph passes**, ZERO render-pass C++ classes (OpaquePass is now a
+graphics-queue JSON node). Graph: 19 resources / 12 passes.
 
-Primitives PROVEN (data-driven, no per-pass C++): per-frame dynamic resolution (PerFrameCBuffer
-frame-parity), dynamic dispatch (Static / ScreenTile / TiledTwoLevel / DrawModelGroups), deferred
-screen RT, ordered transition prepass, TrackWriteState (culling→indirect), named init/update hooks,
-and **frame-parity ping-pong** (TAA, commit c67bde3a).
+Primitives PROVEN (data-driven, no per-pass C++): per-frame dynamic resolution (PerFrameCBuffer /
+PerFrameCBufferPrev / TransformBuffer frame-parity), dynamic dispatch (Static / ScreenTile /
+TiledTwoLevel / DrawModelGroups), deferred screen RT, ordered transition prepass, TrackWriteState
+(culling→indirect), named init/update hooks, frame-parity ping-pong (TAA), and **raster / multi-RT +
+depth + indirect-draw + root-constants** (OpaquePass GBuffer, commit 0b507daf).
+
+OpaquePass now produces the real GBuffer + motion vector (OpaquePass_RT_0..3 are real
+OutputMergerTargets, retiring the zeroed orphans); SSAO/TAA read them by name. Payoff is structural
+only until LightPass returns (the present chain still reads zeroed LightPass luminance → MAE unchanged).
 
 Primitives STILL NEEDED (each gates a cluster of archived passes):
-- **raster / multi-RT + depth + indirect-draw + root-constants** → OpaquePass (GBuffer). Foundational;
-  populates the real GBuffer + motion vector, retiring the OpaquePass_RT_0/1/3 zeroed orphans. INVISIBLE
-  until LightPass. Integration linchpin confirmed (auto-named OutputMergerTarget RTs resolve via import).
 - **raytracing** (TLAS / RayQuery / shader tables) → SunShadowRTPass, PT/NRD denoise chain.
 - LightPass is compute but BLOCKED: reads SSRC GI (t10 Illuminance from Radiance Cache) + uses inline
   RayQuery + Volumetric + LightCulling. Needs SSRC (excluded) or accepting zeroed GI.
@@ -64,10 +65,11 @@ Verification bar for this track: BuildWin exit 0; TestGIScene (non-GBV) exit 0 +
 pixel MAE ≤ 0.45 (currently 0.103); RenderGraph unit tests green. GBV is NOT clean — the sole residual
 is the pre-existing **TASK-163** FinalBlend present-target readback barrier (separate ticket).
 
-RECOMMENDED NEXT: either the **SSRC clean-reuse chain** (audited ready, low risk, but consumed only by
-the blocked LightPass) or the **OpaquePass raster/multi-RT primitive** (the big foundational primitive).
-Resume note in the `InnocenceEngine` basic-memory project has the same state + gotchas. Per-pass detail
-in the dated entries below.
+RECOMMENDED NEXT: the **SSRC clean-reuse chain** is NOT clean-reuse on inspection (8 entangled passes;
+needs multi-size ping-pong + probe/SH sizing + ceil-dispatch + multi-output primitives; blocked by the
+excluded SSRCRaytracing → zeroed end-to-end). The remaining tractable, payoff-bearing work is
+**raytracing** (unblocks SunShadowRT and lets a returning LightPass light the new GBuffer). Resume note
+in the `InnocenceEngine` basic-memory project mirrors this. Per-pass detail in the dated entries below.
 
 2026-06-01 — Activated early (ahead of strict dep order) because TASK-227.1 proved bin-a is exhausted at 2 passes: the bulk of the umbrella's LOC payoff sits behind bin-b kernel infra. Groundwork already landed under .1 (commit 74215eb3): Buffer-resource type + external-resource-import in the graph schema/loader/serializer + GPUBufferResourceService::Find.
 
@@ -246,5 +248,12 @@ NEXT (separate phase — NOT done): migrate MORE passes from _Archive back into 
 - JSON: +"TAA Pass Result" (PingPong), +"Post-TAA Pass Result" (deferred RT), +"OpaquePass_RT_3" (zeroed orphan motion-vector placeholder, mirrors RT_0/1 — becomes writer-owned once OpaquePass migrates). +TAAPass + PostTAAPass nodes; FinalBlend input repointed Pre-TAA → Post-TAA. New present chain: PreTAA → TAA → PostTAA → FinalBlend (22 resources / 11 passes). Shaders TAAPass.comp/postTAAPass.comp unchanged (already compiled).
 - Verified: BuildWin + TestSuite exit 0; TestGIScene (non-GBV) exit 0, GISponza loaded + auto-terminated, 0 D3D12 errors, MAE 0.103 (unchanged — motion is a zeroed orphan so TAA degenerates to a history/current blend with no reprojection, PostTAA is pass-through; correct given no GBuffer); GBV ran to the LAST pass with NO new errors from the ping-pong textures (cross-frame parity barriers are clean because TryToTransitState ignores the From hint and uses actual per-physical-texture/per-frameIndex state) — only the pre-existing TASK-163 FinalBlend present-target barrier remains; RenderGraph unit 9/9 incl ping-pong round-trip. Peer-reviewed PASS (3 optional advisories, non-blocking).
 - NEXT: SSRC chain (clean-reuse, audited) and/or the OpaquePass raster/multi-RT primitive (foundational; needs RT-output + depth + indirect-draw + root-constants across Desc/Serializer/Service/Recorder; populates the real GBuffer + motion vector, retiring the OpaquePass_RT_0/1/3 orphans; invisible until LightPass). LightPass blocked on SSRC GI + raytracing. [task-stays-open]
+
+2026-06-12 — RASTER/MULTI-RT PRIMITIVE + OpaquePass migrated (commit 0b507daf, peer-reviewed ADVISORY — no blocking issues). First graphics-queue node in the graph. OpaquePass draws into a 4-RT + depth OutputMergerTarget via ExecuteIndirect (args = OpaqueCullingPass/IndirectDrawCommandBuffer); the engine auto-creates OpaquePass_RT_0..3 + _DS, which downstream SSAO (RT_0/1) and TAA (RT_3) resolve by name — the 3 zeroed-orphan RT resources were removed from JSON. Graph: 19 resources / 12 passes.
+- NEW PRIMITIVE (additive, data-driven): BindingDesc.m_IsRootConstant + m_SubresourceCount (root-signature slot whose value rides the indirect command signature per draw; DX12 BindGPUResource no-ops it, recorder skips it). PassNodeDesc.m_Raster (RasterDesc: RT count, depth buffer, indirect draw, depth-stencil + cull state, CrossQueueExit::ToCommon, indirect-args buffer name). CreatePassNode raster branch configures a graphics OutputMerger pass (RT format/size = engine default, screen-sized, matching imperative). RenderGraphPassRecorder raster body: ClearRenderTargets → bind non-root-constant resources (empty name "" = intentional null bind for the bindless texture slot t3) → ExecuteIndirect. Submit executes the GRAPHICS CL for graphics-queue nodes (was hardcoded to compute CL). VS/PS shader paths + raster block round-trip through the serializer; new RenderGraphSerializerTests_Raster unit test.
+- Dynamic per-frame resolution added for PerFrameCBufferPrev (GetPreviousFrameBuffer) + TransformBuffer (GetCurrentFrameTransformBuffer) — both parity-double-buffered like the existing PerFrameCBuffer special-case; import-by-name would pin the wrong parity.
+- Verified invariants: DX12 root-sig param visibility defaults to ALL (m_ShaderStage does NOT gate it), and BindGPUResource ignores the stage arg — so the binding ShaderStage is documentation-only. ExecuteIndirect emits its own indirect-arg barrier; PostCLState=ToCommon emits the RT→COMMON barrier at CommandListEnd.
+- Verified: BuildWin exit 0 (Main+RenderTest+TestSuite); TestSuite 113/113 incl new raster round-trip; non-GBV TestGIScene exit 0, GISponza loaded + auto-terminated, 0 D3D12 errors, MAE 0.103 (UNCHANGED — present FinalBlend chain still reads the zeroed LightPass luminance; the real GBuffer/motion feed SSAO + TAA-reprojection whose visible effect waits on LightPass); GBV -gpu_validation loads 19 res/12 passes, OpaquePass graphics CL records + ExecuteIndirect with no GBV error (only the standard indirect "Shader Patch Mode NONE" undervalidation warning); sole fatal GBV residual is the pre-existing TASK-163 FinalBlend present-target barrier. Peer review ADVISORY: 2 shader-stage findings, both non-defects (DX12 visibility=ALL + stage-arg-ignored, runtime-confirmed).
+- NEXT: raytracing primitive (TLAS/RayQuery/shader tables) — unblocks SunShadowRT and a returning LightPass (which would light the new GBuffer = first visible payoff). The SSRC chain is NOT clean-reuse (see anchor). [task-stays-open]
 
 <!-- SECTION:NOTES:END -->
