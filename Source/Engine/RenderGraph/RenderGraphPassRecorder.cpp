@@ -63,6 +63,43 @@ namespace
 		}
 		return nullptr;
 	}
+
+	// Raster body: a graphics-queue node draws into its OutputMergerTarget via
+	// ExecuteIndirect. Clears the targets, binds the shared resources (skipping
+	// root-constant slots, whose value rides the indirect command signature), then
+	// issues the indirect draw. The RT->COMMON exit and indirect-arg barriers are
+	// emitted by the engine (PostCLState / ExecuteIndirect), not here.
+	bool RecordRasterPass(const RenderGraphPassContext& ctx, FrameManagementService* l_fmService)
+	{
+		if (!ctx.m_IndirectArgs)
+		{
+			Log(Warning, "RecordPass [", ctx.m_Node->m_Name.c_str(), "]: raster node missing indirect-args buffer.");
+			return false;
+		}
+		if (ctx.m_BoundResources.size() != ctx.m_Node->m_Bindings.size())
+		{
+			Log(Warning, "RecordPass [", ctx.m_Node->m_Name.c_str(), "]: bound-resource count ",
+				ctx.m_BoundResources.size(), " != binding count ", ctx.m_Node->m_Bindings.size(), ".");
+			return false;
+		}
+
+		l_fmService->CommandListBegin(ctx.m_RenderPass, ctx.m_CommandList, 0);
+		l_fmService->BindRenderPassComponent(ctx.m_RenderPass, ctx.m_CommandList);
+		l_fmService->ClearRenderTargets(ctx.m_RenderPass, ctx.m_CommandList);
+
+		for (size_t i = 0; i < ctx.m_Node->m_Bindings.size(); i++)
+		{
+			if (ctx.m_Node->m_Bindings[i].m_IsRootConstant)
+				continue;
+			l_fmService->BindGPUResource(ctx.m_RenderPass, ctx.m_CommandList,
+				ctx.m_Node->m_Bindings[i].m_ShaderStage, ctx.m_BoundResources[i], i);
+		}
+
+		l_fmService->ExecuteIndirect(ctx.m_RenderPass, ctx.m_CommandList,
+			static_cast<GPUBufferComponent*>(ctx.m_IndirectArgs));
+		l_fmService->CommandListEnd(ctx.m_RenderPass, ctx.m_CommandList);
+		return true;
+	}
 }
 
 bool Inno::RecordPass(RenderGraphPassContext& ctx)
@@ -78,6 +115,9 @@ bool Inno::RecordPass(RenderGraphPassContext& ctx)
 		Log(Warning, "RecordPass rejected for [", ctx.m_Node->m_Name.c_str(), "]: RenderPass not Activated.");
 		return false;
 	}
+
+	if (ctx.m_Node->m_Raster.m_Enabled)
+		return RecordRasterPass(ctx, g_Engine->Get<FrameManagementService>());
 
 	uint32_t l_x = ctx.m_Node->m_Dispatch.m_X;
 	uint32_t l_y = ctx.m_Node->m_Dispatch.m_Y;

@@ -41,6 +41,17 @@ namespace Inno
 	{
 		auto l_graph = g_Engine->Get<RenderGraphService>();
 
+		// OpaquePass imports a single Repeat-wrap sampler by name (the imperative
+		// pass created it in Setup); the graph binds it as the pass's s0.
+		l_graph->RegisterInitHook("OpaquePass", []()
+		{
+			auto l_samplerService = g_Engine->Get<SamplerResourceService>();
+			auto l_sampler = l_samplerService->Add("OpaquePass");
+			l_sampler->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
+			l_sampler->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
+			l_samplerService->Initialize(l_sampler);
+		});
+
 		// SSAONoisePass imports a sample kernel (hemisphere distribution), a 4x4
 		// random-rotation noise texture, and two samplers — all by name. Created +
 		// filled once after the graph loads.

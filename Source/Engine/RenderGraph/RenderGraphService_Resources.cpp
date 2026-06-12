@@ -6,6 +6,7 @@
 #include "../Services/GPUBufferResourceService.h"
 #include "../Services/SamplerResourceService.h"
 #include "../Services/PerFrameDataService.h"
+#include "../Services/DrawCallService.h"
 #include "../Services/FrameManagementService.h"
 
 using namespace Inno;
@@ -17,6 +18,11 @@ namespace
 	// this name through that accessor every RecordNode rather than pinning one handle
 	// via static import-by-name (which would go stale every other frame).
 	const char* const g_PerFrameCBufferName = "PerFrameCBuffer";
+	// Both double-buffered like PerFrameCBuffer: the prev-frame per-frame CBuffer
+	// and the current-frame transform CBuffer alternate by frame-parity, so they
+	// must re-resolve through their accessor each frame, never pin by name.
+	const char* const g_PerFrameCBufferPrevName = "PerFrameCBufferPrev";
+	const char* const g_TransformBufferName = "TransformBuffer";
 }
 
 GPUResourceComponent* RenderGraphService::FindResource(const std::string& name)
@@ -26,6 +32,10 @@ GPUResourceComponent* RenderGraphService::FindResource(const std::string& name)
 	// handle without per-pass C++.
 	if (name == g_PerFrameCBufferName)
 		return g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
+	if (name == g_PerFrameCBufferPrevName)
+		return g_Engine->Get<PerFrameDataService>()->GetPreviousFrameBuffer();
+	if (name == g_TransformBufferName)
+		return g_Engine->Get<DrawCallService>()->GetCurrentFrameTransformBuffer();
 
 	// A plain read of a ping-pong name resolves to the current-frame output
 	// (parity with the imperative pass's GetResult()).

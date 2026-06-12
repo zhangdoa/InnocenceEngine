@@ -273,6 +273,10 @@ extern void TestTiledFrustumNodeRoundTrip();
 // lives in RenderGraphSerializerTests_PingPong.cpp.
 extern void TestPingPongNodeRoundTrip();
 
+// Raster fixture (graphics-queue node: VS/PS shader paths + root-constant binding
+// + raster pipeline block) lives in RenderGraphSerializerTests_Raster.cpp.
+extern void TestRasterNodeRoundTrip();
+
 void RunRenderGraphSerializerUnitTests()
 {
 	TestRunner::StartTestSuite("RenderGraphSerializer");
@@ -285,5 +289,6 @@ void RunRenderGraphSerializerUnitTests()
 	TestSSAONodeRoundTrip();
 	TestTiledFrustumNodeRoundTrip();
 	TestPingPongNodeRoundTrip();
+	TestRasterNodeRoundTrip();
 	TestRunner::EndTestSuite();
 }

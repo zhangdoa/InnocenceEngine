@@ -17,6 +17,9 @@ namespace Inno
 		CommandListComponent* m_CommandList_Graphics = nullptr;
 		// 1:1 with m_Node->m_Bindings — the live resource for each binding slot.
 		Inno::Array<GPUResourceComponent*> m_BoundResources;
+		// Raster-only: the indirect draw-args buffer passed to ExecuteIndirect
+		// (resolved from m_Raster.m_IndirectArgsBuffer). Null for compute nodes.
+		GPUResourceComponent* m_IndirectArgs = nullptr;
 	};
 
 	// Records a node's command list entirely from its data — no per-pass code.

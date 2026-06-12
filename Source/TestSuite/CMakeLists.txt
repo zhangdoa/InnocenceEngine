@@ -23,6 +23,7 @@ set(TEST_SOURCES
     UnitTests/RenderGraphSerializerTests_SSAO.cpp
     UnitTests/RenderGraphSerializerTests_TiledFrustum.cpp
     UnitTests/RenderGraphSerializerTests_PingPong.cpp
+    UnitTests/RenderGraphSerializerTests_Raster.cpp
     # Performance tests
     PerformanceTests/StringConversionPerf.cpp
     PerformanceTests/ContainerPerf.cpp

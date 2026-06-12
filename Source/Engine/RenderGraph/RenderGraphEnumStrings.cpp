@@ -91,6 +91,12 @@ namespace
 	const std::vector<Row<DispatchMode>> g_DispatchMode = {
 		{ DispatchMode::Static, "Static" }, { DispatchMode::ScreenTile, "ScreenTile" },
 		{ DispatchMode::TiledTwoLevel, "TiledTwoLevel" }, { DispatchMode::DrawModelGroups, "DrawModelGroups" } };
+
+	const std::vector<Row<ComparisionFunction>> g_ComparisionFunction = {
+		{ ComparisionFunction::Never, "Never" }, { ComparisionFunction::Less, "Less" },
+		{ ComparisionFunction::Equal, "Equal" }, { ComparisionFunction::LessEqual, "LessEqual" },
+		{ ComparisionFunction::Greater, "Greater" }, { ComparisionFunction::NotEqual, "NotEqual" },
+		{ ComparisionFunction::GreaterEqual, "GreaterEqual" }, { ComparisionFunction::Always, "Always" } };
 }
 
 namespace Inno
@@ -144,5 +150,8 @@ namespace Inno
 
 		std::string ToString(DispatchMode v) { return ToStringImpl(v, g_DispatchMode, "Static"); }
 		DispatchMode DispatchModeFromString(const std::string& s) { return FromStringImpl(s, g_DispatchMode, DispatchMode::Static); }
+
+		std::string ToString(ComparisionFunction v) { return ToStringImpl(v, g_ComparisionFunction, "Never"); }
+		ComparisionFunction ComparisionFunctionFromString(const std::string& s) { return FromStringImpl(s, g_ComparisionFunction, ComparisionFunction::Never); }
 	}
 }

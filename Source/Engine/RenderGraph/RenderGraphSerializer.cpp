@@ -88,6 +88,10 @@ namespace
 			{ "TextureUsage", ES::ToString(b.m_TextureUsage) }, { "Stage", ES::ToString(b.m_ShaderStage) } };
 		if (b.m_PingPongHistory)
 			j["PingPongHistory"] = true;
+		if (b.m_IsRootConstant)
+			j["RootConstant"] = true;
+		if (b.m_SubresourceCount != 1)
+			j["SubresourceCount"] = b.m_SubresourceCount;
 		return j;
 	}
 
@@ -102,6 +106,8 @@ namespace
 		b.m_TextureUsage = ES::TextureUsageFromString(j.value("TextureUsage", std::string("Invalid")));
 		b.m_ShaderStage = ES::ShaderStageFromString(j.value("Stage", std::string("Invalid")));
 		b.m_PingPongHistory = j.value("PingPongHistory", false);
+		b.m_IsRootConstant = j.value("RootConstant", false);
+		b.m_SubresourceCount = j.value("SubresourceCount", 1u);
 	}
 
 	json TransitionToJson(const TransitionDesc& t)
@@ -131,10 +137,15 @@ namespace
 		for (const auto& w : p.m_Writes) writes.push_back(w);
 		json bindings = json::array();
 		for (const auto& b : p.m_Bindings) bindings.push_back(BindingToJson(b));
+		json shader = json::object();
+		if (p.m_ShaderFilePaths.m_VSPath.c_str()[0]) shader["VS"] = p.m_ShaderFilePaths.m_VSPath.c_str();
+		if (p.m_ShaderFilePaths.m_PSPath.c_str()[0]) shader["PS"] = p.m_ShaderFilePaths.m_PSPath.c_str();
+		if (p.m_ShaderFilePaths.m_CSPath.c_str()[0]) shader["CS"] = p.m_ShaderFilePaths.m_CSPath.c_str();
+
 
 		json j = json{
 			{ "Name", p.m_Name }, { "Queue", ES::ToString(p.m_Queue) },
-			{ "Shader", { { "CS", p.m_ShaderFilePaths.m_CSPath.c_str() } } },
+			{ "Shader", shader },
 			{ "Reads", reads }, { "Writes", writes }, { "Bindings", bindings },
 			{ "Dispatch", { { "Mode", ES::ToString(p.m_Dispatch.m_Mode) },
 				{ "X", p.m_Dispatch.m_X }, { "Y", p.m_Dispatch.m_Y }, { "Z", p.m_Dispatch.m_Z },
@@ -149,6 +160,20 @@ namespace
 			for (const auto& t : p.m_Transitions) transitions.push_back(TransitionToJson(t));
 			j["Transitions"] = transitions;
 		}
+		if (p.m_Raster.m_Enabled)
+		{
+			j["Raster"] = json{
+				{ "RenderTargetCount", p.m_Raster.m_RenderTargetCount },
+				{ "UseDepthBuffer", p.m_Raster.m_UseDepthBuffer },
+				{ "IndirectDraw", p.m_Raster.m_IndirectDraw },
+				{ "DepthEnable", p.m_Raster.m_DepthEnable },
+				{ "DepthWrite", p.m_Raster.m_DepthWrite },
+				{ "DepthCompare", ES::ToString(p.m_Raster.m_DepthCompare) },
+				{ "DepthClamp", p.m_Raster.m_DepthClamp },
+				{ "UseCulling", p.m_Raster.m_UseCulling },
+				{ "CrossQueueExitToCommon", p.m_Raster.m_CrossQueueExitToCommon },
+				{ "IndirectArgsBuffer", p.m_Raster.m_IndirectArgsBuffer } };
+		}
 		return j;
 	}
 
@@ -157,7 +182,11 @@ namespace
 		p.m_Name = j.value("Name", std::string());
 		p.m_Queue = ES::GPUEngineTypeFromString(j.value("Queue", std::string("Compute")));
 		if (j.contains("Shader"))
+		{
+			p.m_ShaderFilePaths.m_VSPath = j["Shader"].value("VS", std::string()).c_str();
+			p.m_ShaderFilePaths.m_PSPath = j["Shader"].value("PS", std::string()).c_str();
 			p.m_ShaderFilePaths.m_CSPath = j["Shader"].value("CS", std::string()).c_str();
+		}
 		if (j.contains("Reads"))
 			for (const auto& r : j["Reads"]) p.m_Reads.push_back(r.get<std::string>());
 		if (j.contains("Writes"))
@@ -178,6 +207,21 @@ namespace
 		{
 			p.m_BypassEnabled = j["Bypass"].value("Enabled", false);
 			p.m_ClearOnBypass = j["Bypass"].value("ClearOnBypass", false);
+		}
+		if (j.contains("Raster"))
+		{
+			const auto& rj = j["Raster"];
+			p.m_Raster.m_Enabled = true;
+			p.m_Raster.m_RenderTargetCount = rj.value("RenderTargetCount", 0u);
+			p.m_Raster.m_UseDepthBuffer = rj.value("UseDepthBuffer", false);
+			p.m_Raster.m_IndirectDraw = rj.value("IndirectDraw", false);
+			p.m_Raster.m_DepthEnable = rj.value("DepthEnable", false);
+			p.m_Raster.m_DepthWrite = rj.value("DepthWrite", false);
+			p.m_Raster.m_DepthCompare = ES::ComparisionFunctionFromString(rj.value("DepthCompare", std::string("Never")));
+			p.m_Raster.m_DepthClamp = rj.value("DepthClamp", false);
+			p.m_Raster.m_UseCulling = rj.value("UseCulling", false);
+			p.m_Raster.m_CrossQueueExitToCommon = rj.value("CrossQueueExitToCommon", false);
+			p.m_Raster.m_IndirectArgsBuffer = rj.value("IndirectArgsBuffer", std::string());
 		}
 		p.m_TrackWriteState = j.value("TrackWriteState", false);
 		p.m_OneShot = j.value("OneShot", false);

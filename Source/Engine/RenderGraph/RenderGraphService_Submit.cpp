@@ -72,7 +72,12 @@ bool RenderGraphService::Render()
 			l_hw->WaitOnGPU(l_node->m_RenderPass, l_queue, GPUEngineType::Graphics);
 		}
 
-		l_hw->Execute(l_node->m_CommandList_Compute, l_queue);
+		// Body CL is the node's own queue: a graphics-queue node (raster) records
+		// into the graphics CL; compute nodes into the compute CL. (A compute node's
+		// optional transition prepass above is the only other graphics-CL use.)
+		auto* l_bodyCL = (l_queue == GPUEngineType::Graphics)
+			? l_node->m_CommandList_Graphics : l_node->m_CommandList_Compute;
+		l_hw->Execute(l_bodyCL, l_queue);
 		l_hw->SignalOnGPU(l_node->m_RenderPass, l_queue);
 
 		if (l_desc.m_OneShot)

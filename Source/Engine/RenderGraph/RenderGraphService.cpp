@@ -79,6 +79,27 @@ bool RenderGraphService::CreatePassNode(const PassNodeDesc& desc)
 	l_renderPassDesc.m_GPUEngineType = desc.m_Queue;
 	l_renderPassDesc.m_Resizable = false;
 
+	// A raster node draws into an OutputMergerTarget via ExecuteIndirect instead of
+	// a compute Dispatch. The engine auto-creates "<Node>_RT_<i>" + "<Node>_DS" from
+	// m_RenderTargetCount; downstream nodes read those by name. RT format/size stays
+	// at the engine default (screen-sized), matching the imperative pass.
+	if (desc.m_Raster.m_Enabled)
+	{
+		l_renderPassDesc.m_RenderTargetCount = desc.m_Raster.m_RenderTargetCount;
+		l_renderPassDesc.m_UseDepthBuffer = desc.m_Raster.m_UseDepthBuffer;
+		l_renderPassDesc.m_IndirectDraw = desc.m_Raster.m_IndirectDraw;
+		l_renderPassDesc.m_UseOutputMerger = true;
+		l_renderPassDesc.m_Resizable = true;
+		l_renderPassDesc.m_PostCLState = desc.m_Raster.m_CrossQueueExitToCommon
+			? CrossQueueExit::ToCommon : CrossQueueExit::None;
+		auto& l_pipeline = l_renderPassDesc.m_GraphicsPipelineDesc;
+		l_pipeline.m_DepthStencilDesc.m_DepthEnable = desc.m_Raster.m_DepthEnable;
+		l_pipeline.m_DepthStencilDesc.m_AllowDepthWrite = desc.m_Raster.m_DepthWrite;
+		l_pipeline.m_DepthStencilDesc.m_DepthComparisionFunction = desc.m_Raster.m_DepthCompare;
+		l_pipeline.m_DepthStencilDesc.m_AllowDepthClamp = desc.m_Raster.m_DepthClamp;
+		l_pipeline.m_RasterizerDesc.m_UseCulling = desc.m_Raster.m_UseCulling;
+	}
+
 	// A screen-sized write makes this node own a deferred RT: hand the engine an
 	// RT-init-func that (re)creates that texture at current screen resolution, and
 	// mark the pass resizable so PostResize re-invokes it (parity with the
@@ -120,6 +141,8 @@ bool RenderGraphService::CreatePassNode(const PassNodeDesc& desc)
 		l_layout.m_ResourceAccessibility = l_binding.m_ResourceAccessibility;
 		l_layout.m_TextureUsage = l_binding.m_TextureUsage;
 		l_layout.m_ShaderStage = l_binding.m_ShaderStage;
+		l_layout.m_IsRootConstant = l_binding.m_IsRootConstant;
+		l_layout.m_SubresourceCount = l_binding.m_SubresourceCount;
 	}
 
 	l_renderPass->m_ShaderProgram = l_node->m_ShaderProgram;
@@ -178,9 +201,20 @@ bool RenderGraphService::RecordNode(RenderGraphPassNode* node)
 
 	l_ctx.m_BoundResources.reserve(node->m_Desc.m_Bindings.size());
 	for (const auto& l_binding : node->m_Desc.m_Bindings)
-		l_ctx.m_BoundResources.push_back(l_binding.m_PingPongHistory
-			? PingPongTexture(l_binding.m_Resource, true)
-			: FindResource(l_binding.m_Resource));
+	{
+		// Root-constant slots carry no resource (the indirect command signature
+		// supplies the value per draw); an empty name is an intentional null bind
+		// (e.g. a bindless texture slot). Push null; the recorder skips/null-binds.
+		if (l_binding.m_IsRootConstant || l_binding.m_Resource.empty())
+			l_ctx.m_BoundResources.push_back(nullptr);
+		else
+			l_ctx.m_BoundResources.push_back(l_binding.m_PingPongHistory
+				? PingPongTexture(l_binding.m_Resource, true)
+				: FindResource(l_binding.m_Resource));
+	}
+
+	if (node->m_Desc.m_Raster.m_Enabled && !node->m_Desc.m_Raster.m_IndirectArgsBuffer.empty())
+		l_ctx.m_IndirectArgs = FindResource(node->m_Desc.m_Raster.m_IndirectArgsBuffer);
 
 	return RecordPass(l_ctx);
 }

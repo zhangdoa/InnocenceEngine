@@ -114,45 +114,6 @@
             "Lifetime": "Persistent"
         },
         {
-            "Name": "OpaquePass_RT_0",
-            "Type": "Texture",
-            "Size": "screen",
-            "DepthOrArraySize": 1,
-            "MipLevels": 1,
-            "Sampler": "Sampler2D",
-            "Usage": "ComputeOnly",
-            "PixelDataType": "Float16",
-            "PixelDataFormat": "RGBA",
-            "GPUAccessibility": "ReadWrite",
-            "Lifetime": "Persistent"
-        },
-        {
-            "Name": "OpaquePass_RT_1",
-            "Type": "Texture",
-            "Size": "screen",
-            "DepthOrArraySize": 1,
-            "MipLevels": 1,
-            "Sampler": "Sampler2D",
-            "Usage": "ComputeOnly",
-            "PixelDataType": "Float16",
-            "PixelDataFormat": "RGBA",
-            "GPUAccessibility": "ReadWrite",
-            "Lifetime": "Persistent"
-        },
-        {
-            "Name": "OpaquePass_RT_3",
-            "Type": "Texture",
-            "Size": "screen",
-            "DepthOrArraySize": 1,
-            "MipLevels": 1,
-            "Sampler": "Sampler2D",
-            "Usage": "ComputeOnly",
-            "PixelDataType": "Float16",
-            "PixelDataFormat": "RGBA",
-            "GPUAccessibility": "ReadWrite",
-            "Lifetime": "Persistent"
-        },
-        {
             "Name": "TAA Pass Result",
             "Type": "Texture",
             "Size": "screen",
@@ -399,6 +360,38 @@
             "TrackWriteState": true,
             "Bypass": { "Enabled": false, "ClearOnBypass": false },
             "OneShot": false
+        },
+        {
+            "Name": "OpaquePass",
+            "Queue": "Graphics",
+            "Shader": { "VS": "opaqueGeometryProcessPass.vert", "PS": "opaqueGeometryProcessPass.frag" },
+            "Reads": [ "OpaqueCullingPass/IndirectDrawCommandBuffer", "PerFrameCBuffer", "PerFrameCBufferPrev", "TransformBuffer", "GPUModelDataBuffer", "MaterialCBuffer" ],
+            "Writes": [ "OpaquePass_RT_0", "OpaquePass_RT_1", "OpaquePass_RT_2", "OpaquePass_RT_3" ],
+            "Bindings": [
+                { "Resource": "", "Type": "Buffer", "Set": 0, "Index": 0, "RootConstant": true, "SubresourceCount": 2, "Stage": "Vertex" },
+                { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 1, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Vertex" },
+                { "Resource": "PerFrameCBufferPrev", "Type": "Buffer", "Set": 0, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Pixel" },
+                { "Resource": "TransformBuffer", "Type": "Buffer", "Set": 1, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "Stage": "Vertex" },
+                { "Resource": "GPUModelDataBuffer", "Type": "Buffer", "Set": 1, "Index": 1, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "Stage": "Pixel" },
+                { "Resource": "MaterialCBuffer", "Type": "Buffer", "Set": 1, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "Stage": "Pixel" },
+                { "Resource": "", "Type": "Image", "Set": 1, "Index": 3, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "Sample", "Stage": "Pixel" },
+                { "Resource": "OpaquePass", "Type": "Sampler", "Set": 2, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Pixel" }
+            ],
+            "Dispatch": { "Mode": "Static", "X": 1, "Y": 1, "Z": 1, "TileSize": 0 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false,
+            "Raster": {
+                "RenderTargetCount": 4,
+                "UseDepthBuffer": true,
+                "IndirectDraw": true,
+                "DepthEnable": true,
+                "DepthWrite": true,
+                "DepthCompare": "LessEqual",
+                "DepthClamp": true,
+                "UseCulling": true,
+                "CrossQueueExitToCommon": true,
+                "IndirectArgsBuffer": "OpaqueCullingPass/IndirectDrawCommandBuffer"
+            }
         },
         {
             "Name": "PreTAAPass",

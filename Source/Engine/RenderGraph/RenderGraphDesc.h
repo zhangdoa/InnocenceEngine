@@ -64,6 +64,11 @@ namespace Inno
 		// m_Resource — the previous frame's output the node reads back. Plain
 		// (false) bindings of a ping-pong name get the current-parity texture.
 		bool m_PingPongHistory = false;
+		// A root-constant binding occupies a root-signature slot but carries no
+		// resource handle (the indirect command signature supplies its value per
+		// draw). m_SubresourceCount = the constant count. Recording skips it.
+		bool m_IsRootConstant = false;
+		uint32_t m_SubresourceCount = 1;
 	};
 
 	// An ordered render-target state transition recorded on the graphics queue
@@ -94,6 +99,29 @@ namespace Inno
 		DispatchMode m_Mode = DispatchMode::Static;
 		uint32_t m_TileSize = 0;
 	};
+	// Raster pipeline state as data: a graphics-queue node that draws into an
+	// OutputMergerTarget (the engine auto-creates "<Node>_RT_<i>" + "<Node>_DS")
+	// via ExecuteIndirect, instead of a compute Dispatch. Absent (m_Enabled false)
+	// keeps the node on the compute path. The render-target format/size comes from
+	// the engine default (screen-sized), matching the imperative pass.
+	struct RasterDesc
+	{
+		bool m_Enabled = false;
+		uint32_t m_RenderTargetCount = 0;
+		bool m_UseDepthBuffer = false;
+		bool m_IndirectDraw = false;
+		bool m_DepthEnable = false;
+		bool m_DepthWrite = false;
+		ComparisionFunction m_DepthCompare = ComparisionFunction::Never;
+		bool m_DepthClamp = false;
+		bool m_UseCulling = false;
+		// Emit the RENDER_TARGET -> COMMON barrier at the end of the pass CL so a
+		// different-queue consumer reads the outputs safely (CrossQueueExit::ToCommon).
+		bool m_CrossQueueExitToCommon = false;
+		// Resource name of the indirect draw-args buffer passed to ExecuteIndirect.
+		std::string m_IndirectArgsBuffer;
+	};
+
 
 	struct PassNodeDesc
 	{
@@ -111,6 +139,7 @@ namespace Inno
 		// Publish the first Writes resource's post-write state after recording so a
 		// downstream consumer emits the correct barrier (e.g. culling -> ExecuteIndirect).
 		bool m_TrackWriteState = false;
+		RasterDesc m_Raster = {};
 	};
 
 	struct RenderGraphDesc

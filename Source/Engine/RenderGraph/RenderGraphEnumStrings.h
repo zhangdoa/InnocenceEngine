@@ -45,5 +45,8 @@ namespace Inno
 
 		std::string ToString(DispatchMode v);
 		DispatchMode DispatchModeFromString(const std::string& s);
+
+		std::string ToString(ComparisionFunction v);
+		ComparisionFunction ComparisionFunctionFromString(const std::string& s);
 	}
 }
