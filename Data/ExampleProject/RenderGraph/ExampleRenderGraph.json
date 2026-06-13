@@ -394,6 +394,34 @@
             }
         },
         {
+            "Name": "LightPass",
+            "Queue": "Compute",
+            "Shader": { "CS": "lightPassSimple.comp" },
+            "Reads": [ "PerFrameCBuffer", "OpaquePass_RT_0", "OpaquePass_RT_1", "OpaquePass_RT_2", "BRDF LUT", "BRDF MS LUT" ],
+            "Writes": [ "LightPass Luminance Result" ],
+            "Bindings": [
+                { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
+                { "Resource": "OpaquePass_RT_0", "Type": "Image", "Set": 1, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "OpaquePass_RT_1", "Type": "Image", "Set": 1, "Index": 1, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "OpaquePass_RT_2", "Type": "Image", "Set": 1, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "BRDF LUT", "Type": "Image", "Set": 1, "Index": 3, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "BRDF MS LUT", "Type": "Image", "Set": 1, "Index": 4, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "LightPass", "Type": "Sampler", "Set": 2, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
+                { "Resource": "LightPass Luminance Result", "Type": "Image", "Set": 3, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" }
+            ],
+            "Transitions": [
+                { "Resource": "OpaquePass_RT_0", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "OpaquePass_RT_1", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "OpaquePass_RT_2", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "BRDF LUT", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "BRDF MS LUT", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "LightPass Luminance Result", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
             "Name": "PreTAAPass",
             "Queue": "Compute",
             "Shader": { "CS": "preTAAPass.comp" },
