@@ -55,7 +55,48 @@ no-images / no-new-md allowlists.
 
 Not hard-enforced under omp (session-model differences): the always-apply-skill check and the
 session-start briefing are convention via agent manifests; the old `agent-dispatch` gate is
-now `spawns` config; `no-auto-memory` was dropped (its venue is unused).
+
+## Logging discipline
+
+Logs are diagnostics, not narration. Two failure modes to avoid:
+
+- **Main-loop spam** — `Log()` in per-frame paths (render-graph `RecordPass`,
+  per-frame update hooks, hot services) floods the log, hides real signal, and
+  tanks log-search/grep performance. Logs at `Success`/`Info` level inside
+  per-frame loops are forbidden; they belong at `Verbose` (off by default).
+- **Silent one-shot failures** — init / setup / parse paths must surface
+  *every* failure at `Error` or `Warning`. If an init step can fail, log
+  the failure with the entity name. Defaulting to "return false" on the
+  happy path with no message is acceptable; on a failure path it's a bug.
+
+### Rules
+
+- `Log(Error|Warning)` for any failure path in setup / init / parse / one-shot
+  hooks — no silent `return false;` on a failure. Caller needs the entity
+  name + reason to diagnose.
+- `Log(Success|Info)` is reserved for non-repeating startup milestones
+  (e.g. "DX12 device created", "graph loaded with N passes"). Do not
+  log a success message every time a routine completes — that's
+  per-frame in disguise.
+- `Log(Verbose)` for per-pass or per-frame signals that are useful when
+  actively debugging but not for normal operation. Default off.
+- `Log(Success|Info)` inside a per-frame path (rendering, update,
+  draw, simulation tick) is a harness smell. If you need to confirm
+  flow during a debug session, gate it on a `-verbose` cmdline flag
+  or a hot-reloadable config, not a hardcoded `Log(Success, …)`.
+- **Diagnostic logs are not for committing.** A `Log(Success, "RecordPass start: …")`
+  you added to track a crash gets removed before the commit. The commit
+  message records the finding, the code carries the rule, the log stays
+  clean. Exception: a log that catches a real defect class with no
+  production-side cost (rare; document in the body).
+
+### Pre-commit check
+
+Before staging, grep your own diff for `Log(Success|Info)` and `Log(Verbose)` and
+ask: is this in a per-frame path? Is it firing once or N times? If N, demote
+to `Verbose` or delete. The harness will not block on log spam today, but a
+future gate will.
+
 
 ## Session start
 
