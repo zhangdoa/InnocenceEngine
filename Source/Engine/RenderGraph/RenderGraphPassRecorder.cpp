@@ -39,12 +39,17 @@ namespace
 			z = 1;
 			return;
 		}
-
 		auto l_vp = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 		if (d.m_Mode == DispatchMode::ScreenTile)
 		{
 			x = static_cast<uint32_t>(l_vp.x / static_cast<float>(d.m_TileSize));
 			y = static_cast<uint32_t>(l_vp.y / static_cast<float>(d.m_TileSize));
+		}
+		else if (d.m_Mode == DispatchMode::TiledDispatch)
+		{
+			uint32_t l_effTile = d.m_TileSize * d.m_DispatchScale;
+			x = (static_cast<uint32_t>(l_vp.x) + l_effTile - 1) / l_effTile;
+			y = (static_cast<uint32_t>(l_vp.y) + l_effTile - 1) / l_effTile;
 		}
 		else
 		{

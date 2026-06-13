@@ -280,7 +280,7 @@ extern void TestRasterNodeRoundTrip();
 // Raytracing fixture (compute-queue node: RT shader stages + TLAS binding +
 // DispatchRays) lives in RenderGraphSerializerTests_Raytracing.cpp.
 extern void TestRaytracingNodeRoundTrip();
-
+extern void RunRenderGraphSerializerTiledUnitTests();
 void RunRenderGraphSerializerUnitTests()
 {
 	TestRunner::StartTestSuite("RenderGraphSerializer");
@@ -295,5 +295,6 @@ void RunRenderGraphSerializerUnitTests()
 	TestPingPongNodeRoundTrip();
 	TestRasterNodeRoundTrip();
 	TestRaytracingNodeRoundTrip();
+	RunRenderGraphSerializerTiledUnitTests();
 	TestRunner::EndTestSuite();
 }

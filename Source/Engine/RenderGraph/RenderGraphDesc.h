@@ -32,9 +32,11 @@ namespace Inno
 		RenderGraphResourceLifetime m_Lifetime = RenderGraphResourceLifetime::Persistent;
 		// Screen-relative size as data: "screen" -> current screen resolution at
 		// creation, recreated on resize via the owning pass's RT init-func. Empty =
-		// fixed Width/Height. Only the literal "screen" is recognized today; finer
-		// expressions ("screen/2") slot in here when a pass needs one.
+		// fixed Width/Height. "tiled" / "tiledArray" derive extent from m_TileSize
+		// (and m_TileArraySize) at runtime via the writer node's RT init-func.
 		std::string m_SizeExpr;
+		uint32_t m_TileSize = 8;
+		uint32_t m_TileArraySize = 3;
 		// A resource produced by a still-imperative pass: not created/owned by the
 		// graph; resolved at bind time to the live engine resource by name via the
 		// matching *ResourceService. Reads naming a resource absent from the graph's
@@ -87,14 +89,9 @@ namespace Inno
 		bool m_PingPongHistory = false;
 	};
 
-	// How the dispatch thread-group count is derived. Static uses the literal
-	// X/Y/Z; ScreenTile floors viewport/m_TileSize; TiledTwoLevel applies the
-	// light-culling floor-then-ceil reduction; DrawModelGroups packs the live
-	// draw-model count into groups of m_TileSize. A dispatch variant is data,
-	// not a code path.
-	// DispatchRays issues a raytracing dispatch sized to the screen resolution
-	// (x=width, y=height, z=1); the engine skips it until the TLAS is ready.
-	enum class DispatchMode { Static, ScreenTile, TiledTwoLevel, DrawModelGroups, DispatchRays };
+	// TiledDispatch ceils viewport / (m_TileSize * m_DispatchScale); a coarser
+	// grid when m_DispatchScale > 1.
+	enum class DispatchMode { Static, ScreenTile, TiledTwoLevel, DrawModelGroups, DispatchRays, TiledDispatch };
 
 	struct DispatchDesc
 	{
@@ -103,6 +100,7 @@ namespace Inno
 		uint32_t m_Z = 1;
 		DispatchMode m_Mode = DispatchMode::Static;
 		uint32_t m_TileSize = 0;
+		uint32_t m_DispatchScale = 1;
 	};
 	// Raster pipeline state as data: a graphics-queue node that draws into an
 	// OutputMergerTarget (the engine auto-creates "<Node>_RT_<i>" + "<Node>_DS")

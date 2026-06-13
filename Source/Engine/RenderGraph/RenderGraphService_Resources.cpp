@@ -99,12 +99,19 @@ bool RenderGraphService::CreateResource(const ResourceDesc& desc)
 		return true;
 	}
 
-	// Screen-sized textures are (re)created by the writer node's RT-init-func at
-	// Initialize + resize, never eagerly here — defer until CreatePassNode wires
-	// that hook (so resize flows through the engine's PostResize loop).
 	if (desc.m_SizeExpr == "screen")
 	{
 		m_DeferredScreenTextures[desc.m_Name] = desc;
+		return true;
+	}
+	if (desc.m_SizeExpr == "tiled")
+	{
+		m_DeferredTiledTextures[desc.m_Name] = desc;
+		return true;
+	}
+	if (desc.m_SizeExpr == "tiledArray")
+	{
+		m_DeferredTiledArrayTextures[desc.m_Name] = desc;
 		return true;
 	}
 
@@ -124,6 +131,31 @@ bool RenderGraphService::CreateResource(const ResourceDesc& desc)
 
 bool RenderGraphService::CreateScreenSizedTexture(const ResourceDesc& desc)
 {
+	auto l_res = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+	return CreateSizedTexture(desc, l_res.x, l_res.y);
+}
+
+bool RenderGraphService::CreateTiledTexture(const ResourceDesc& desc)
+{
+	auto l_res = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+	uint32_t l_T = desc.m_TileSize == 0 ? 8u : desc.m_TileSize;
+	uint32_t l_w = (static_cast<uint32_t>(l_res.x) + l_T - 1) / l_T;
+	uint32_t l_h = (static_cast<uint32_t>(l_res.y) + l_T - 1) / l_T;
+	return CreateSizedTexture(desc, l_w, l_h);
+}
+
+bool RenderGraphService::CreateTiledArrayTexture(const ResourceDesc& desc)
+{
+	auto l_res = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+	uint32_t l_T = desc.m_TileSize == 0 ? 8u : desc.m_TileSize;
+	uint32_t l_S = desc.m_TileArraySize == 0 ? 3u : desc.m_TileArraySize;
+	uint32_t l_w = ((static_cast<uint32_t>(l_res.x) + l_T - 1) / l_T) * l_S;
+	uint32_t l_h = ((static_cast<uint32_t>(l_res.y) + l_T - 1) / l_T) * l_S;
+	return CreateSizedTexture(desc, l_w, l_h);
+}
+
+bool RenderGraphService::CreateSizedTexture(const ResourceDesc& desc, uint32_t width, uint32_t height)
+{
 	auto l_textureService = g_Engine->Get<TextureResourceService>();
 
 	// Ping-pong: (re)create BOTH parity textures. The logical name stays out of
@@ -131,7 +163,6 @@ bool RenderGraphService::CreateScreenSizedTexture(const ResourceDesc& desc)
 	// resize can delete them and a physical-name lookup still works.
 	if (desc.m_PingPong)
 	{
-		auto l_res = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 		auto l_make = [&](const std::string& physName) -> TextureComponent*
 		{
 			auto l_prior = m_Resources.find(physName);
@@ -144,8 +175,8 @@ bool RenderGraphService::CreateScreenSizedTexture(const ResourceDesc& desc)
 				return nullptr;
 			}
 			l_tex->m_TextureDesc = desc.m_TextureDesc;
-			l_tex->m_TextureDesc.Width = l_res.x;
-			l_tex->m_TextureDesc.Height = l_res.y;
+			l_tex->m_TextureDesc.Width = width;
+			l_tex->m_TextureDesc.Height = height;
 			l_textureService->Initialize(l_tex);
 			m_Resources[physName] = l_tex;
 			return l_tex;
@@ -163,18 +194,16 @@ bool RenderGraphService::CreateScreenSizedTexture(const ResourceDesc& desc)
 	if (it != m_Resources.end() && it->second)
 		l_textureService->Delete(static_cast<TextureComponent*>(it->second));
 
-	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-
 	auto l_texture = l_textureService->Add(desc.m_Name.c_str());
 	if (!l_texture)
 	{
-		Log(Error, "RenderGraphService: failed to Add screen-sized texture [", desc.m_Name.c_str(), "].");
+		Log(Error, "RenderGraphService: failed to Add texture [", desc.m_Name.c_str(), "].");
 		return false;
 	}
 
 	l_texture->m_TextureDesc = desc.m_TextureDesc;
-	l_texture->m_TextureDesc.Width = l_screenResolution.x;
-	l_texture->m_TextureDesc.Height = l_screenResolution.y;
+	l_texture->m_TextureDesc.Width = width;
+	l_texture->m_TextureDesc.Height = height;
 
 	l_textureService->Initialize(l_texture);
 
@@ -182,7 +211,7 @@ bool RenderGraphService::CreateScreenSizedTexture(const ResourceDesc& desc)
 	return true;
 }
 
-TextureComponent* RenderGraphService::PingPongTexture(const std::string& name, bool history)
+	TextureComponent* RenderGraphService::PingPongTexture(const std::string& name, bool history)
 {
 	auto it = m_PingPong.find(name);
 	if (it == m_PingPong.end())
@@ -203,7 +232,9 @@ void RenderGraphService::CreateOrphanResources()
 	// screen RTs are created by the writer node's RT-init-func.
 	for (const auto& l_desc : m_Desc.m_Resources)
 	{
-		if (l_desc.m_Imported || l_desc.m_SizeExpr != "screen")
+		if (l_desc.m_Imported)
+			continue;
+		if (l_desc.m_SizeExpr != "screen" && l_desc.m_SizeExpr != "tiled" && l_desc.m_SizeExpr != "tiledArray")
 			continue;
 
 		bool l_hasWriter = false;
@@ -214,7 +245,14 @@ void RenderGraphService::CreateOrphanResources()
 			if (l_hasWriter)
 				break;
 		}
-		if (!l_hasWriter)
+		if (l_hasWriter)
+			continue;
+
+		if (l_desc.m_SizeExpr == "tiled")
+			CreateTiledTexture(l_desc);
+		else if (l_desc.m_SizeExpr == "tiledArray")
+			CreateTiledArrayTexture(l_desc);
+		else
 			CreateScreenSizedTexture(l_desc);
 	}
 }

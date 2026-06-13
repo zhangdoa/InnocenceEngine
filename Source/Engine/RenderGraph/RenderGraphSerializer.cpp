@@ -59,6 +59,10 @@ namespace
 			j["Imported"] = true;
 		if (!r.m_SizeExpr.empty())
 			j["Size"] = r.m_SizeExpr;
+		if (r.m_TileSize != 8)
+			j["TileSize"] = r.m_TileSize;
+		if (r.m_TileArraySize != 3)
+			j["TileArraySize"] = r.m_TileArraySize;
 		if (r.m_PingPong)
 			j["PingPong"] = true;
 		return j;
@@ -71,6 +75,8 @@ namespace
 		r.m_Lifetime = ES::LifetimeFromString(j.value("Lifetime", std::string("Persistent")));
 		r.m_Imported = j.value("Imported", false);
 		r.m_SizeExpr = j.value("Size", std::string());
+		r.m_TileSize = j.value("TileSize", 8u);
+		r.m_TileArraySize = j.value("TileArraySize", 3u);
 		r.m_PingPong = j.value("PingPong", false);
 		if (r.m_Type == RenderGraphResourceType::Buffer)
 			BufferDescFromJson(j, r.m_BufferDesc);
@@ -149,8 +155,6 @@ namespace
 		if (p.m_ShaderFilePaths.m_ClosestHitPath.c_str()[0]) shader["ClosestHit"] = p.m_ShaderFilePaths.m_ClosestHitPath.c_str();
 		if (p.m_ShaderFilePaths.m_MissPath.c_str()[0]) shader["Miss"] = p.m_ShaderFilePaths.m_MissPath.c_str();
 		if (p.m_ShaderFilePaths.m_ShadowMissPath.c_str()[0]) shader["ShadowMiss"] = p.m_ShaderFilePaths.m_ShadowMissPath.c_str();
-
-
 		json j = json{
 			{ "Name", p.m_Name }, { "Queue", ES::ToString(p.m_Queue) },
 			{ "Shader", shader },
@@ -160,6 +164,8 @@ namespace
 				{ "TileSize", p.m_Dispatch.m_TileSize } } },
 			{ "Bypass", { { "Enabled", p.m_BypassEnabled }, { "ClearOnBypass", p.m_ClearOnBypass } } },
 			{ "OneShot", p.m_OneShot } };
+		if (p.m_Dispatch.m_DispatchScale != 1)
+			j["Dispatch"]["DispatchScale"] = p.m_Dispatch.m_DispatchScale;
 		if (p.m_TrackWriteState)
 			j["TrackWriteState"] = true;
 		if (!p.m_Transitions.empty())
@@ -217,6 +223,7 @@ namespace
 			p.m_Dispatch.m_Y = j["Dispatch"].value("Y", 1u);
 			p.m_Dispatch.m_Z = j["Dispatch"].value("Z", 1u);
 			p.m_Dispatch.m_TileSize = j["Dispatch"].value("TileSize", 0u);
+			p.m_Dispatch.m_DispatchScale = j["Dispatch"].value("DispatchScale", 1u);
 		}
 		if (j.contains("Bypass"))
 		{
@@ -267,7 +274,6 @@ bool RenderGraphSerializer::LoadFromFile(const char* fileName, RenderGraphDesc& 
 	json j;
 	if (!JSONWrapper::Load(fileName, j))
 		return false;
-
 	from_json(j, out);
 	return true;
 }

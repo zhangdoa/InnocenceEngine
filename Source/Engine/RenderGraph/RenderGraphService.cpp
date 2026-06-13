@@ -111,23 +111,47 @@ bool RenderGraphService::CreatePassNode(const PassNodeDesc& desc)
 	// mark the pass resizable so PostResize re-invokes it (parity with the
 	// imperative pass's m_RenderTargetsInitializationFunc). Multiple screen-sized
 	// writes are all (re)created in one func call.
-	Inno::Array<ResourceDesc> l_screenWrites;
+	Inno::Array<ResourceDesc> l_deferredWrites;
 	for (const auto& l_write : desc.m_Writes)
 	{
-		auto it = m_DeferredScreenTextures.find(l_write);
-		if (it != m_DeferredScreenTextures.end())
-			l_screenWrites.push_back(it->second);
+		auto itScreen = m_DeferredScreenTextures.find(l_write);
+		if (itScreen != m_DeferredScreenTextures.end())
+		{
+			l_deferredWrites.push_back(itScreen->second);
+			continue;
+		}
+		auto itTiled = m_DeferredTiledTextures.find(l_write);
+		if (itTiled != m_DeferredTiledTextures.end())
+		{
+			l_deferredWrites.push_back(itTiled->second);
+			continue;
+		}
+		auto itTiledArray = m_DeferredTiledArrayTextures.find(l_write);
+		if (itTiledArray != m_DeferredTiledArrayTextures.end())
+		{
+			l_deferredWrites.push_back(itTiledArray->second);
+			continue;
+		}
 	}
-	if (!l_screenWrites.empty())
+	if (!l_deferredWrites.empty())
 	{
 		l_renderPassDesc.m_Resizable = true;
 		l_renderPassDesc.m_UseOutputMerger = false;
-		l_renderPassDesc.m_RenderTargetsInitializationFunc = [this, l_screenWrites]()
+		l_renderPassDesc.m_RenderTargetsInitializationFunc = [this, l_deferredWrites]()
 		{
-			for (const auto& l_resource : l_screenWrites)
+			for (const auto& l_resource : l_deferredWrites)
 			{
-				if (!CreateScreenSizedTexture(l_resource))
-					return false;
+				if (l_resource.m_SizeExpr == "tiled")
+				{
+					if (!CreateTiledTexture(l_resource)) return false;
+					continue;
+				}
+				if (l_resource.m_SizeExpr == "tiledArray")
+				{
+					if (!CreateTiledArrayTexture(l_resource)) return false;
+					continue;
+				}
+				if (!CreateScreenSizedTexture(l_resource)) return false;
 			}
 			return true;
 		};

@@ -66,25 +66,18 @@ namespace Inno
 		GPUResourceComponent* ResolveImportedResource(const std::string& name);
 		bool CreateResource(const ResourceDesc& desc);
 		bool CreatePassNode(const PassNodeDesc& desc);
-		// (Re)creates a screen-sized texture at the current resolution. Installed as
-		// the writer node's RenderPass init-func so the engine's PostResize loop
-		// drives resize through the same path the imperative passes used.
 		bool CreateScreenSizedTexture(const ResourceDesc& desc);
-		// Initializes graph-owned resources that no pass writes (their producer
-		// isn't a graph node yet) so consumers bind valid zeroed inputs.
+		bool CreateTiledTexture(const ResourceDesc& desc);
+		bool CreateTiledArrayTexture(const ResourceDesc& desc);
+		bool CreateSizedTexture(const ResourceDesc& desc, uint32_t width, uint32_t height);
 		void CreateOrphanResources();
-		// Resolves a ping-pong pair to one physical texture by frame parity:
-		// history=false -> current-frame output (odd frame -> Odd), history=true ->
-		// the other parity (previous frame's output). Null if name isn't ping-pong.
 		TextureComponent* PingPongTexture(const std::string& name, bool history);
 
 		RenderGraphDesc m_Desc;
 		std::unordered_map<std::string, GPUResourceComponent*> m_Resources;
-		// Texture resources whose size is "screen" — created lazily by the writer
-		// node's RT-init-func, not eagerly in CreateResource.
 		std::unordered_map<std::string, ResourceDesc> m_DeferredScreenTextures;
-		// Ping-pong pairs keyed by logical name: { Even, Odd } physical textures.
-		// The writer node's RT-init-func (re)creates both via CreateScreenSizedTexture.
+		std::unordered_map<std::string, ResourceDesc> m_DeferredTiledTextures;
+		std::unordered_map<std::string, ResourceDesc> m_DeferredTiledArrayTextures;
 		std::unordered_map<std::string, std::pair<TextureComponent*, TextureComponent*>> m_PingPong;
 		std::unordered_map<std::string, std::unique_ptr<RenderGraphPassNode>> m_Nodes;
 		Inno::Array<RenderGraphPassNode*> m_Schedule;
