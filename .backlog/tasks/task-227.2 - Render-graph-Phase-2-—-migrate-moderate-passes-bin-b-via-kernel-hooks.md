@@ -41,40 +41,40 @@ Design reference: backlog doc-1 (TASK-227 Render-Graph Design RFC), kernel inter
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-### CURRENT STATE (2026-06-13) — at-a-glance anchor for a fresh session
+### CURRENT STATE (2026-06-13b) — at-a-glance anchor for a fresh session
 
-Keep-set is **13 pure-JSON graph passes**, ZERO render-pass C++ classes. Graph: 19 resources /
-13 passes. The present chain now renders a recognizable **sun-lit Sponza** (first visible lit frame):
-OpaquePass GBuffer → LightPass → PreTAA → TAA → PostTAA → FinalBlend.
+Keep-set is **14 pure-JSON graph passes**, ZERO render-pass C++ classes. Graph: 20 resources /
+14 passes. The present chain renders a recognizable **sun-SHADOWED Sponza** (well-exposed, full tonal
+range): OpaquePass GBuffer → SunShadowRTPass → LightPass → PreTAA → TAA → PostTAA → FinalBlend.
 
 Primitives PROVEN (data-driven, no per-pass C++): per-frame dynamic resolution (PerFrameCBuffer /
 PerFrameCBufferPrev / TransformBuffer frame-parity), dynamic dispatch (Static / ScreenTile /
 TiledTwoLevel / DrawModelGroups), deferred screen RT, ordered transition prepass, TrackWriteState
-(culling→indirect), named init/update hooks, frame-parity ping-pong (TAA), and raster / multi-RT +
-depth + indirect-draw + root-constants (OpaquePass GBuffer, commit 0b507daf).
+(culling→indirect), named init/update hooks, frame-parity ping-pong (TAA), raster / multi-RT + depth +
+indirect-draw + root-constants (OpaquePass GBuffer, 0b507daf), and **raytracing** (DispatchRays + RT
+PSO/shader-table from RayGen/AnyHit/ClosestHit/Miss/ShadowMiss + TLAS root-SRV bind via the "TLAS"
+dynamic name + IsTLASReady self-guard) — SunShadowRTPass, commit 7f8b9164.
 
-OpaquePass produces the real GBuffer + motion (OpaquePass_RT_0..3 real OutputMergerTargets); SSAO/TAA
-read them by name. LightPass (commit b3351c7) is a MINIMAL sun-direct compute node (lightPassSimple.comp:
-unshadowed sun + flat ambient; no GI/TLAS/point-lights/RT-shadows) writing "LightPass Luminance Result".
-Degraded look: high-albedo surfaces overexpose under AgX (no shadows/GI), mid-albedo stone exposes well.
+LightPass (lightPassSimple.comp) is still MINIMAL: sun (now shadowed by SunShadowRT_Visibility t5) + flat
+ambient; NO radiance-cache GI, NO tiled point lights. Swapping it for the full lightPass.comp is gated on
+SSRC GI (t10) + LightCulling + point-light TLAS shadows.
 
 GOTCHA (cost a long misdiagnosis): TestGIScene runs Main.exe with CWD = Bin/ (Split-Path BinDir -Parent
 in Test-Engine.psm1), so the REAL capture is **Bin/gpu_output.png**, NOT Bin/RelWithDebInfo/gpu_output.png.
 A direct Main.exe run from Bin/RelWithDebInfo writes its capture THERE instead. Always view
 Bin/gpu_output.png for the TestGIScene result. Auto-exposure is NOT broken.
 
-Primitives STILL NEEDED (fidelity, each gates archived passes):
-- **raytracing** (TLAS / RayQuery / shader tables) → SunShadowRTPass (sun shadows), point-light shadows
-  in a full LightPass, PT/NRD denoise chain.
+Primitives STILL NEEDED (fidelity):
 - **SSRC** radiance-cache GI (t10 Illuminance) → indirect lighting; the full lightPass.comp consumes it.
+- **point lights + LightCulling** (light grid t8 + index list t9; point shadows reuse the proven TLAS).
 
 Verification bar: BuildWin exit 0; TestGIScene (non-GBV) exit 0 + 0 D3D12 errors + MAE ≤ 0.45
-(currently 0.139); TestSuite green. GBV NOT clean — sole residual is the pre-existing **TASK-163**
+(currently 0.289); TestSuite green. GBV NOT clean — sole residual is the pre-existing **TASK-163**
 FinalBlend present-target readback barrier (separate ticket).
 
-RECOMMENDED NEXT: fidelity now that the lit frame is visible — **raytracing** (SunShadowRT first: smallest
-RT entry, real sun shadows) or **SSRC** GI. Both are new primitives, not clean-reuse. Then swap the minimal
-LightPass for the full lightPass.comp. Resume note in `InnocenceEngine` basic-memory mirrors this.
+RECOMMENDED NEXT: **SSRC GI** (biggest remaining fidelity jump — indirect bounce; large multi-pass) or
+**point lights + LightCulling** (medium), then swap the minimal LightPass for the full lightPass.comp.
+TASK-163 for a clean -gpu_validation run. Resume note in `InnocenceEngine` basic-memory mirrors this.
 
 2026-06-01 — Activated early (ahead of strict dep order) because TASK-227.1 proved bin-a is exhausted at 2 passes: the bulk of the umbrella's LOC payoff sits behind bin-b kernel infra. Groundwork already landed under .1 (commit 74215eb3): Buffer-resource type + external-resource-import in the graph schema/loader/serializer + GPUBufferResourceService::Find.
 
@@ -267,5 +267,12 @@ NEXT (separate phase — NOT done): migrate MORE passes from _Archive back into 
 - GOTCHA recorded in the anchor: TestGIScene writes the real capture to Bin/gpu_output.png (Main.exe CWD = Bin/, the PARENT of the -BinDir RelWithDebInfo). Reading Bin/RelWithDebInfo/gpu_output.png (stale from a direct run) shows a flat 245 frame and caused a long false "broken auto-exposure / flat present" misdiagnosis before the blue-probe MAE jump (0.139->0.54) exposed the wrong-file read. Always view Bin/gpu_output.png.
 - Verified: BuildWin exit 0; lightPassSimple.comp compiles; TestSuite 113/113; TestGIScene (non-GBV) exit 0, 0 D3D12 errors, MAE 0.139 (up from 0.103 — real luminance now contributes); GBV loads 19 res/13 passes, LightPass CL clean, only the pre-existing TASK-163 FinalBlend residual.
 - NEXT: fidelity — raytracing (SunShadowRT first = real sun shadows, smallest RT entry) or SSRC GI; then swap the minimal LightPass for full lightPass.comp. [task-stays-open]
+
+2026-06-13b — SunShadowRT RAYTRACING node migrated + sun shadows wired into LightPass (commit 7f8b9164, peer-reviewed PASS 0 bugs, visually reviewed). First raytracing pass in the graph; the present chain now renders a sun-SHADOWED, well-exposed Sponza. Graph: 20 resources / 14 passes. NOTE: the engine-side RT primitive + the SunShadowRT/LightPass JSON nodes + the round-trip test were pre-existing working-tree WIP (zhangdoa); this increment completed it by wiring lightPassSimple.comp to sample the visibility.
+- RAYTRACING PRIMITIVE (additive, data-driven): BindingDesc.m_GPUBufferUsage (TLAS → root SRV, DX12 requires root-SRV for accel structures). DispatchMode::DispatchRays (recorder sizes to screen res, calls FrameManagementService::DispatchRays; engine self-guards on IsTLASReady → skipped until TLAS built, no early-frame UB). PassNodeDesc.m_UseRaytracing → RenderPassDesc.m_UseRaytracing (engine builds RT PSO + shader table from RayGen/AnyHit/ClosestHit/Miss/ShadowMiss paths, serialized in the Shader block). "TLAS" dynamic name → GPUBufferResourceService::GetTLASBuffer() in FindResource (engine-owned, built per frame outside the graph).
+- JSON: +SunShadowRT_Visibility (screen R8/UByte UAV); +SunShadowRTPass node (reads PerFrameCBuffer + TLAS + OpaquePass_RT_0/1, writes the visibility, DispatchRays; bindings bit-match the archived SunShadowRTPass: b0 set0/0, t0 TLAS set1/0, t1 RT0 set1/1, t2 RT1 set1/2, u0 vis set2/0). LightPass reads SunShadowRT_Visibility at t5 (set1/idx5). lightPassSimple.comp adds the t5 SRV + multiplies the sun term by visibility (0=shadowed, 1=lit). New RenderGraphSerializerTests_Raytracing round-trip test.
+- VISUAL: Bin/gpu_output.png shows a sun-shadowed Sponza with full tonal range (teal/orange drapes, stone, column) — the prior washed direct-only look resolves once shadows add contrast. MAE 0.139→0.289 (hard direct shadows diverge from the soft-GI reference; expected, still < 0.45).
+- Verified: BuildWin exit 0; SunShadowRT* + lightPassSimple compile; TestSuite incl raytracing round-trip; TestGIScene exit 0, 0 D3D12 errors, MAE 0.289; GBV loads 20 res/14 passes, SunShadowRT DispatchRays clean, only the pre-existing TASK-163 residual.
+- NEXT: SSRC GI (indirect bounce — biggest remaining fidelity jump, large multi-pass) or point lights + LightCulling; then swap minimal LightPass for full lightPass.comp. [task-stays-open]
 
 <!-- SECTION:NOTES:END -->
