@@ -13,7 +13,14 @@ void RayGenShader()
     // remaining (ξ_x·ξ_y - 1) probe slots inside the spawn tile inherit
     // whatever Reprojection has for them — reprojected radiance if the
     // temporal reuse succeeded, PROBE_MASK_INVALID if it didn't.
-    uint2 spawnIndex = DispatchRaysIndex().xy;
+    // The render graph drives this RTPSO with a full-screen DispatchRays (the
+    // recorder can't size a ray dispatch at spawn-tile granularity). Gate to the
+    // spawn-tile-aligned threads and remap to the paper's viewport/(8*xi) sparse
+    // spawn index; the other threads in each spawn tile early-out.
+    uint2 fullDispatchIndex = DispatchRaysIndex().xy;
+    if ((fullDispatchIndex.x % spawnTileSize.x) != 0u || (fullDispatchIndex.y % spawnTileSize.y) != 0u)
+        return;
+    uint2 spawnIndex = fullDispatchIndex / spawnTileSize;
     uint2 spawnTileOrigin = spawnIndex * spawnTileSize;
 
     // Halton(2) / Halton(3) — pick pixel inside the (8·ξ_x × 8·ξ_y) spawn

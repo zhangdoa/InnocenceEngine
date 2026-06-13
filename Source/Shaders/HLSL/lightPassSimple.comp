@@ -31,23 +31,25 @@ Texture2D in_BRDFLUT : register(t3);
 Texture2D in_BRDFMSLUT : register(t4);
 [[vk::binding(5, 1)]]
 Texture2D<float> in_SunShadowRTVisibility : register(t5);
+[[vk::binding(6, 1)]]
+Texture2D<float4> in_SSRCGI : register(t6);
 [[vk::binding(0, 2)]]
 SamplerState in_samplerPoint : register(s0);
 [[vk::binding(0, 3)]]
 RWTexture2D<float4> out_Luminance : register(u0);
+[[vk::binding(1, 3)]]
+RWTexture2D<float4> out_Illuminance : register(u1);
 
 #include "common/BSDF.hlsl"
 #include "common/lightPassCommon.hlsl"
-
-// Flat ambient fraction of albedo applied to all geometry so shadowed
-// regions remain readable without the (excluded) radiance-cache GI.
-static const float SIMPLE_AMBIENT_INTENSITY = 0.05;
+#include "common/lightPassIndirectCompose.hlsl"
 
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
 {
 	uint2 l_ScreenCoord = input.dispatchThreadID.xy;
 	out_Luminance[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
+	out_Illuminance[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
 
 	float3 l_PositionWS;
 	float3 l_NormalWS;
@@ -75,8 +77,17 @@ void main(ComputeInputType input)
 	float l_SunVisibility = in_SunShadowRTVisibility.Load(int3(l_ScreenCoord, 0));
 	l_SunDirect *= l_SunVisibility;
 
-	float3 l_Ambient = l_Material.m_Albedo * SIMPLE_AMBIENT_INTENSITY;
+	// Direct lit radiance is the bounce source SSRCRaytracingPass samples next
+	// frame (its t5) — direct only, so ray hits don't re-accumulate indirect.
+	out_Illuminance[l_ScreenCoord] = float4(l_SunDirect, 1.0);
 
-	out_Luminance[l_ScreenCoord] = float4(l_SunDirect + l_Ambient, 1.0);
+	// Indirect diffuse from the screen-space radiance cache: SSRCSpatialVerticalPass
+	// per-pixel irradiance -> Lambertian outgoing radiance (albedo*(1-metallic)*E/PI).
+	float3 l_Indirect = ComposeIndirectLighting(in_SSRCGI, l_ScreenCoord, l_Material);
+
+	// Flat ambient fallback keeps shadowed regions readable while the radiance
+	// cache GI is incomplete (chain populates only weakly — see ssrc-5b spec).
+	float3 l_Ambient = l_Material.m_Albedo * 0.05;
+	out_Luminance[l_ScreenCoord] = float4(l_SunDirect + l_Indirect + l_Ambient, 1.0);
 	DeviceMemoryBarrier();
 }

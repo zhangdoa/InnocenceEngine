@@ -198,6 +198,90 @@
             "PixelDataFormat": "RGBA",
             "GPUAccessibility": "ReadWrite",
             "Lifetime": "Persistent"
+        },
+        {
+            "Name": "Radiance Cache Result",
+            "Type": "Texture", "Size": "screen", "PingPong": true,
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float16", "PixelDataFormat": "RGBA", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "Radiance Cache Probe Position",
+            "Type": "Texture", "Size": "tiled", "PingPong": true,
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float16", "PixelDataFormat": "RGBA", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "Radiance Cache Probe Normal",
+            "Type": "Texture", "Size": "tiled", "PingPong": true,
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float16", "PixelDataFormat": "RGBA", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "Radiance Cache Probe Mask",
+            "Type": "Texture", "Size": "tiled",
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "UInt32", "PixelDataFormat": "R", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "Radiance Cache FilterH Result",
+            "Type": "Texture", "Size": "screen",
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float16", "PixelDataFormat": "RGBA", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "Radiance Cache FilterV Result",
+            "Type": "Texture", "Size": "screen",
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float16", "PixelDataFormat": "RGBA", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "Radiance Cache Integration Result",
+            "Type": "Texture", "Size": "tiledArray",
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float16", "PixelDataFormat": "RGBA", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "SSRC Temporal History",
+            "Type": "Texture", "Size": "screen", "PingPong": true,
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float16", "PixelDataFormat": "RGBA", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "SSRC Temporal PrevWorldPos",
+            "Type": "Texture", "Size": "screen", "PingPong": true,
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float16", "PixelDataFormat": "RGBA", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "SSRC Temporal ColorDelta",
+            "Type": "Texture", "Size": "screen", "PingPong": true,
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float16", "PixelDataFormat": "R", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "SSRC Temporal BlurMask",
+            "Type": "Texture", "Size": "screen",
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float16", "PixelDataFormat": "R", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "SSRC SpatialH Result",
+            "Type": "Texture", "Size": "screen",
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float16", "PixelDataFormat": "RGBA", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "SSRC SpatialV Result",
+            "Type": "Texture", "Size": "screen",
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float16", "PixelDataFormat": "RGBA", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "LightPass Illuminance Result",
+            "Type": "Texture", "Size": "screen",
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float16", "PixelDataFormat": "RGBA", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
         }
     ],
     "Passes": [
@@ -430,11 +514,233 @@
             "OneShot": false
         },
         {
+            "Name": "SSRCReprojectionPass",
+            "Queue": "Compute",
+            "Shader": { "CS": "SSRCReprojection.comp" },
+            "Reads": [ "PerFrameCBuffer", "OpaquePass_RT_0", "OpaquePass_RT_1", "OpaquePass_RT_3", "Radiance Cache Result", "Radiance Cache Probe Position", "Radiance Cache Probe Normal" ],
+            "Writes": [ "Radiance Cache Result", "Radiance Cache Probe Mask" ],
+            "Bindings": [
+                { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
+                { "Resource": "OpaquePass_RT_0", "Type": "Image", "Set": 1, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "OpaquePass_RT_1", "Type": "Image", "Set": 1, "Index": 1, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "OpaquePass_RT_3", "Type": "Image", "Set": 1, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Result", "Type": "Image", "Set": 1, "Index": 3, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute", "PingPongHistory": true },
+                { "Resource": "Radiance Cache Probe Position", "Type": "Image", "Set": 1, "Index": 4, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute", "PingPongHistory": true },
+                { "Resource": "Radiance Cache Probe Normal", "Type": "Image", "Set": 1, "Index": 5, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute", "PingPongHistory": true },
+                { "Resource": "Radiance Cache Result", "Type": "Image", "Set": 2, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Probe Mask", "Type": "Image", "Set": 2, "Index": 1, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" }
+            ],
+            "Transitions": [
+                { "Resource": "OpaquePass_RT_0", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "OpaquePass_RT_1", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "OpaquePass_RT_3", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache Result", "From": "WriteOnly", "To": "ReadOnly", "PingPongHistory": true },
+                { "Resource": "Radiance Cache Probe Position", "From": "WriteOnly", "To": "ReadOnly", "PingPongHistory": true },
+                { "Resource": "Radiance Cache Probe Normal", "From": "WriteOnly", "To": "ReadOnly", "PingPongHistory": true },
+                { "Resource": "Radiance Cache Result", "From": "ReadOnly", "To": "WriteOnly" },
+                { "Resource": "Radiance Cache Probe Mask", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "TiledDispatch", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "SSRCRaytracingPass",
+            "Queue": "Compute",
+            "UseRaytracing": true,
+            "Shader": { "RayGen": "SSRCRayGen.hlsl", "ClosestHit": "SSRCClosestHit.hlsl", "AnyHit": "SSRCAnyHit.hlsl", "Miss": "SSRCMiss.hlsl" },
+            "Reads": [ "PerFrameCBuffer", "TLAS", "OpaquePass_RT_0", "OpaquePass_RT_1", "OpaquePass_RT_2", "OpaquePass_RT_3", "LightPass Illuminance Result", "Radiance Cache Result" ],
+            "Writes": [ "Radiance Cache Probe Position", "Radiance Cache Probe Normal" ],
+            "Bindings": [
+                { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "RayGen" },
+                { "Resource": "TLAS", "Type": "Buffer", "Set": 1, "Index": 0, "BufferUsage": "TLAS", "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "Stage": "RayGen" },
+                { "Resource": "OpaquePass_RT_0", "Type": "Image", "Set": 1, "Index": 1, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "RayGen" },
+                { "Resource": "OpaquePass_RT_1", "Type": "Image", "Set": 1, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "RayGen" },
+                { "Resource": "OpaquePass_RT_2", "Type": "Image", "Set": 1, "Index": 3, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "RayGen" },
+                { "Resource": "OpaquePass_RT_3", "Type": "Image", "Set": 1, "Index": 4, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "RayGen" },
+                { "Resource": "LightPass Illuminance Result", "Type": "Image", "Set": 1, "Index": 5, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ComputeOnly", "Stage": "RayGen" },
+                { "Resource": "Radiance Cache Result", "Type": "Image", "Set": 1, "Index": 6, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "RayGen", "PingPongHistory": true },
+                { "Resource": "Radiance Cache Result", "Type": "Image", "Set": 2, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "RayGen" },
+                { "Resource": "Radiance Cache Probe Position", "Type": "Image", "Set": 2, "Index": 2, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "RayGen" },
+                { "Resource": "Radiance Cache Probe Normal", "Type": "Image", "Set": 2, "Index": 3, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "RayGen" },
+                { "Resource": "Radiance Cache Probe Mask", "Type": "Image", "Set": 2, "Index": 4, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "RayGen" }
+            ],
+            "Transitions": [
+                { "Resource": "LightPass Illuminance Result", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache Result", "From": "WriteOnly", "To": "ReadOnly", "PingPongHistory": true },
+                { "Resource": "Radiance Cache Result", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "DispatchRays", "X": 1, "Y": 1, "Z": 1, "TileSize": 0 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "SSRCFilterHorizontalPass",
+            "Queue": "Compute",
+            "Shader": { "CS": "SSRCFilterHorizontal.comp" },
+            "Reads": [ "PerFrameCBuffer", "Radiance Cache Result", "Radiance Cache Probe Position", "Radiance Cache Probe Normal", "Radiance Cache Probe Mask" ],
+            "Writes": [ "Radiance Cache FilterH Result" ],
+            "Bindings": [
+                { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Result", "Type": "Image", "Set": 1, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Probe Position", "Type": "Image", "Set": 1, "Index": 1, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Probe Normal", "Type": "Image", "Set": 1, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Probe Mask", "Type": "Image", "Set": 1, "Index": 3, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "Radiance Cache FilterH Result", "Type": "Image", "Set": 2, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ColorAttachment", "Stage": "Compute" }
+            ],
+            "Transitions": [
+                { "Resource": "Radiance Cache Result", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache Probe Position", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache Probe Normal", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache Probe Mask", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache FilterH Result", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "TiledDispatch", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "SSRCFilterVerticalPass",
+            "Queue": "Compute",
+            "Shader": { "CS": "SSRCFilterVertical.comp" },
+            "Reads": [ "PerFrameCBuffer", "Radiance Cache FilterH Result", "Radiance Cache Probe Position", "Radiance Cache Probe Normal", "Radiance Cache Probe Mask" ],
+            "Writes": [ "Radiance Cache FilterV Result" ],
+            "Bindings": [
+                { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
+                { "Resource": "Radiance Cache FilterH Result", "Type": "Image", "Set": 1, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Probe Position", "Type": "Image", "Set": 1, "Index": 1, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Probe Normal", "Type": "Image", "Set": 1, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Probe Mask", "Type": "Image", "Set": 1, "Index": 3, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "Radiance Cache FilterV Result", "Type": "Image", "Set": 2, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ColorAttachment", "Stage": "Compute" }
+            ],
+            "Transitions": [
+                { "Resource": "Radiance Cache FilterH Result", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache Probe Position", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache Probe Normal", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache Probe Mask", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache FilterV Result", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "TiledDispatch", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "SSRCIntegrationPass",
+            "Queue": "Compute",
+            "Shader": { "CS": "SSRCIntegration.comp" },
+            "Reads": [ "Radiance Cache FilterV Result" ],
+            "Writes": [ "Radiance Cache Integration Result" ],
+            "Bindings": [
+                { "Resource": "Radiance Cache FilterV Result", "Type": "Image", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Integration Result", "Type": "Image", "Set": 1, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ColorAttachment", "Stage": "Compute" }
+            ],
+            "Transitions": [
+                { "Resource": "Radiance Cache FilterV Result", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache Integration Result", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "TiledDispatch", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "SSRCTemporalPass",
+            "Queue": "Compute",
+            "Shader": { "CS": "SSRCTemporal.comp" },
+            "Reads": [ "PerFrameCBuffer", "OpaquePass_RT_0", "OpaquePass_RT_1", "OpaquePass_RT_3", "Radiance Cache Integration Result", "Radiance Cache Probe Position", "Radiance Cache Probe Normal", "Radiance Cache Probe Mask", "SSRC Temporal History", "SSRC Temporal PrevWorldPos", "SSRC Temporal ColorDelta" ],
+            "Writes": [ "SSRC Temporal History", "SSRC Temporal PrevWorldPos", "SSRC Temporal ColorDelta", "SSRC Temporal BlurMask" ],
+            "Bindings": [
+                { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
+                { "Resource": "OpaquePass_RT_0", "Type": "Image", "Set": 1, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "OpaquePass_RT_1", "Type": "Image", "Set": 1, "Index": 1, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "OpaquePass_RT_3", "Type": "Image", "Set": 1, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Integration Result", "Type": "Image", "Set": 1, "Index": 3, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Probe Position", "Type": "Image", "Set": 1, "Index": 4, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Probe Normal", "Type": "Image", "Set": 1, "Index": 5, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "Radiance Cache Probe Mask", "Type": "Image", "Set": 1, "Index": 6, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "SSRC Temporal History", "Type": "Image", "Set": 1, "Index": 7, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute", "PingPongHistory": true },
+                { "Resource": "SSRC Temporal PrevWorldPos", "Type": "Image", "Set": 1, "Index": 8, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute", "PingPongHistory": true },
+                { "Resource": "SSRC Temporal ColorDelta", "Type": "Image", "Set": 1, "Index": 9, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute", "PingPongHistory": true },
+                { "Resource": "SSRC Temporal History", "Type": "Image", "Set": 2, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "SSRC Temporal BlurMask", "Type": "Image", "Set": 2, "Index": 1, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "SSRC Temporal PrevWorldPos", "Type": "Image", "Set": 2, "Index": 2, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "SSRC Temporal ColorDelta", "Type": "Image", "Set": 2, "Index": 3, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" }
+            ],
+            "Transitions": [
+                { "Resource": "OpaquePass_RT_0", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "OpaquePass_RT_1", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "OpaquePass_RT_3", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache Integration Result", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache Probe Position", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache Probe Normal", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "Radiance Cache Probe Mask", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "SSRC Temporal History", "From": "WriteOnly", "To": "ReadOnly", "PingPongHistory": true },
+                { "Resource": "SSRC Temporal PrevWorldPos", "From": "WriteOnly", "To": "ReadOnly", "PingPongHistory": true },
+                { "Resource": "SSRC Temporal ColorDelta", "From": "WriteOnly", "To": "ReadOnly", "PingPongHistory": true },
+                { "Resource": "SSRC Temporal History", "From": "ReadOnly", "To": "WriteOnly" },
+                { "Resource": "SSRC Temporal BlurMask", "From": "ReadOnly", "To": "WriteOnly" },
+                { "Resource": "SSRC Temporal PrevWorldPos", "From": "ReadOnly", "To": "WriteOnly" },
+                { "Resource": "SSRC Temporal ColorDelta", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "TiledDispatch", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "SSRCSpatialHorizontalPass",
+            "Queue": "Compute",
+            "Shader": { "CS": "SSRCSpatialHorizontal.comp" },
+            "Reads": [ "PerFrameCBuffer", "OpaquePass_RT_0", "OpaquePass_RT_1", "SSRC Temporal History", "SSRC Temporal BlurMask" ],
+            "Writes": [ "SSRC SpatialH Result" ],
+            "Bindings": [
+                { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
+                { "Resource": "OpaquePass_RT_0", "Type": "Image", "Set": 1, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "OpaquePass_RT_1", "Type": "Image", "Set": 1, "Index": 1, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "SSRC Temporal History", "Type": "Image", "Set": 1, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "SSRC Temporal BlurMask", "Type": "Image", "Set": 1, "Index": 3, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "SSRC SpatialH Result", "Type": "Image", "Set": 2, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" }
+            ],
+            "Transitions": [
+                { "Resource": "OpaquePass_RT_0", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "OpaquePass_RT_1", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "SSRC Temporal History", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "SSRC Temporal BlurMask", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "SSRC SpatialH Result", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "SSRCSpatialVerticalPass",
+            "Queue": "Compute",
+            "Shader": { "CS": "SSRCSpatialVertical.comp" },
+            "Reads": [ "PerFrameCBuffer", "OpaquePass_RT_0", "OpaquePass_RT_1", "SSRC SpatialH Result", "SSRC Temporal BlurMask" ],
+            "Writes": [ "SSRC SpatialV Result" ],
+            "Bindings": [
+                { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
+                { "Resource": "OpaquePass_RT_0", "Type": "Image", "Set": 1, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "OpaquePass_RT_1", "Type": "Image", "Set": 1, "Index": 1, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "SSRC SpatialH Result", "Type": "Image", "Set": 1, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "SSRC Temporal BlurMask", "Type": "Image", "Set": 1, "Index": 3, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "SSRC SpatialV Result", "Type": "Image", "Set": 2, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" }
+            ],
+            "Transitions": [
+                { "Resource": "OpaquePass_RT_0", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "OpaquePass_RT_1", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "SSRC SpatialH Result", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "SSRC Temporal BlurMask", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "SSRC SpatialV Result", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": true },
+            "OneShot": false
+        },
+        {
             "Name": "LightPass",
             "Queue": "Compute",
             "Shader": { "CS": "lightPassSimple.comp" },
-            "Reads": [ "PerFrameCBuffer", "OpaquePass_RT_0", "OpaquePass_RT_1", "OpaquePass_RT_2", "BRDF LUT", "BRDF MS LUT", "SunShadowRT_Visibility" ],
-            "Writes": [ "LightPass Luminance Result" ],
+            "Reads": [ "PerFrameCBuffer", "OpaquePass_RT_0", "OpaquePass_RT_1", "OpaquePass_RT_2", "BRDF LUT", "BRDF MS LUT", "SunShadowRT_Visibility", "SSRC SpatialV Result" ],
+            "Writes": [ "LightPass Luminance Result", "LightPass Illuminance Result" ],
             "Bindings": [
                 { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
                 { "Resource": "OpaquePass_RT_0", "Type": "Image", "Set": 1, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
@@ -443,8 +749,10 @@
                 { "Resource": "BRDF LUT", "Type": "Image", "Set": 1, "Index": 3, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
                 { "Resource": "BRDF MS LUT", "Type": "Image", "Set": 1, "Index": 4, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
                 { "Resource": "SunShadowRT_Visibility", "Type": "Image", "Set": 1, "Index": 5, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "SSRC SpatialV Result", "Type": "Image", "Set": 1, "Index": 6, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
                 { "Resource": "LightPass", "Type": "Sampler", "Set": 2, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
-                { "Resource": "LightPass Luminance Result", "Type": "Image", "Set": 3, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" }
+                { "Resource": "LightPass Luminance Result", "Type": "Image", "Set": 3, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "LightPass Illuminance Result", "Type": "Image", "Set": 3, "Index": 1, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" }
             ],
             "Transitions": [
                 { "Resource": "OpaquePass_RT_0", "From": "WriteOnly", "To": "ReadOnly" },
@@ -453,7 +761,9 @@
                 { "Resource": "BRDF LUT", "From": "WriteOnly", "To": "ReadOnly" },
                 { "Resource": "BRDF MS LUT", "From": "WriteOnly", "To": "ReadOnly" },
                 { "Resource": "SunShadowRT_Visibility", "From": "WriteOnly", "To": "ReadOnly" },
-                { "Resource": "LightPass Luminance Result", "From": "ReadOnly", "To": "WriteOnly" }
+                { "Resource": "SSRC SpatialV Result", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "LightPass Luminance Result", "From": "ReadOnly", "To": "WriteOnly" },
+                { "Resource": "LightPass Illuminance Result", "From": "ReadOnly", "To": "WriteOnly" }
             ],
             "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
             "Bypass": { "Enabled": false, "ClearOnBypass": false },
@@ -503,6 +813,21 @@
                 { "Resource": "Pre-TAA Pass Result", "From": "ReadOnly", "To": "WriteOnly" }
             ],
             "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
+            "Name": "LuminanceHistogramPass",
+            "Queue": "Compute",
+            "Shader": { "CS": "luminanceHistogramPass.comp" },
+            "Reads": [ "PerFrameCBuffer", "LightPass Luminance Result" ],
+            "Writes": [ "LuminanceHistogramGPUBuffer" ],
+            "Bindings": [
+                { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
+                { "Resource": "LightPass Luminance Result", "Type": "Image", "Set": 1, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "LuminanceHistogramGPUBuffer", "Type": "Buffer", "Set": 2, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "Stage": "Compute" }
+            ],
+            "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 16 },
             "Bypass": { "Enabled": false, "ClearOnBypass": false },
             "OneShot": false
         },
