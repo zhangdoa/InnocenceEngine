@@ -41,35 +41,40 @@ Design reference: backlog doc-1 (TASK-227 Render-Graph Design RFC), kernel inter
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-### CURRENT STATE (2026-06-12) — at-a-glance anchor for a fresh session
+### CURRENT STATE (2026-06-13) — at-a-glance anchor for a fresh session
 
-Keep-set is **12 pure-JSON graph passes**, ZERO render-pass C++ classes (OpaquePass is now a
-graphics-queue JSON node). Graph: 19 resources / 12 passes.
+Keep-set is **13 pure-JSON graph passes**, ZERO render-pass C++ classes. Graph: 19 resources /
+13 passes. The present chain now renders a recognizable **sun-lit Sponza** (first visible lit frame):
+OpaquePass GBuffer → LightPass → PreTAA → TAA → PostTAA → FinalBlend.
 
 Primitives PROVEN (data-driven, no per-pass C++): per-frame dynamic resolution (PerFrameCBuffer /
 PerFrameCBufferPrev / TransformBuffer frame-parity), dynamic dispatch (Static / ScreenTile /
 TiledTwoLevel / DrawModelGroups), deferred screen RT, ordered transition prepass, TrackWriteState
-(culling→indirect), named init/update hooks, frame-parity ping-pong (TAA), and **raster / multi-RT +
-depth + indirect-draw + root-constants** (OpaquePass GBuffer, commit 0b507daf).
+(culling→indirect), named init/update hooks, frame-parity ping-pong (TAA), and raster / multi-RT +
+depth + indirect-draw + root-constants (OpaquePass GBuffer, commit 0b507daf).
 
-OpaquePass now produces the real GBuffer + motion vector (OpaquePass_RT_0..3 are real
-OutputMergerTargets, retiring the zeroed orphans); SSAO/TAA read them by name. Payoff is structural
-only until LightPass returns (the present chain still reads zeroed LightPass luminance → MAE unchanged).
+OpaquePass produces the real GBuffer + motion (OpaquePass_RT_0..3 real OutputMergerTargets); SSAO/TAA
+read them by name. LightPass (commit b3351c7) is a MINIMAL sun-direct compute node (lightPassSimple.comp:
+unshadowed sun + flat ambient; no GI/TLAS/point-lights/RT-shadows) writing "LightPass Luminance Result".
+Degraded look: high-albedo surfaces overexpose under AgX (no shadows/GI), mid-albedo stone exposes well.
 
-Primitives STILL NEEDED (each gates a cluster of archived passes):
-- **raytracing** (TLAS / RayQuery / shader tables) → SunShadowRTPass, PT/NRD denoise chain.
-- LightPass is compute but BLOCKED: reads SSRC GI (t10 Illuminance from Radiance Cache) + uses inline
-  RayQuery + Volumetric + LightCulling. Needs SSRC (excluded) or accepting zeroed GI.
+GOTCHA (cost a long misdiagnosis): TestGIScene runs Main.exe with CWD = Bin/ (Split-Path BinDir -Parent
+in Test-Engine.psm1), so the REAL capture is **Bin/gpu_output.png**, NOT Bin/RelWithDebInfo/gpu_output.png.
+A direct Main.exe run from Bin/RelWithDebInfo writes its capture THERE instead. Always view
+Bin/gpu_output.png for the TestGIScene result. Auto-exposure is NOT broken.
 
-Verification bar for this track: BuildWin exit 0; TestGIScene (non-GBV) exit 0 + 0 D3D12 errors +
-pixel MAE ≤ 0.45 (currently 0.103); RenderGraph unit tests green. GBV is NOT clean — the sole residual
-is the pre-existing **TASK-163** FinalBlend present-target readback barrier (separate ticket).
+Primitives STILL NEEDED (fidelity, each gates archived passes):
+- **raytracing** (TLAS / RayQuery / shader tables) → SunShadowRTPass (sun shadows), point-light shadows
+  in a full LightPass, PT/NRD denoise chain.
+- **SSRC** radiance-cache GI (t10 Illuminance) → indirect lighting; the full lightPass.comp consumes it.
 
-RECOMMENDED NEXT: the **SSRC clean-reuse chain** is NOT clean-reuse on inspection (8 entangled passes;
-needs multi-size ping-pong + probe/SH sizing + ceil-dispatch + multi-output primitives; blocked by the
-excluded SSRCRaytracing → zeroed end-to-end). The remaining tractable, payoff-bearing work is
-**raytracing** (unblocks SunShadowRT and lets a returning LightPass light the new GBuffer). Resume note
-in the `InnocenceEngine` basic-memory project mirrors this. Per-pass detail in the dated entries below.
+Verification bar: BuildWin exit 0; TestGIScene (non-GBV) exit 0 + 0 D3D12 errors + MAE ≤ 0.45
+(currently 0.139); TestSuite green. GBV NOT clean — sole residual is the pre-existing **TASK-163**
+FinalBlend present-target readback barrier (separate ticket).
+
+RECOMMENDED NEXT: fidelity now that the lit frame is visible — **raytracing** (SunShadowRT first: smallest
+RT entry, real sun shadows) or **SSRC** GI. Both are new primitives, not clean-reuse. Then swap the minimal
+LightPass for the full lightPass.comp. Resume note in `InnocenceEngine` basic-memory mirrors this.
 
 2026-06-01 — Activated early (ahead of strict dep order) because TASK-227.1 proved bin-a is exhausted at 2 passes: the bulk of the umbrella's LOC payoff sits behind bin-b kernel infra. Groundwork already landed under .1 (commit 74215eb3): Buffer-resource type + external-resource-import in the graph schema/loader/serializer + GPUBufferResourceService::Find.
 
@@ -255,5 +260,12 @@ NEXT (separate phase — NOT done): migrate MORE passes from _Archive back into 
 - Verified invariants: DX12 root-sig param visibility defaults to ALL (m_ShaderStage does NOT gate it), and BindGPUResource ignores the stage arg — so the binding ShaderStage is documentation-only. ExecuteIndirect emits its own indirect-arg barrier; PostCLState=ToCommon emits the RT→COMMON barrier at CommandListEnd.
 - Verified: BuildWin exit 0 (Main+RenderTest+TestSuite); TestSuite 113/113 incl new raster round-trip; non-GBV TestGIScene exit 0, GISponza loaded + auto-terminated, 0 D3D12 errors, MAE 0.103 (UNCHANGED — present FinalBlend chain still reads the zeroed LightPass luminance; the real GBuffer/motion feed SSAO + TAA-reprojection whose visible effect waits on LightPass); GBV -gpu_validation loads 19 res/12 passes, OpaquePass graphics CL records + ExecuteIndirect with no GBV error (only the standard indirect "Shader Patch Mode NONE" undervalidation warning); sole fatal GBV residual is the pre-existing TASK-163 FinalBlend present-target barrier. Peer review ADVISORY: 2 shader-stage findings, both non-defects (DX12 visibility=ALL + stage-arg-ignored, runtime-confirmed).
 - NEXT: raytracing primitive (TLAS/RayQuery/shader tables) — unblocks SunShadowRT and a returning LightPass (which would light the new GBuffer = first visible payoff). The SSRC chain is NOT clean-reuse (see anchor). [task-stays-open]
+
+2026-06-13 — MINIMAL LightPass migrated (commit b3351c7, peer-reviewed PASS, visually reviewed). First VISIBLE lit frame of the keep-set: the present chain now renders a recognizable sun-lit Sponza. Pure-JSON compute node reusing existing primitives (deferred-RT output, static GBuffer reads, sampler hook) — NO new engine code.
+- New shader lightPassSimple.comp: DecodeGBuffer -> sun as an UNSHADOWED directional light via the shared AccumulateLightContribution + a small flat ambient (albedo*0.05) for legibility. Plain cs path (no RayQuery/TLAS). Degraded stand-in for the full lightPass.comp (which needs radiance-cache GI t10 + tiled point lights + inline-RayQuery shadows + hardware-RT sun visibility t13 — all excluded). Dropping them also removed the SSAO dependency, so no pass reorder. LightPass node reads PerFrameCBuffer + OpaquePass_RT_0/1/2 + BRDF LUT/MS, writes the existing "LightPass Luminance Result" orphan (PreTAA already reads it), ScreenTile TileSize 8. + a LightPass point-sampler init hook.
+- VISUAL: Bin/gpu_output.png shows lit Sponza (stone walls/floor/columns). High-albedo surfaces (drapes) overexpose under AgX auto-exposure — expected for the direct-only/no-GI/no-shadow path, not a bug. Auto-exposure works correctly.
+- GOTCHA recorded in the anchor: TestGIScene writes the real capture to Bin/gpu_output.png (Main.exe CWD = Bin/, the PARENT of the -BinDir RelWithDebInfo). Reading Bin/RelWithDebInfo/gpu_output.png (stale from a direct run) shows a flat 245 frame and caused a long false "broken auto-exposure / flat present" misdiagnosis before the blue-probe MAE jump (0.139->0.54) exposed the wrong-file read. Always view Bin/gpu_output.png.
+- Verified: BuildWin exit 0; lightPassSimple.comp compiles; TestSuite 113/113; TestGIScene (non-GBV) exit 0, 0 D3D12 errors, MAE 0.139 (up from 0.103 — real luminance now contributes); GBV loads 19 res/13 passes, LightPass CL clean, only the pre-existing TASK-163 FinalBlend residual.
+- NEXT: fidelity — raytracing (SunShadowRT first = real sun shadows, smallest RT entry) or SSRC GI; then swap the minimal LightPass for full lightPass.comp. [task-stays-open]
 
 <!-- SECTION:NOTES:END -->
