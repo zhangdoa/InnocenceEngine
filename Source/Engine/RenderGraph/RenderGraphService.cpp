@@ -100,6 +100,12 @@ bool RenderGraphService::CreatePassNode(const PassNodeDesc& desc)
 		l_pipeline.m_RasterizerDesc.m_UseCulling = desc.m_Raster.m_UseCulling;
 	}
 
+	// A raytracing node: the engine builds the RT PSO + shader table from the
+	// ShaderProgram's RT stages (copied above). m_UseOutputMerger is forced off
+	// by the deferred-RT block below (the visibility UAV is a screen write).
+	if (desc.m_UseRaytracing)
+		l_renderPassDesc.m_UseRaytracing = true;
+
 	// A screen-sized write makes this node own a deferred RT: hand the engine an
 	// RT-init-func that (re)creates that texture at current screen resolution, and
 	// mark the pass resizable so PostResize re-invokes it (parity with the
@@ -143,6 +149,7 @@ bool RenderGraphService::CreatePassNode(const PassNodeDesc& desc)
 		l_layout.m_ShaderStage = l_binding.m_ShaderStage;
 		l_layout.m_IsRootConstant = l_binding.m_IsRootConstant;
 		l_layout.m_SubresourceCount = l_binding.m_SubresourceCount;
+		l_layout.m_GPUBufferUsage = l_binding.m_GPUBufferUsage;
 	}
 
 	l_renderPass->m_ShaderProgram = l_node->m_ShaderProgram;

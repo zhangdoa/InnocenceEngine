@@ -1,10 +1,10 @@
 // shadertype=hlsl
 
-// Minimal LightPass: sun as an UNSHADOWED directional light + a small flat
-// ambient, written to the luminance RT. Degraded stand-in for lightPass.comp
-// (no GI/TLAS/point-lights/RT-shadows -- SSRC + raytracing not in the
-// keep-set), which keeps it on the plain compute path. Reuses DecodeGBuffer +
-// AccumulateLightContribution from common/lightPassCommon.hlsl.
+// Minimal LightPass: sun as a directional light, attenuated by SunShadowRTPass's
+// per-pixel RT visibility (R8, 0=shadowed, 1=lit), + a small flat ambient.
+// Degraded stand-in for lightPass.comp (no radiance-cache GI or tiled point
+// lights yet). Reuses DecodeGBuffer + AccumulateLightContribution from
+// common/lightPassCommon.hlsl.
 
 #include "common/common.hlsl"
 
@@ -29,6 +29,8 @@ Texture2D in_opaquePassRT2 : register(t2);
 Texture2D in_BRDFLUT : register(t3);
 [[vk::binding(4, 1)]]
 Texture2D in_BRDFMSLUT : register(t4);
+[[vk::binding(5, 1)]]
+Texture2D<float> in_SunShadowRTVisibility : register(t5);
 [[vk::binding(0, 2)]]
 SamplerState in_samplerPoint : register(s0);
 [[vk::binding(0, 3)]]
@@ -66,6 +68,12 @@ void main(ComputeInputType input)
 		l_Material, l_V, l_NormalWS, l_L,
 		g_Frame.sun_illuminance.xyz, 1.0,
 		l_SunDirect, l_SunIndirectSeed);
+
+	// Sun-shadow visibility (SunShadowRTPass, R8: 0=shadowed, 1=lit). Until the
+	// TLAS is ready the pass is skipped and this reads the cleared buffer (0 =
+	// shadowed) for the first frames, then resolves once tracing begins.
+	float l_SunVisibility = in_SunShadowRTVisibility.Load(int3(l_ScreenCoord, 0));
+	l_SunDirect *= l_SunVisibility;
 
 	float3 l_Ambient = l_Material.m_Albedo * SIMPLE_AMBIENT_INTENSITY;
 

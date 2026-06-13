@@ -164,6 +164,19 @@
             "Lifetime": "Persistent"
         },
         {
+            "Name": "SunShadowRT_Visibility",
+            "Type": "Texture",
+            "Size": "screen",
+            "DepthOrArraySize": 1,
+            "MipLevels": 1,
+            "Sampler": "Sampler2D",
+            "Usage": "ComputeOnly",
+            "PixelDataType": "UByte",
+            "PixelDataFormat": "R",
+            "GPUAccessibility": "ReadWrite",
+            "Lifetime": "Persistent"
+        },
+        {
             "Name": "TiledFrustumGPUBuffer",
             "Type": "Buffer",
             "Imported": true
@@ -394,10 +407,33 @@
             }
         },
         {
+            "Name": "SunShadowRTPass",
+            "Queue": "Compute",
+            "UseRaytracing": true,
+            "Shader": { "RayGen": "SunShadowRTRayGen.hlsl", "AnyHit": "SunShadowRTAnyHit.hlsl", "ClosestHit": "SunShadowRTClosestHit.hlsl", "Miss": "SunShadowRTMiss.hlsl", "ShadowMiss": "SunShadowRTShadowMiss.hlsl" },
+            "Reads": [ "PerFrameCBuffer", "TLAS", "OpaquePass_RT_0", "OpaquePass_RT_1" ],
+            "Writes": [ "SunShadowRT_Visibility" ],
+            "Bindings": [
+                { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "RayGen" },
+                { "Resource": "TLAS", "Type": "Buffer", "Set": 1, "Index": 0, "BufferUsage": "TLAS", "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "Stage": "RayGen" },
+                { "Resource": "OpaquePass_RT_0", "Type": "Image", "Set": 1, "Index": 1, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "RayGen" },
+                { "Resource": "OpaquePass_RT_1", "Type": "Image", "Set": 1, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "RayGen" },
+                { "Resource": "SunShadowRT_Visibility", "Type": "Image", "Set": 2, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "RayGen" }
+            ],
+            "Transitions": [
+                { "Resource": "OpaquePass_RT_0", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "OpaquePass_RT_1", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "SunShadowRT_Visibility", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "DispatchRays", "X": 1, "Y": 1, "Z": 1, "TileSize": 0 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        },
+        {
             "Name": "LightPass",
             "Queue": "Compute",
             "Shader": { "CS": "lightPassSimple.comp" },
-            "Reads": [ "PerFrameCBuffer", "OpaquePass_RT_0", "OpaquePass_RT_1", "OpaquePass_RT_2", "BRDF LUT", "BRDF MS LUT" ],
+            "Reads": [ "PerFrameCBuffer", "OpaquePass_RT_0", "OpaquePass_RT_1", "OpaquePass_RT_2", "BRDF LUT", "BRDF MS LUT", "SunShadowRT_Visibility" ],
             "Writes": [ "LightPass Luminance Result" ],
             "Bindings": [
                 { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
@@ -406,6 +442,7 @@
                 { "Resource": "OpaquePass_RT_2", "Type": "Image", "Set": 1, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
                 { "Resource": "BRDF LUT", "Type": "Image", "Set": 1, "Index": 3, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
                 { "Resource": "BRDF MS LUT", "Type": "Image", "Set": 1, "Index": 4, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
+                { "Resource": "SunShadowRT_Visibility", "Type": "Image", "Set": 1, "Index": 5, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "TextureUsage": "ComputeOnly", "Stage": "Compute" },
                 { "Resource": "LightPass", "Type": "Sampler", "Set": 2, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
                 { "Resource": "LightPass Luminance Result", "Type": "Image", "Set": 3, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ComputeOnly", "Stage": "Compute" }
             ],
@@ -415,6 +452,7 @@
                 { "Resource": "OpaquePass_RT_2", "From": "WriteOnly", "To": "ReadOnly" },
                 { "Resource": "BRDF LUT", "From": "WriteOnly", "To": "ReadOnly" },
                 { "Resource": "BRDF MS LUT", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "SunShadowRT_Visibility", "From": "WriteOnly", "To": "ReadOnly" },
                 { "Resource": "LightPass Luminance Result", "From": "ReadOnly", "To": "WriteOnly" }
             ],
             "Dispatch": { "Mode": "ScreenTile", "X": 1, "Y": 1, "Z": 1, "TileSize": 8 },

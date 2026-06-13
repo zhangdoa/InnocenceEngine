@@ -31,6 +31,15 @@ namespace
 			return;
 		}
 
+		if (d.m_Mode == DispatchMode::DispatchRays)
+		{
+			auto l_res = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+			x = static_cast<uint32_t>(l_res.x);
+			y = static_cast<uint32_t>(l_res.y);
+			z = 1;
+			return;
+		}
+
 		auto l_vp = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 		if (d.m_Mode == DispatchMode::ScreenTile)
 		{
@@ -163,7 +172,10 @@ bool Inno::RecordPass(RenderGraphPassContext& ctx)
 			ctx.m_Node->m_Bindings[i].m_ShaderStage, l_resource, i);
 	}
 
-	l_fmService->Dispatch(ctx.m_RenderPass, ctx.m_CommandList, l_x, l_y, l_z);
+	if (ctx.m_Node->m_Dispatch.m_Mode == DispatchMode::DispatchRays)
+		l_fmService->DispatchRays(ctx.m_RenderPass, ctx.m_CommandList, l_x, l_y, l_z);
+	else
+		l_fmService->Dispatch(ctx.m_RenderPass, ctx.m_CommandList, l_x, l_y, l_z);
 	l_fmService->CommandListEnd(ctx.m_RenderPass, ctx.m_CommandList);
 
 	// Publish the output's post-write state so a downstream consumer (e.g. a

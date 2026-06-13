@@ -69,6 +69,9 @@ namespace Inno
 		// draw). m_SubresourceCount = the constant count. Recording skips it.
 		bool m_IsRootConstant = false;
 		uint32_t m_SubresourceCount = 1;
+		// For an acceleration-structure binding (GPUBufferUsage::TLAS), the engine
+		// emits a root SRV instead of a descriptor-table entry. Generic otherwise.
+		GPUBufferUsage m_GPUBufferUsage = GPUBufferUsage::Generic;
 	};
 
 	// An ordered render-target state transition recorded on the graphics queue
@@ -89,7 +92,9 @@ namespace Inno
 	// light-culling floor-then-ceil reduction; DrawModelGroups packs the live
 	// draw-model count into groups of m_TileSize. A dispatch variant is data,
 	// not a code path.
-	enum class DispatchMode { Static, ScreenTile, TiledTwoLevel, DrawModelGroups };
+	// DispatchRays issues a raytracing dispatch sized to the screen resolution
+	// (x=width, y=height, z=1); the engine skips it until the TLAS is ready.
+	enum class DispatchMode { Static, ScreenTile, TiledTwoLevel, DrawModelGroups, DispatchRays };
 
 	struct DispatchDesc
 	{
@@ -140,6 +145,11 @@ namespace Inno
 		// downstream consumer emits the correct barrier (e.g. culling -> ExecuteIndirect).
 		bool m_TrackWriteState = false;
 		RasterDesc m_Raster = {};
+		// A raytracing node: the engine builds an RT PSO + shader table from the
+		// ShaderFilePaths RT stages and the body issues DispatchRays. The TLAS is
+		// engine-owned (bind the "TLAS" dynamic name); BLAS/TLAS build + readiness
+		// are handled outside the graph (FrameManagementService / mesh service).
+		bool m_UseRaytracing = false;
 	};
 
 	struct RenderGraphDesc

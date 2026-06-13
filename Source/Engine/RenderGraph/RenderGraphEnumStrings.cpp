@@ -90,7 +90,8 @@ namespace
 
 	const std::vector<Row<DispatchMode>> g_DispatchMode = {
 		{ DispatchMode::Static, "Static" }, { DispatchMode::ScreenTile, "ScreenTile" },
-		{ DispatchMode::TiledTwoLevel, "TiledTwoLevel" }, { DispatchMode::DrawModelGroups, "DrawModelGroups" } };
+		{ DispatchMode::TiledTwoLevel, "TiledTwoLevel" }, { DispatchMode::DrawModelGroups, "DrawModelGroups" },
+		{ DispatchMode::DispatchRays, "DispatchRays" } };
 
 	const std::vector<Row<ComparisionFunction>> g_ComparisionFunction = {
 		{ ComparisionFunction::Never, "Never" }, { ComparisionFunction::Less, "Less" },

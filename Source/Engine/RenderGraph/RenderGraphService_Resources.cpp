@@ -23,6 +23,9 @@ namespace
 	// must re-resolve through their accessor each frame, never pin by name.
 	const char* const g_PerFrameCBufferPrevName = "PerFrameCBufferPrev";
 	const char* const g_TransformBufferName = "TransformBuffer";
+	// The engine-owned scene TLAS (built per frame by FrameManagementService /
+	// the mesh service). Bound by name; DispatchRays self-guards on IsTLASReady.
+	const char* const g_TLASName = "TLAS";
 }
 
 GPUResourceComponent* RenderGraphService::FindResource(const std::string& name)
@@ -36,6 +39,8 @@ GPUResourceComponent* RenderGraphService::FindResource(const std::string& name)
 		return g_Engine->Get<PerFrameDataService>()->GetPreviousFrameBuffer();
 	if (name == g_TransformBufferName)
 		return g_Engine->Get<DrawCallService>()->GetCurrentFrameTransformBuffer();
+	if (name == g_TLASName)
+		return g_Engine->Get<GPUBufferResourceService>()->GetTLASBuffer();
 
 	// A plain read of a ping-pong name resolves to the current-frame output
 	// (parity with the imperative pass's GetResult()).

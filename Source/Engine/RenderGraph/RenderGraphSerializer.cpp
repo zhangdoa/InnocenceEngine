@@ -92,6 +92,8 @@ namespace
 			j["RootConstant"] = true;
 		if (b.m_SubresourceCount != 1)
 			j["SubresourceCount"] = b.m_SubresourceCount;
+		if (b.m_GPUBufferUsage != GPUBufferUsage::Generic)
+			j["BufferUsage"] = ES::ToString(b.m_GPUBufferUsage);
 		return j;
 	}
 
@@ -108,6 +110,7 @@ namespace
 		b.m_PingPongHistory = j.value("PingPongHistory", false);
 		b.m_IsRootConstant = j.value("RootConstant", false);
 		b.m_SubresourceCount = j.value("SubresourceCount", 1u);
+		b.m_GPUBufferUsage = ES::GPUBufferUsageFromString(j.value("BufferUsage", std::string("Generic")));
 	}
 
 	json TransitionToJson(const TransitionDesc& t)
@@ -141,6 +144,11 @@ namespace
 		if (p.m_ShaderFilePaths.m_VSPath.c_str()[0]) shader["VS"] = p.m_ShaderFilePaths.m_VSPath.c_str();
 		if (p.m_ShaderFilePaths.m_PSPath.c_str()[0]) shader["PS"] = p.m_ShaderFilePaths.m_PSPath.c_str();
 		if (p.m_ShaderFilePaths.m_CSPath.c_str()[0]) shader["CS"] = p.m_ShaderFilePaths.m_CSPath.c_str();
+		if (p.m_ShaderFilePaths.m_RayGenPath.c_str()[0]) shader["RayGen"] = p.m_ShaderFilePaths.m_RayGenPath.c_str();
+		if (p.m_ShaderFilePaths.m_AnyHitPath.c_str()[0]) shader["AnyHit"] = p.m_ShaderFilePaths.m_AnyHitPath.c_str();
+		if (p.m_ShaderFilePaths.m_ClosestHitPath.c_str()[0]) shader["ClosestHit"] = p.m_ShaderFilePaths.m_ClosestHitPath.c_str();
+		if (p.m_ShaderFilePaths.m_MissPath.c_str()[0]) shader["Miss"] = p.m_ShaderFilePaths.m_MissPath.c_str();
+		if (p.m_ShaderFilePaths.m_ShadowMissPath.c_str()[0]) shader["ShadowMiss"] = p.m_ShaderFilePaths.m_ShadowMissPath.c_str();
 
 
 		json j = json{
@@ -174,6 +182,8 @@ namespace
 				{ "CrossQueueExitToCommon", p.m_Raster.m_CrossQueueExitToCommon },
 				{ "IndirectArgsBuffer", p.m_Raster.m_IndirectArgsBuffer } };
 		}
+		if (p.m_UseRaytracing)
+			j["UseRaytracing"] = true;
 		return j;
 	}
 
@@ -186,6 +196,11 @@ namespace
 			p.m_ShaderFilePaths.m_VSPath = j["Shader"].value("VS", std::string()).c_str();
 			p.m_ShaderFilePaths.m_PSPath = j["Shader"].value("PS", std::string()).c_str();
 			p.m_ShaderFilePaths.m_CSPath = j["Shader"].value("CS", std::string()).c_str();
+			p.m_ShaderFilePaths.m_RayGenPath = j["Shader"].value("RayGen", std::string()).c_str();
+			p.m_ShaderFilePaths.m_AnyHitPath = j["Shader"].value("AnyHit", std::string()).c_str();
+			p.m_ShaderFilePaths.m_ClosestHitPath = j["Shader"].value("ClosestHit", std::string()).c_str();
+			p.m_ShaderFilePaths.m_MissPath = j["Shader"].value("Miss", std::string()).c_str();
+			p.m_ShaderFilePaths.m_ShadowMissPath = j["Shader"].value("ShadowMiss", std::string()).c_str();
 		}
 		if (j.contains("Reads"))
 			for (const auto& r : j["Reads"]) p.m_Reads.push_back(r.get<std::string>());
@@ -225,6 +240,7 @@ namespace
 		}
 		p.m_TrackWriteState = j.value("TrackWriteState", false);
 		p.m_OneShot = j.value("OneShot", false);
+		p.m_UseRaytracing = j.value("UseRaytracing", false);
 	}
 }
 
