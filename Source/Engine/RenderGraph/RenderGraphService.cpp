@@ -57,6 +57,29 @@ bool RenderGraphService::LoadGraph(const char* fileName)
 			l_hook->second();
 	}
 
+	// Drain RenderPassResourceService deferred queue, then publish each
+	// raster node's auto-created OutputMerger color + depth-stencil textures
+	// under their conventional names so downstream passes can bind them by
+	// name in pure JSON.
+	g_Engine->Get<RenderPassResourceService>()->InitializeComponents();
+	for (auto& l_kv : m_Nodes)
+	{
+		auto& l_nodeDesc = l_kv.second->m_Desc;
+		auto* l_renderPass = l_kv.second->m_RenderPass;
+		if (!l_nodeDesc.m_Raster.m_Enabled || !l_renderPass)
+			continue;
+		auto* l_om = l_renderPass->m_OutputMergerTarget;
+		if (!l_om)
+			continue;
+		for (size_t i = 0; i < l_om->m_ColorOutputs.size(); ++i)
+		{
+			if (l_om->m_ColorOutputs[i])
+				m_Resources[l_nodeDesc.m_Name + "_RT_" + std::to_string(i)] = l_om->m_ColorOutputs[i];
+		}
+		if (l_om->m_DepthStencilOutput)
+			m_Resources[l_nodeDesc.m_Name + "_DS"] = l_om->m_DepthStencilOutput;
+	}
+
 	m_Loaded = true;
 	Log(Success, "RenderGraphService loaded graph [", m_Desc.m_Name.c_str(), "] with ",
 		m_Desc.m_Resources.size(), " resources and ", m_Desc.m_Passes.size(), " passes.");
