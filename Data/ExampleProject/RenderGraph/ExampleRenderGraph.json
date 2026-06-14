@@ -2674,17 +2674,24 @@
             "Name": "LightPass",
             "Queue": "Compute",
             "Shader": {
-                "CS": "lightPassSimple.comp"
+                "CS": "lightPass.comp"
             },
             "Reads": [
                 "PerFrameCBuffer",
+                "PointLightCBuffer",
+                "SphereLightCBuffer",
                 "OpaquePass_RT_0",
                 "OpaquePass_RT_1",
                 "OpaquePass_RT_2",
+                "OpaquePass_RT_3",
                 "BRDF LUT",
                 "BRDF MS LUT",
+                "SSAO_Result",
+                "LightCulling LightGrid",
+                "LightIndexList",
+                "Radiance Cache Result",
                 "SunShadowRT_Visibility",
-                "SSRC SpatialV Result"
+                "TLAS"
             ],
             "Writes": [
                 "LightPass Luminance Result",
@@ -2701,12 +2708,30 @@
                     "Stage": "Compute"
                 },
                 {
+                    "Resource": "PointLightCBuffer",
+                    "Type": "Buffer",
+                    "Set": 0,
+                    "Index": 1,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "SphereLightCBuffer",
+                    "Type": "Buffer",
+                    "Set": 0,
+                    "Index": 2,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadOnly",
+                    "Stage": "Compute"
+                },
+                {
                     "Resource": "OpaquePass_RT_0",
                     "Type": "Image",
                     "Set": 1,
                     "Index": 0,
                     "BindingAccess": "ReadOnly",
-                    "ResourceAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
                     "TextureUsage": "ColorAttachment",
                     "Stage": "Compute"
                 },
@@ -2716,7 +2741,7 @@
                     "Set": 1,
                     "Index": 1,
                     "BindingAccess": "ReadOnly",
-                    "ResourceAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
                     "TextureUsage": "ColorAttachment",
                     "Stage": "Compute"
                 },
@@ -2726,7 +2751,17 @@
                     "Set": 1,
                     "Index": 2,
                     "BindingAccess": "ReadOnly",
-                    "ResourceAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ColorAttachment",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "OpaquePass_RT_3",
+                    "Type": "Image",
+                    "Set": 1,
+                    "Index": 3,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
                     "TextureUsage": "ColorAttachment",
                     "Stage": "Compute"
                 },
@@ -2734,9 +2769,9 @@
                     "Resource": "BRDF LUT",
                     "Type": "Image",
                     "Set": 1,
-                    "Index": 3,
+                    "Index": 4,
                     "BindingAccess": "ReadOnly",
-                    "ResourceAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
                     "TextureUsage": "ComputeOnly",
                     "Stage": "Compute"
                 },
@@ -2744,37 +2779,76 @@
                     "Resource": "BRDF MS LUT",
                     "Type": "Image",
                     "Set": 1,
-                    "Index": 4,
+                    "Index": 5,
                     "BindingAccess": "ReadOnly",
-                    "ResourceAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
                     "TextureUsage": "ComputeOnly",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "SSAO_Result",
+                    "Type": "Image",
+                    "Set": 1,
+                    "Index": 6,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ColorAttachment",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "LightCulling LightGrid",
+                    "Type": "Image",
+                    "Set": 1,
+                    "Index": 8,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ColorAttachment",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "LightIndexList",
+                    "Type": "Buffer",
+                    "Set": 1,
+                    "Index": 9,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "Radiance Cache Result",
+                    "Type": "Image",
+                    "Set": 1,
+                    "Index": 10,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
+                    "TextureUsage": "ColorAttachment",
                     "Stage": "Compute"
                 },
                 {
                     "Resource": "SunShadowRT_Visibility",
                     "Type": "Image",
                     "Set": 1,
-                    "Index": 5,
+                    "Index": 13,
                     "BindingAccess": "ReadOnly",
-                    "ResourceAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
                     "TextureUsage": "ComputeOnly",
                     "Stage": "Compute"
                 },
                 {
-                    "Resource": "SSRC SpatialV Result",
-                    "Type": "Image",
+                    "Resource": "TLAS",
+                    "Type": "Buffer",
                     "Set": 1,
-                    "Index": 6,
+                    "Index": 14,
+                    "BufferUsage": "TLAS",
                     "BindingAccess": "ReadOnly",
-                    "ResourceAccess": "ReadOnly",
-                    "TextureUsage": "ComputeOnly",
+                    "ResourceAccess": "ReadWrite",
                     "Stage": "Compute"
                 },
                 {
-                    "Resource": "LightPass",
+                    "Resource": "LightPass/PointSampler",
                     "Type": "Sampler",
                     "Set": 2,
-                    "Index": 0,
+                    "Index": 1,
                     "BindingAccess": "ReadOnly",
                     "ResourceAccess": "ReadOnly",
                     "Stage": "Compute"
@@ -2786,7 +2860,7 @@
                     "Index": 0,
                     "BindingAccess": "ReadWrite",
                     "ResourceAccess": "ReadWrite",
-                    "TextureUsage": "ComputeOnly",
+                    "TextureUsage": "ColorAttachment",
                     "Stage": "Compute"
                 },
                 {
@@ -2796,7 +2870,7 @@
                     "Index": 1,
                     "BindingAccess": "ReadWrite",
                     "ResourceAccess": "ReadWrite",
-                    "TextureUsage": "ComputeOnly",
+                    "TextureUsage": "ColorAttachment",
                     "Stage": "Compute"
                 }
             ],
@@ -2817,6 +2891,11 @@
                     "To": "ReadOnly"
                 },
                 {
+                    "Resource": "OpaquePass_RT_3",
+                    "From": "WriteOnly",
+                    "To": "ReadOnly"
+                },
+                {
                     "Resource": "BRDF LUT",
                     "From": "WriteOnly",
                     "To": "ReadOnly"
@@ -2827,12 +2906,27 @@
                     "To": "ReadOnly"
                 },
                 {
-                    "Resource": "SunShadowRT_Visibility",
+                    "Resource": "SSAO_Result",
                     "From": "WriteOnly",
                     "To": "ReadOnly"
                 },
                 {
-                    "Resource": "SSRC SpatialV Result",
+                    "Resource": "LightCulling LightGrid",
+                    "From": "WriteOnly",
+                    "To": "ReadOnly"
+                },
+                {
+                    "Resource": "LightIndexList",
+                    "From": "WriteOnly",
+                    "To": "ReadOnly"
+                },
+                {
+                    "Resource": "Radiance Cache Result",
+                    "From": "WriteOnly",
+                    "To": "ReadOnly"
+                },
+                {
+                    "Resource": "SunShadowRT_Visibility",
                     "From": "WriteOnly",
                     "To": "ReadOnly"
                 },
@@ -5122,212 +5216,6 @@
                     "BindingAccess": "ReadWrite",
                     "ResourceAccess": "ReadWrite",
                     "TextureUsage": "ComputeOnly",
-                    "Stage": "Compute"
-                }
-            ],
-            "Dispatch": {
-                "Mode": "ScreenTile",
-                "X": 1,
-                "Y": 1,
-                "Z": 1,
-                "TileSize": 8
-            },
-            "Bypass": {
-                "Enabled": true,
-                "ClearOnBypass": false
-            },
-            "OneShot": false
-        },
-        {
-            "Name": "LightPassFull",
-            "Queue": "Compute",
-            "Shader": {
-                "CS": "lightPass.comp"
-            },
-            "Reads": [
-                "PerFrameCBuffer",
-                "PointLightCBuffer",
-                "SphereLightCBuffer",
-                "Voxelization CBuffer",
-                "GI CBuffer",
-                "OpaquePass_RT_0",
-                "OpaquePass_RT_1",
-                "OpaquePass_RT_2",
-                "OpaquePass_RT_3",
-                "BRDF LUT",
-                "BRDF MS LUT",
-                "SSAO_Result",
-                "LightCulling LightGrid",
-                "LightIndexList",
-                "Radiance Cache Result",
-                "LightPass/Volumetric Fog",
-                "SunShadowRT_Visibility",
-                "TLAS"
-            ],
-            "Writes": [
-                "LightPass Luminance Result",
-                "LightPass Illuminance Result"
-            ],
-            "Bindings": [
-                {
-                    "Resource": "PerFrameCBuffer",
-                    "Type": "Buffer",
-                    "Set": 0,
-                    "Index": 0
-                },
-                {
-                    "Resource": "PointLightCBuffer",
-                    "Type": "Buffer",
-                    "Set": 0,
-                    "Index": 1
-                },
-                {
-                    "Resource": "SphereLightCBuffer",
-                    "Type": "Buffer",
-                    "Set": 0,
-                    "Index": 2
-                },
-                {
-                    "Resource": "Voxelization CBuffer",
-                    "Type": "Buffer",
-                    "Set": 0,
-                    "Index": 4
-                },
-                {
-                    "Resource": "GI CBuffer",
-                    "Type": "Buffer",
-                    "Set": 0,
-                    "Index": 5
-                },
-                {
-                    "Resource": "OpaquePass_RT_0",
-                    "Type": "Image",
-                    "Set": 1,
-                    "Index": 0,
-                    "TextureUsage": "ColorAttachment",
-                    "Stage": "Compute"
-                },
-                {
-                    "Resource": "OpaquePass_RT_1",
-                    "Type": "Image",
-                    "Set": 1,
-                    "Index": 1,
-                    "TextureUsage": "ColorAttachment",
-                    "Stage": "Compute"
-                },
-                {
-                    "Resource": "OpaquePass_RT_2",
-                    "Type": "Image",
-                    "Set": 1,
-                    "Index": 2,
-                    "TextureUsage": "ColorAttachment",
-                    "Stage": "Compute"
-                },
-                {
-                    "Resource": "OpaquePass_RT_3",
-                    "Type": "Image",
-                    "Set": 1,
-                    "Index": 3,
-                    "TextureUsage": "ColorAttachment",
-                    "Stage": "Compute"
-                },
-                {
-                    "Resource": "BRDF LUT",
-                    "Type": "Image",
-                    "Set": 1,
-                    "Index": 4,
-                    "TextureUsage": "ComputeOnly",
-                    "Stage": "Compute"
-                },
-                {
-                    "Resource": "BRDF MS LUT",
-                    "Type": "Image",
-                    "Set": 1,
-                    "Index": 5,
-                    "TextureUsage": "ComputeOnly",
-                    "Stage": "Compute"
-                },
-                {
-                    "Resource": "SSAO_Result",
-                    "Type": "Image",
-                    "Set": 1,
-                    "Index": 6,
-                    "TextureUsage": "ColorAttachment"
-                },
-                {
-                    "Resource": "LightCulling LightGrid",
-                    "Type": "Image",
-                    "Set": 1,
-                    "Index": 8,
-                    "BindingAccess": "ReadOnly",
-                    "ResourceAccess": "ReadWrite",
-                    "TextureUsage": "ColorAttachment"
-                },
-                {
-                    "Resource": "LightIndexList",
-                    "Type": "Buffer",
-                    "Set": 1,
-                    "Index": 9,
-                    "BindingAccess": "ReadOnly",
-                    "ResourceAccess": "ReadWrite"
-                },
-                {
-                    "Resource": "Radiance Cache Result",
-                    "Type": "Image",
-                    "Set": 1,
-                    "Index": 10,
-                    "BindingAccess": "ReadOnly",
-                    "ResourceAccess": "ReadWrite",
-                    "TextureUsage": "ColorAttachment"
-                },
-                {
-                    "Resource": "LightPass/Volumetric Fog",
-                    "Type": "Image",
-                    "Set": 1,
-                    "Index": 11,
-                    "BindingAccess": "ReadOnly",
-                    "ResourceAccess": "ReadWrite",
-                    "TextureUsage": "ColorAttachment"
-                },
-                {
-                    "Resource": "LightPass Luminance Result",
-                    "Type": "Image",
-                    "Set": 3,
-                    "Index": 0,
-                    "BindingAccess": "ReadWrite",
-                    "ResourceAccess": "ReadWrite",
-                    "TextureUsage": "ColorAttachment"
-                },
-                {
-                    "Resource": "LightPass Illuminance Result",
-                    "Type": "Image",
-                    "Set": 3,
-                    "Index": 1,
-                    "BindingAccess": "ReadWrite",
-                    "ResourceAccess": "ReadWrite",
-                    "TextureUsage": "ColorAttachment"
-                },
-                {
-                    "Resource": "LightPass/PointSampler",
-                    "Type": "Sampler",
-                    "Set": 2,
-                    "Index": 1
-                },
-                {
-                    "Resource": "SunShadowRT_Visibility",
-                    "Type": "Image",
-                    "Set": 1,
-                    "Index": 13,
-                    "TextureUsage": "ComputeOnly"
-                },
-                {
-                    "Resource": "TLAS",
-                    "Type": "Buffer",
-                    "Set": 1,
-                    "Index": 14,
-                    "BufferUsage": "TLAS",
-                    "BindingAccess": "ReadOnly",
-                    "ResourceAccess": "ReadWrite",
                     "Stage": "Compute"
                 }
             ],

@@ -18,15 +18,17 @@ set(TEST_SOURCES
     UnitTests/UnorderedSetTests.cpp
     UnitTests/DequeTests.cpp
     UnitTests/RenderGraphSerializerTests.cpp
+    UnitTests/RenderGraphSerializerTests_Core.cpp
     UnitTests/RenderGraphSerializerTests_ScreenSized.cpp
     UnitTests/RenderGraphTransitionTests.cpp
     UnitTests/RenderGraphSerializerTests_SSAO.cpp
+    UnitTests/RenderGraphSerializerTests_Tiled.cpp
     UnitTests/RenderGraphSerializerTests_TiledFrustum.cpp
     UnitTests/RenderGraphSerializerTests_PingPong.cpp
     UnitTests/RenderGraphSerializerTests_Raster.cpp
     UnitTests/RenderGraphSerializerTests_Bypass.cpp
     UnitTests/RenderGraphSerializerTests_Raytracing.cpp
-    UnitTests/RenderGraphSerializerTests_Tiled.cpp
+    UnitTests/RenderGraphSerializerTests_LightPassFull.cpp
     # Performance tests
     PerformanceTests/StringConversionPerf.cpp
     PerformanceTests/ContainerPerf.cpp

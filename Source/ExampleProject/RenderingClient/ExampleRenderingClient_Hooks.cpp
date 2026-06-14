@@ -56,16 +56,17 @@ namespace Inno
 			l_samplerService->Initialize(l_sampler);
 		});
 
-		// LightPass imports a single point (nearest) sampler by name — used to
-		// sample the BRDF LUTs in the BSDF accumulator. Bound as the pass's s0.
-		l_graph->RegisterInitHook("LightPass", []()
-		{
-			auto l_samplerService = g_Engine->Get<SamplerResourceService>();
-			auto l_sampler = l_samplerService->Add("LightPass");
-			l_sampler->m_SamplerDesc.m_MinFilterMethod = TextureFilterMethod::Nearest;
-			l_sampler->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
-			l_samplerService->Initialize(l_sampler);
-		});
+	// LightPass (lightPass.comp) imports a single point (nearest) sampler by name
+	// — used to sample the BRDF LUTs in the BSDF accumulator. Bound as the
+	// pass's s1.
+	l_graph->RegisterInitHook("LightPass", []()
+	{
+		auto l_samplerService = g_Engine->Get<SamplerResourceService>();
+		auto l_sampler = l_samplerService->Add("LightPass/PointSampler");
+		l_sampler->m_SamplerDesc.m_MinFilterMethod = TextureFilterMethod::Nearest;
+		l_sampler->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
+		l_samplerService->Initialize(l_sampler);
+	});
 
 		// SSAONoisePass imports a sample kernel (hemisphere distribution), a 4x4
 		// random-rotation noise texture, and two samplers — all by name. Created +
