@@ -280,6 +280,12 @@ extern void TestRasterNodeRoundTrip();
 // Raytracing fixture (compute-queue node: RT shader stages + TLAS binding +
 // DispatchRays) lives in RenderGraphSerializerTests_Raytracing.cpp.
 extern void TestRaytracingNodeRoundTrip();
+
+// Bypass primitive fixture (Bypass.Enabled + ClearOnBypass + raster pipeline
+// description in a declared-but-inert node) lives in
+// RenderGraphSerializerTests_Bypass.cpp.
+extern void TestBypassNodeRoundTrip();
+
 extern void RunRenderGraphSerializerTiledUnitTests();
 void RunRenderGraphSerializerUnitTests()
 {
@@ -295,6 +301,8 @@ void RunRenderGraphSerializerUnitTests()
 	TestPingPongNodeRoundTrip();
 	TestRasterNodeRoundTrip();
 	TestRaytracingNodeRoundTrip();
+	TestBypassNodeRoundTrip();
 	RunRenderGraphSerializerTiledUnitTests();
 	TestRunner::EndTestSuite();
 }
+

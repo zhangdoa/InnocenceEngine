@@ -24,6 +24,7 @@ set(TEST_SOURCES
     UnitTests/RenderGraphSerializerTests_TiledFrustum.cpp
     UnitTests/RenderGraphSerializerTests_PingPong.cpp
     UnitTests/RenderGraphSerializerTests_Raster.cpp
+    UnitTests/RenderGraphSerializerTests_Bypass.cpp
     UnitTests/RenderGraphSerializerTests_Raytracing.cpp
     UnitTests/RenderGraphSerializerTests_Tiled.cpp
     # Performance tests

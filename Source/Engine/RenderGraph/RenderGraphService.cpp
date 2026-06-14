@@ -39,9 +39,21 @@ bool RenderGraphService::LoadGraph(const char* fileName)
 
 	for (const auto& l_pass : m_Desc.m_Passes)
 	{
+		// Bypass node: declared in the graph for documentation / round-trip /
+		// future re-enable, but never instantiated (no components, no shader
+		// compile, no RT alloc, no entry in m_Schedule). Render() and
+		// CreateOrphanResources / CreateResource also short-circuit on
+		// IsReferencedByLivePasses so its Writes never allocate either.
+		if (l_pass.m_BypassEnabled)
+		{
+			Log(Verbose, "RenderGraphService: pass [", l_pass.m_Name.c_str(),
+				"] bypassed; skipping instantiation.");
+			continue;
+		}
 		if (!CreatePassNode(l_pass))
 			return false;
 	}
+
 	// Graph-owned resources whose producing pass isn't a graph node yet have no
 	// node to create/initialize them; the factory does it so consumers bind a
 	// valid (zeroed) input. Resources WITH a producing node are owned by it.
@@ -50,12 +62,17 @@ bool RenderGraphService::LoadGraph(const char* fileName)
 	// Named init hooks: residual CPU resource creation/fill a pure-data node can't
 	// express (SSAO noise/kernel/samplers, tiled-frustum buffers). The client
 	// registered these before LoadGraph; run each once now that the nodes exist.
+	// Bypassed nodes aren't instantiated, so their registered hooks (if any) are
+	// skipped — invoking them would touch un-created resources.
 	for (const auto& l_pass : m_Desc.m_Passes)
 	{
+		if (l_pass.m_BypassEnabled)
+			continue;
 		auto l_hook = m_InitHooks.find(l_pass.m_Name);
 		if (l_hook != m_InitHooks.end())
 			l_hook->second();
 	}
+
 
 	// Drain RenderPassResourceService deferred queue, then publish each
 	// raster node's auto-created OutputMerger color + depth-stencil textures

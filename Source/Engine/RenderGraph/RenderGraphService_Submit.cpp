@@ -32,6 +32,13 @@ bool RenderGraphService::Render()
 	Inno::Array<RenderGraphPassNode*> l_recorded;
 	for (auto* l_node : m_Schedule)
 	{
+		// Bypass: a node marked Bypass.Enabled is in the graph only as data
+		// (description-as-data scaffold / future re-enable). It is not in
+		// m_Schedule today (CreatePassNode skipped it on Load), but the explicit
+		// guard makes the contract self-evident and survives any future path
+		// that re-introduces bypassed nodes into the schedule.
+		if (l_node->m_Desc.m_BypassEnabled)
+			continue;
 		if (l_node->m_Desc.m_OneShot && m_OneShotDone)
 			continue;
 		if (!l_node->m_RenderPass || l_node->m_RenderPass->m_ObjectStatus != ObjectStatus::Activated)

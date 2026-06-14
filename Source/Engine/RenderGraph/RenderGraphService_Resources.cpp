@@ -13,6 +13,26 @@ using namespace Inno;
 
 namespace
 {
+	// True iff `name` is referenced (Reads / Writes / Bindings) by any NON-bypassed
+	// pass. A resource referenced only by bypassed passes is itself bypassed: never
+	// instantiated; the data description round-trips for documentation and future
+	// re-enable, but no GPU component is created.
+	bool IsReferencedByLivePasses(const RenderGraphDesc& desc, const std::string& name)
+	{
+		for (const auto& l_pass : desc.m_Passes)
+		{
+			if (l_pass.m_BypassEnabled)
+				continue;
+			for (const auto& r : l_pass.m_Reads)
+				if (r == name) return true;
+			for (const auto& w : l_pass.m_Writes)
+				if (w == name) return true;
+			for (const auto& b : l_pass.m_Bindings)
+				if (b.m_Resource == name) return true;
+		}
+		return false;
+	}
+
 	// Built-in dynamic resource: PerFrameCBuffer is double-buffered
 	// (GetCurrentFrameBuffer() alternates by frame-parity), so the graph re-resolves
 	// this name through that accessor every RecordNode rather than pinning one handle
@@ -77,6 +97,13 @@ bool RenderGraphService::CreateResource(const ResourceDesc& desc)
 	// Imported resources are owned by an imperative pass; resolved live by name
 	// at bind time, never created here.
 	if (desc.m_Imported)
+		return true;
+
+	// Bypass-only resource: nothing alive reads/writes/binds it. The data
+	// description still round-trips (documentation / future re-enable), but no
+	// GPU component is created — saves the alloc + the deferred-RT writer-needs
+	// bookkeeping for a pass that will never record.
+	if (!IsReferencedByLivePasses(m_Desc, desc.m_Name))
 		return true;
 
 	if (desc.m_Type == RenderGraphResourceType::Buffer)
@@ -211,7 +238,7 @@ bool RenderGraphService::CreateSizedTexture(const ResourceDesc& desc, uint32_t w
 	return true;
 }
 
-	TextureComponent* RenderGraphService::PingPongTexture(const std::string& name, bool history)
+TextureComponent* RenderGraphService::PingPongTexture(const std::string& name, bool history)
 {
 	auto it = m_PingPong.find(name);
 	if (it == m_PingPong.end())
@@ -235,6 +262,12 @@ void RenderGraphService::CreateOrphanResources()
 		if (l_desc.m_Imported)
 			continue;
 		if (l_desc.m_SizeExpr != "screen" && l_desc.m_SizeExpr != "tiled" && l_desc.m_SizeExpr != "tiledArray")
+			continue;
+
+		// Bypass-only resource: nothing alive references it (IsReferencedByLivePasses
+		// also covers Reads/Bindings). Skip the factory alloc; the data description
+		// still round-trips.
+		if (!IsReferencedByLivePasses(m_Desc, l_desc.m_Name))
 			continue;
 
 		bool l_hasWriter = false;
