@@ -29,6 +29,10 @@ namespace
 	// from the frame loop, long after the init hook returns.
 	Inno::Array<Inno::Math::Vec4> g_SSAOKernel;
 	Inno::Array<Inno::Math::Vec4> g_SSAONoise;
+	Inno::GPUBufferComponent* g_LightCullingDispatchParams = nullptr;
+	Inno::GPUBufferComponent* g_LightListIndexCounter = nullptr;
+	Inno::Math::TVec4<uint32_t> g_LightCullingNumThreads;
+	Inno::Math::TVec4<uint32_t> g_LightCullingNumThreadGroups;
 }
 
 namespace Inno
@@ -157,6 +161,49 @@ namespace Inno
 			l_workload.numThreadGroups = g_TiledFrustumNumThreadGroups;
 			l_workload.numThreads = g_TiledFrustumNumThreads;
 			g_Engine->Get<GPUBufferResourceService>()->Upload(g_TiledFrustumDispatchParams, &l_workload, 0, 1);
+		});
+
+		l_graph->RegisterInitHook("LightCullingPass", []()
+		{
+			auto l_bufferService = g_Engine->Get<GPUBufferResourceService>();
+
+			g_LightCullingDispatchParams = l_bufferService->Add("LightCullingDispatchParams");
+			g_LightCullingDispatchParams->m_ElementCount = 1;
+			g_LightCullingDispatchParams->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
+			g_LightCullingDispatchParams->m_GPUAccessibility = Accessibility::ReadOnly;
+			l_bufferService->Initialize(g_LightCullingDispatchParams);
+
+			g_LightListIndexCounter = l_bufferService->Add("LightListIndexCounter");
+			g_LightListIndexCounter->m_GPUAccessibility = Accessibility::ReadWrite;
+			g_LightListIndexCounter->m_ElementCount = 1;
+			g_LightListIndexCounter->m_ElementSize = sizeof(uint32_t);
+			static uint32_t s_initialIndexCount = 1;
+			g_LightListIndexCounter->m_InitialData = &s_initialIndexCount;
+			l_bufferService->Initialize(g_LightListIndexCounter);
+
+			auto l_samplerService = g_Engine->Get<SamplerResourceService>();
+			auto l_sampler = l_samplerService->Add("LightCullingPass");
+			l_samplerService->Initialize(l_sampler);
+
+			const float l_tile = static_cast<float>(LightCulling::TILE_SIZE);
+			auto l_vp = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+			uint32_t l_threadsX = static_cast<uint32_t>(std::ceil(l_vp.x / l_tile));
+			uint32_t l_threadsY = static_cast<uint32_t>(std::ceil(l_vp.y / l_tile));
+			g_LightCullingNumThreads = Math::TVec4<uint32_t>(l_threadsX, l_threadsY, 1, 0);
+			g_LightCullingNumThreadGroups = Math::TVec4<uint32_t>(
+				static_cast<uint32_t>(std::ceil(l_threadsX / l_tile)),
+				static_cast<uint32_t>(std::ceil(l_threadsY / l_tile)), 1, 0);
+		});
+
+		l_graph->RegisterUpdateHook("LightCullingPass", []()
+		{
+			static uint32_t s_resetValue = 1;
+			g_Engine->Get<GPUBufferResourceService>()->Upload(g_LightListIndexCounter, &s_resetValue);
+
+			DispatchParamsConstantBuffer l_workload;
+			l_workload.numThreadGroups = g_LightCullingNumThreadGroups;
+			l_workload.numThreads = g_LightCullingNumThreads;
+			g_Engine->Get<GPUBufferResourceService>()->Upload(g_LightCullingDispatchParams, &l_workload, 0, 1);
 		});
 	}
 }

@@ -283,6 +283,41 @@
             "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
             "PixelDataType": "Float16", "PixelDataFormat": "RGBA", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
         }
+        ,
+        {
+            "Name": "PointLightCBuffer",
+            "Type": "Buffer",
+            "Imported": true
+        },
+        {
+            "Name": "LightCullingDispatchParams",
+            "Type": "Buffer",
+            "Imported": true
+        },
+        {
+            "Name": "LightListIndexCounter",
+            "Type": "Buffer",
+            "ElementCount": 1,
+            "ElementSize": 4
+        },
+        {
+            "Name": "LightIndexList",
+            "Type": "Buffer",
+            "ElementCount": 4096,
+            "ElementSize": 4
+        },
+        {
+            "Name": "LightCulling LightGrid",
+            "Type": "Texture", "Size": "tiled",
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "UInt32", "PixelDataFormat": "RG", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        },
+        {
+            "Name": "LightCulling HeatMap",
+            "Type": "Texture", "Size": "screen",
+            "DepthOrArraySize": 1, "MipLevels": 1, "Sampler": "Sampler2D", "Usage": "ComputeOnly",
+            "PixelDataType": "Float32", "PixelDataFormat": "RGBA", "GPUAccessibility": "ReadWrite", "Lifetime": "Persistent"
+        }
     ],
     "Passes": [
         {
@@ -512,7 +547,38 @@
             "Dispatch": { "Mode": "DispatchRays", "X": 1, "Y": 1, "Z": 1, "TileSize": 0 },
             "Bypass": { "Enabled": false, "ClearOnBypass": false },
             "OneShot": false
-        },
+        }
+        ,
+        {
+            "Name": "LightCullingPass",
+            "Queue": "Graphics",
+            "Shader": { "CS": "lightCulling.comp" },
+            "Reads": [ "PerFrameCBuffer", "PointLightCBuffer", "LightCullingDispatchParams", "TiledFrustumGPUBuffer", "OpaquePass_DS" ],
+            "Writes": [ "LightCulling LightGrid", "LightCulling HeatMap", "LightIndexList", "LightListIndexCounter" ],
+            "Bindings": [
+                { "Resource": "PerFrameCBuffer", "Type": "Buffer", "Set": 0, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
+                { "Resource": "PointLightCBuffer", "Type": "Buffer", "Set": 0, "Index": 1, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
+                { "Resource": "LightCullingDispatchParams", "Type": "Buffer", "Set": 0, "Index": 2, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" },
+                { "Resource": "TiledFrustumGPUBuffer", "Type": "Buffer", "Set": 1, "Index": 0, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "Stage": "Compute" },
+                { "Resource": "LightListIndexCounter", "Type": "Buffer", "Set": 1, "Index": 1, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "Stage": "Compute" },
+                { "Resource": "LightIndexList", "Type": "Buffer", "Set": 1, "Index": 2, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "Stage": "Compute" },
+                { "Resource": "LightCulling LightGrid", "Type": "Image", "Set": 1, "Index": 3, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "LightCulling HeatMap", "Type": "Image", "Set": 1, "Index": 4, "BindingAccess": "ReadWrite", "ResourceAccess": "ReadWrite", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "OpaquePass_DS", "Type": "Image", "Set": 2, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadWrite", "TextureUsage": "ColorAttachment", "Stage": "Compute" },
+                { "Resource": "LightCullingPass", "Type": "Sampler", "Set": 3, "Index": 0, "BindingAccess": "ReadOnly", "ResourceAccess": "ReadOnly", "Stage": "Compute" }
+            ],
+            "Transitions": [
+                { "Resource": "OpaquePass_DS", "From": "WriteOnly", "To": "ReadOnly" },
+                { "Resource": "LightCulling LightGrid", "From": "ReadOnly", "To": "WriteOnly" },
+                { "Resource": "LightCulling HeatMap", "From": "ReadOnly", "To": "WriteOnly" },
+                { "Resource": "LightIndexList", "From": "ReadOnly", "To": "WriteOnly" },
+                { "Resource": "LightListIndexCounter", "From": "ReadOnly", "To": "WriteOnly" }
+            ],
+            "Dispatch": { "Mode": "TiledDispatch", "X": 1, "Y": 1, "Z": 1, "TileSize": 16 },
+            "Bypass": { "Enabled": false, "ClearOnBypass": false },
+            "OneShot": false
+        }
+        ,
         {
             "Name": "SSRCReprojectionPass",
             "Queue": "Compute",
