@@ -1,3 +1,4 @@
+#pragma once
 #include "LogService.h"
 #include "Enum.h"
 #include "MathHelper.h"

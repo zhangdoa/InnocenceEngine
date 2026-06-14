@@ -181,7 +181,7 @@ bool DX12RenderPassResourceService::OnOutputMergerTargetsCreated(RenderPassCompo
 			}
 		}
 
-		auto l_renderTargetTexture = reinterpret_cast<TextureComponent*>(l_outputMergerTarget->m_DepthStencilOutput);
+
 		for (size_t i = 0; i < l_DSVs.size(); i++)
 		{
 			auto l_renderTarget = static_cast<ID3D12Resource*>(l_outputMergerTarget->m_DepthStencilOutput->GetGPUResource(i));

@@ -9,6 +9,7 @@ namespace Inno
 	public:
 		static uint32_t GetTypeID() { return 8; };
 		static const char* GetTypeName() { return "TextureComponent"; };
+		static GPUResourceType GetResourceType() { return GPUResourceType::Image; };
 		TextureDesc m_TextureDesc = {};
 
 		Inno::Array<void*> m_GPUResources;

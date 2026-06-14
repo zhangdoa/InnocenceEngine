@@ -63,7 +63,7 @@ bool DX12FrameManagementService::AssignSwapChainImages()
         return false;
     }
 
-    auto l_textureComp = reinterpret_cast<TextureComponent*>(l_outputMergerTarget->m_ColorOutputs[0]);
+    auto l_textureComp = l_outputMergerTarget->m_ColorOutputs[0];
     if (!l_textureComp)
     {
         Log(Warning, "DX12FrameManagementService::AssignSwapChainImages: swap chain color output texture is null");

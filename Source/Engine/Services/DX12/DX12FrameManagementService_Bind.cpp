@@ -1,6 +1,5 @@
 #include "DX12FrameManagementService.h"
-#include "../../Component/GPUBufferComponent.h"
-#include "../../Component/TextureComponent.h"
+#include "../../Component/GPUResourceCast.h"
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
 #include "DX12Helper_Common.h"
@@ -44,7 +43,7 @@ bool DX12FrameManagementService::BindComputeResource(CommandListComponent* comma
 	{
 		if (resourceBindingLayoutDesc.m_IsRootConstant) return true;
 		if (DX12Helper_BindlessMesh::TryAutoBindCompute(commandList, resourceBindingLayoutDesc.m_GPUBufferUsage, *m_ctx, rootParameterIndex)) return true;
-		auto l_buffer = reinterpret_cast<GPUBufferComponent*>(resource);
+		auto l_buffer = resource->As<GPUBufferComponent>();
 		if (!l_buffer)
 		{
 			Log(Warning, "DX12FrameManagementService::BindComputeResource: null buffer at root param ", rootParameterIndex);
@@ -106,7 +105,8 @@ bool DX12FrameManagementService::BindComputeResource(CommandListComponent* comma
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ColorAttachment
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ComputeOnly)
 		{
-			auto l_image = reinterpret_cast<TextureComponent*>(resource);
+			auto l_image = resource->As<TextureComponent>();
+			if (!l_image) return false;
 			if (l_image->m_ObjectStatus != ObjectStatus::Activated)
 			{
 				Log(Error, "Attempt to bind inactivated texture ", l_image->m_InstanceName);
@@ -127,7 +127,9 @@ bool DX12FrameManagementService::BindComputeResource(CommandListComponent* comma
 	}
 	else if (resourceBindingLayoutDesc.m_GPUResourceType == GPUResourceType::Sampler)
 	{
-		auto l_handle = reinterpret_cast<SamplerComponent*>(resource)->m_ReadHandles[l_currentFrame].m_GPUHandle;
+		auto l_sampler = resource->As<SamplerComponent>();
+		if (!l_sampler) return false;
+		auto l_handle = l_sampler->m_ReadHandles[l_currentFrame].m_GPUHandle;
 		l_commandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_handle });
 	}
 
@@ -163,7 +165,7 @@ bool DX12FrameManagementService::BindGraphicsResource(CommandListComponent* comm
 		if (resourceBindingLayoutDesc.m_IsRootConstant)
 			return true;
 
-		auto l_buffer = reinterpret_cast<GPUBufferComponent*>(resource);
+		auto l_buffer = resource->As<GPUBufferComponent>();
 		if (!l_buffer)
 		{
 			Log(Warning, "DX12FrameManagementService::BindGraphicsResource: null buffer at root param ", rootParameterIndex);
@@ -216,7 +218,8 @@ bool DX12FrameManagementService::BindGraphicsResource(CommandListComponent* comm
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ColorAttachment
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ComputeOnly)
 		{
-			auto l_image = reinterpret_cast<TextureComponent*>(resource);
+			auto l_image = resource->As<TextureComponent>();
+			if (!l_image) return false;
 			if (l_image->m_ObjectStatus != ObjectStatus::Activated)
 			{
 				Log(Error, "Attempt to bind inactivated texture ", l_image->m_InstanceName);
@@ -237,7 +240,9 @@ bool DX12FrameManagementService::BindGraphicsResource(CommandListComponent* comm
 	}
 	else if (resourceBindingLayoutDesc.m_GPUResourceType == GPUResourceType::Sampler)
 	{
-		auto l_handle = reinterpret_cast<SamplerComponent*>(resource)->m_ReadHandles[l_currentFrame].m_GPUHandle;
+		auto l_sampler = resource->As<SamplerComponent>();
+		if (!l_sampler) return false;
+		auto l_handle = l_sampler->m_ReadHandles[l_currentFrame].m_GPUHandle;
 		l_commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_handle });
 		return true;
 	}

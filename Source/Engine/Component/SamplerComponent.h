@@ -21,6 +21,7 @@ namespace Inno
 	public:
 		static uint32_t GetTypeID() { return 13; };
 		static const char* GetTypeName() { return "SamplerComponent"; };
+		static GPUResourceType GetResourceType() { return GPUResourceType::Sampler; };
 
 		SamplerDesc m_SamplerDesc = {};
 	};

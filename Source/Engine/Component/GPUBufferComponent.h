@@ -9,6 +9,7 @@ namespace Inno
 	public:
 		static uint32_t GetTypeID() { return 14; };
 		static const char* GetTypeName() { return "GPUBufferComponent"; };
+		static GPUResourceType GetResourceType() { return GPUResourceType::Buffer; };
 
 		size_t m_ElementCount = 0;
 		size_t m_ElementSize = 0;

@@ -180,13 +180,13 @@ bool DX12FrameManagementService::ChangeRenderTargetStates(RenderPassComponent* r
 
 	for (size_t i = 0; i < l_outputMergerTarget->m_ColorOutputs.size(); i++)
 	{
-		auto l_renderTarget = reinterpret_cast<TextureComponent*>(l_outputMergerTarget->m_ColorOutputs[i]);
+		auto l_renderTarget = l_outputMergerTarget->m_ColorOutputs[i];
 		TryToTransitState(l_renderTarget, commandList, sourceAccessibility, targetAccessibility);
 	}
 
 	if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
 	{
-		auto l_depthStencilRenderTarget = reinterpret_cast<TextureComponent*>(l_outputMergerTarget->m_DepthStencilOutput);
+		auto l_depthStencilRenderTarget = l_outputMergerTarget->m_DepthStencilOutput;
 		TryToTransitState(l_depthStencilRenderTarget, commandList, sourceAccessibility, targetAccessibility);
 	}
 

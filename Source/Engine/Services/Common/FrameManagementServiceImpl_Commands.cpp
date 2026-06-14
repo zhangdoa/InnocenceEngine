@@ -6,6 +6,7 @@
 #include "../../Common/LogServiceSpecialization.h"
 
 #include "../../Services/TemplateAssetService.h"
+#include "../../Component/GPUResourceCast.h"
 
 #include "../../Engine.h"
 
@@ -74,7 +75,8 @@ bool FrameManagementService::PrepareSwapChainCommands()
 
 	CommandListBegin(l_swapChainRP, l_commandList, l_currentFrame);
 
-	TryToTransitState(reinterpret_cast<TextureComponent*>(l_userPipelineOutput), l_commandList, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	if (auto* l_outputTexture = l_userPipelineOutput->As<TextureComponent>())
+		TryToTransitState(l_outputTexture, l_commandList, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	BindRenderPassComponent(l_swapChainRP, l_commandList);
 
 	ClearRenderTargets(l_swapChainRP, l_commandList);
