@@ -16,8 +16,8 @@ export const IMAGE_EXT_RE = /\.(png|jpe?g|gif|bmp|tga|webp|hdr|exr|pfm|tiff?|ico
 export const NO_IMAGES_EXCLUDE_RE = /^Data\/Engine\/Icons\/|^Source\/Editor-Next\/tests\/.*-snapshots\//;
 
 export const NEW_MD_ALLOWLIST_RE = new RegExp([
-  "^\\.backlog/tasks/",
-  "^\\.omp/(agents|skills|commands|state|extensions)/",
+  "^\\.backlog/(tasks|docs)/",
+  "^\\.omp/(agents|skills|commands|state|extensions|rules)/",
   "(^|/)AGENTS\\.md$",
   "(^|/)SYSTEM\\.md$",
   "(^|/)README\\.md$",
