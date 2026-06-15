@@ -1,19 +1,20 @@
 ---
 id: TASK-185
-title: 'Output-texture viewer — pick any pass RT as overlay/window for diagnosis'
-status: To Do
+title: Output-texture viewer — pick any pass RT as overlay/window for diagnosis
+status: Done
 assignee: []
 created_date: '2026-04-28 17:30'
+updated_date: '2026-06-15 09:15'
 labels:
   - editor
   - tooling
   - diagnostic
 dependencies:
   - TASK-184
-priority: medium
 references:
   - Source/Engine/Services/EditorService.cpp
   - Source/ExampleProject/RenderingClient/ExampleRenderingClient.cpp
+priority: medium
 ---
 
 ## Description

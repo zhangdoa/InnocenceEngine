@@ -3,9 +3,10 @@ id: TASK-136
 title: >-
   Systemic: audit graphics subsystems for per-consumer-duplicated constants that
   mirror HLSL canonical values
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-04-25 22:25'
+updated_date: '2026-06-15 09:15'
 labels:
   - rendering
   - refactor
@@ -54,22 +55,13 @@ Behavior-preserving consolidation only. Any value-change uncovered during the au
 - [ ] #1 Source/ExampleProject/RenderingClient/*.h grepped for `const uint32_t` / `static constexpr` member constants — inventory in final summary
 - [ ] #2 Each found constant cross-referenced against HLSL canonical (RayTracingTypes.hlsl / BRDF.hlsl / common/*.hlsl) — match or drift status quoted per constant
 - [~] #3 For each subsystem with the drift pattern: a `<Subsystem>Constants.h` header consolidates the constants with HLSL-canonical anchor comments — screen-tile 8×8 landed (2026-05-15); light-culling 16×16 landed (2026-05-15); 4 follow-up subsystems remain (TASK-225 SSAO drift, point/sphere light arrays, MaxTextureSlotCount, luminance histogram 256 + reduction 16×16, BRDF LUT 512)
-- [ ] #4 Any live drift discovered (i.e. C++ value != current HLSL value) filed as its own task with symptom screenshot, NOT silently fixed in this CL
-- [ ] #5 Final summary lists subsystems audited AND subsystems explicitly skipped (with reason)
+- [ ] #3 Any live drift discovered (i.e. C++ value != current HLSL value) filed as its own task with symptom screenshot, NOT silently fixed in this CL
+- [ ] #4 Final summary lists subsystems audited AND subsystems explicitly skipped (with reason)
 <!-- AC:END -->
-
-## Definition of Done
-<!-- DOD:BEGIN -->
-- [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
-- [ ] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
-- [ ] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path
-- [ ] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
-- [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
-- [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
-<!-- DOD:END -->
 
 ## Implementation Notes
 
+<!-- SECTION:NOTES:BEGIN -->
 ### 2026-05-14 — Audit phase (inventory only)
 
 AUDIT-ONLY dispatch — no source modified, no engine launched. Scope: AC #1, #2, #5 of this ticket. Consolidation (#3) and drift-fix-CL (#4) deferred to follow-up dispatches.
@@ -208,3 +200,14 @@ Each consumer header gained `#include "LightCullingConstants.h"` after the `IRen
 **File-size ratchet**: all touched files under 300 lines (`LightCullingPass.h` 49→50, `TiledFrustumGenerationPass.h` 35→36, new header 23 lines). The `LightCullingPass.cpp` 309-line ratchet trip was sidestepped by not touching the `.cpp`.
 
 **ACs**: AC #3 partially ticked for this subsystem alongside screen-tile. Follow-ups in priority order: TASK-225 SSAO drift → point/sphere light arrays → MaxTextureSlotCount → luminance histogram + reduction → BRDF LUT 512. Task stays `In Progress`.
+<!-- SECTION:NOTES:END -->
+
+## Definition of Done
+<!-- DOD:BEGIN -->
+- [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
+- [ ] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
+- [ ] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path
+- [ ] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
+- [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
+- [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
+<!-- DOD:END -->

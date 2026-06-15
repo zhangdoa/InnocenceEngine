@@ -4,18 +4,19 @@ title: Editor viewport transform gizmos (translate / rotate / scale)
 status: To Do
 assignee: []
 created_date: '2026-04-19 11:30'
+updated_date: '2026-06-15 09:15'
 labels:
   - editor
   - viewport
   - gizmo
   - world-editing
-dependencies:
-  - TASK-62
+dependencies: []
 priority: medium
 ---
 
 ## Description
 
+<!-- SECTION:DESCRIPTION:BEGIN -->
 <!-- SECTION:DESCRIPTION:BEGIN -->
 TASK-62 AC #7 is half-done: entity create / rename / delete + per-property edits round-trip through `UPDATE_ENTITY_PROPERTY` and the existing Save button rewrites the scene. The remaining piece — transform-handle gizmos in the viewport — is its own substantial slice with its own moving parts and gets a dedicated task.
 
@@ -33,6 +34,7 @@ TASK-62 AC #7 is half-done: entity create / rename / delete + per-property edits
 - Multi-select gizmos (select-and-drag-many) — single selection only for v1.
 - Pivot mode toggles, parent-space vs world-space transforms — single mode (world-space) for v1.
 - Undo / redo — separate task.
+<!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
