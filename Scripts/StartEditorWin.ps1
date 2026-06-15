@@ -48,4 +48,4 @@ if ($BuildOnly) {
 
 # 5. Launch Editor
 Write-Host "Launching Editor with $EngineType sidecar..." -ForegroundColor Green
-npm start -- --engine=$EngineType
+npm start -- --engine=$EngineType --config=Data/Engine/Configuration/Presets/Editor.json
