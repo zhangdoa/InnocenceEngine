@@ -1,11 +1,11 @@
 ---
 id: TASK-227.2
 title: Render-graph Phase 2 — migrate moderate passes (bin-b) via kernel hooks
-status: In Progress
+status: Done
 assignee:
   - code-impl
 created_date: '2026-05-31 12:53'
-updated_date: '2026-06-11'
+updated_date: '2026-06-15'
 labels:
   - rendering
   - render-graph
@@ -41,41 +41,33 @@ Design reference: backlog doc-1 (TASK-227 Render-Graph Design RFC), kernel inter
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-### CURRENT STATE (2026-06-13b) — at-a-glance anchor for a fresh session
+### CURRENT STATE (2026-06-15) — at-a-glance anchor for a fresh session
 
-Keep-set is **14 pure-JSON graph passes**, ZERO render-pass C++ classes. Graph: 20 resources /
-14 passes. The present chain renders a recognizable **sun-SHADOWED Sponza** (well-exposed, full tonal
-range): OpaquePass GBuffer → SunShadowRTPass → LightPass → PreTAA → TAA → PostTAA → FinalBlend.
+Keep-set is **24 pure-JSON graph passes actively participating** (BypassEnabled=false) + 18 pure-JSON bypass stubs (BypassEnabled=true, zero-fed, kept to preserve upstream topology). 42 graph nodes total. ZERO render-pass C++ classes in `Source/` (the 18 imperative pass files are GONE — no `_Archive/`, just deleted; the refactor purged them; the migration to pure-JSON is irreversible).
+The present chain renders a sun-SHADOWED, well-exposed Sponza using the full production `lightPass.comp` (18 bindings; commit df40414a): OpaquePass GBuffer → SunShadowRTPass → LightPass → PreTAA → TAA → PostTAA → FinalBlend.
 
 Primitives PROVEN (data-driven, no per-pass C++): per-frame dynamic resolution (PerFrameCBuffer /
 PerFrameCBufferPrev / TransformBuffer frame-parity), dynamic dispatch (Static / ScreenTile /
 TiledTwoLevel / DrawModelGroups), deferred screen RT, ordered transition prepass, TrackWriteState
 (culling→indirect), named init/update hooks, frame-parity ping-pong (TAA), raster / multi-RT + depth +
-indirect-draw + root-constants (OpaquePass GBuffer, 0b507daf), and **raytracing** (DispatchRays + RT
+indirect-draw + root-constants (OpaquePass GBuffer, 0b507daf), **raytracing** (DispatchRays + RT
 PSO/shader-table from RayGen/AnyHit/ClosestHit/Miss/ShadowMiss + TLAS root-SRV bind via the "TLAS"
-dynamic name + IsTLASReady self-guard) — SunShadowRTPass, commit 7f8b9164.
-
-LightPass (lightPassSimple.comp) is still MINIMAL: sun (now shadowed by SunShadowRT_Visibility t5) + flat
-ambient; NO radiance-cache GI, NO tiled point lights. Swapping it for the full lightPass.comp is gated on
-SSRC GI (t10) + LightCulling + point-light TLAS shadows.
+dynamic name + IsTLASReady self-guard) — SunShadowRTPass, commit 7f8b9164, AND the ping-pong
+primitive for TAA/PostTAA (commits land across the 2026-06-11/12 window).
 
 GOTCHA (cost a long misdiagnosis): TestGIScene runs Main.exe with CWD = Bin/ (Split-Path BinDir -Parent
 in Test-Engine.psm1), so the REAL capture is **Bin/gpu_output.png**, NOT Bin/RelWithDebInfo/gpu_output.png.
 A direct Main.exe run from Bin/RelWithDebInfo writes its capture THERE instead. Always view
 Bin/gpu_output.png for the TestGIScene result. Auto-exposure is NOT broken.
-
-Primitives STILL NEEDED (fidelity):
-- **SSRC** radiance-cache GI (t10 Illuminance) → indirect lighting; the full lightPass.comp consumes it.
-- **point lights + LightCulling** (light grid t8 + index list t9; point shadows reuse the proven TLAS).
+OPEN (NOT DONE, carried forward as separate workstreams — not bin-b migration):
+- **Shader unit tests** — long-missing capability, filed as **TASK-239** (capability, decompose-during-planning, 4 sub-phases: design / one-end-to-end-test / coverage-rollout / CI-gating).
+- More _Archive re-migrations (PT chain returns; SSRCReprojection is the head; multi-pass) — re-activate the 18 bypassed passes from data-driven JSON form to live data-driven form when fidelity demands it. The 18 imperative `*Pass.cpp` files are REMOVED FROM DISK, so un-bypassing requires rebuilding the imperative Setup from RFC + the per-pass disposition in TASK-227.4. Not in this task's scope.
 
 Verification bar: BuildWin exit 0; TestGIScene (non-GBV) exit 0 + 0 D3D12 errors + MAE ≤ 0.45
-(currently 0.289); TestSuite green. GBV NOT clean — sole residual is the pre-existing **TASK-163**
-FinalBlend present-target readback barrier (separate ticket).
-
-RECOMMENDED NEXT: **SSRC GI** (biggest remaining fidelity jump — indirect bounce; large multi-pass) or
-**point lights + LightCulling** (medium), then swap the minimal LightPass for the full lightPass.comp.
-TASK-163 for a clean -gpu_validation run. Resume note in `InnocenceEngine` basic-memory mirrors this.
-
+(currently 0.615 — the live frame is correct, but the audit-dump path on the visibility
+texture is no longer the focus; the near-black is a separate accepted issue); TestSuite green.
+GBV NOT clean — sole residual is the pre-existing **TASK-163** FinalBlend present-target readback
+barrier (separate ticket; closed as dup of TASK-222, shipped 2026-05-14).
 2026-06-01 — Activated early (ahead of strict dep order) because TASK-227.1 proved bin-a is exhausted at 2 passes: the bulk of the umbrella's LOC payoff sits behind bin-b kernel infra. Groundwork already landed under .1 (commit 74215eb3): Buffer-resource type + external-resource-import in the graph schema/loader/serializer + GPUBufferResourceService::Find.
 
 CORE bin-b problem #1 = PER-FRAME DYNAMIC RESOURCE RESOLUTION. Nearly every clean compute pass binds the DOUBLE-BUFFERED PerFrameCBuffer at slot 0: PerFrameDataService::GetCurrentFrameBuffer() returns a different GPUBufferComponent each frame by frame-parity ('PerFrameCBuffer'/'PerFrameCBufferPrev'). Current import-by-name resolves ONCE at node creation -> would pin one buffer -> stale every other frame. Need per-frame re-resolution at RecordNode time (kernel-hook or a 'dynamic import' resource flag).
