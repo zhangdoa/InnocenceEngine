@@ -78,7 +78,7 @@ namespace Inno
 	class HIDService : public IService
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(HIDService);
+		INNO_CLASS_CONCRETE_NON_COPYABLE_AND_NON_MOVABLE(HIDService);
 
 		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;

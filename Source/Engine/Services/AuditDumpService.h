@@ -11,7 +11,7 @@ namespace Inno
     class AuditDumpService : public IService
     {
     public:
-        INNO_CLASS_CONCRETE_NON_COPYABLE(AuditDumpService);
+        INNO_CLASS_CONCRETE_NON_COPYABLE_AND_NON_MOVABLE(AuditDumpService);
 
         bool Setup(IServiceConfig* systemConfig) override;
         bool Initialize() override;

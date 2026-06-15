@@ -8,7 +8,7 @@ namespace Inno
 	class SceneService : public IService
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(SceneService);
+		INNO_CLASS_CONCRETE_NON_COPYABLE_AND_NON_MOVABLE(SceneService);
 
 		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;

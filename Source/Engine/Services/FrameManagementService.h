@@ -19,7 +19,7 @@ namespace Inno
 	class FrameManagementService : public IService
 	{
 	public:
-		INNO_CLASS_INTERFACE_NON_COPYABLE(FrameManagementService);
+		INNO_CLASS_INTERFACE_NON_COPYABLE_AND_NON_MOVABLE(FrameManagementService);
 
 		bool Setup(IServiceConfig* systemConfig = nullptr) override;
 		bool Initialize() override;
