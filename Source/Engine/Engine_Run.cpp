@@ -2,6 +2,7 @@
 #include "Common/Array.h"
 #include "Common/LogService.h"
 #include "Services/AssetService.h"
+#include "Services/ConfigurationService.h"
 #include <chrono>
 #include <thread>
 
@@ -12,9 +13,10 @@ bool Engine::Run()
 	// std::thread (not TaskScheduler) for the outer file loop: ImportSync fans
 	// out per-file mesh/material work to scheduler workers, and a worker
 	// blocking on sub-tasks on its own thread would deadlock on Thread::Busy.
-	if (m_pImpl->m_initConfig.isBakeMode)
+	auto* l_cfg = g_Engine->Get<ConfigurationService>();
+	if (l_cfg->IsBakeMode())
 	{
-		const std::string l_list(m_pImpl->m_initConfig.bakeInputs);
+		const std::string l_list(l_cfg->GetBakeInputs());
 		auto* l_assetService = Get<AssetService>();
 
 		struct BakeTask

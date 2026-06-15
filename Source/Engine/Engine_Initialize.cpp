@@ -1,6 +1,9 @@
 #include "Engine_Internal.h"
 #include "Common/LogService.h"
 #include "Common/TaskScheduler.h"
+#include "Services/ConfigurationService.h"
+#include "Services/ScreenCaptureService.h"
+#include "Services/AuditDumpService.h"
 #include "Services/EntityRegistry.h"
 #include "Services/TransformService.h"
 #include "Services/LightSimulationService.h"
@@ -37,12 +40,13 @@ bool Engine::Initialize()
 	SystemInit(LightSimulationService);
 	SystemInit(CameraService);
 
-	if (m_pImpl->m_initConfig.engineMode == EngineMode::Sidecar)
+	auto* l_cfg = g_Engine->Get<ConfigurationService>();
+	if (l_cfg->GetEngineMode() == EngineMode::Sidecar)
 	{
 		SystemInit(EditorService);
 	}
 
-	if (!m_pImpl->m_initConfig.isHeadless) {
+	if (!l_cfg->IsHeadless()) {
 		Get<FrameManagementService>()->Initialize();
 		SystemInit(TemplateAssetService);
 		SystemInit(PerFrameDataService);
@@ -53,6 +57,8 @@ bool Engine::Initialize()
 		SystemInit(DebugDrawCallService);
 		SystemInit(AnimationSimulationService);
 		SystemInit(AnimationResourceService);
+		SystemInit(ScreenCaptureService);
+		SystemInit(AuditDumpService);
 
 		ITask::Desc taskDesc("Default Rendering Client Initialization Task", ITask::Type::Once, 2);
 		auto l_ExampleRenderingClientInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
@@ -64,7 +70,7 @@ bool Engine::Initialize()
 				}
 			}
 
-			if (!m_pImpl->m_initConfig.isOffscreen)
+			if (!l_cfg->IsOffscreen())
 				SystemInit(GUIService);
 
 			return true;
@@ -84,7 +90,7 @@ bool Engine::Initialize()
 		}
 	}
 
-	if (m_pImpl->m_LogicClient && !m_pImpl->m_initConfig.isBakeMode) {
+	if (m_pImpl->m_LogicClient && !l_cfg->IsBakeMode()) {
 		m_pImpl->m_LogicClient->Initialize();
 	}
 

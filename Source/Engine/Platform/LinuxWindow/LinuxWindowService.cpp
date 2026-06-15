@@ -1,8 +1,8 @@
 #include "LinuxWindowService.h"
 #include "../../Common/Array.h"
 #include "../../Common/UnorderedSet.h"
-
 #include "../../Engine.h"
+#include "../../Services/ConfigurationService.h"
 
 using namespace Inno;
 ;
@@ -21,8 +21,8 @@ namespace LinuxWindowServiceNS
 
 	IWindowSurface* m_WindowSurface;
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-	InitConfig m_InitConfig;
 	Inno::Array<ButtonState> m_ButtonStates;
+
 	Inno::UnorderedSet<WindowEventCallback*> m_WindowEventCallbacks;
 
 	Display* m_display;

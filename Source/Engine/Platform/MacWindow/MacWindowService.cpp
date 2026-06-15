@@ -1,8 +1,8 @@
 #include "MacWindowService.h"
 #include "../../Common/Array.h"
 #include "../../Common/UnorderedSet.h"
-
 #include "../../Engine.h"
+#include "../../Services/ConfigurationService.h"
 
 using namespace Inno;
 ;
@@ -11,8 +11,8 @@ namespace MacWindowServiceNS
 {
 	IWindowSurface* m_WindowSurface;
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-	InitConfig m_InitConfig;
 	Inno::Array<ButtonState> m_ButtonStates;
+
 	Inno::UnorderedSet<WindowEventCallback*> m_WindowEventCallbacks;
 
 	MacWindowServiceBridge* m_bridge;

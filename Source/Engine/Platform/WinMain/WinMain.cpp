@@ -1,11 +1,13 @@
-﻿#include <windows.h>
+#include <windows.h>
 #include <windowsx.h>
 #include <iostream>
 
 #include "../../Common/STL14.h"
 #include "../../Engine.h"
+#include "../../Services/ConfigurationService.h"
 #include "../../Services/GraphicsHardwareService.h"
 #include "../../Interface/IClientFactory.h"
+
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 #include <dbghelp.h>
@@ -141,9 +143,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
         // -serialize_test result takes precedence — the test runs without
         // rendering services so the GPU-error checks below don't apply.
-        const InitConfig l_initConfig = m_pEngine->getInitConfig();
-        if (l_initConfig.serializeTest[0] != '\0')
-            return l_initConfig.serializeTestResult;
+        const std::string& l_serializeTest = m_pEngine->Get<ConfigurationService>()->GetSerializeTest();
+        if (!l_serializeTest.empty())
+            return m_pEngine->Get<ConfigurationService>()->GetSerializeTestResult();
 
         // GraphicsHardwareService only exists in non-headless mode.
         if (!l_isHeadless && m_pEngine->Get<GraphicsHardwareService>()->HasGPUError())

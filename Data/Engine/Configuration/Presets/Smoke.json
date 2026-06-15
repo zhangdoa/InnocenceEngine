@@ -1,0 +1,15 @@
+{
+  "engine": {
+    "engineMode": "Host",
+    "graphicsService": "DX12",
+    "isOffscreen": true,
+    "logLevel": 1,
+    "applicationName": "InnocenceEngine"
+  },
+  "session": {
+    "totalFrames": 3
+  },
+  "scene": {
+    "initialScene": "ExampleProject/Scenes/UnitTest.InnoScene"
+  }
+}

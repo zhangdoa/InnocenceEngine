@@ -1,7 +1,11 @@
 #include "Engine_Internal.h"
 #include "Common/LogService.h"
 #include "Common/TaskScheduler.h"
+#include "Services/ConfigurationService.h"
 #include "Services/EntityRegistry.h"
+#include "Services/DevToggleRegistry.h"
+#include "Services/ScreenCaptureService.h"
+#include "Services/AuditDumpService.h"
 #include "Services/TransformService.h"
 #include "Services/LightSimulationService.h"
 #include "Services/CameraService.h"
@@ -41,19 +45,24 @@ bool Engine::Terminate()
 
 	// Drain the GPU before destroying resources — the last rendered frame's
 	// commands may still be in-flight since no subsequent BeginFrame waited.
-	if (!m_pImpl->m_initConfig.isHeadless) {
+	auto* l_cfg = g_Engine->Get<ConfigurationService>();
+	if (!l_cfg->IsHeadless()) {
 		Get<FrameManagementService>()->WaitForGPUIdle();
 	}
 
-	// GPU-alive finalization must run before LogicClient::Terminate; the next
-	// phase may stall the GPU long enough to trip TDR.
-	if (!m_pImpl->m_initConfig.isHeadless && m_pImpl->m_RenderingClient) {
-		if (!m_pImpl->m_RenderingClient->FinalizeGPUResults())
-			Log(Warning, "RenderingClient::FinalizeGPUResults reported failure; continuing shutdown.");
+	// GPU-alive finalization: capture readback must run before LogicClient
+	// shutdown — the next phase may stall the GPU long enough to trip TDR.
+	// Registered toggle callbacks capture client state; clear the registry
+	// before clients start to die so an in-flight WS message can't deref it.
+	if (!l_cfg->IsHeadless())
+	{
+		Get<ScreenCaptureService>()->TryWriteAutoCapture();
+		DevToggleRegistry::Clear();
 	}
 
+
 	// Bake mode skips LogicClient::Terminate — the client was never Setup/Initialize'd.
-	if (m_pImpl->m_LogicClient && !m_pImpl->m_initConfig.isBakeMode) {
+	if (m_pImpl->m_LogicClient && !l_cfg->IsBakeMode()) {
 		if (!m_pImpl->m_LogicClient->Terminate())
 		{
 			Log(Error, "Logic client can't be terminated!");
@@ -61,10 +70,10 @@ bool Engine::Terminate()
 		}
 	}
 
-	if (!m_pImpl->m_initConfig.isHeadless) {
+	if (!l_cfg->IsHeadless()) {
 		ITask::Desc taskDesc("Default Rendering Client Termination Task", ITask::Type::Once, 2);
 		auto l_ExampleRenderingClientTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
-			if (!m_pImpl->m_initConfig.isOffscreen)
+			if (!l_cfg->IsOffscreen())
 				SystemTerm(GUIService);
 
 			if (m_pImpl->m_RenderingClient && !m_pImpl->m_RenderingClient->Terminate())
@@ -77,6 +86,8 @@ bool Engine::Terminate()
 		l_ExampleRenderingClientTerminationTask->Activate();
 		l_ExampleRenderingClientTerminationTask->Wait();
 
+		SystemTerm(AuditDumpService);
+		SystemTerm(ScreenCaptureService);
 		SystemTerm(AnimationResourceService);
 		SystemTerm(AnimationSimulationService);
 		SystemTerm(DebugDrawCallService);
@@ -101,7 +112,7 @@ bool Engine::Terminate()
 	SystemTerm(CameraService);
 	SystemTerm(LightSimulationService);
 
-	if (m_pImpl->m_initConfig.engineMode == EngineMode::Sidecar)
+	if (l_cfg->GetEngineMode() == EngineMode::Sidecar)
 	{
 		SystemTerm(EditorService);
 	}

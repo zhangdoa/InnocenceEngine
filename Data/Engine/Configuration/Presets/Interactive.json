@@ -1,0 +1,11 @@
+{
+  "engine": {
+    "engineMode": "Host",
+    "graphicsService": "DX12",
+    "logLevel": 0,
+    "applicationName": "InnocenceEngine"
+  },
+  "session": {
+    "renderGraph": "ExampleProject/RenderGraph/ExampleRenderGraph.json"
+  }
+}

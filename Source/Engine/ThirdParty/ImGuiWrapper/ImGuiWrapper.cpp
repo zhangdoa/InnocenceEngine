@@ -35,6 +35,7 @@
 #include "../../Services/PhysicsSimulationService.h"
 #include "../../Services/SceneService.h"
 #include "../../Services/RenderingConfigurationService.h"
+#include "../../Services/ConfigurationService.h"
 #include "../../RayTracer/RayTracer.h"
 
 #include "../../Engine.h"
@@ -66,7 +67,7 @@ using namespace ImGuiWrapperNS;
 
 bool ImGuiWrapper::Setup()
 {
-	auto l_initConfig = g_Engine->getInitConfig();
+	auto l_graphicsService = g_Engine->Get<ConfigurationService>()->GetGraphicsService();
 
 #if defined INNO_PLATFORM_WIN
 	m_windowImpl = new ImGuiWindowWin();
@@ -78,7 +79,7 @@ bool ImGuiWrapper::Setup()
 	ImGuiWrapperNS::m_isParity = false;
 #endif
 
-	switch (l_initConfig.graphicsService)
+	switch (l_graphicsService)
 	{
 	case GraphicsService::DX12:
 #if defined INNO_RENDERER_DIRECTX

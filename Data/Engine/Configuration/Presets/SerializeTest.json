@@ -1,0 +1,15 @@
+{
+  "engine": {
+    "engineMode": "Host",
+    "graphicsService": "DX12",
+    "logLevel": 1,
+    "applicationName": "InnocenceEngine"
+  },
+  "session": {
+    "totalFrames": 1
+  },
+  "scene": {
+    "initialScene": "ExampleProject/Scenes/UnitTest.InnoScene",
+    "serializeTest": "ExampleProject/Scenes/UnitTest.InnoScene"
+  }
+}

@@ -2,6 +2,7 @@
 #include "Common/Timer.h"
 #include "Common/LogService.h"
 #include "Common/TaskScheduler.h"
+#include "Services/ConfigurationService.h"
 #include "Services/EntityRegistry.h"
 #include "Services/TransformService.h"
 #include "Services/LightSimulationService.h"
@@ -21,6 +22,8 @@
 #include "Services/AnimationSimulationService.h"
 #include "Services/GUIService.h"
 #include "Services/EditorService.h"
+#include "Services/ScreenCaptureService.h"
+#include "Services/AuditDumpService.h"
 #include "Services/GraphicsHardwareService.h"
 #include "Services/FrameManagementService.h"
 #include "Services/CommandListResourceService.h"
@@ -41,12 +44,14 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 	if (!CreateServices(appHook, extraHook, pScmdline))
 		return false;
 
+	auto* l_cfg = g_Engine->Get<ConfigurationService>();
+
 	m_pImpl->m_RenderingClient = std::move(renderingClient);
 	m_pImpl->m_LogicClient = std::move(logicClient);
 
 	if (m_pImpl->m_LogicClient)
 	{
-		if (m_pImpl->m_initConfig.isOffscreen)
+		if (l_cfg->IsOffscreen())
 		{
 			m_pImpl->m_applicationName = "OffscreenEngine";
 			Log(Success, "Offscreen mode: LogicClient and RenderingClient injected for testing.");
@@ -84,14 +89,14 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 	SystemSetup(LightSimulationService);
 	SystemSetup(CameraService);
 
-	if (m_pImpl->m_initConfig.engineMode == EngineMode::Sidecar)
+	if (l_cfg->GetEngineMode() == EngineMode::Sidecar)
 	{
 		SystemSetup(EditorService);
 	}
 
 	SystemSetup(TemplateAssetService);
 
-	if (!m_pImpl->m_initConfig.isHeadless)
+	if (!l_cfg->IsHeadless())
 	{
 		if (!Get<CommandListResourceService>()->Setup())
 		{
@@ -147,11 +152,11 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		}
 	}
 
-	if (!m_pImpl->m_initConfig.isHeadless) {
+	if (!l_cfg->IsHeadless()) {
 		WireRenderingCallbacks();
 	}
 
-	if (!m_pImpl->m_initConfig.isHeadless) {
+	if (!l_cfg->IsHeadless()) {
 		SystemSetup(PerFrameDataService);
 		SystemSetup(LightDataService);
 		SystemSetup(DrawCallService);
@@ -160,6 +165,8 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		SystemSetup(DebugDrawCallService);
 		SystemSetup(AnimationSimulationService);
 		SystemSetup(AnimationResourceService);
+		SystemSetup(ScreenCaptureService);
+		SystemSetup(AuditDumpService);
 
 		ITask::Desc taskDesc("Default Rendering Client Setup Task", ITask::Type::Once, 2);
 		auto l_ExampleRenderingClientSetupTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
@@ -171,7 +178,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 				}
 			}
 
-			if (!m_pImpl->m_initConfig.isOffscreen)
+			if (!l_cfg->IsOffscreen())
 				SystemSetup(GUIService);
 
 			return true;
@@ -181,9 +188,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		l_ExampleRenderingClientSetupTask->Wait();
 	}
 
-	// Bake mode skips LogicClient: scene loads would call WaitForGPUIdle on a
-	// FrameManagementService that has no GraphicsHardwareService wired up.
-	if (m_pImpl->m_LogicClient && !m_pImpl->m_initConfig.isBakeMode) {
+	if (m_pImpl->m_LogicClient && !l_cfg->IsBakeMode()) {
 		if (!m_pImpl->m_LogicClient->Setup())
 		{
 			Log(Error, "Logic Client can't be setup!");
@@ -191,7 +196,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		}
 	}
 
-	if (!m_pImpl->m_initConfig.isHeadless)
+	if (!l_cfg->IsHeadless())
 	{
 		m_pImpl->m_RenderingExecutionTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Rendering Execution Task", ITask::Type::Recurrent, 2), [&]()
 			{

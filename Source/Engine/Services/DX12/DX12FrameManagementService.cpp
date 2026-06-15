@@ -4,6 +4,7 @@
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
+#include "../ConfigurationService.h"
 #include "DX12Helper_Common.h"
 
 using namespace Inno;
@@ -56,7 +57,7 @@ bool DX12FrameManagementService::Close(CommandListComponent* commandList, GPUEng
 
 bool DX12FrameManagementService::CreateSwapChainResources()
 {
-    if (!g_Engine->getInitConfig().isOffscreen)
+    if (!g_Engine->Get<ConfigurationService>()->IsOffscreen())
     {
         return CreateSwapChain();
     }

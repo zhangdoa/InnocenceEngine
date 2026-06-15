@@ -5,6 +5,7 @@
 #include "../GPUBufferResourceService.h"
 #include "../../Engine.h"
 #include "../../Common/LogService.h"
+#include "../ConfigurationService.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -20,7 +21,7 @@ bool DX12GraphicsHardwareService::CreateHardwareResources()
     TryLoadPIXEventRuntime();
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-    if (g_Engine->getInitConfig().enableGPUValidation)
+    if (g_Engine->Get<ConfigurationService>()->IsEnableGPUValidation())
         l_result &= CreateDebugCallback();
     else
         Log(Warning, "D3D12 debug layer disabled by default to avoid TDR from validation overhead. Pass -gpu_validation to enable.");

@@ -1,7 +1,11 @@
 #include "Engine_Internal.h"
 #include "Common/LogService.h"
+#include "Services/ConfigurationService.h"
 #include "Services/EntityRegistry.h"
 #include "Services/TransformService.h"
+#include "RenderGraph/RenderGraphService.h"
+#include "Services/ScreenCaptureService.h"
+#include "Services/AuditDumpService.h"
 #include "Services/LightSimulationService.h"
 #include "Services/CameraService.h"
 #include "Services/SceneService.h"
@@ -50,12 +54,6 @@ void Engine::WireRenderingCallbacks()
 
 	Get<FrameManagementService>()->SetCommandPreparationCallback([&]()
 		{
-			if (Get<SceneService>()->IsLoading())
-				return true;
-
-			if (m_pImpl->m_RenderingClient) {
-				m_pImpl->m_RenderingClient->PrepareCommands();
-			}
 			return true;
 		});
 
@@ -64,13 +62,14 @@ void Engine::WireRenderingCallbacks()
 			if (Get<SceneService>()->IsLoading())
 				return true;
 
-			if (m_pImpl->m_RenderingClient) {
-				m_pImpl->m_RenderingClient->ExecuteCommands();
-			}
+			Get<RenderGraphService>()->Render();
+			Get<ScreenCaptureService>()->Update();
+			Get<AuditDumpService>()->Update();
+
 			return true;
 		});
 
-	const int l_captureFrame = m_pImpl->m_initConfig.captureFrame;
+	const int l_captureFrame = g_Engine->Get<ConfigurationService>()->GetCaptureFrame();
 	if (l_captureFrame >= 0)
 	{
 		Get<FrameManagementService>()->SetPreFrameCallback([this, l_captureFrame](uint32_t frameCount)

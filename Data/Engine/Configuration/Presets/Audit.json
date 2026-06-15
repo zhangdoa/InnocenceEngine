@@ -1,0 +1,21 @@
+{
+  "engine": {
+    "engineMode": "Host",
+    "graphicsService": "DX12",
+    "isAudit": true,
+    "logLevel": 1,
+    "applicationName": "InnocenceEngine"
+  },
+  "session": {
+    "renderGraph": "ExampleProject/RenderGraph/ExampleRenderGraph.json"
+  },
+  "audit": {
+    "triggerAtFrame": 30,
+    "passes": [
+      { "node": "BRDFLUTPass",   "output": "BRDF LUT",        "file": "audit_01_BRDFLUTPass.hdr" },
+      { "node": "BRDFLUTMSPass", "output": "BRDF MS LUT",     "file": "audit_02_BRDFLUTMSPass.hdr" },
+      { "node": "SSAONoisePass", "output": "SSAO_Result",     "file": "audit_05_SSAO.hdr" },
+      { "node": "SkyPass",       "output": "Sky Pass Result", "file": "audit_09_Sky.hdr" }
+    ]
+  }
+}

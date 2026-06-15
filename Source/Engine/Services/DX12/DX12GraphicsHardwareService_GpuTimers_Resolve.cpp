@@ -3,6 +3,7 @@
 #include "../FrameManagementService.h"
 #include "../../Engine.h"
 #include "../../Common/LogService.h"
+#include "../ConfigurationService.h"
 
 using namespace Inno;
 
@@ -149,7 +150,7 @@ bool DX12GraphicsHardwareService::ResolveGpuTimers()
 	// Opt-in periodic dump: first fires the moment readback is live (smoke runs see
 	// a baseline), then every GPU_TIMER_LOG_PERIOD_FRAMES. Per-pass-per-frame logs
 	// would drown the signal at any non-default loglevel.
-	if (g_Engine->getInitConfig().enableGpuTimerLog)
+	if (g_Engine->Get<ConfigurationService>()->IsEnableGpuTimerLog())
 	{
 		static constexpr uint32_t GPU_TIMER_LOG_PERIOD_FRAMES = 30;
 		const bool l_firstReadbackReady = (m_TimerResolveFrameCounter == GPU_TIMER_READBACK_FRAME_LATENCY + 1);

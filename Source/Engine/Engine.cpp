@@ -86,15 +86,6 @@ ObjectStatus Engine::GetStatus()
 	return m_pImpl->m_ObjectStatus;
 }
 
-InitConfig Engine::getInitConfig()
-{
-	return m_pImpl->m_initConfig;
-}
-
-void Engine::setSerializeTestResult(int result)
-{
-	m_pImpl->m_initConfig.serializeTestResult = result;
-}
 
 IWindowService* Engine::getWindowService()
 {

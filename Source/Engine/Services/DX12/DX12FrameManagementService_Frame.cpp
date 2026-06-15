@@ -5,6 +5,7 @@
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Common/LogService.h"
+#include "../ConfigurationService.h"
 #include "../../Common/LogServiceSpecialization.h"
 #include "DX12Helper_Common.h"
 
@@ -115,7 +116,7 @@ bool DX12FrameManagementService::PrepareRayTracing(CommandListComponent* command
 
 bool DX12FrameManagementService::PresentImpl()
 {
-    if (g_Engine->getInitConfig().isOffscreen)
+    if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
     {
         return true;
     }
@@ -127,7 +128,7 @@ bool DX12FrameManagementService::PresentImpl()
 
 bool DX12FrameManagementService::EndFrame()
 {
-    if (g_Engine->getInitConfig().isOffscreen)
+    if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
     {
         return true;
     }
@@ -140,7 +141,7 @@ bool DX12FrameManagementService::EndFrame()
 
 bool DX12FrameManagementService::ResizeImpl()
 {
-    if (g_Engine->getInitConfig().isOffscreen)
+    if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
     {
         return true;
     }

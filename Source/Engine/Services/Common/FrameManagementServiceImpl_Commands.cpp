@@ -8,6 +8,7 @@
 #include "../../Services/TemplateAssetService.h"
 #include "../../Component/GPUResourceCast.h"
 
+#include "../ConfigurationService.h"
 #include "../../Engine.h"
 
 using namespace Inno;
@@ -59,10 +60,10 @@ bool FrameManagementService::ExecuteGlobalCommands()
 
 bool FrameManagementService::PrepareSwapChainCommands()
 {
-	if (g_Engine->getInitConfig().isOffscreen)
+	if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
 		return true;
 
-	auto l_userPipelineOutput = m_GetUserPipelineOutputFunc();
+	auto l_userPipelineOutput = GetUserPipelineOutput();
 	if (!l_userPipelineOutput)
 		return false;
 
@@ -97,10 +98,10 @@ bool FrameManagementService::PrepareSwapChainCommands()
 
 bool FrameManagementService::ExecuteSwapChainCommands()
 {
-	if (g_Engine->getInitConfig().isOffscreen)
+	if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
 		return true;
 
-	auto l_userPipelineOutput = m_GetUserPipelineOutputFunc();
+	auto l_userPipelineOutput = GetUserPipelineOutput();
 	if (!l_userPipelineOutput)
 		return false;
 

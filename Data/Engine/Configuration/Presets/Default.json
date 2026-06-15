@@ -1,0 +1,40 @@
+{
+  "engine": {
+    "engineMode": "Host",
+    "graphicsService": "DX12",
+    "logLevel": 1,
+    "applicationName": "InnocenceEngine"
+  },
+  "session": {
+    "totalFrames": 0,
+    "renderGraph": "ExampleProject/RenderGraph/ExampleRenderGraph.json"
+  },
+  "scene": {
+    "initialScene": ""
+  },
+  "screenshot": {
+    "outputDir": "Captures/Screenshots",
+    "canvasResource": "Final Blend Pass Result",
+    "canvasNode": "FinalBlendPass",
+    "dumpFramePattern": "gpu_output_%04u.png",
+    "autoCaptureFileName": "gpu_output.png"
+  },
+  "debugView": {
+    "modes": [
+      { "name": "DebugView_Off",                     "mode": 0 },
+      { "name": "DebugView_BaseColor",               "mode": 1 },
+      { "name": "DebugView_ORM",                     "mode": 2 },
+      { "name": "DebugView_Emissive",                "mode": 3 },
+      { "name": "DebugView_TileLightCountHeatmap",   "mode": 4 },
+      { "name": "DebugView_PointShadowMask",         "mode": 5 }
+    ]
+  },
+  "bootstrap": {
+    "ambientCGSets": [
+      { "setName": "Concrete007", "assetPath": "ConvertedAssets/Concrete007" },
+      { "setName": "Ground037",   "assetPath": "ConvertedAssets/Ground037" },
+      { "setName": "Metal032",    "assetPath": "ConvertedAssets/Metal032" },
+      { "setName": "Tiles074",    "assetPath": "ConvertedAssets/Tiles074" }
+    ]
+  }
+}

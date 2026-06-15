@@ -1,4 +1,4 @@
-﻿#include "../../Engine/Services/EntityRegistry.h"
+#include "../../Engine/Services/EntityRegistry.h"
 #include "../../Engine/Services/CameraService.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/SceneService.h"
@@ -9,6 +9,7 @@
 #include "../../Engine/Common/IOService.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/ConfigurationService.h"
 
 #include <filesystem>
 #include <fstream>
@@ -141,8 +142,7 @@ namespace
 		// Stash the result in InitConfig; WinMain reads it after Engine::Terminate()
 		// returns and uses it as the process exit code. IWindowService::Terminate()
 		// ends the main loop cleanly, driving the normal Terminate path which
-		// releases D3D12 resources and drains the debug layer.
-		g_Engine->setSerializeTestResult(l_passed ? 0 : 1);
+		g_Engine->Get<ConfigurationService>()->SetSerializeTestResult(l_passed ? 0 : 1);
 		g_Engine->Get<IWindowService>()->Terminate();
 	}
 } // anonymous namespace
@@ -213,25 +213,26 @@ namespace
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
 
-		const auto& l_config = g_Engine->getInitConfig();
-		if (l_config.serializeTest[0] != '\0')
-		{
-			// Serialize-determinism mode: run the save+compare test after the
-			// scene has finished loading, then exit.  No player, no game loop.
-			const char* l_testScene = l_config.serializeTest;
-			f_sceneLoadingFinishedCallback = [l_testScene]() {
-				RunSerializeTest(l_testScene);
-			};
-		}
-		else
-		{
-			f_sceneLoadingFinishedCallback = [&]() {
-				if (!m_player)
-					m_player = new Player();
-				m_player->Setup();
-				m_ObjectStatus = ObjectStatus::Activated;
-			};
-		}
+	auto* l_configSvc = g_Engine->Get<ConfigurationService>();
+	const auto& l_serializeTest = l_configSvc->GetSerializeTest();
+	if (l_serializeTest[0] != '\0')
+	{
+		// Serialize-determinism mode: run the save+compare test after the
+		// scene has finished loading, then exit.  No player, no game loop.
+		const char* l_testScene = l_serializeTest.c_str();
+		f_sceneLoadingFinishedCallback = [l_testScene]() {
+			RunSerializeTest(l_testScene);
+		};
+	}
+	else
+	{
+		f_sceneLoadingFinishedCallback = [&]() {
+			if (!m_player)
+				m_player = new Player();
+			m_player->Setup();
+			m_ObjectStatus = ObjectStatus::Activated;
+		};
+	}
 
 		g_Engine->Get<SceneService>()->AddSceneLoadedCallback(&f_sceneLoadingFinishedCallback);
 
@@ -248,21 +249,17 @@ namespace
 		//   3. UnitTest default        (normal engine operation)
 		// When (2) is set, Update() also suppresses the default frame-5
 		// auto-switch to GISponza so the chosen scene renders end-to-end.
-		const auto& l_config = g_Engine->getInitConfig();
+		auto* l_configSvc = g_Engine->Get<ConfigurationService>();
+		const auto& l_serializeTest = l_configSvc->GetSerializeTest();
+		const auto& l_initialSceneCfg = l_configSvc->GetInitialScene();
 		const char* l_initialScene = "ExampleProject/Scenes/UnitTest.InnoScene";
-		if (l_config.serializeTest[0] != '\0')
-			l_initialScene = l_config.serializeTest;
-		else if (l_config.initialScene[0] != '\0')
-			l_initialScene = l_config.initialScene;
-		g_Engine->Get<SceneService>()->Load(l_initialScene, true);
-
-		  RayTracerConfig l_cfg;
-		l_cfg.downsampleDenominator = 2;
-		auto* l_rayTracer = g_Engine->Get<RayTracer>();
-		l_rayTracer->Setup(&l_cfg);
-		l_rayTracer->Initialize();
-
-		return true;
+		if (l_serializeTest[0] != '\0')
+			l_initialScene = l_serializeTest.c_str();
+		else if (l_initialSceneCfg[0] != '\0')
+			l_initialScene = l_initialSceneCfg.c_str();
+	g_Engine->Get<SceneService>()->Load(l_initialScene, true);
+	InitializeRayTracerForWorld(*this);
+	return l_result;
 	}
 
 	bool WorldSystem::Update()
@@ -270,7 +267,7 @@ namespace
 		if (m_ObjectStatus != ObjectStatus::Activated)
 			return false;
 
-		auto l_totalFrames = g_Engine->getInitConfig().totalFrames;
+		auto l_totalFrames = g_Engine->Get<ConfigurationService>()->GetTotalFrames();
 		if (l_totalFrames > 0)
 		{
 			m_AutoFrameCount++;
@@ -280,7 +277,7 @@ namespace
 			// the run. Suppressed when -scene <path> picks a target scene
 			// explicitly — the three-scene capture harness drives each
 			// scene end-to-end via that override.
-			const bool l_sceneOverridden = g_Engine->getInitConfig().initialScene[0] != '\0';
+		const bool l_sceneOverridden = g_Engine->Get<ConfigurationService>()->GetInitialScene()[0] != '\0';
 			if (!l_sceneOverridden && !m_AutoGISceneTriggered && m_AutoFrameCount >= 5)
 			{
 				m_AutoGISceneTriggered = true;
@@ -288,7 +285,7 @@ namespace
 				Log(Success, "Auto-test: loaded GISponza scene at frame ", m_AutoFrameCount, ".");
 			}
 
-			auto l_reloadAtFrame = g_Engine->getInitConfig().reloadAtFrame;
+			auto l_reloadAtFrame = g_Engine->Get<ConfigurationService>()->GetReloadAtFrame();
 			if (l_reloadAtFrame > 0 && !m_AutoReloadTriggered && m_AutoFrameCount >= static_cast<uint32_t>(l_reloadAtFrame))
 			{
 				m_AutoReloadTriggered = true;
@@ -322,11 +319,11 @@ namespace
 			// so yaw at dump frame N is independent of the variable load-
 			// frame count → identical viewpoint at the same dump frame
 			// across binaries.
-			const auto& l_initCfg = g_Engine->getInitConfig();
-			const uint32_t l_orbitFrame =
-				g_Engine->Get<FrameManagementService>()->GetSteadyStateRelativeFrameCount();
-			if (l_initCfg.cameraOrbitActive
-				&& l_orbitFrame <= static_cast<uint32_t>(l_initCfg.cameraOrbitDuration))
+		auto* l_configSvc = g_Engine->Get<ConfigurationService>();
+		const uint32_t l_orbitFrame =
+			g_Engine->Get<FrameManagementService>()->GetSteadyStateRelativeFrameCount();
+		if (l_configSvc->IsCameraOrbitActive()
+			&& l_orbitFrame <= static_cast<uint32_t>(l_configSvc->GetCameraOrbitDuration()))
 			{
 				auto l_Registry = g_Engine->Get<EntityRegistry>();
 				auto l_CameraEntity = l_Registry->FindByName("Main Camera");
@@ -337,10 +334,10 @@ namespace
 					{
 						const float l_yawDeg = 360.0f
 							* static_cast<float>(l_orbitFrame)
-							/ static_cast<float>(l_initCfg.cameraOrbitDuration);
-						const float l_pitchRad = l_initCfg.cameraOrbitPitchDeg * PI<float> / 180.0f;
+							/ static_cast<float>(l_configSvc->GetCameraOrbitDuration());
+						const float l_pitchRad = l_configSvc->GetCameraOrbitPitchDeg() * PI<float> / 180.0f;
 						const float l_yawRad   = l_yawDeg                       * PI<float> / 180.0f;
-						const float l_r        = l_initCfg.cameraOrbitRadius;
+						const float l_r        = l_configSvc->GetCameraOrbitRadius();
 						const float l_cosP     = std::cos(l_pitchRad);
 
 						l_CameraTransform->m_LocalPos = Vec3(
@@ -352,7 +349,7 @@ namespace
 						// world Y brings -Z to face origin; pitch around local
 						// X tilts the camera to look at origin when elevated.
 						Vec4 l_yawQuat   = Math::getQuatRotator(Vec4(0.0f, 1.0f, 0.0f, 0.0f),  l_yawDeg);
-						Vec4 l_pitchQuat = Math::getQuatRotator(Vec4(1.0f, 0.0f, 0.0f, 0.0f), -l_initCfg.cameraOrbitPitchDeg);
+						Vec4 l_pitchQuat = Math::getQuatRotator(Vec4(1.0f, 0.0f, 0.0f, 0.0f), -l_configSvc->GetCameraOrbitPitchDeg());
 						l_CameraTransform->m_LocalRot = l_yawQuat.quatMul(l_pitchQuat);
 					}
 				}
@@ -376,7 +373,7 @@ namespace
 			delete m_player;
 		}
 
-		if (g_Engine->getInitConfig().totalFrames > 0)
+	if (g_Engine->Get<ConfigurationService>()->GetTotalFrames() > 0)
 		{
 			Log(Verbose, "Auto-test: running CPU path tracer reference render...");
 			g_Engine->Get<RayTracer>()->Execute();

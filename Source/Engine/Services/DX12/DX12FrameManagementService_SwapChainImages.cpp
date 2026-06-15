@@ -3,6 +3,7 @@
 #include "../../Engine.h"
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
+#include "../ConfigurationService.h"
 #include "DX12Helper_Common.h"
 
 using namespace Inno;
@@ -10,9 +11,9 @@ using namespace DX12Helper;
 
 bool DX12FrameManagementService::GetSwapChainImages()
 {
-    Log(Verbose, "GetSwapChainImages: Called with offscreen=", g_Engine->getInitConfig().isOffscreen);
+    Log(Verbose, "GetSwapChainImages: Called with offscreen=", g_Engine->Get<ConfigurationService>()->IsOffscreen());
 
-    if (g_Engine->getInitConfig().isOffscreen)
+    if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
     {
         Log(Verbose, "GetSwapChainImages: Skipping in offscreen mode");
         return true;
@@ -45,7 +46,7 @@ bool DX12FrameManagementService::GetSwapChainImages()
 
 bool DX12FrameManagementService::AssignSwapChainImages()
 {
-    if (g_Engine->getInitConfig().isOffscreen)
+    if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
     {
         return true;
     }

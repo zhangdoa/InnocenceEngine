@@ -3,6 +3,7 @@
 #include "../../Engine.h"
 #include "../../Common/IOService.h"
 #include "../../Common/LogService.h"
+#include "../ConfigurationService.h"
 
 #include "../../../External/GitSubmodules/renderdoc/renderdoc/api/app/renderdoc_app.h"
 
@@ -18,8 +19,8 @@ using namespace DX12Helper;
 bool DX12GraphicsHardwareService::TryLoadRenderDocAPI()
 {
 #ifdef _WIN32
-	auto l_initConfig = g_Engine->getInitConfig();
-	if (l_initConfig.captureFrame < 0)
+	auto* l_config = g_Engine->Get<ConfigurationService>();
+	if (l_config->GetCaptureFrame() < 0)
 		return false;
 
 	// Load order: in-process → INNO_RENDERDOC_DLL env override → PATH → default

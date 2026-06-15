@@ -1,0 +1,29 @@
+{
+  "engine": {
+    "engineMode": "Host",
+    "graphicsService": "DX12",
+    "isOffscreen": true,
+    "logLevel": 0,
+    "applicationName": "InnocenceEngine"
+  },
+  "session": {
+    "testCase": "gpu_path_tracer",
+    "totalFrames": 60
+  },
+  "scene": {
+    "initialScene": "ExampleProject/Scenes/UnitTest.InnoScene"
+  },
+  "screenshot": {
+    "outputDir": "Captures/Screenshots",
+    "canvasResource": "Final Blend Pass Result",
+    "canvasNode": "FinalBlendPass",
+    "dumpFramePattern": "gpu_output_%04u.png",
+    "autoCaptureFileName": "gpu_output.png"
+  },
+  "camera": {
+    "orbitActive": true,
+    "orbitPitchDeg": 20.0,
+    "orbitRadius": 8.0,
+    "orbitDuration": 120
+  }
+}

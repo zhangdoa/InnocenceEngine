@@ -2,6 +2,8 @@
 #include "../GPUBufferResourceService.h"
 #include "../MeshResourceService.h"
 #include "../SceneService.h"
+#include "../ConfigurationService.h"
+#include "../../RenderGraph/RenderGraphService.h"
 
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
@@ -136,15 +138,10 @@ RenderPassComponent* FrameManagementService::GetSwapChainRenderPassComponent()
 	return m_SwapChainRenderPassComp;
 }
 
-bool FrameManagementService::SetUserPipelineOutput(std::function<GPUResourceComponent* ()>&& getUserPipelineOutputFunc)
-{
-	m_GetUserPipelineOutputFunc = getUserPipelineOutputFunc;
-	return true;
-}
-
 GPUResourceComponent* FrameManagementService::GetUserPipelineOutput()
 {
-	return m_GetUserPipelineOutputFunc();
+	const auto& l_canvasName = g_Engine->Get<ConfigurationService>()->GetCanvasResourceName();
+	return g_Engine->Get<RenderGraphService>()->GetResource(l_canvasName);
 }
 
 ISemaphore* FrameManagementService::GetGlobalSemaphore()

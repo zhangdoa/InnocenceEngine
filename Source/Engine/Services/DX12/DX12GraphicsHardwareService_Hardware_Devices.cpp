@@ -1,6 +1,7 @@
 #include "DX12GraphicsHardwareService.h"
 #include "../../Engine.h"
 #include "../../Common/LogService.h"
+#include "../ConfigurationService.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -37,7 +38,7 @@ bool DX12GraphicsHardwareService::CreateDebugCallback()
 
         m_DX12Context.m_debugInterface->EnableDebugLayer();
 
-        if (g_Engine->getInitConfig().enableGPUValidation)
+        if (g_Engine->Get<ConfigurationService>()->IsEnableGPUValidation())
         {
             m_DX12Context.m_debugInterface->SetEnableGPUBasedValidation(true);
             m_DX12Context.m_debugInterface->SetEnableSynchronizedCommandQueueValidation(true);

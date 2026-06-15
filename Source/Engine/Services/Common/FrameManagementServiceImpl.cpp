@@ -16,6 +16,7 @@
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/SceneService.h"
 #include "../../Services/GUIService.h"
+#include "../ConfigurationService.h"
 
 #include "../../Engine.h"
 
@@ -78,7 +79,7 @@ bool FrameManagementService::Initialize()
 
 bool FrameManagementService::InitializeSwapChainRenderPassComponent()
 {
-	if (g_Engine->getInitConfig().isOffscreen)
+	if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
 	{
 		Log(Verbose, "InitializeSwapChainRenderPassComponent: Skipping in offscreen mode");
 		return true;
@@ -147,7 +148,7 @@ bool FrameManagementService::Update()
 		return false;
 	}
 
-	if (g_Engine->getInitConfig().engineMode == EngineMode::Sidecar)
+	if (g_Engine->Get<ConfigurationService>()->GetEngineMode() == EngineMode::Sidecar)
 	{
 		AssignSwapChainImages();
 	}
@@ -184,7 +185,7 @@ bool FrameManagementService::Update()
 
 		ExecuteSwapChainCommands();
 
-		if (g_Engine->getInitConfig().isOffscreen)
+		if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
 		{
 			m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
 			m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Compute);

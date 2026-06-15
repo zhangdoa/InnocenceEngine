@@ -38,7 +38,6 @@ namespace Inno
 
 		IWindowSurface* m_WindowSurface;
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-		InitConfig m_InitConfig;
 
 		DoubleBuffer<Inno::Array<IWindowEvent*>> m_WindowEvents;
 		Inno::UnorderedSet<WindowEventCallback*> m_WindowEventCallbacks;

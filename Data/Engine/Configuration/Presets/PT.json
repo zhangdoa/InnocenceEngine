@@ -1,0 +1,21 @@
+{
+  "engine": {
+    "engineMode": "Host",
+    "graphicsService": "DX12",
+    "isOffscreen": true,
+    "logLevel": 0,
+    "applicationName": "InnocenceEngine"
+  },
+  "session": {
+    "testCase": "gpu_path_tracer",
+    "totalFrames": 60
+  },
+  "scene": {
+    "initialScene": "ExampleProject/Scenes/UnitTest.InnoScene"
+  },
+  "screenshot": {
+    "outputDir": "Captures/Screenshots",
+    "canvasResource": "Final Blend Pass Result",
+    "canvasNode": "FinalBlendPass"
+  }
+}

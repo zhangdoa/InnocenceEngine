@@ -1,7 +1,8 @@
-﻿#include "HIDService.h"
+#include "HIDService.h"
 #include "../Common/LogService.h"
 #include "../Common/Array.h"
 #include "RenderingConfigurationService.h"
+#include "ConfigurationService.h"
 
 #include "../Engine.h"
 #include "../Services/FrameManagementService.h"
@@ -26,8 +27,8 @@ bool HIDService::Initialize()
 		m_ObjectStatus = ObjectStatus::Activated;
 		Log(Success, "HIDService has been initialized.");
 
-		const auto& l_initConfig = g_Engine->getInitConfig();
-		if (l_initConfig.isOffscreen || l_initConfig.totalFrames > 0)
+		auto* l_config = g_Engine->Get<ConfigurationService>();
+		if (l_config->IsOffscreen() || l_config->GetTotalFrames() > 0)
 			Log(Success, "HIDService::Update dispatch suppressed in offscreen/capture mode.");
 
 		return true;
@@ -51,8 +52,8 @@ bool HIDService::Update()
 	// m_ButtonEvents now makes the dispatch path thread-safe; this guard is
 	// retained as defensive defense-in-depth (near-zero cost) so capture runs
 	// never enter the input dispatch path at all.
-	const auto& l_initConfig = g_Engine->getInitConfig();
-	if (l_initConfig.isOffscreen || l_initConfig.totalFrames > 0)
+	auto* l_config = g_Engine->Get<ConfigurationService>();
+	if (l_config->IsOffscreen() || l_config->GetTotalFrames() > 0)
 		return true;
 
 	g_Engine->getWindowService()->ConsumeEvents([this](const Inno::Array<IWindowEvent*>& l_events)

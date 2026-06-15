@@ -2,6 +2,7 @@
 
 #include "../../Common/LogService.h"
 #include "../../Services/RenderingConfigurationService.h"
+#include "../../Services/ConfigurationService.h"
 
 #include "DXWindowSurface/WinDXWindowSurface.h"
 #include "VKWindowSurface/WinVKWindowSurface.h"
@@ -20,12 +21,11 @@ bool WinWindowService::Setup(IServiceConfig* systemConfig)
 	}
 
 	m_ApplicationName = g_Engine->GetApplicationName().c_str();
-	m_InitConfig = g_Engine->getInitConfig();
 
-	Log(Success, "WinWindowService::Setup: engineMode=", (int)m_InitConfig.engineMode);
+	Log(Success, "WinWindowService::Setup: engineMode=", (int)g_Engine->Get<ConfigurationService>()->GetEngineMode());
 
-	switch (m_InitConfig.graphicsService)
-	{
+	switch (g_Engine->Get<ConfigurationService>()->GetGraphicsService())
+{
 	case GraphicsService::DX12:
 #if defined INNO_PLATFORM_WIN
 		m_WindowSurface = new WinDXWindowSurface();
@@ -40,7 +40,7 @@ bool WinWindowService::Setup(IServiceConfig* systemConfig)
 		break;
 	}
 
-	if (m_InitConfig.engineMode == EngineMode::Host || m_InitConfig.engineMode == EngineMode::Sidecar)
+	if (g_Engine->Get<ConfigurationService>()->GetEngineMode() == EngineMode::Host || g_Engine->Get<ConfigurationService>()->GetEngineMode() == EngineMode::Sidecar)
 	{
 		auto l_windowName = g_Engine->GetApplicationName();
 
@@ -95,7 +95,7 @@ bool WinWindowService::Initialize()
 {
 	m_WindowSurface->Initialize();
 
-	if (m_InitConfig.engineMode == EngineMode::Host || m_InitConfig.engineMode == EngineMode::Sidecar)
+	if (g_Engine->Get<ConfigurationService>()->GetEngineMode() == EngineMode::Host || g_Engine->Get<ConfigurationService>()->GetEngineMode() == EngineMode::Sidecar)
 	{
 		ShowWindow(reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle(), true);
 		SetForegroundWindow(reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle());
@@ -110,7 +110,7 @@ bool WinWindowService::Initialize()
 
 bool WinWindowService::Update()
 {
-	if (m_InitConfig.engineMode != EngineMode::Host && m_InitConfig.engineMode != EngineMode::Sidecar)
+	if (g_Engine->Get<ConfigurationService>()->GetEngineMode() != EngineMode::Host && g_Engine->Get<ConfigurationService>()->GetEngineMode() != EngineMode::Sidecar)
 		return true;
 
 	MSG msg = { 0 };
@@ -127,7 +127,7 @@ bool WinWindowService::Terminate()
 {
 	m_WindowSurface->Terminate();
 
-	if (m_InitConfig.engineMode == EngineMode::Host || m_InitConfig.engineMode == EngineMode::Sidecar)
+	if (g_Engine->Get<ConfigurationService>()->GetEngineMode() == EngineMode::Host || g_Engine->Get<ConfigurationService>()->GetEngineMode() == EngineMode::Sidecar)
 	{
 		ShowCursor(true);
 

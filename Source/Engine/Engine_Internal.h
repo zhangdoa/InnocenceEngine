@@ -11,7 +11,6 @@ namespace Inno
 	class EngineImpl
 	{
 	public:
-		InitConfig m_initConfig;
 
 		std::unique_ptr<IWindowService> m_WindowSystem;
 
