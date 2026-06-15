@@ -47,12 +47,14 @@ export const OPEN_STATUSES: Record<string, true> = { "in progress": true, "to do
 export const QUALIFYING_TEST = new RegExp([
   String.raw`npx\s+playwright\s+test`,
   String.raw`Main\.exe\b[^|&;]*-(total_frames|reload_at_frame|bake|capture_frame)\b`,
+  String.raw`Main\.exe\b[^|&;]*-c\s+\S+\.json`,
   String.raw`RenderTest\.exe\b[^|&;]*-test\b`,
   String.raw`InteractiveTest\.ps1`,
   String.raw`Main\.exe\b[^|&;]*-serialize_test\b`,
 ].join("|"));
 export const NON_PLAYWRIGHT_LIVE = new RegExp([
   String.raw`Main\.exe\b[^|&;]*-(total_frames|reload_at_frame|bake|capture_frame)\b`,
+  String.raw`Main\.exe\b[^|&;]*-c\s+\S+\.json`,
   String.raw`RenderTest\.exe\b[^|&;]*-test\b`,
   String.raw`InteractiveTest\.ps1`,
 ].join("|"));

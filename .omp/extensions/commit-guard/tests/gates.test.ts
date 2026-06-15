@@ -120,6 +120,7 @@ test("liveEngine / serializeTest: path-gated on turn flag", () => {
 
 test("classifyTestCommand: qualifying / live / serialize / playwright spec", () => {
   assert.deepEqual(g.classifyTestCommand("Bin/RelWithDebInfo/Main.exe -total_frames 5", () => null), { qualifying: true, live: true, serialize: false });
+  assert.deepEqual(g.classifyTestCommand("Main.exe -c Engine/Configuration/Presets/Smoke.json", () => null), { qualifying: true, live: true, serialize: false });
   assert.equal(g.classifyTestCommand("Main.exe -serialize_test scene", () => null).serialize, true);
   assert.equal(g.classifyTestCommand("npx playwright test", () => null).live, true); // full suite
   assert.equal(g.classifyTestCommand("npx playwright test tests/mock.spec.js", () => "no engine").live, false);
