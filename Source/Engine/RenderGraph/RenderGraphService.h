@@ -9,7 +9,6 @@
 
 namespace Inno
 {
-	// A compiled pass node: the engine components the graph built from a PassNodeDesc.
 	struct RenderGraphPassNode
 	{
 		PassNodeDesc m_Desc;
@@ -47,7 +46,7 @@ namespace Inno
 		// Live resolved resource by name — for a migrated pass adopting a
 		// graph-owned resource (e.g. a deferred screen-sized RT created after
 		// Initialize runs the writer node's RT-init-func).
-		GPUResourceComponent* GetResource(const std::string& name) { return FindResource(name); }
+		GPUResourceComponent* GetResource(const std::string& name) { return FindResourceByName(name); }
 
 		// The OTHER-parity (history) texture of a ping-pong resource — the previous
 		// frame's output a node reads back. A plain GetResource of the same name
@@ -56,13 +55,19 @@ namespace Inno
 
 		// Named hooks for the residual CPU work a pure-data node can't express:
 		// an init hook creates+fills a node's imported resources (run once after
-		// load); an update hook refreshes per-frame data before the node records.
-		// Keyed by node name; the client registers them in Setup.
-		void RegisterInitHook(const std::string& nodeName, std::function<void()> fn) { m_InitHooks[nodeName] = std::move(fn); }
-		void RegisterUpdateHook(const std::string& nodeName, std::function<void()> fn) { m_UpdateHooks[nodeName] = std::move(fn); }
+		// Initialize runs the writer node's RT-init-func). An update hook runs
+		// every frame in the engine's record-dispatch phase. Hooks are registered
+		// by name; the per-node m_Desc.m_InitHook is invoked in LoadGraph.
+		void RegisterInitHook(const std::string& passName, std::function<void()> hook) { m_InitHooks[passName] = std::move(hook); }
+		void RegisterUpdateHook(const std::string& passName, std::function<void()> hook) { m_UpdateHooks[passName] = std::move(hook); }
 
 	private:
-		GPUResourceComponent* FindResource(const std::string& name);
+		// Engine-internal resource resolver. The public alias is GetResource();
+		// this private helper does the work. The "ByName" suffix avoids the
+		// Windows FindResourceA macro collision (C++23 with WIN32_LEAN_AND_MEAN
+		// made the macro substitution visible at all TU boundaries; pre-C++23 it
+		// was effectively shadowed by the engine method name).
+		GPUResourceComponent* FindResourceByName(const std::string& name);
 		GPUResourceComponent* ResolveImportedResource(const std::string& name);
 		bool CreateResource(const ResourceDesc& desc);
 		bool CreatePassNode(const PassNodeDesc& desc);

@@ -9,8 +9,14 @@
 #include "../Services/DrawCallService.h"
 #include "../Services/FrameManagementService.h"
 
-using namespace Inno;
+// Windows headers
+// FindResource and PingPongTexture as macros. C++23 (with WIN32_LEAN_AND_MEAN set
+// globally) makes the macro substitution more visible, so the engine methods of
+// the same name bind to the Windows API. undef the macros in this TU.
+#undef FindResource
+#undef PingPongTexture
 
+using namespace Inno;
 namespace
 {
 	// True iff `name` is referenced (Reads / Writes / Bindings) by any NON-bypassed
@@ -47,14 +53,13 @@ namespace
 	// the mesh service). Bound by name; DispatchRays self-guards on IsTLASReady.
 	const char* const g_TLASName = "TLAS";
 }
-
-GPUResourceComponent* RenderGraphService::FindResource(const std::string& name)
+// FindResource (the Windows API) is undef'd at the top of this TU to keep the
+// engine method name binding. The method itself is named FindResourceByName for
+// extra defense; the public alias is RenderGraphService::GetResource.
+GPUResourceComponent* RenderGraphService::FindResourceByName(const std::string& name)
 {
 	// Re-resolve per frame via the frame-parity accessor: RecordNode calls
-	// FindResource each frame, so this hands back the correct double-buffered
-	// handle without per-pass C++.
-	if (name == g_PerFrameCBufferName)
-		return g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
+	// FindResourceByName each frame, so this hands back the correct double-buffered
 	if (name == g_PerFrameCBufferPrevName)
 		return g_Engine->Get<PerFrameDataService>()->GetPreviousFrameBuffer();
 	if (name == g_TransformBufferName)

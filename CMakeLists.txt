@@ -26,7 +26,7 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Language standard
 set (CMAKE_C_STANDARD 11)
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 23)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set platform-specific properties
@@ -41,7 +41,7 @@ elseif (APPLE)
 elseif (UNIX)
     set(PLATFORM_FOLDER "Linux")
 else()
-    message(FATAL_ERROR "Unsupported platform! Cannot determine platform-specific folder name.")
+    message(FATAL_ERROR "Unsupported platform! Cannot determine platform-specific folder.")
 endif()
 
 # Set up Python virtual environment
@@ -58,7 +58,7 @@ if (NOT EXISTS ${PYTHON_VENV_PATH})
         ERROR_VARIABLE VENV_CREATION_ERROR
     )
     if (NOT VENV_CREATION_RESULT EQUAL 0)
-        message(FATAL_ERROR 
+        message(FATAL_ERROR
             "Failed to create Python virtual environment at ${PYTHON_VENV_PATH}\n"
             "Error: ${VENV_CREATION_ERROR}\n"
             "Output: ${VENV_CREATION_OUTPUT}"
@@ -98,9 +98,17 @@ option(BUILD_WITH_NRD "Build NVIDIA NRD denoiser integration" ON)
 
 include(CMake/BuildThirdPartyLibs.cmake)
 
+
 include(CMake/CompileHlslShaders.cmake)
 
-# Create Data/Generated directory structure (not version-controlled)
+# Engine-wide compile defs: NOMINMAX disables Windows.h's min/max macros (caught
+# by C++23's stricter preprocessor in std::numeric_limits<T>::max() call sites
+# inside MathHelper.h); WIN32_LEAN_AND_MEAN excludes winsock.h so winsock2.h
+# is the only one in scope (caught by C++23's stricter redefinition checks
+# when IXWebSocketWrapper pulls both in). Third-party submodules set their own
+# preprocessor state internally before their own includes, so these are
+# scoped to the engine targets only.
+add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/Data/Generated/Components")
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/Data/Generated/Fonts")
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/Data/Generated/Scenes")

@@ -8,9 +8,17 @@
 #include "../Services/RenderPassResourceService.h"
 #include "../Services/CommandListResourceService.h"
 
+// <Windows.h> (pulled in transitively through Engine.h) defines FindResource
+// as a macro that expands to FindResourceA/W depending on _UNICODE. C++23
+// (with WIN32_LEAN_AND_MEAN set globally) makes the macro substitution visible
+// at TU boundaries. The engine method was renamed FindResourceByName; the
+// public alias is GetResource(). undef the macros so the class body binds.
+#undef FindResource
+#undef PingPongTexture
+
 using namespace Inno;
 
-// Resource creation + resolution (FindResource / ResolveImportedResource /
+// Resource creation + resolution (FindResourceByName / ResolveImportedResource /
 // CreateResource / CreateScreenSizedTexture) lives in
 // RenderGraphService_Resources.cpp.
 
@@ -281,11 +289,10 @@ bool RenderGraphService::RecordNode(RenderGraphPassNode* node)
 		else
 			l_ctx.m_BoundResources.push_back(l_binding.m_PingPongHistory
 				? PingPongTexture(l_binding.m_Resource, true)
-				: FindResource(l_binding.m_Resource));
+				: FindResourceByName(l_binding.m_Resource));
 	}
 
 	if (node->m_Desc.m_Raster.m_Enabled && !node->m_Desc.m_Raster.m_IndirectArgsBuffer.empty())
-		l_ctx.m_IndirectArgs = FindResource(node->m_Desc.m_Raster.m_IndirectArgsBuffer);
-
+		l_ctx.m_IndirectArgs = FindResourceByName(node->m_Desc.m_Raster.m_IndirectArgsBuffer);
 	return RecordPass(l_ctx);
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "STL14.h"
 #include "Enum.h"
+#include <Windows.h>
 
 namespace Inno {
 	enum class LogLevel { Verbose, Success, Warning, Error };
@@ -74,7 +75,7 @@ namespace Inno {
 		void LogImpl(double logMessage);
 		void LogImpl(const char* logMessage);
 		void LogImpl(const wchar_t* logMessage);
-
+		void LogImpl(HRESULT logMessage) { LogImpl(static_cast<int32_t>(logMessage)); }
 		template<typename T,
 			typename = std::enable_if_t<std::is_enum_v<T> && Inno::Enum::IsRegisteredEnum<T>::value>>
 		void LogImpl(T value)

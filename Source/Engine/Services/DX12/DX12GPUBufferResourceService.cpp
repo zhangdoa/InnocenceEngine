@@ -147,19 +147,19 @@ bool DX12GPUBufferResourceService::InitializeImpl(GPUBufferComponent* gpuBuffer)
 
 			if (l_deviceMemory->m_DefaultHeapBuffer)
 			{
-				l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-					l_deviceMemory->m_DefaultHeapBuffer.Get(), l_initialState, D3D12_RESOURCE_STATE_COPY_DEST));
+				auto l_barrierToCopy = CD3DX12_RESOURCE_BARRIER::Transition(
+					l_deviceMemory->m_DefaultHeapBuffer.Get(), l_initialState, D3D12_RESOURCE_STATE_COPY_DEST);
+				l_dx12CommandList->ResourceBarrier(1, &l_barrierToCopy);
 			}
-
 			UploadToGPU(&l_commandList, l_mappedMemory, l_deviceMemory, gpuBuffer);
 
 			if (l_deviceMemory->m_DefaultHeapBuffer)
 			{
 				// Transition to the buffer's read state (not COMMON) because buffers
-				// with ALLOW_UNORDERED_ACCESS do not support implicit promotion from COMMON.
 				auto l_readState = static_cast<D3D12_RESOURCE_STATES>(gpuBuffer->m_ReadState);
-				l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-					l_deviceMemory->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_readState));
+				auto l_barrierToRead = CD3DX12_RESOURCE_BARRIER::Transition(
+					l_deviceMemory->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_readState);
+				l_dx12CommandList->ResourceBarrier(1, &l_barrierToRead);
 				gpuBuffer->m_CurrentState[i] = gpuBuffer->m_ReadState;
 			}
 		}

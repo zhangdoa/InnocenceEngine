@@ -124,19 +124,22 @@ bool DX12MeshResourceService::InitializeImpl(MeshAssetHandle handle, Inno::Array
 	l_commandList.m_Type = GPUEngineType::Graphics;
 	auto l_dx12CommandList = m_ctx->CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, l_tempAllocator, L"MeshInitCommandList");
 	l_commandList.m_CommandList = reinterpret_cast<uint64_t>(l_dx12CommandList.Get());
-
-	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		l_defaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
-	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		l_defaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_INDEX_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
+	auto l_barrierVBToCopyDest = CD3DX12_RESOURCE_BARRIER::Transition(
+		l_defaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST);
+	auto l_barrierIBToCopyDest = CD3DX12_RESOURCE_BARRIER::Transition(
+		l_defaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_INDEX_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST);
+	l_dx12CommandList->ResourceBarrier(1, &l_barrierVBToCopyDest);
+	l_dx12CommandList->ResourceBarrier(1, &l_barrierIBToCopyDest);
 
 	l_dx12CommandList->CopyResource(l_defaultHeapBuffer_VB.Get(), l_uploadHeapBuffer_VB.Get());
 	l_dx12CommandList->CopyResource(l_defaultHeapBuffer_IB.Get(), l_uploadHeapBuffer_IB.Get());
 
-	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		l_defaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		l_defaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
+	auto l_barrierVBFromCopyDest = CD3DX12_RESOURCE_BARRIER::Transition(
+		l_defaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+	auto l_barrierIBFromCopyDest = CD3DX12_RESOURCE_BARRIER::Transition(
+		l_defaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER);
+	l_dx12CommandList->ResourceBarrier(1, &l_barrierVBFromCopyDest);
+	l_dx12CommandList->ResourceBarrier(1, &l_barrierIBFromCopyDest);
 
 	D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc = {};
 	geometryDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
@@ -186,11 +189,12 @@ bool DX12MeshResourceService::InitializeImpl(MeshAssetHandle handle, Inno::Array
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	DX12Helper::SetObjectName(l_name, l_scratchBuffer, "ScratchBuffer_BLAS");
 #endif
-
-	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		l_defaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_INDEX_BUFFER, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		l_defaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	auto l_barrierIBToSRV = CD3DX12_RESOURCE_BARRIER::Transition(
+		l_defaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_INDEX_BUFFER, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	auto l_barrierVBToSRV = CD3DX12_RESOURCE_BARRIER::Transition(
+		l_defaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	l_dx12CommandList->ResourceBarrier(1, &l_barrierIBToSRV);
+	l_dx12CommandList->ResourceBarrier(1, &l_barrierVBToSRV);
 
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = {};
 	buildDesc.Inputs = inputs;
@@ -202,11 +206,12 @@ bool DX12MeshResourceService::InitializeImpl(MeshAssetHandle handle, Inno::Array
 	D3D12_RESOURCE_BARRIER uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV(l_BLAS.Get());
 	l_dx12CommandList->ResourceBarrier(1, &uavBarrier);
 
-	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		l_defaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_INDEX_BUFFER));
-	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		l_defaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-
+	auto l_barrierIBFromSRV = CD3DX12_RESOURCE_BARRIER::Transition(
+		l_defaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_INDEX_BUFFER);
+	auto l_barrierVBFromSRV = CD3DX12_RESOURCE_BARRIER::Transition(
+		l_defaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+	l_dx12CommandList->ResourceBarrier(1, &l_barrierIBFromSRV);
+	l_dx12CommandList->ResourceBarrier(1, &l_barrierVBFromSRV);
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	l_fmService->Close(&l_commandList, GPUEngineType::Graphics);

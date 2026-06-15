@@ -220,11 +220,22 @@ void LogService::LogImpl(const char* logMessage)
 	std::cout << logMessage;
 	m_LogFile << logMessage;
 }
-
 void LogService::LogImpl(const wchar_t* logMessage)
 {
 	std::wcout << logMessage;
-	m_LogFile << logMessage;
+	// m_LogFile is std::ofstream (narrow). C++23 deletes operator<<(ofstream, wchar_t*);
+	// convert via WideCharToMultiByte. The wide-only logging path is for HRESULT-format
+	// strings; ASCII round-trip is acceptable for log capture.
+	if (m_LogFile.is_open())
+	{
+		int l_len = WideCharToMultiByte(CP_UTF8, 0, logMessage, -1, nullptr, 0, nullptr, nullptr);
+		if (l_len > 0)
+		{
+			std::string l_narrow(l_len - 1, '\0');
+			WideCharToMultiByte(CP_UTF8, 0, logMessage, -1, l_narrow.data(), l_len, nullptr, nullptr);
+			m_LogFile << l_narrow;
+		}
+	}
 }
 
 LogService::LogService()

@@ -127,18 +127,20 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 		}
 		l_textureSubResourceData.pData = (unsigned char*)textureData;
 
-		for (auto gpuResource : texture->m_GPUResources)
-		{
-			auto l_defaultHeapBuffer = static_cast<ID3D12Resource*>(gpuResource);
-			l_dx12UploadCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-				l_defaultHeapBuffer, l_initialState, D3D12_RESOURCE_STATE_COPY_DEST));
+	for (auto gpuResource : texture->m_GPUResources)
+	{
+		auto l_defaultHeapBuffer = static_cast<ID3D12Resource*>(gpuResource);
+		auto l_barrierToCopy = CD3DX12_RESOURCE_BARRIER::Transition(
+			l_defaultHeapBuffer, l_initialState, D3D12_RESOURCE_STATE_COPY_DEST);
+		l_dx12UploadCommandList->ResourceBarrier(1, &l_barrierToCopy);
 
-			UpdateSubresources(l_dx12UploadCommandList.Get(), l_defaultHeapBuffer, l_uploadHeapBuffer.Get(), 0, 0, l_subresourcesCount, &l_textureSubResourceData);
+		UpdateSubresources(l_dx12UploadCommandList.Get(), l_defaultHeapBuffer, l_uploadHeapBuffer.Get(), 0, 0, l_subresourcesCount, &l_textureSubResourceData);
 
-			auto l_nextState = texture->m_TextureDesc.MipLevels > 1 ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : l_initialState;
-			l_dx12UploadCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-				l_defaultHeapBuffer, D3D12_RESOURCE_STATE_COPY_DEST, l_nextState));
-		}
+		auto l_nextState = texture->m_TextureDesc.MipLevels > 1 ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : l_initialState;
+		auto l_barrierFromCopy = CD3DX12_RESOURCE_BARRIER::Transition(
+			l_defaultHeapBuffer, D3D12_RESOURCE_STATE_COPY_DEST, l_nextState);
+		l_dx12UploadCommandList->ResourceBarrier(1, &l_barrierFromCopy);
+	}
 
 		l_fmService->Close(&l_uploadCommandList, GPUEngineType::Graphics);
 		l_hwService->Execute(&l_uploadCommandList, GPUEngineType::Graphics);
@@ -212,16 +214,13 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 		l_transitionCommandList.m_Type = GPUEngineType::Graphics;
 		auto l_dx12TransitionCommandList = m_ctx->CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, l_transitionAllocator, L"TextureTransitionCommandList");
 		l_transitionCommandList.m_CommandList = reinterpret_cast<uint64_t>(l_dx12TransitionCommandList.Get());
-
-		for (auto gpuResource : texture->m_GPUResources)
-		{
-			auto l_defaultHeapBuffer = static_cast<ID3D12Resource*>(gpuResource);
-			l_dx12TransitionCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-				l_defaultHeapBuffer,
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-				l_initialState));
-		}
-
+	for (auto gpuResource : texture->m_GPUResources)
+	{
+		auto l_defaultHeapBuffer = static_cast<ID3D12Resource*>(gpuResource);
+		auto l_barrierToInitial = CD3DX12_RESOURCE_BARRIER::Transition(
+			l_defaultHeapBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, l_initialState);
+		l_dx12TransitionCommandList->ResourceBarrier(1, &l_barrierToInitial);
+	}
 		l_fmService->Close(&l_transitionCommandList, GPUEngineType::Graphics);
 		l_hwService->Execute(&l_transitionCommandList, GPUEngineType::Graphics);
 		l_hwService->SignalOnGPU(l_globalSemaphore, GPUEngineType::Graphics);

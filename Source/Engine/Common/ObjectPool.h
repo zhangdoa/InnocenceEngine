@@ -1,6 +1,8 @@
 #pragma once
+#include "../Engine.h"
 #include "Memory.h"
 #include "LogService.h"
+
 
 namespace Inno
 {

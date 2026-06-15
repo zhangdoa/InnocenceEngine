@@ -1,4 +1,5 @@
 #pragma once
+#include "../Engine.h"
 #include "ObjectPool.h"
 #include "ThreadSafeUnorderedMap.h"
 #include "ThreadSafeVector.h"

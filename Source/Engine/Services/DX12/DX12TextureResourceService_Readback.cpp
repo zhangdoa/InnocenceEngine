@@ -59,7 +59,8 @@ Inno::Array<Vec4> DX12TextureResourceService::ReadTextureBackToCPU(RenderPassCom
             return {};
         }
         auto l_dx12CommandList = m_ctx->CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, l_tempAllocator, L"ReadTextureBackToCPU_Transition");
-        l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer, l_beforeState, D3D12_RESOURCE_STATE_COPY_SOURCE));
+        auto l_barrierToCopy = CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer, l_beforeState, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        l_dx12CommandList->ResourceBarrier(1, &l_barrierToCopy);
 
         for (uint32_t i = 0; i < l_subresourceCount; ++i)
         {
@@ -77,7 +78,8 @@ Inno::Array<Vec4> DX12TextureResourceService::ReadTextureBackToCPU(RenderPassCom
             l_dx12CommandList->CopyTextureRegion(&l_destLocation, 0, 0, 0, &l_srcLocation, NULL);
         }
 
-        l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE, l_beforeState));
+        auto l_barrierFromCopy = CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE, l_beforeState);
+        l_dx12CommandList->ResourceBarrier(1, &l_barrierFromCopy);
         l_dx12CommandList->Close();
 
         auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
