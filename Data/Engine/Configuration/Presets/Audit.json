@@ -12,10 +12,23 @@
   "audit": {
     "triggerAtFrame": 30,
     "passes": [
-      { "node": "BRDFLUTPass",   "output": "BRDF LUT",        "file": "audit_01_BRDFLUTPass.hdr" },
-      { "node": "BRDFLUTMSPass", "output": "BRDF MS LUT",     "file": "audit_02_BRDFLUTMSPass.hdr" },
-      { "node": "SSAONoisePass", "output": "SSAO_Result",     "file": "audit_05_SSAO.hdr" },
-      { "node": "SkyPass",       "output": "Sky Pass Result", "file": "audit_09_Sky.hdr" }
+      { "node": "OpaquePass",            "output": "OpaquePass_RT_0",                "file": "audit_00a_OpaquePass_RT_0_BaseColor.hdr" },
+      { "node": "OpaquePass",            "output": "OpaquePass_RT_1",                "file": "audit_00b_OpaquePass_RT_1_Normal.hdr" },
+      { "node": "OpaquePass",            "output": "OpaquePass_RT_2",                "file": "audit_00c_OpaquePass_RT_2_ORM.hdr" },
+      { "node": "OpaquePass",            "output": "OpaquePass_RT_3",                "file": "audit_00d_OpaquePass_RT_3_Emissive.hdr" },
+      { "node": "SunShadowRTPass",       "output": "SunShadowRT_Visibility",         "file": "audit_01_SunShadowRT_Visibility.hdr" },
+      { "node": "BRDFLUTPass",           "output": "BRDF LUT",                      "file": "audit_02_BRDFLUTPass.hdr" },
+      { "node": "BRDFLUTMSPass",         "output": "BRDF MS LUT",                   "file": "audit_03_BRDFLUTMSPass.hdr" },
+      { "node": "SSAONoisePass",         "output": "SSAO_Result",                   "file": "audit_04_SSAO_Result.hdr" },
+      { "node": "SkyPass",               "output": "Sky Pass Result",               "file": "audit_05_SkyPass.hdr" },
+      { "node": "SSRCReprojectionPass",  "output": "Radiance Cache Result",         "file": "audit_06_SSRCReprojection_Result.hdr" },
+      { "node": "SSRCReprojectionPass",  "output": "Radiance Cache Probe Mask",     "file": "audit_07_SSRCReprojection_ProbeMask.hdr" },
+      { "node": "LightPass",             "output": "LightPass Luminance Result",    "file": "audit_08_LightPass_Luminance.hdr" },
+      { "node": "LightPass",             "output": "LightPass Illuminance Result",  "file": "audit_09_LightPass_Illuminance.hdr" },
+      { "node": "PreTAAPass",            "output": "Pre-TAA Pass Result",            "file": "audit_10_PreTAA.hdr" },
+      { "node": "TAAPass",               "output": "TAA Pass Result",               "file": "audit_11_TAA.hdr" },
+      { "node": "PostTAAPass",           "output": "Post-TAA Pass Result",           "file": "audit_12_PostTAA.hdr" },
+      { "node": "FinalBlendPass",        "output": "Final Blend Pass Result",       "file": "audit_13_FinalBlend.hdr" }
     ]
   }
 }
