@@ -1,34 +1,26 @@
 #pragma once
-#include "../../Engine/Common/Array.h"
-#include <vector>
 #include "../../Engine/Interface/IRenderingClient.h"
 
 namespace Inno
 {
-	class IRenderPass;
-	class ExampleRenderingClientImpl;
+	// Single concrete client split across sibling _Section.cpp TUs (Setup,
+	// Bootstrap, Hooks). The render graph owns every node + resource; this
+	// client only registers the residual CPU hooks the data model can't
+	// express, plus the bootstrap asset imports.
 	class ExampleRenderingClient : public IRenderingClient
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(ExampleRenderingClient);
 
-		// Inherited via IRenderingClient
 		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
-		bool Update() override;
-		bool PrepareCommands() override;
-		bool ExecuteCommands(IRenderingConfig* renderingConfig = nullptr) override;
-		bool FinalizeGPUResults() override;
 		bool Terminate() override;
-
 		ObjectStatus GetStatus() override;
 
-		// Snapshot of passes the client owns, in the order PrepareCommands would
-		// dispatch them. Call from the main thread between frames; returned
-		// pointers are stable for the process lifetime.
-		Inno::Array<IRenderPass*> GetDispatchedPasses() const;
-
 	private:
-		ExampleRenderingClientImpl* m_Impl;
+		void BootstrapAmbientCGTextures();
+		void RegisterGraphHooks();
+
+		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 	};
 }

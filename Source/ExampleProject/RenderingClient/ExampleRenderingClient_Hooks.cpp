@@ -1,4 +1,4 @@
-#include "ExampleRenderingClient_Internal.h"
+#include "ExampleRenderingClient.h"
 
 #include "../../Engine/RenderGraph/RenderGraphService.h"
 #include "../../Engine/Services/TextureResourceService.h"
@@ -41,7 +41,7 @@ namespace Inno
 	// creating + filling imported resources, and per-frame uploads. Registering
 	// them here (before LoadGraph) is what lets the passes be pure JSON nodes with
 	// no C++ class.
-	void ExampleRenderingClientImpl::RegisterGraphHooks()
+	void ExampleRenderingClient::RegisterGraphHooks()
 	{
 		auto l_graph = g_Engine->Get<RenderGraphService>();
 

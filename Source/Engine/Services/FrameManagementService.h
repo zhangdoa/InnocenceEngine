@@ -58,7 +58,6 @@ namespace Inno
 		bool Resize();
 		bool Present();
 
-		bool SetUserPipelineOutput(std::function<GPUResourceComponent*()>&& func);
 		GPUResourceComponent* GetUserPipelineOutput();
 
 		ISemaphore* GetGlobalSemaphore();
@@ -113,7 +112,7 @@ namespace Inno
 
 		RenderPassComponent* m_SwapChainRenderPassComp = nullptr;
 
-		std::function<GPUResourceComponent* ()> m_GetUserPipelineOutputFunc;
+
 
 		// K=3 frames because GISponza's TLAS log shows count flips at frame=0/1/2/16/30;
 		// a single stable frame does not ride out late-binding rebuilds driven by

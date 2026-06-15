@@ -1,6 +1,7 @@
-#include "ExampleRenderingClient_Internal.h"
+#include "ExampleRenderingClient.h"
 
 #include "../../Engine/Services/AssetService.h"
+#include "../../Engine/Services/ConfigurationService.h"
 #include "../../Engine/Common/IOService.h"
 
 #include "../../Engine/Engine.h"
@@ -11,12 +12,8 @@ using namespace Inno;
 
 namespace Inno
 {
-	void ExampleRenderingClientImpl::BootstrapAmbientCGTextures()
+	void ExampleRenderingClient::BootstrapAmbientCGTextures()
 	{
-		// Idempotent bootstrap of AmbientCG PBR sets that materials in
-		// ExampleProject scenes reference. Each ImportTexture writes a
-		// TextureComponent JSON + binary if the JSON is missing; existing
-		// JSONs short-circuit the load → recompress → save chain.
 		struct PBRSetSlot { const char* slotName; uint32_t slotIndex; bool isSRGB; };
 		static const PBRSetSlot s_AmbientCGSlots[] = {
 			{ "NormalGL",  0u, false },
@@ -24,20 +21,20 @@ namespace Inno
 			{ "Metalness", 2u, false },
 			{ "Roughness", 3u, false },
 		};
-		static const char* s_AmbientCGSets[] = { "Concrete007", "Ground037", "Metal032", "Tiles074" };
 		auto* l_io = g_Engine->Get<IOService>();
 		auto l_dataDir = l_io->GetDataDirectory();
-		for (const char* setName : s_AmbientCGSets)
+		for (const auto& l_set : g_Engine->Get<ConfigurationService>()->GetAmbientCGSets())
 		{
-			std::string l_setDir = std::string("../OriginalAssets/Textures/") + setName + "/";
-			std::string l_baseName = std::string(setName) + "_1K-PNG";
+			const std::string setName = l_set.setName;
+			std::string l_setDir = l_set.assetPath + "/";
+			std::string l_baseName = setName + "_1K-PNG";
 			for (const auto& slot : s_AmbientCGSlots)
 			{
 				std::string l_pngPath = l_setDir + l_baseName + "_" + slot.slotName + ".png";
 				if (!l_io->IsFileExist(l_pngPath.c_str()))
 					continue;
 
-				std::string l_instanceName = std::string(setName) + "_" + slot.slotName + ".TextureComponent";
+				std::string l_instanceName = setName + "_" + slot.slotName + ".TextureComponent";
 
 				auto l_destJson = l_dataDir + AssetService::GetAssetFilePath(l_instanceName.c_str());
 				if (l_io->IsFileExist(l_destJson.c_str()))
