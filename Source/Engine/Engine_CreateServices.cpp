@@ -4,6 +4,7 @@
 #include "Common/Memory.h"
 #include "Common/TaskScheduler.h"
 #include "Common/IOService.h"
+#include "Services/ConfigurationService.h"
 #include "Services/EntityRegistry.h"
 #include "Services/TransformService.h"
 #include "Services/LightSimulationService.h"
@@ -55,19 +56,24 @@ using namespace Inno;
 
 bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 {
-	std::string l_windowArguments = pScmdline;
-	m_pImpl->m_initConfig = ParseInitConfig(l_windowArguments);
+	auto* l_cfg = g_Engine->Get<ConfigurationService>();
 
 	Get<Timer>();
 	Get<LogService>();
-	if (m_pImpl->m_initConfig.totalFrames > 0)
-		Get<LogService>()->SetFatalOnError(true);
 	Get<Memory>();
 	Get<TaskScheduler>();
 	Get<IOService>()->SetupWorkingDirectory();
+
+	// Config load resolves paths against the data directory, so it must run
+	// after SetupWorkingDirectory.
+	if (pScmdline)
+		l_cfg->LoadFromCommandLine(pScmdline);
+	if (l_cfg->GetTotalFrames() > 0)
+		Get<LogService>()->SetFatalOnError(true);
+
 	Get<HIDService>();
 
-	if (m_pImpl->m_initConfig.isHeadless || m_pImpl->m_initConfig.isOffscreen) {
+	if (l_cfg->IsHeadless() || l_cfg->IsOffscreen()) {
 		m_pImpl->m_WindowSystem = std::make_unique<HeadlessWindowService>();
 	} else {
 #if defined INNO_PLATFORM_WIN
@@ -84,7 +90,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
-	if (!m_pImpl->m_initConfig.isHeadless) {
+	if (!l_cfg->IsHeadless()) {
 		Get<RenderingConfigurationService>();
 		Get<TemplateAssetService>();
 		Get<PerFrameDataService>();
@@ -95,12 +101,12 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		Get<DebugDrawCallService>();
 		Get<AnimationSimulationService>();
 		Get<AnimationResourceService>();
-		if (!m_pImpl->m_initConfig.isOffscreen)
+		if (!l_cfg->IsOffscreen())
 			Get<GUIService>();
 	}
 
 #if defined INNO_RENDERER_DIRECTX
-	if (!m_pImpl->m_initConfig.isHeadless)
+	if (!l_cfg->IsHeadless())
 	{
 		auto* l_hwService = new DX12GraphicsHardwareService();
 		auto* l_ctx = l_hwService->GetDX12Context();
@@ -143,7 +149,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 #endif
 
 #if defined INNO_PLATFORM_MAC
-	if (!m_pImpl->m_initConfig.isHeadless) {
+	if (!l_cfg->IsHeadless()) {
 		auto l_windowSystem = reinterpret_cast<MacWindowService*>(m_pImpl->m_WindowSystem.get());
 		auto l_windowSystemBridge = reinterpret_cast<MacWindowServiceBridge*>(appHook);
 		l_windowSystem->setBridge(l_windowSystemBridge);
@@ -157,7 +163,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	Get<LightSimulationService>();
 	Get<CameraService>();
 
-	if (m_pImpl->m_initConfig.engineMode == EngineMode::Sidecar)
+	if (l_cfg->GetEngineMode() == EngineMode::Sidecar)
 	{
 		Get<EditorService>();
 	}

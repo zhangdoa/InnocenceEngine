@@ -243,12 +243,7 @@ namespace
 	{
 		bool l_result = true;
 
-		// Initial-scene selection priority:
-		//   1. -serialize_test target  (test runs save+compare on this scene then exits)
-		//   2. -scene override         (three-scene capture harness picks the scene)
-		//   3. UnitTest default        (normal engine operation)
-		// When (2) is set, Update() also suppresses the default frame-5
-		// auto-switch to GISponza so the chosen scene renders end-to-end.
+		// Scene priority: serialize_test target, else config initialScene, else UnitTest default.
 		auto* l_configSvc = g_Engine->Get<ConfigurationService>();
 		const auto& l_serializeTest = l_configSvc->GetSerializeTest();
 		const auto& l_initialSceneCfg = l_configSvc->GetInitialScene();
@@ -257,9 +252,14 @@ namespace
 			l_initialScene = l_serializeTest.c_str();
 		else if (l_initialSceneCfg[0] != '\0')
 			l_initialScene = l_initialSceneCfg.c_str();
-	g_Engine->Get<SceneService>()->Load(l_initialScene, true);
-	InitializeRayTracerForWorld(*this);
-	return l_result;
+		g_Engine->Get<SceneService>()->Load(l_initialScene, true);
+
+		RayTracerConfig l_rtCfg;
+		auto* l_rayTracer = g_Engine->Get<RayTracer>();
+		l_rayTracer->Setup(&l_rtCfg);
+		l_rayTracer->Initialize();
+
+		return l_result;
 	}
 
 	bool WorldSystem::Update()
