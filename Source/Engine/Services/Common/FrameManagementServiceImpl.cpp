@@ -55,7 +55,7 @@ bool FrameManagementService::Initialize()
 {
 	if (m_ObjectStatus != ObjectStatus::Created)
 	{
-		Log(Error, "FrameManagementService is not in Created state.");
+		Log(Error, " is not in Created state.");
 		return false;
 	}
 
@@ -81,13 +81,13 @@ bool FrameManagementService::InitializeSwapChainRenderPassComponent()
 {
 	if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
 	{
-		Log(Verbose, "InitializeSwapChainRenderPassComponent: Skipping in offscreen mode");
+		Log(Verbose, " offscreen mode; skipping.");
 		return true;
 	}
 
 	if (!GetSwapChainImages())
 	{
-		Log(Error, "Failed to get swap chain images.");
+		Log(Error, " GetSwapChainImages failed; aborting.");
 		return false;
 	}
 
@@ -137,8 +137,7 @@ bool FrameManagementService::Update()
 		{
 			m_DeviceErrorReported = true;
 			m_HardwareService->DumpGPUDiagnostics();
-			Log(Warning, "GPU device removed detected after frame wait — frame=", m_FrameCountSinceLaunch,
-				" swapIndex=", l_currentFrame, " — skipping GPU work from this point forward.");
+			Log(Warning, " GPU device removed after frame wait; frame=", m_FrameCountSinceLaunch, " swapIndex=", l_currentFrame, " — skipping GPU work from this point forward.");
 		}
 		// Run CPU-side callbacks even on GPU error so the logic client can still
 		// count frames and trigger auto-termination.
@@ -220,17 +219,24 @@ bool FrameManagementService::Update()
 
 bool FrameManagementService::Terminate()
 {
-	auto l_result = true;
-	l_result &= g_Engine->Get<SamplerResourceService>()->Delete(m_SwapChainSamplerComp);
-	l_result &= g_Engine->Get<ShaderProgramResourceService>()->Delete(m_SwapChainShaderProgramComp);
-	l_result &= g_Engine->Get<RenderPassResourceService>()->Delete(m_SwapChainRenderPassComp);
+	Log(Verbose, " starting.");
+	if (!g_Engine->Get<SamplerResourceService>()->Delete(m_SwapChainSamplerComp))
+	{
+		Log(Error, " SamplerResourceService->Delete failed; aborting.");
+		return false;
+	}
+	if (!g_Engine->Get<ShaderProgramResourceService>()->Delete(m_SwapChainShaderProgramComp))
+	{
+		Log(Error, " ShaderProgramResourceService->Delete failed; aborting.");
+		return false;
+	}
+	if (!g_Engine->Get<RenderPassResourceService>()->Delete(m_SwapChainRenderPassComp))
+	{
+		Log(Error, " RenderPassResourceService->Delete failed; aborting.");
+		return false;
+	}
 
 	m_ObjectStatus = ObjectStatus::Terminated;
-
-	if (l_result)
-		Log(Success, "FrameManagementService has been terminated.");
-	else
-		Log(Error, "Failed to terminate FrameManagementService.");
-
-	return l_result;
+	Log(Success, " terminated.");
+	return true;
 }

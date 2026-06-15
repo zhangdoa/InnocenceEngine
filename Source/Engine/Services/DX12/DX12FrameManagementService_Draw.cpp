@@ -22,7 +22,7 @@ bool DX12FrameManagementService::DrawIndexedInstanced(RenderPassComponent* rende
 	auto* l_resource = AssetService::GetMeshAsset(mesh->m_Asset);
 	if (!l_resource || l_resource->m_Residency != AssetResidency::Resident)
 	{
-		Log(Warning, "DX12FrameManagementService::DrawIndexedInstanced: mesh asset not resident");
+		Log(Warning, " mesh asset not resident");
 		return false;
 	}
 
@@ -96,7 +96,7 @@ bool DX12FrameManagementService::DispatchRays(RenderPassComponent* renderPass, C
 
 	if (!g_Engine->Get<GPUBufferResourceService>()->IsTLASReady())
 	{
-		Log(Warning, "DX12FrameManagementService::DispatchRays: TLAS not ready, skipping for ", renderPass->m_InstanceName);
+		Log(Warning, " TLAS not ready, skipping for ", renderPass->m_InstanceName);
 		return false;
 	}
 
@@ -171,7 +171,7 @@ bool DX12FrameManagementService::ExecuteIndirect(RenderPassComponent* renderPass
 
 	if (maxDrawCommandCount == 0)
 	{
-		Log(Warning, "DX12FrameManagementService::ExecuteIndirect: zero draw commands for ", renderPass->m_InstanceName);
+		Log(Warning, " zero draw commands for ", renderPass->m_InstanceName);
 		return false;
 	}
 
@@ -188,7 +188,7 @@ void DX12FrameManagementService::PushRootConstants(RenderPassComponent* renderPa
 {
 	if (!renderPass || !commandList)
 	{
-		Log(Warning, "DX12FrameManagementService::PushRootConstants: null ", (!renderPass ? "renderPass" : "commandList"));
+		Log(Warning, " null ", (!renderPass ? "renderPass" : "commandList"));
 		return;
 	}
 

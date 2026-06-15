@@ -16,7 +16,7 @@ bool MeshResourceService::Setup(IServiceConfig* systemConfig)
 	m_Pool.Initialize(l_cap.maxMeshes);
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	Log(Success, "MeshResourceService Setup finished.");
+	Log(Success, " Setup finished.");
 	return true;
 }
 
@@ -28,7 +28,7 @@ bool MeshResourceService::Terminate()
 	m_MeshResourceLUT.clear();
 
 	m_ObjectStatus = ObjectStatus::Terminated;
-	Log(Success, "MeshResourceService Terminated.");
+	Log(Success, " terminated.");
 	return true;
 }
 
@@ -54,7 +54,7 @@ void MeshResourceService::Initialize(MeshComponent* mesh, Inno::Array<Vertex>& v
 	auto l_assetHandle = AssetService::AllocateMeshAsset(mesh->m_InstanceName.c_str(), l_lifespan);
 	if (!l_assetHandle.IsValid())
 	{
-		Log(Error, "Failed to allocate MeshAsset for: ", mesh->m_InstanceName);
+		Log(Error, " AllocateMeshAsset failed for: ", mesh->m_InstanceName);
 		return;
 	}
 
@@ -66,21 +66,17 @@ void MeshResourceService::Initialize(MeshComponent* mesh, Inno::Array<Vertex>& v
 	if (!l_resource)
 	{
 		uint32_t l_currentGen = AssetService::DebugGetMeshGeneration(l_assetHandle.m_Index);
-		Log(Error, "MeshResourceService::Initialize: AllocateMeshAsset succeeded but GetMeshAsset returned nullptr for '",
-			mesh->m_InstanceName.c_str(), "' handle(idx=", l_assetHandle.m_Index,
-			" gen=", l_assetHandle.m_Generation, ") currentGen=", l_currentGen);
+		Log(Error, " AllocateMeshAsset succeeded but GetMeshAsset returned nullptr for '", mesh->m_InstanceName.c_str(), "' handle(idx=", l_assetHandle.m_Index, " gen=", l_assetHandle.m_Generation, ") currentGen=", l_currentGen);
 		return;
 	}
 	if (!vertices.empty())
 	{
 		l_resource->m_AABB = Math::GenerateAABB(vertices.data(), vertices.size());
-		Log(Verbose, "Calculated AABB for MeshComponent: min(",
-			l_resource->m_AABB.m_boundMin.x, ",", l_resource->m_AABB.m_boundMin.y, ",", l_resource->m_AABB.m_boundMin.z,
-			") max(", l_resource->m_AABB.m_boundMax.x, ",", l_resource->m_AABB.m_boundMax.y, ",", l_resource->m_AABB.m_boundMax.z, ")");
+		Log(Verbose, " AABB min=(", l_resource->m_AABB.m_boundMin.x, ",", l_resource->m_AABB.m_boundMin.y, ",", l_resource->m_AABB.m_boundMin.z, ") max=(", l_resource->m_AABB.m_boundMax.x, ",", l_resource->m_AABB.m_boundMax.y, ",", l_resource->m_AABB.m_boundMax.z, ")");
 	}
 
 	m_DeferredQueue.push(MeshInitTask(mesh, std::move(vertices), std::move(indices), owner, l_lifespan));
-	Log(Verbose, "MeshComponent ", mesh->m_InstanceName, " queued for deferred initialization");
+	Log(Verbose, " ", mesh->m_InstanceName, " queued for deferred initialization");
 }
 
 bool MeshResourceService::InitializeComponents()
@@ -100,13 +96,13 @@ bool MeshResourceService::InitializeComponents()
 			if (l_current)
 				l_meshComp = l_current;
 			else
-				Log(Warning, "MeshInitTask: entity ", l_task.m_Owner, " no longer has MeshComponent, using stored pointer");
+				Log(Warning, " entity ", l_task.m_Owner, " no longer has MeshComponent, using stored pointer");
 		}
 
 		auto* l_resource = AssetService::GetMeshAsset(l_meshComp->m_Asset);
 		if (!l_resource)
 		{
-			Log(Error, "MeshInitTask: invalid MeshAssetHandle for ", l_meshComp->m_InstanceName);
+			Log(Error, " invalid MeshAssetHandle for ", l_meshComp->m_InstanceName);
 			continue;
 		}
 
@@ -131,7 +127,7 @@ bool MeshResourceService::InitializeComponents()
 		// the main thread emplaces more components or assets — reallocation of those
 		// std::vectors would make l_meshComp and l_resource dangling.
 		auto l_assetHandle = l_meshComp->m_Asset;
-		Log(Verbose, "Processing deferred mesh initialization for: ", l_meshComp->m_InstanceName);
+		Log(Verbose, " processing deferred init for: ", l_meshComp->m_InstanceName);
 		if (InitializeImpl(l_assetHandle, l_task.m_Vertices, l_task.m_Indices))
 		{
 			// Re-fetch pointers: std::vector backing may have been reallocated.

@@ -37,7 +37,7 @@ bool DX12FrameManagementService::Open(CommandListComponent* commandList, GPUEngi
 	auto l_resetResult = l_commandList->Reset(allocator, l_PSO);
 	if (FAILED(l_resetResult))
 	{
-		Log(Error, "DX12FrameManagementService::Open: Reset failed, HRESULT=", l_resetResult);
+		Log(Error, " Reset failed, HRESULT=", l_resetResult);
 		return false;
 	}
 	return true;
@@ -49,7 +49,7 @@ bool DX12FrameManagementService::Close(CommandListComponent* commandList, GPUEng
 	auto l_closeResult = l_commandList->Close();
 	if (FAILED(l_closeResult))
 	{
-		Log(Error, "DX12FrameManagementService::Close: Close failed, HRESULT=", l_closeResult);
+		Log(Error, " Close failed, HRESULT=", l_closeResult);
 		return false;
 	}
 	return true;
@@ -66,54 +66,60 @@ bool DX12FrameManagementService::CreateSwapChainResources()
 
 bool DX12FrameManagementService::CreateSwapChain()
 {
-    m_swapChainDesc.BufferCount = m_swapChainImageCount;
+	Log(Verbose, " starting.");
+	m_swapChainDesc.BufferCount = m_swapChainImageCount;
 
-    auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-    m_swapChainDesc.Width = (UINT)l_screenResolution.x;
-    m_swapChainDesc.Height = (UINT)l_screenResolution.y;
+	m_swapChainDesc.Width = (UINT)l_screenResolution.x;
+	m_swapChainDesc.Height = (UINT)l_screenResolution.y;
 
-    m_swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	m_swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
-    m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_BACK_BUFFER;
+	m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_BACK_BUFFER;
 
-    m_swapChainDesc.SampleDesc.Count = 1;
-    m_swapChainDesc.SampleDesc.Quality = 0;
+	m_swapChainDesc.SampleDesc.Count = 1;
+	m_swapChainDesc.SampleDesc.Quality = 0;
 
-    m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+	m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 
-    m_swapChainDesc.Flags = 0;
+	m_swapChainDesc.Flags = 0;
 
-    m_swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+	m_swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 
-    auto l_windowService = g_Engine->getWindowService();
-    auto l_winWindowService = dynamic_cast<WinWindowService*>(l_windowService);
-    if (!l_winWindowService)
-    {
-        Log(Error, "CreateSwapChain: Window service is not a WinWindowService! Can't create swap chain for HWND.");
-        return false;
-    }
+	auto l_windowService = g_Engine->getWindowService();
+	auto l_winWindowService = dynamic_cast<WinWindowService*>(l_windowService);
+	if (!l_winWindowService)
+	{
+		Log(Error, " Window service is not a WinWindowService! Can't create swap chain for HWND.");
+		return false;
+	}
 
-    IDXGISwapChain1* l_swapChain1;
-    auto l_hResult = m_ctx->m_factory->CreateSwapChainForHwnd(
-        m_ctx->m_directCommandQueue.Get(),
-        l_winWindowService->GetWindowHandle(),
-        &m_swapChainDesc,
-        nullptr,
-        nullptr,
-        &l_swapChain1);
+	IDXGISwapChain1* l_swapChain1;
+	auto l_hResult = m_ctx->m_factory->CreateSwapChainForHwnd(
+		m_ctx->m_directCommandQueue.Get(),
+		l_winWindowService->GetWindowHandle(),
+		&m_swapChainDesc,
+		nullptr,
+		nullptr,
+		&l_swapChain1);
 
-    l_hResult = l_swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain));
-    l_swapChain1->Release();
+	if (FAILED(l_hResult))
+	{
+		Log(Error, " CreateSwapChainForHwnd failed, HRESULT=", l_hResult);
+		return false;
+	}
 
-    if (FAILED(l_hResult))
-    {
-        Log(Error, "Can't create swap chain!");
-        m_ObjectStatus = ObjectStatus::Suspended;
-        return false;
-    }
+	l_hResult = l_swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain));
+	l_swapChain1->Release();
 
-    Log(Success, "Swap chain has been created.");
+	if (FAILED(l_hResult))
+	{
+		Log(Error, " QueryInterface on swap chain failed, HRESULT=", l_hResult);
+		m_ObjectStatus = ObjectStatus::Suspended;
+		return false;
+	}
 
-    return true;
+	Log(Success, " Swap chain has been created.");
+	return true;
 }

@@ -11,7 +11,7 @@ bool DX12FrameManagementService::CommandListBegin(RenderPassComponent* renderPas
 {
 	if (!commandList || !renderPass)
 	{
-		Log(Warning, "DX12FrameManagementService::CommandListBegin: null ", (!commandList ? "commandList" : "renderPass"));
+		Log(Warning, " null ", (!commandList ? "commandList" : "renderPass"));
 		return false;
 	}
 

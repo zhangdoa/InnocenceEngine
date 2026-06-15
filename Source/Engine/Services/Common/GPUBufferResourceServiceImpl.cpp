@@ -17,7 +17,7 @@ bool GPUBufferResourceService::Setup(IServiceConfig* systemConfig)
 	auto l_cap = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 	m_Pool.Initialize(l_cap.maxBuffers);
 	m_ObjectStatus = ObjectStatus::Activated;
-	Log(Success, "GPUBufferResourceService Setup finished.");
+	Log(Success, " Setup finished.");
 	return true;
 }
 
@@ -25,7 +25,7 @@ bool GPUBufferResourceService::Terminate()
 {
 	m_Pool.Terminate();
 	m_ObjectStatus = ObjectStatus::Terminated;
-	Log(Success, "GPUBufferResourceService has been terminated.");
+	Log(Success, " terminated.");
 	return true;
 }
 
@@ -56,7 +56,7 @@ void GPUBufferResourceService::Initialize(GPUBufferComponent* gpuBuffer)
 		return;
 
 	m_DeferredQueue.push(gpuBuffer);
-	Log(Verbose, "GPUBufferComponent ", gpuBuffer->m_InstanceName, " queued for deferred initialization");
+	Log(Verbose, " ", gpuBuffer->m_InstanceName, " queued for deferred initialization");
 }
 
 bool GPUBufferResourceService::InitializeComponents()
@@ -69,7 +69,7 @@ bool GPUBufferResourceService::InitializeComponents()
 		if (!l_component)
 			continue;
 
-		Log(Verbose, "Processing deferred GPU buffer initialization for: ", l_component->m_InstanceName);
+		Log(Verbose, " processing deferred init for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
 			l_component->m_ObjectStatus = ObjectStatus::Activated;
 		else
@@ -83,7 +83,7 @@ bool GPUBufferResourceService::WriteMappedMemory(GPUBufferComponent* gpuBuffer, 
 {
 	if (gpuBuffer->m_ObjectStatus != ObjectStatus::Activated)
 	{
-		Log(Warning, "WriteMappedMemory rejected for [", gpuBuffer->m_InstanceName, "]: ObjectStatus is ", gpuBuffer->m_ObjectStatus, ", expected Activated.");
+		Log(Warning, " WriteMappedMemory rejected for [", gpuBuffer->m_InstanceName, "]: ObjectStatus is ", gpuBuffer->m_ObjectStatus, ", expected Activated.");
 		return false;
 	}
 
@@ -93,7 +93,7 @@ bool GPUBufferResourceService::WriteMappedMemory(GPUBufferComponent* gpuBuffer, 
 
 	if (mappedMemory == nullptr)
 	{
-		Log(Error, "Can't upload data to GPU buffer: ", gpuBuffer->m_InstanceName, " because it's not mapped.");
+		Log(Error, " Can't upload data to GPU buffer: ", gpuBuffer->m_InstanceName, " because it's not mapped.");
 		return false;
 	}
 

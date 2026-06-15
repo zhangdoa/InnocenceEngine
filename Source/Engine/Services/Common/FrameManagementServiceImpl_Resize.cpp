@@ -39,37 +39,48 @@ bool FrameManagementService::Present()
 
 bool FrameManagementService::WaitForGPUIdle()
 {
-	Log(Verbose, "WaitForGPUIdle: signaling all queues...");
+	Log(Verbose, " signaling all queues...");
 	m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
 	m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Compute);
 	m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Copy);
 
-	Log(Verbose, "WaitForGPUIdle: waiting on Graphics...");
+	Log(Verbose, " waiting on Graphics...");
 	m_HardwareService->WaitOnCPU(m_HardwareService->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
-	Log(Verbose, "WaitForGPUIdle: waiting on Compute...");
+	Log(Verbose, " waiting on Compute...");
 	m_HardwareService->WaitOnCPU(m_HardwareService->GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
-	Log(Verbose, "WaitForGPUIdle: waiting on Copy...");
+	Log(Verbose, " waiting on Copy...");
 	m_HardwareService->WaitOnCPU(m_HardwareService->GetSemaphoreValue(GPUEngineType::Copy), GPUEngineType::Copy);
-	Log(Verbose, "WaitForGPUIdle: complete.");
+	Log(Verbose, " complete.");
 
 	return true;
 }
 
 bool FrameManagementService::Resize()
 {
-	Log(Success, "FrameManagementService::Resize requested.");
+	Log(Success, " requested.");
 	m_needResize = true;
 	return true;
 }
 
 bool FrameManagementService::ExecuteResize()
 {
-	Log(Success, "FrameManagementService::ExecuteResize begin.");
-	PreResize();
-	ResizeImpl();
-	PostResize();
-	Log(Success, "FrameManagementService::ExecuteResize complete.");
-
+	Log(Success, " begin.");
+	if (!PreResize())
+	{
+		Log(Error, " PreResize failed; aborting.");
+		return false;
+	}
+	if (!ResizeImpl())
+	{
+		Log(Error, " ResizeImpl failed; aborting.");
+		return false;
+	}
+	if (!PostResize())
+	{
+		Log(Error, " PostResize failed; aborting.");
+		return false;
+	}
+	Log(Success, " complete.");
 	return true;
 }
 

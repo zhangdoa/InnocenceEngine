@@ -15,6 +15,7 @@ using namespace Inno;
 
 bool FrameManagementService::PrepareGlobalCommands()
 {
+	
 	auto l_currentFrame = m_CurrentFrame;
 
 	auto l_commandList = m_GlobalGraphicsCommandLists[l_currentFrame];
@@ -41,34 +42,46 @@ bool FrameManagementService::PrepareGlobalCommands()
 	l_gpuBufferService->UpdateRaytracingInstances();
 
 	PrepareRayTracing(l_commandList);
-
 	Close(l_commandList, GPUEngineType::Graphics);
 
+	
 	return true;
 }
 
 bool FrameManagementService::ExecuteGlobalCommands()
 {
+	
 	auto l_currentFrame = m_CurrentFrame;
 
 	auto l_commandList = m_GlobalGraphicsCommandLists[l_currentFrame];
 	m_HardwareService->Execute(l_commandList, GPUEngineType::Graphics);
 	m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
 
+	
 	return true;
 }
 
 bool FrameManagementService::PrepareSwapChainCommands()
 {
+	
 	if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
+	{
+		Log(Verbose, " offscreen; skipped.");
 		return true;
+	}
 
 	auto l_userPipelineOutput = GetUserPipelineOutput();
 	if (!l_userPipelineOutput)
+	{
+		Log(Error, " GetUserPipelineOutput returned null; aborting.");
 		return false;
+	}
 
 	if (l_userPipelineOutput->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Verbose, " user pipeline output not Activated (status=", l_userPipelineOutput->m_ObjectStatus, "); aborting.");
 		return false;
+	}
 
 	auto l_currentFrame = m_CurrentFrame;
 	auto l_commandList = m_GlobalGraphicsCommandLists[l_currentFrame];
@@ -93,24 +106,36 @@ bool FrameManagementService::PrepareSwapChainCommands()
 
 	CommandListEnd(l_swapChainRP, l_commandList);
 
+	
 	return true;
 }
 
 bool FrameManagementService::ExecuteSwapChainCommands()
 {
+	
 	if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
+	{
+		Log(Verbose, " offscreen; skipped.");
 		return true;
+	}
 
 	auto l_userPipelineOutput = GetUserPipelineOutput();
 	if (!l_userPipelineOutput)
+	{
+		Log(Error, " GetUserPipelineOutput null; aborting.");
 		return false;
+	}
 
 	if (l_userPipelineOutput->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Verbose, " user pipeline output not Activated (status=", l_userPipelineOutput->m_ObjectStatus, "); aborting.");
 		return false;
+	}
 
 	auto l_currentFrame = m_CurrentFrame;
 	auto l_commandList = m_GlobalGraphicsCommandLists[l_currentFrame];
 	m_HardwareService->Execute(l_commandList, GPUEngineType::Graphics);
 
+	
 	return true;
 }

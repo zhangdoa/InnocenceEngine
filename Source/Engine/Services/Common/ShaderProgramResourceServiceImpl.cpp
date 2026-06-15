@@ -8,7 +8,7 @@ bool ShaderProgramResourceService::Setup(IServiceConfig* systemConfig)
 {
 	m_Pool.Initialize(256);
 	m_ObjectStatus = ObjectStatus::Activated;
-	Log(Success, "ShaderProgramResourceService Setup finished.");
+	Log(Success, " Setup finished.");
 	return true;
 }
 
@@ -16,7 +16,7 @@ bool ShaderProgramResourceService::Terminate()
 {
 	m_Pool.Terminate();
 	m_ObjectStatus = ObjectStatus::Terminated;
-	Log(Success, "ShaderProgramResourceService has been terminated.");
+	Log(Success, " terminated.");
 	return true;
 }
 

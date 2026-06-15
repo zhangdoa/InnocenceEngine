@@ -46,7 +46,7 @@ bool DX12FrameManagementService::BindComputeResource(CommandListComponent* comma
 		auto l_buffer = resource->As<GPUBufferComponent>();
 		if (!l_buffer)
 		{
-			Log(Warning, "DX12FrameManagementService::BindComputeResource: null buffer at root param ", rootParameterIndex);
+			Log(Warning, " null buffer at root param ", rootParameterIndex);
 			return false;
 		}
 
@@ -168,7 +168,7 @@ bool DX12FrameManagementService::BindGraphicsResource(CommandListComponent* comm
 		auto l_buffer = resource->As<GPUBufferComponent>();
 		if (!l_buffer)
 		{
-			Log(Warning, "DX12FrameManagementService::BindGraphicsResource: null buffer at root param ", rootParameterIndex);
+			Log(Warning, " null buffer at root param ", rootParameterIndex);
 			return false;
 		}
 

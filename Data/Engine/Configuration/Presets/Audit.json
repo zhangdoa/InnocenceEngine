@@ -3,11 +3,17 @@
     "engineMode": "Host",
     "graphicsService": "DX12",
     "isAudit": true,
+    "isHeadless": false,
+    "isOffscreen": true,
     "logLevel": 1,
     "applicationName": "InnocenceEngine"
   },
   "session": {
+    "totalFrames": 35,
     "renderGraph": "ExampleProject/RenderGraph/ExampleRenderGraph.json"
+  },
+  "scene": {
+    "initialScene": "ExampleProject/Scenes/UnitTest.InnoScene"
   },
   "audit": {
     "triggerAtFrame": 30,

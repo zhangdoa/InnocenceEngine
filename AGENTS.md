@@ -28,6 +28,14 @@ fresh dispatch from the main session (see `dispatch-briefs` skill).
 - `.omp/agents/` — stage manifests (above).
 - `.omp/skills/<name>/SKILL.md` — project skills (priority 100; win over same-named
   `~/.claude/skills`). Enforcement-supporting content only.
+- `.omp/rules/` — standalone rules. Each file has a YAML frontmatter (`name`,
+  `description`, `condition`, `scope`) consumed by the harness's rule matcher.
+  Read by the model on demand; not hard-gated. Examples:
+  `no-speculative-debug-loop.md`, `no-revert-on-engine-gap.md`,
+  `pre-commit-tracker-sync.md`, `verify-capture-path-not-stale.md`,
+  `prefer-ast-rewrites.md`. New rules belong here when an observed failure
+  pattern is worth encoding for future sessions; see the
+  `harness-changes-are-empirical` line in the global user-scope CLAUDE.md.
 - `.omp/extensions/commit-guard/` — the commit gates (TypeScript omp extension; a `tool_call`
   interceptor). `bun test` under `tests/` must pass for changes.
 - `.omp/state/` — point-in-time fact snapshots (direction, remote-sync, engine invariants).

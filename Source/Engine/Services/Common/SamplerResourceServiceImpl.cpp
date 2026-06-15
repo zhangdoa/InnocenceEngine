@@ -8,7 +8,7 @@ bool SamplerResourceService::Setup(IServiceConfig* systemConfig)
 {
 	m_Pool.Initialize(256);
 	m_ObjectStatus = ObjectStatus::Activated;
-	Log(Success, "SamplerResourceService Setup finished.");
+	Log(Success, " Setup finished.");
 	return true;
 }
 
@@ -16,7 +16,7 @@ bool SamplerResourceService::Terminate()
 {
 	m_Pool.Terminate();
 	m_ObjectStatus = ObjectStatus::Terminated;
-	Log(Success, "SamplerResourceService has been terminated.");
+	Log(Success, " terminated.");
 	return true;
 }
 

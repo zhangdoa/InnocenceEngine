@@ -9,7 +9,7 @@ bool CommandListResourceService::Setup(IServiceConfig* systemConfig)
 {
 	m_Pool.Initialize(256);
 	m_ObjectStatus = ObjectStatus::Activated;
-	Log(Success, "CommandListResourceService Setup finished.");
+	Log(Success, " Setup finished.");
 	return true;
 }
 
@@ -17,7 +17,7 @@ bool CommandListResourceService::Terminate()
 {
 	m_Pool.Terminate();
 	m_ObjectStatus = ObjectStatus::Terminated;
-	Log(Success, "CommandListResourceService has been terminated.");
+	Log(Success, " terminated.");
 	return true;
 }
 

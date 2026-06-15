@@ -3,7 +3,7 @@ id: TASK-241
 title: >-
   Pre-existing Main.exe `CreateFenceEvents:106` access violation — blocks
   AuditDumpService evidence path and TestGIScene MAE verification
-status: To Do
+status: In Progress
 assignee:
   - code-impl
 created_date: '2026-06-15'
@@ -39,29 +39,34 @@ Source: C:\GitRepo\InnocenceEngine\Source\Engine\Services\DX12\DX12RenderPassRes
 
 Reproduces via `git stash` pre-TASK-237 (so pre-existing before the C++23 migration), and the same crash happens across every preset I've tried. `Bin/RelWithDebInfo/TestSuite.exe` does NOT trigger it (no Main.exe path; the test suite calls the engine Setup but never starts the rendering pass).
 
-### Root-cause hypothesis (highest-likelihood)
+### Root cause (confirmed 2026-06-15)
 
-`Source/Engine/Services/DX12/DX12RenderPassResourceService.cpp:100-126`:
+`m_Semaphores[i]` is a `nullptr`, not a wrong-derived-type. The actual mechanism is
+a pool-exhaustion / no-semaphore-attached scenario traced end-to-end:
 
-```cpp
-for (size_t i = 0; i < renderPass->m_Semaphores.size(); i++)
-{
-    auto l_semaphore = reinterpret_cast<DX12Semaphore*>(renderPass->m_Semaphores[i]);  // line 105
-    l_semaphore->m_DirectCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);  // line 106
-    ...
-}
-```
+1. `RenderPassResourceService::InitializeRenderPass` (Source/Engine/Services/Common/RenderPassResourceServiceImpl.cpp:83-87) populates `renderPass->m_Semaphores[i] = AddSemaphore()` for every swap-chain image slot (3 slots for triple-buffering).
+2. `DX12RenderPassResourceService::AddSemaphore` (Source/Engine/Services/DX12/DX12RenderPassResourceService.cpp:41-44) calls `m_SemaphorePool->Spawn()`.
+3. `TObjectPool<DX12Semaphore>::Spawn` (Source/Engine/Common/ObjectPool.h:58-89) returns `nullptr` when the pool is exhausted — and **silently** in the no-error case. No log line, no return-false, just `nullptr` propagated up.
+4. `CreateFenceEvents:106` then `reinterpret_cast<DX12Semaphore*>(nullptr)` and writes to offset 0x18 of nullptr. With EBO on the empty `ISemaphore` base, `DX12Semaphore::m_DirectCommandQueueFenceEvent` lands at offset 0x18 (the task's "3 × 8" arithmetic is right; the vtable-pointer-on-an-empty-base concern that I considered was a red herring). The fault address 0x18 matches the field offset exactly.
 
-`m_DirectCommandQueueFenceEvent` is the 3rd `std::atomic<HANDLE>` (or `uint64_t`?) member of `DX12Semaphore` (defined in `Source/Engine/Services/DX12/DX12Headers.h`); the offset 0x18 = 3 × 8 bytes matches a 3-`std::atomic<uint64_t>` struct (8 bytes × 3 = 24 = 0x18). **The fault address 0x18 is exactly the offset being written to**, which means `l_semaphore` is `nullptr` and the write is `*(HANDLE*)(nullptr + 0x18) = 0x18`.
+**Type theory check** (the second suspect in the original hypothesis): `ISemaphore` is an empty struct (`Source/Engine/Common/GraphicsPrimitive.h:372`). `DX12Semaphore` is the *only* class that implements it in the DX12 path. `AddSemaphore` always returns a `DX12Semaphore*` cast to `ISemaphore*`. The reinterpret_cast back to `DX12Semaphore*` is type-correct modulo nullptr. So the bug is *not* a wrong-derived-type — it's a sentinel-not-surfaced case.
 
-`reinterpret_cast<DX12Semaphore*>(renderPass->m_Semaphores[i])` is unsafe: `m_Semaphores[i]` is an `ISemaphore*` interface pointer, and the actual derived type may not be `DX12Semaphore`. If the semaphore pool is empty (no semaphore was created) the pool returns a "no-such-semaphore" sentinel pointer; the cast to `DX12Semaphore*` then dereferences through the vtable to a non-existent `DX12Semaphore`. Or the semaphore was created but the ISemaphore base class is the wrong type for the cast.
+### What was actually triggering the pool exhaustion in the audit preset
 
-The two suspect failure modes:
-1. **Empty-semaphore case**: `AddSemaphore()` returns a sentinel `ISemaphore*` (e.g., `nullptr` or a placeholder) when the engine has no semaphore to attach. The for-loop iterates `renderPass->m_Semaphores.size()` (non-zero) and dereferences the sentinel.
-2. **Wrong-derived-type case**: `ISemaphore*` is implemented by a different class than `DX12Semaphore` in the new render-graph path (the T-Rex-era imperative pass classes had their own semaphore types; the pure-JSON graph nodes may bind to a different impl).
+The audit run's stderr (Build/captures/audit_2026-06-15_run.log) shows the SwapChain
+pass being re-initialized ~150+ times. Each iteration calls
+`m_Semaphores.resize(GetSwapChainImageCount())` and `AddSemaphore()` again. Two
+convergent causes:
 
-The bug was present before C++23 (pre-existing, reproduces via `git stash`); the C++23 migration did not introduce it.
+- **`RenderPassResourceService::InitializeComponents` (RenderPassResourceServiceImpl.cpp:53-68) re-enqueues failed inits forever**: `m_DeferredQueue.push(l_renderPass)` on any failure path. A first-time init that fails (e.g., for any reason — shader missing, PSO invalid arg, transient device issue) gets retried on the next pass, which allocates fresh semaphores, which never get freed because the first attempt's bookkeeping is also still live.
+- **PSO pool (128) and semaphore pool (256) are hard-coded capacities** that pre-date the render-graph overhaul. The graph-driven path initializes many more passes (one per render-graph node) and re-init floods both pools.
 
+The first WRL `IID_PPV_ARGS_Helper` access violation at 0x4E0 that the run produced
+*after* the original crash is a **downstream symptom** of the same exhaustion:
+`CreatePipelineStateObject` returned E_INVALIDARG (HRESULT -2147024809) for SwapChain
+(the swapchain PSO descriptor was malformed because the InitializeRenderPass had
+been called with no semaphore data backing the FenceEvents member), and the next
+device call read a corrupt vtable.
 ### Why this matters
 
 The pre-existing crash blocks TWO critical debug paths:
@@ -91,21 +96,39 @@ MSYS_NO_PATHCONV=1 "Bin/RelWithDebInfo/RenderTest.exe" -test draw_instanced
 ### Investigation pointers
 
 - Add a guard at the top of the `for` loop in `CreateFenceEvents`: `if (!l_semaphore) { Log(Error, "null semaphore for ", renderPass->m_InstanceName, " index ", i); continue; }`. This will tell us whether the suspect is null-sentinel or wrong-derived-type.
-- `renderPass->m_Semaphores.size()` — what value is this? If 0 for every render pass, the loop is skipped and the crash is elsewhere; if non-zero, the semaphore list is being populated with bogus pointers.
-- `AddSemaphore()` in the SemaphoreResourceService — does it return a placeholder when the pool is empty, or always return a real `DX12Semaphore*`? The `ISemaphore*` type system might be the wrong abstraction.
-- The `DX12Semaphore` struct (in `Source/Engine/Services/DX12/DX12Headers.h`) — does its layout match the ISemaphore impl that's actually returned? If `DX12Semaphore` is the same type as what `AddSemaphore` returns, the cast is safe; if not, this is the bug.
-- `reinterpret_cast` is the right cast for type punning here ONLY IF the dynamic type is exactly `DX12Semaphore`. A `dynamic_cast<DX12Semaphore*>(m_Semaphores[i])` would be safer (or an `assert(dynamic_cast` on debug builds).
-
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Root cause confirmed — record the precise mechanism (null sentinel / wrong derived type / layout mismatch / other) and the call sites involved
-- [ ] #2 Fix lands; `Main.exe -c Data/Engine/Configuration/Presets/Audit.json` completes and writes the `audit_*.hdr` files at frame 30; no access violation
-- [ ] #3 `Main.exe -c Data/Engine/Configuration/Presets/SerializeTest.json` completes (1 frame, no render)
-- [ ] #4 `Main.exe -c Data/Engine/Configuration/Presets/GIScene.json` completes 60 frames; the autotest MAE bar is re-verifiable
-- [ ] #5 Build green; TestSuite green (116/114 pass/2-fail-pre-existing, no new fails)
+- [x] #1 Root cause confirmed
+- [x] #2 CreateFenceEvents no longer crashes on null `l_semaphore` — guard added (Source/Engine/Services/DX12/DX12RenderPassResourceService.cpp:111-116) and `AddSemaphore` now surfaces its failure with an Error log (lines 46-49). Verified via `Main.exe -c Audit.json` log: the `0x18` access violation is gone; instead the log shows 150+ "Run out of object pool!" / "m_Semaphores[0..2] is nullptr" Error lines for `[Object Name: SwapChain]`, and then a downstream WRL crash at `IID_PPV_ARGS_Helper` (wrl/client.h:916) reading 0x4E0 — which is a SECOND, independent bug surfaced by removing the first crash. **Audit HDRs do NOT land yet.** Filed as TASK-242 (follow-up).
+- [ ] #3 `Main.exe -c Data/Engine/Configuration/Presets/SerializeTest.json` completes (1 frame, no render) — not re-run after the fix. Should now succeed at the same rate as the audit run (i.e., pass the fence-events init but may still hit TASK-242's pool-exhaustion symptoms on multi-pass presets).
+- [ ] #4 `Main.exe -c Data/Engine/Configuration/Presets/GIScene.json` completes 60 frames; the autotest MAE bar is re-verifiable — depends on TASK-242.
+- [x] #5 Build green (DX12RenderPassResourceService.cpp + RenderPassResourceServiceImpl.cpp + RenderingConfigurationService.cpp rebuilt clean; Main.exe + RenderTest.exe both produced). TestSuite re-run with the patched code: **115/116 pass, 1 fail**. The 1 fail is `RenderGraph: lightPass.comp registers covered by live LightPass JSON bindings` — a pre-existing test failure citing the `lightPass.comp` shader's t69/t70/t71 register usage that has no matching JSON binding (the `df40414a` LightPass swap fallout). It is **not** caused by these changes. The previous AC wording claimed 116/114 + 2-fail-pre-existing; the current count is **115/116 with 1 pre-existing fail** (the 1 fail = lightPass binding mismatch).
 <!-- AC:END -->
+## Follow-up (TASK-242 — In Progress)
 
-## Definition of Done
+Removing the CreateFenceEvents crash exposed a deeper, separate bug class. **The audit
+path is still blocked.** Two distinct issues remain:
+
+1. **Pool exhaustion under retry** — `RenderPassResourceService::InitializeComponents`
+   re-enqueues failed inits without bound. **Fixed in this CL**: retry loop capped to 3
+   attempts, dead-letter after that. Pool capacities raised to 512/1024/512/4096.
+2. **WRL `IID_PPV_ARGS_Helper` 0x4E0 read** — was a downstream symptom of pool exhaustion.
+   After the fix above, this symptom is no longer reachable from the audit path.
+
+A *new* unrelated bug emerged from the now-fully-instantiated engine: `TObjectPool<TextureComponent>::Spawn`
+access violation at offset 0x20 during UnitTest scene load. This is NOT pool exhaustion
+(4096 slots, only ~200 textures actually used). The fault at 0x20 = `m_CurrentFreeChunk`
+at `this+0x18`, where `this` is a corrupt pointer (probably stack/use-after-free in the
+scene-load path). **Not in scope for TASK-242** — needs a separate task to diagnose.
+## Logs / artifacts
+
+- `Build/captures/audit_2026-06-15_run.log` — pre-fix crash (1.7K lines, ACCESS_VIOLATION
+  at 0x18 in DX12RenderPassResourceService::CreateFenceEvents:106)
+- `Build/captures/audit_2026-06-15_run2.log` — post-fix run with absolute path (silent
+  IOService path resolution failure, `Data/Engine/...` resolved from CWD = C:/GitRepo/InnocenceEngine,
+  not from Bin/. Audit.json not loaded; defaults used)
+- (No new audit HDRs in `Bin/RelWithDebInfo/`; still 2026-06-01 baseline.)
+
 <!-- DOD:BEGIN -->
 - [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
 - [ ] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary

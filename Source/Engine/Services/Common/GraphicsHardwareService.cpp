@@ -9,7 +9,7 @@ bool GraphicsHardwareService::Setup(IServiceConfig* systemConfig)
 {
 	if (!CreateHardwareResources())
 	{
-		Log(Error, "GraphicsHardwareService: CreateHardwareResources() failed.");
+		Log(Error, " CreateHardwareResources() failed.");
 		return false;
 	}
 
@@ -25,8 +25,7 @@ bool GraphicsHardwareService::SignalOnGPU(RenderPassComponent* renderPass, GPUEn
 
 	if (renderPass->m_CurrentFrame >= renderPass->m_Semaphores.size())
 	{
-		Log(Error, "SignalOnGPU: Invalid m_CurrentFrame index %d for RenderPass %s (semaphore count: %d)",
-			renderPass->m_CurrentFrame, renderPass->m_InstanceName.c_str(), renderPass->m_Semaphores.size());
+		Log(Error, "SignalOnGPU: invalid m_CurrentFrame index %d for RenderPass %s (semaphore count: %d)", renderPass->m_CurrentFrame, renderPass->m_InstanceName.c_str(), renderPass->m_Semaphores.size());
 		return false;
 	}
 
@@ -43,8 +42,7 @@ bool GraphicsHardwareService::WaitOnGPU(RenderPassComponent* renderPass, GPUEngi
 
 	if (renderPass->m_CurrentFrame >= renderPass->m_Semaphores.size())
 	{
-		Log(Error, "WaitOnGPU: Invalid m_CurrentFrame index %d for RenderPass %s (semaphore count: %d)",
-			renderPass->m_CurrentFrame, renderPass->m_InstanceName.c_str(), renderPass->m_Semaphores.size());
+		Log(Error, "WaitOnGPU: invalid m_CurrentFrame index %d for RenderPass %s (semaphore count: %d)", renderPass->m_CurrentFrame, renderPass->m_InstanceName.c_str(), renderPass->m_Semaphores.size());
 		return false;
 	}
 

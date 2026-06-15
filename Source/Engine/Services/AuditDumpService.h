@@ -29,5 +29,6 @@ namespace Inno
         std::vector<AuditPassEntry> m_Passes;
 
         ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
+        std::function<void()> m_SceneLoadedCallback;
     };
 }

@@ -11,17 +11,17 @@ using namespace DX12Helper;
 
 bool DX12FrameManagementService::GetSwapChainImages()
 {
-    Log(Verbose, "GetSwapChainImages: Called with offscreen=", g_Engine->Get<ConfigurationService>()->IsOffscreen());
+    Log(Verbose, " called with offscreen=", g_Engine->Get<ConfigurationService>()->IsOffscreen());
 
     if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
     {
-        Log(Verbose, "GetSwapChainImages: Skipping in offscreen mode");
+        Log(Verbose, " offscreen mode; skipping.");
         return true;
     }
 
     if (!m_swapChain)
     {
-        Log(Error, "GetSwapChainImages: m_swapChain is null! This should not happen in windowed mode.");
+        Log(Error, " m_swapChain is null; this should not happen in windowed mode.");
         return false;
     }
 
@@ -53,21 +53,21 @@ bool DX12FrameManagementService::AssignSwapChainImages()
 
     if (!m_SwapChainRenderPassComp)
     {
-        Log(Warning, "DX12FrameManagementService::AssignSwapChainImages: m_SwapChainRenderPassComp is null");
+        Log(Warning, " m_SwapChainRenderPassComp is null");
         return false;
     }
 
     auto l_outputMergerTarget = m_SwapChainRenderPassComp->m_OutputMergerTarget;
     if (!l_outputMergerTarget)
     {
-        Log(Warning, "DX12FrameManagementService::AssignSwapChainImages: OutputMergerTarget is null");
+        Log(Warning, " OutputMergerTarget is null");
         return false;
     }
 
     auto l_textureComp = l_outputMergerTarget->m_ColorOutputs[0];
     if (!l_textureComp)
     {
-        Log(Warning, "DX12FrameManagementService::AssignSwapChainImages: swap chain color output texture is null");
+        Log(Warning, " swap chain color output texture is null");
         return false;
     }
 

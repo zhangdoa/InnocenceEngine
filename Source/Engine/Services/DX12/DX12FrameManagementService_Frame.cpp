@@ -24,17 +24,17 @@ bool DX12FrameManagementService::BeginFrame()
 
     if (FAILED(m_ctx->m_directCommandAllocators[l_currentFrame]->Reset()))
     {
-        Log(Error, "DX12FrameManagementService::BeginFrame: direct command allocator Reset failed for frame ", l_currentFrame);
+        Log(Error, " direct command allocator Reset failed for frame ", l_currentFrame);
         return false;
     }
     if (FAILED(m_ctx->m_computeCommandAllocators[l_currentFrame]->Reset()))
     {
-        Log(Error, "DX12FrameManagementService::BeginFrame: compute command allocator Reset failed for frame ", l_currentFrame);
+        Log(Error, " compute command allocator Reset failed for frame ", l_currentFrame);
         return false;
     }
     if (FAILED(m_ctx->m_copyCommandAllocators[l_currentFrame]->Reset()))
     {
-        Log(Error, "DX12FrameManagementService::BeginFrame: copy command allocator Reset failed for frame ", l_currentFrame);
+        Log(Error, " copy command allocator Reset failed for frame ", l_currentFrame);
         return false;
     }
 
@@ -117,38 +117,29 @@ bool DX12FrameManagementService::PrepareRayTracing(CommandListComponent* command
 bool DX12FrameManagementService::PresentImpl()
 {
     if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
-    {
         return true;
-    }
 
     m_swapChain->Present(0, 0);
-
     return true;
 }
 
 bool DX12FrameManagementService::EndFrame()
 {
     if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
-    {
         return true;
-    }
 
     m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
     m_SwapChainRenderPassComp->m_CurrentFrame = m_CurrentFrame;
-
     return true;
 }
 
 bool DX12FrameManagementService::ResizeImpl()
 {
     if (g_Engine->Get<ConfigurationService>()->IsOffscreen())
-    {
         return true;
-    }
 
     auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-    Log(Success, "DX12FrameManagementService::ResizeImpl: ",
-        l_screenResolution.x, "x", l_screenResolution.y);
+    Log(Success, " resized to ", l_screenResolution.x, "x", l_screenResolution.y);
 
     m_swapChainDesc.Width = (UINT)l_screenResolution.x;
     m_swapChainDesc.Height = (UINT)l_screenResolution.y;
@@ -161,26 +152,27 @@ bool DX12FrameManagementService::ResizeImpl()
         m_swapChainDesc.Height,
         m_swapChainDesc.Format,
         0);
-
     if (FAILED(l_hResult))
     {
-        Log(Error, "DX12FrameManagementService::ResizeImpl: ResizeBuffers failed, HRESULT=", static_cast<int32_t>(l_hResult));
+        Log(Error, " ResizeBuffers failed, HRESULT=", static_cast<int32_t>(l_hResult));
         return false;
     }
 
-    Log(Success, "DX12FrameManagementService::ResizeImpl: ResizeBuffers succeeded.");
+    Log(Success, " ResizeBuffers succeeded.");
 
-    GetSwapChainImages();
-
+    if (!GetSwapChainImages())
+    {
+        Log(Error, " GetSwapChainImages failed; aborting.");
+        return false;
+    }
     return true;
 }
-
 bool DX12FrameManagementService::WaitAllOnCPU()
 {
     auto l_semaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
     if (!l_semaphore)
     {
-        Log(Error, "DX12FrameManagementService::WaitAllOnCPU: global semaphore is null");
+        Log(Error, " global semaphore is null");
         return false;
     }
 
@@ -200,10 +192,21 @@ bool DX12FrameManagementService::WaitAllOnCPU()
         return true;
     };
 
-    bool l_result = true;
-    l_result &= waitFence(m_ctx->m_directCommandQueueFence, m_ctx->m_directCommandQueue, l_semaphore->m_DirectCommandQueueFenceEvent);
-    l_result &= waitFence(m_ctx->m_computeCommandQueueFence, m_ctx->m_computeCommandQueue, l_semaphore->m_ComputeCommandQueueFenceEvent);
-    l_result &= waitFence(m_ctx->m_copyCommandQueueFence, m_ctx->m_copyCommandQueue, l_semaphore->m_CopyCommandQueueFenceEvent);
+    if (!waitFence(m_ctx->m_directCommandQueueFence, m_ctx->m_directCommandQueue, l_semaphore->m_DirectCommandQueueFenceEvent))
+    {
+        Log(Error, " waitFence failed for direct command queue; aborting.");
+        return false;
+    }
+    if (!waitFence(m_ctx->m_computeCommandQueueFence, m_ctx->m_computeCommandQueue, l_semaphore->m_ComputeCommandQueueFenceEvent))
+    {
+        Log(Error, " waitFence failed for compute command queue; aborting.");
+        return false;
+    }
+    if (!waitFence(m_ctx->m_copyCommandQueueFence, m_ctx->m_copyCommandQueue, l_semaphore->m_CopyCommandQueueFenceEvent))
+    {
+        Log(Error, " waitFence failed for copy command queue; aborting.");
+        return false;
+    }
 
-    return l_result;
+    return true;
 }

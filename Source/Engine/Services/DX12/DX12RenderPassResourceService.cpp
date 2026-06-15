@@ -13,23 +13,62 @@ using namespace DX12Helper;
 
 bool DX12RenderPassResourceService::Setup(IServiceConfig* systemConfig)
 {
-	RenderPassResourceService::Setup(systemConfig);
+	Log(Verbose, " starting.");
+	if (!RenderPassResourceService::Setup(systemConfig))
+	{
+		Log(Error, " base RenderPassResourceService::Setup failed; aborting.");
+		return false;
+	}
 
-	m_PSOPool = TObjectPool<DX12PipelineStateObject>::Create(128);
-	m_SemaphorePool = TObjectPool<DX12Semaphore>::Create(256);
-	m_OutputMergerTargetPool = TObjectPool<DX12OutputMergerTarget>::Create(128);
+	m_PSOPool = TObjectPool<DX12PipelineStateObject>::Create(512);
+	if (!m_PSOPool)
+	{
+		Log(Error, " failed to create PSO pool; aborting.");
+		return false;
+	}
+	m_SemaphorePool = TObjectPool<DX12Semaphore>::Create(1024);
+	if (!m_SemaphorePool)
+	{
+		Log(Error, " failed to create Semaphore pool; aborting.");
+		return false;
+	}
+	m_OutputMergerTargetPool = TObjectPool<DX12OutputMergerTarget>::Create(512);
+	if (!m_OutputMergerTargetPool)
+	{
+		Log(Error, " failed to create OMT pool; aborting.");
+		return false;
+	}
 
+	Log(Verbose, " finished.");
 	return true;
 }
 
 bool DX12RenderPassResourceService::Terminate()
 {
-	delete m_PSOPool;
-	delete m_SemaphorePool;
-	delete m_OutputMergerTargetPool;
+	Log(Verbose, " starting.");
+	if (m_PSOPool)
+	{
+		delete m_PSOPool;
+		m_PSOPool = nullptr;
+	}
+	if (m_SemaphorePool)
+	{
+		delete m_SemaphorePool;
+		m_SemaphorePool = nullptr;
+	}
+	if (m_OutputMergerTargetPool)
+	{
+		delete m_OutputMergerTargetPool;
+		m_OutputMergerTargetPool = nullptr;
+	}
 
-	RenderPassResourceService::Terminate();
+	if (!RenderPassResourceService::Terminate())
+	{
+		Log(Error, " base RenderPassResourceService::Terminate failed; aborting.");
+		return false;
+	}
 
+	Log(Verbose, " finished.");
 	return true;
 }
 
@@ -40,13 +79,21 @@ IPipelineStateObject* DX12RenderPassResourceService::AddPipelineStateObject()
 
 ISemaphore* DX12RenderPassResourceService::AddSemaphore()
 {
-	return m_SemaphorePool->Spawn();
+	auto* l_result = m_SemaphorePool->Spawn();
+	if (!l_result)
+		Log(Error, " AddSemaphore failed (pool returned nullptr; capacity exhausted or pool uninitialized).");
+	return l_result;
 }
 
 bool DX12RenderPassResourceService::Add(IOutputMergerTarget*& rhs)
 {
 	rhs = m_OutputMergerTargetPool->Spawn();
-	return rhs != nullptr;
+	if (!rhs)
+	{
+		Log(Error, " Add: OutputMergerTarget pool returned nullptr; aborting.");
+		return false;
+	}
+	return true;
 }
 
 bool DX12RenderPassResourceService::Delete(RenderPassComponent* ptr)
@@ -77,14 +124,25 @@ bool DX12RenderPassResourceService::Delete(IOutputMergerTarget* rhs)
 	for (auto& j : l_rhs->m_ColorOutputs)
 	{
 		if (j)
-			l_textureService->Delete(j);
+		{
+			if (!l_textureService->Delete(j))
+			{
+				Log(Error, " TextureService->Delete failed for color output; aborting.");
+				return false;
+			}
+		}
 	}
 
 	l_rhs->m_ColorOutputs.clear();
 
 	if (l_rhs->m_DepthStencilOutput)
-		l_textureService->Delete(l_rhs->m_DepthStencilOutput);
-
+	{
+		if (!l_textureService->Delete(l_rhs->m_DepthStencilOutput))
+		{
+			Log(Error, " TextureService->Delete failed for depth-stencil output; aborting.");
+			return false;
+		}
+	}
 	l_rhs->m_DepthStencilOutput = nullptr;
 
 	m_OutputMergerTargetPool->Destroy(l_rhs);
@@ -103,6 +161,12 @@ bool DX12RenderPassResourceService::CreateFenceEvents(RenderPassComponent* rende
 	for (size_t i = 0; i < renderPass->m_Semaphores.size(); i++)
 	{
 		auto l_semaphore = reinterpret_cast<DX12Semaphore*>(renderPass->m_Semaphores[i]);
+		if (!l_semaphore)
+		{
+			Log(Error, renderPass->m_InstanceName, " CreateFenceEvents: m_Semaphores[", i, "] is nullptr (AddSemaphore failed earlier; pass will be skipped).");
+			result = false;
+			continue;
+		}
 		l_semaphore->m_DirectCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
 		if (l_semaphore->m_DirectCommandQueueFenceEvent == NULL)
 		{

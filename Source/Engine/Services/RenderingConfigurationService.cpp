@@ -20,7 +20,7 @@ RenderingConfigurationService::RenderingConfigurationService()
 	m_renderingCapability.maxPointLights = 1024;
 	m_renderingCapability.maxSphereLights = 128;
 	m_renderingCapability.maxMeshes = 1024;
-	m_renderingCapability.maxTextures = 2048;
+	m_renderingCapability.maxTextures = 4096;
 	m_renderingCapability.maxMaterials = 4096;
 	m_renderingCapability.maxBuffers = 512;
 

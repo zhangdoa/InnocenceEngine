@@ -56,11 +56,11 @@ bool TextureResourceService::Setup(IServiceConfig* systemConfig)
 						}
 						else
 						{
-							Log(Error, "TextureResourceService: tellg() failed for BC binary: ", l_req.m_BinaryPath.c_str());
+							Log(Error, " tellg() failed for BC binary: ", l_req.m_BinaryPath.c_str());
 						}
 					}
 					if (!l_textureData)
-						Log(Error, "TextureResourceService: Failed to load BC binary: ", l_req.m_BinaryPath.c_str());
+						Log(Error, " Failed to load BC binary: ", l_req.m_BinaryPath.c_str());
 				}
 				else
 				{
@@ -70,17 +70,17 @@ bool TextureResourceService::Setup(IServiceConfig* systemConfig)
 			}
 			catch (const std::exception& e)
 			{
-				Log(Error, "TextureResourceService: Exception in binary loader thread: ", e.what(), " for: ", l_req.m_BinaryPath.c_str());
+				Log(Error, " exception in binary loader thread: ", e.what(), " for: ", l_req.m_BinaryPath.c_str());
 			}
 			catch (...)
 			{
-				Log(Error, "TextureResourceService: Unknown exception in binary loader thread for: ", l_req.m_BinaryPath.c_str());
+				Log(Error, " unknown exception in binary loader thread for: ", l_req.m_BinaryPath.c_str());
 			}
 		}
 	});
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	Log(Success, "TextureResourceService Setup finished.");
+	Log(Success, " Setup finished.");
 	return true;
 }
 
@@ -92,7 +92,7 @@ bool TextureResourceService::Terminate()
 
 	m_Pool.Terminate();
 	m_ObjectStatus = ObjectStatus::Terminated;
-	Log(Success, "TextureResourceService has been terminated.");
+	Log(Success, " terminated.");
 	return true;
 }
 
@@ -118,7 +118,7 @@ void TextureResourceService::Initialize(TextureComponent* texture, void* texture
 		return;
 
 	m_DeferredQueue.push(TextureInitTask(texture, textureData, owner));
-	Log(Verbose, "TextureComponent ", texture->m_InstanceName, " queued for deferred initialization");
+	Log(Verbose, " ", texture->m_InstanceName, " queued for deferred initialization");
 }
 
 bool TextureResourceService::InitializeSynchronous(TextureComponent* texture, void* textureData)
@@ -150,10 +150,10 @@ bool TextureResourceService::InitializeComponents()
 			if (l_current)
 				l_texture = l_current;
 			else
-				Log(Warning, "TextureInitTask: entity ", l_task.m_Owner, " no longer has TextureComponent, using stored pointer");
+				Log(Warning, " entity ", l_task.m_Owner, " no longer has TextureComponent, using stored pointer");
 		}
 
-		Log(Verbose, "Processing deferred texture initialization for: ", l_texture->m_InstanceName);
+		Log(Verbose, " processing deferred init for: ", l_texture->m_InstanceName);
 		if (InitializeImpl(l_texture, l_task.m_TextureData))
 			l_texture->m_ObjectStatus = ObjectStatus::Activated;
 		else

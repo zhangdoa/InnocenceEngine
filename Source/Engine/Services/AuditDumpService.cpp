@@ -70,8 +70,8 @@ bool AuditDumpService::Initialize()
     }
     m_ObjectStatus = ObjectStatus::Activated;
 
-    std::function<void()> l_cb = [this]() { m_SceneLoaded.store(true); };
-    g_Engine->Get<SceneService>()->AddSceneLoadedCallback(&l_cb);
+    m_SceneLoadedCallback = [this]() { m_SceneLoaded.store(true); };
+    g_Engine->Get<SceneService>()->AddSceneLoadedCallback(&m_SceneLoadedCallback);
     return true;
 }
 

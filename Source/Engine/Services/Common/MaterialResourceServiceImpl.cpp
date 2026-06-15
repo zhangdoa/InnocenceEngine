@@ -13,7 +13,7 @@ bool MaterialResourceService::Setup(IServiceConfig* systemConfig)
 	auto l_cap = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 	m_Pool.Initialize(l_cap.maxMaterials);
 	m_ObjectStatus = ObjectStatus::Activated;
-	Log(Success, "MaterialResourceService Setup finished.");
+	Log(Success, " Setup finished.");
 	return true;
 }
 
@@ -21,7 +21,7 @@ bool MaterialResourceService::Terminate()
 {
 	m_Pool.Terminate();
 	m_ObjectStatus = ObjectStatus::Terminated;
-	Log(Success, "MaterialResourceService has been terminated.");
+	Log(Success, " terminated.");
 	return true;
 }
 
@@ -47,7 +47,7 @@ void MaterialResourceService::Initialize(MaterialComponent* material, EntityID o
 		return;
 
 	m_DeferredQueue.push(MaterialInitTask(material, owner));
-	Log(Verbose, "MaterialComponent ", material->m_InstanceName, " queued for deferred initialization");
+	Log(Verbose, " ", material->m_InstanceName, " queued for deferred initialization");
 }
 
 bool MaterialResourceService::InitializeImpl(MaterialComponent* material)
@@ -72,10 +72,10 @@ bool MaterialResourceService::InitializeComponents()
 			if (l_current)
 				l_material = l_current;
 			else
-				Log(Warning, "MaterialInitTask: entity ", l_task.m_Owner, " no longer has MaterialComponent, using stored pointer");
+				Log(Warning, " entity ", l_task.m_Owner, " no longer has MaterialComponent, using stored pointer");
 		}
 
-		Log(Verbose, "Processing deferred material initialization for: ", l_material->m_InstanceName);
+		Log(Verbose, " processing deferred init for: ", l_material->m_InstanceName);
 		if (InitializeImpl(l_material))
 			l_material->m_ObjectStatus = ObjectStatus::Activated;
 		else
