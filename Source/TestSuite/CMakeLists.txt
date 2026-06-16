@@ -52,3 +52,10 @@ target_include_directories(TestSuite PRIVATE "${INNO_GITSUBMODULE_DIRECTORIES}/j
 if (INNO_PLATFORM_LINUX)
 target_link_libraries(TestSuite -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lm -lpthread -lstdc++fs)
 endif (INNO_PLATFORM_LINUX)
+
+# Standalone GPUUploadable unit test. Does not link the engine.
+# GPUUploadable is a pure C++ header with no engine, graphics, or
+# threading dependencies; the test runs as a console-subsystem exe
+# in seconds and is not gated on engine init.
+add_executable(GPUUploadableTests_Standalone UnitTests/GPUUploadableTests.cpp)
+set_target_properties(GPUUploadableTests_Standalone PROPERTIES FOLDER TestSuite)
