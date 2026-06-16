@@ -3,7 +3,7 @@
     "engineMode": "Host",
     "graphicsService": "DX12",
     "isOffscreen": true,
-    "logLevel": 0,
+    "logLevel": 1,
     "applicationName": "InnocenceEngine"
   },
   "session": {

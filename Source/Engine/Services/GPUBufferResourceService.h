@@ -5,6 +5,8 @@
 #include "../Common/ThreadSafeQueue.h"
 #include "../Component/GPUBufferComponent.h"
 #include "../Component/CommandListComponent.h"
+#include "../Common/GPUUploadable.h"
+#include <unordered_set>
 
 namespace Inno
 {
@@ -72,12 +74,32 @@ namespace Inno
 	private:
 		uint32_t GetCurrentFrameIndex();
 
-		ThreadSafeQueue<GPUBufferComponent*> m_DeferredQueue;
+	// Dedup: log each (buffer, byte_offset) once per engine run, not per frame.
+	// Process-lifetime set; cleared only on engine restart.
+	static bool LogFirstUnwrittenOnce(GPUBufferComponent* gpuBuffer, size_t byteOffset);
+	static std::unordered_set<uint64_t>& LoggedUnwrittenKeys();
+
+	ThreadSafeQueue<GPUBufferComponent*> m_DeferredQueue;
 	};
 
-	template<typename T>
+template<typename T>
 	bool GPUBufferResourceService::Upload(GPUBufferComponent* gpuBuffer, const T* value, size_t startOffset, size_t range)
 	{
+		// Pre-upload validation for CRTP-validated CPU->GPU structs. Catches
+		// dropped-field regressions at the single upload chokepoint, naming
+		// the buffer and the byte offset of the first still-poison field.
+		// When T does not derive GPUUploadable, the branch is discarded and
+		if constexpr (std::is_base_of_v<GPUUploadable<T>, T>)
+		{
+			const size_t l_unwritten = value->FirstUnwritten();
+			if (l_unwritten != SIZE_MAX && LogFirstUnwrittenOnce(gpuBuffer, l_unwritten))
+			{
+				Log(Error, " Upload to [", gpuBuffer->m_InstanceName.c_str(),
+					"]: ", typeid(T).name(), " has unwritten field at byte offset ", l_unwritten,
+					" (uploaded with poison).");
+			}
+		}
+
 		auto l_currentFrame = GetCurrentFrameIndex();
 		auto l_mappedMemory = gpuBuffer->m_MappedMemories[l_currentFrame];
 		return WriteMappedMemory(gpuBuffer, l_mappedMemory, value, startOffset, range);

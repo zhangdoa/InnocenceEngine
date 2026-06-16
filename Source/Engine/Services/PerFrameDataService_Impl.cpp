@@ -91,7 +91,8 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 
 	auto l_p = l_camera->m_ProjectionMatrix;
 
-	PerFrameConstantBuffer l_perFrameCB = {};
+	PerFrameConstantBuffer l_perFrameCB;
+	l_perFrameCB.PoisonInit();
 	// Capture mode seeds the PT RNG from the steady-state-relative frame count; interactive keeps the absolute counter.
 	auto l_frameMgmt = g_Engine->Get<FrameManagementService>();
 	const bool l_isCaptureMode = g_Engine->Get<ConfigurationService>()->GetTotalFrames() > 0;
@@ -138,6 +139,10 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	l_perFrameCB.v_inv = l_perFrameCB.v.inverse();
 	l_perFrameCB.viewportSize.x = (float)l_screenResolution.x;
 	l_perFrameCB.viewportSize.y = (float)l_screenResolution.y;
+	// posWSNormalizer is consumed by GI passes; pre-PoC `= {}` left it zero,
+	// which divided by zero in GI probe lookup. Unit normalizer keeps the
+	// GPU math in range; computing the real world-space AABB is follow-up.
+	l_perFrameCB.posWSNormalizer = Vec4(1.0f, 1.0f, 1.0f, 0.0f);
 	l_perFrameCB.minLogLuminance = -10.0f;
 	l_perFrameCB.maxLogLuminance = 16.0f;
 	l_perFrameCB.aperture = l_camera->m_Aperture;

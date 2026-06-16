@@ -12,6 +12,20 @@ uint32_t GPUBufferResourceService::GetCurrentFrameIndex()
 	return g_Engine->Get<FrameManagementService>()->GetCurrentFrame();
 }
 
+// Dedup: log each (buffer, byte_offset) once. Function-local static avoids
+// global-init-order risk. Key = (buffer_ptr truncated to 32b) | offset.
+std::unordered_set<uint64_t>& GPUBufferResourceService::LoggedUnwrittenKeys()
+{
+	static std::unordered_set<uint64_t> s_Keys;
+	return s_Keys;
+}
+
+bool GPUBufferResourceService::LogFirstUnwrittenOnce(GPUBufferComponent* gpuBuffer, size_t byteOffset)
+{
+	const uint64_t key = (static_cast<uint64_t>(reinterpret_cast<uintptr_t>(gpuBuffer) & 0xFFFFFFFFu) << 32)
+		| static_cast<uint64_t>(byteOffset & 0xFFFFFFFFu);
+	return LoggedUnwrittenKeys().insert(key).second;
+}
 bool GPUBufferResourceService::Setup(IServiceConfig* systemConfig)
 {
 	auto l_cap = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();

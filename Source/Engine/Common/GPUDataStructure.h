@@ -1,4 +1,5 @@
 #pragma once
+#include "GPUUploadable.h"
 #include "GraphicsPrimitive.h"
 #include "MathHelper.h"
 
@@ -25,7 +26,7 @@ namespace Inno
 		TileLightCountHeatmap   = 4u,
 	};
 
-	struct alignas(16) PerFrameConstantBuffer
+	struct alignas(16) PerFrameConstantBuffer : GPUUploadable<PerFrameConstantBuffer>
 	{
 		Mat4 p_original;
 		Mat4 p_jittered;
@@ -54,7 +55,27 @@ namespace Inno
 		float exposurePadding;
 		uint32_t pointShadowBypass; // 1 forces inline-RT visibility=1 in EvaluateTiledPointLighting (A/B toggle).
 		uint32_t padding[11];
-	};
+
+		// padding is std140 cbuffer trailing alignment, not a real field.
+		// The producer cannot write it; the HLSL side reads these 44 bytes
+		// as zero. Exclude it from the validator's scan.
+		static constexpr std::array<std::pair<size_t, size_t>, 4> SkipByteRanges() noexcept
+		{
+			std::array<std::pair<size_t, size_t>, 4> r{};
+			r[0] = { offsetof(PerFrameConstantBuffer, padding), sizeof(padding) };
+			return r;
+		}
+};
+
+// EBO invariant: deriving GPUUploadable<PerFrameConstantBuffer> must not grow
+	// the struct or shift any field. The std140 HLSL layout depends on this.
+	static_assert(sizeof(PerFrameConstantBuffer) == 512,
+		"PerFrameConstantBuffer size changed after CRTP base; std140 layout broken.");
+	static_assert(alignof(PerFrameConstantBuffer) == 16,
+		"PerFrameConstantBuffer alignment changed after CRTP base; std140 layout broken.");
+	static_assert(std::is_standard_layout_v<PerFrameConstantBuffer>,
+		"PerFrameConstantBuffer must be standard-layout so offsetof and "
+		"raw byte upload are well-defined.");
 
 	// w component of luminance is attenuationRadius.
 	// m_CastShadow + padding[3] keep the struct 16-byte-aligned for HLSL std140

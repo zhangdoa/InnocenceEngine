@@ -48,7 +48,6 @@ void RenderPassResourceService::Initialize(RenderPassComponent* renderPass)
 
 bool RenderPassResourceService::InitializeComponents()
 {
-	Log(Verbose, " draining deferred queue.");
 	RenderPassComponent* l_renderPass = nullptr;
 	while (m_DeferredQueue.tryPop(l_renderPass))
 	{
@@ -57,7 +56,6 @@ bool RenderPassResourceService::InitializeComponents()
 
 		if (InitializeRenderPass(l_renderPass))
 		{
-			Log(Verbose, " ", l_renderPass->m_InstanceName.c_str(), " activated.");
 			l_renderPass->m_ObjectStatus = ObjectStatus::Activated;
 		}
 		else
@@ -66,6 +64,5 @@ bool RenderPassResourceService::InitializeComponents()
 			l_renderPass->m_ObjectStatus = ObjectStatus::Suspended;
 		}
 	}
-	Log(Verbose, " deferred queue drained.");
 	return true;
 }
