@@ -148,6 +148,10 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	l_perFrameCB.autoExposureCompensation = l_camera->m_AutoExposureCompensation;
 	l_perFrameCB.exposurePadding = 0.0f;
 
+	// GPU culling (opaqueGPUCulling.comp) bounds its per-model loop by modelCount;
+	// leaving it 0 makes every thread early-out, emitting no draw commands -> black GBuffer.
+	l_perFrameCB.modelCount = static_cast<uint32_t>(g_Engine->Get<DrawCallService>()->GetGPUModelData().size());
+
 	auto& l_LightStorage = g_Engine->Get<EntityRegistry>()->Storage<LightComponent>();
 	if (l_LightStorage.All().empty())
 		return false;
@@ -157,6 +161,10 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	auto* l_SunTransform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_SunEntityID);
 	if (l_SunTransform)
 		l_perFrameCB.sun_direction = Math::getDirection(Direction::Forward, l_SunTransform->m_LocalRot);
+
+	// Sun color * intensity feeds deferred sun lighting (lightPassDirectLighting) and the
+	// sky atmosphere (skyPass); leaving it 0 makes LightPass and Sky render black.
+	l_perFrameCB.sun_illuminance = l_sun.m_RGBColor * l_sun.m_LuminousFlux;
 	// Atomic snapshot of editor-thread state into the per-frame CB.
 	l_perFrameCB.debugViewMode = m_DebugViewMode.load(std::memory_order_relaxed);
 	l_perFrameCB.pointShadowBypass = m_PointShadowBypass.load(std::memory_order_relaxed);
