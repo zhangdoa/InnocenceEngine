@@ -126,6 +126,7 @@ test("classifyTestCommand: qualifying / live / serialize / playwright spec", () 
   assert.equal(g.classifyTestCommand("npx playwright test tests/mock.spec.js", () => "no engine").live, false);
   assert.equal(g.classifyTestCommand("npx playwright test tests/live.spec.js", () => "uses --engine=Main").live, true);
   assert.equal(g.classifyTestCommand("git commit -m x", () => null).qualifying, false);
+  assert.equal(g.classifyTestCommand("Bin/RelWithDebInfo/GPUUploadableTests_Standalone.exe", () => null).qualifying, true);
 });
 
 test("parseTaskRefs: dedupes TASK ids", () => {
