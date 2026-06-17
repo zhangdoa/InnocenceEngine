@@ -151,8 +151,8 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 		if (l_vis && !l_vis->m_Visible)
 			continue;
 
-		GPUModelData l_gpuModelData = {};
-
+		GPUModelData l_gpuModelData;
+		l_gpuModelData.PoisonInit();
 		l_gpuModelData.m_VertexBufferAddress = l_resource->m_VertexBufferView.m_BufferLocation;
 		l_gpuModelData.m_IndexBufferAddress = l_resource->m_IndexBufferView.m_BufferLocation;
 
@@ -170,6 +170,8 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 		l_gpuModelData.m_IndexStride = l_resource->m_IndexBufferView.m_StrideInBytes;
 
 		l_gpuModelData.m_MaterialIndex = l_drawCallIndex;
+		l_gpuModelData.m_ShaderProgramIndex = 0;
+		l_gpuModelData.m_RenderPassIndex = 0;
 		l_gpuModelData.m_UUID = static_cast<float>(l_Entity);
 
 		l_gpuModelData.m_VisibilityMask = static_cast<uint32_t>(VisibilityMask::MainCamera);

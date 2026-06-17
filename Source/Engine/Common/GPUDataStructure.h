@@ -262,7 +262,7 @@ static_assert(std::is_standard_layout_v<AnimationConstantBuffer>,
 		MeshUsage meshUsage = MeshUsage::Invalid;
 	};
 
-	struct alignas(16) GPUModelData
+struct alignas(16) GPUModelData : GPUUploadable<GPUModelData>
 	{
 		uint64_t m_VertexBufferAddress = 0;
 		uint64_t m_IndexBufferAddress = 0;
@@ -287,7 +287,24 @@ static_assert(std::is_standard_layout_v<AnimationConstantBuffer>,
 		uint32_t m_FirstInstance = 0;
 
 		float padding[16];
+
+		// Explicit padding[16] is std140 cbuffer trailing alignment,
+		// not a real field. The producer cannot write it; the HLSL
+		// shader reads it as zero.
+		static constexpr std::array<std::pair<size_t, size_t>, 4> SkipByteRanges() noexcept
+		{
+			std::array<std::pair<size_t, size_t>, 4> r{};
+			r[0] = { offsetof(GPUModelData, padding), sizeof(padding) };
+			return r;
+		}
 	};
+static_assert(sizeof(GPUModelData) == 160,
+	"GPUModelData size changed after CRTP base; std140 layout broken.");
+static_assert(alignof(GPUModelData) == 16,
+	"GPUModelData alignment changed after CRTP base; std140 layout broken.");
+static_assert(std::is_standard_layout_v<GPUModelData>,
+	"GPUModelData must be standard-layout so offsetof and "
+	"raw byte upload are well-defined.");
 
 	struct BillboardPassDrawCallInfo
 	{
