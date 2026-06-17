@@ -84,7 +84,10 @@ PoC first slice committed on `ecs-overhaul` in 9d1b71c2 (8 files, 292 insertions
      dangling-component reprocessing). The engine never reaches the
      GPU upload phase so the validator is not exercised via the
      live-engine path until that blocker is resolved.
-- [ ] #4 Remaining CBs not migrated.
+- [ ] #4 Remaining CBs not migrated — tracked as TASK-249 (Rollout §2),
+     blocked on TASK-247 (TextureResourceService init-loop unblocks the
+     live-engine smoke). Follow-ups A/B/C and the commit-guard gate fix
+     (TASK-248) also surfaced this session.
 
 ### Rollout next step
 
