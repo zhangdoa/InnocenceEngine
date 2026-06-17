@@ -1,4 +1,4 @@
-﻿#include "LightDataService.h"
+#include "LightDataService.h"
 
 #include "../Common/LogService.h"
 #include "../Common/Array.h"
@@ -100,6 +100,10 @@ bool LightDataServiceImpl::UpdateLightData()
 		if (l_Light.m_LightType == LightType::Point)
 		{
 			PointLightConstantBuffer l_data;
+			l_data.PoisonInit();
+			l_data.padding[0] = 0;
+			l_data.padding[1] = 0;
+			l_data.padding[2] = 0;
 			if (l_Transform)
 				l_data.pos = l_Transform->m_LocalPos;
 			l_data.luminance = l_Light.m_RGBColor * l_Light.m_LuminousFlux;
@@ -110,6 +114,7 @@ bool LightDataServiceImpl::UpdateLightData()
 		else if (l_Light.m_LightType == LightType::Sphere)
 		{
 			SphereLightConstantBuffer l_data;
+			l_data.PoisonInit();
 			if (l_Transform)
 				l_data.pos = l_Transform->m_LocalPos;
 			l_data.luminance = l_Light.m_RGBColor * l_Light.m_LuminousFlux;

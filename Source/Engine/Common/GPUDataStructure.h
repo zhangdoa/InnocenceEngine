@@ -77,23 +77,45 @@ namespace Inno
 		"PerFrameConstantBuffer must be standard-layout so offsetof and "
 		"raw byte upload are well-defined.");
 
-	// w component of luminance is attenuationRadius.
-	// m_CastShadow + padding[3] keep the struct 16-byte-aligned for HLSL std140
-	// cbuffer-array element alignment.
-	struct alignas(16) PointLightConstantBuffer
-	{
-		Vec4 pos;
-		Vec4 luminance;
-		uint32_t m_CastShadow = 1;
-		uint32_t padding[3] = { 0, 0, 0 };
-	};
+// w component of luminance is attenuationRadius.
+// m_CastShadow + padding[3] keep the struct 16-byte-aligned for HLSL std140
+// cbuffer-array element alignment.
+struct alignas(16) PointLightConstantBuffer : GPUUploadable<PointLightConstantBuffer>
+{
+	Vec4 pos;
+	Vec4 luminance;
+	uint32_t m_CastShadow;
+	uint32_t padding[3];
 
-	// w component of luminance is sphereRadius.
-	struct alignas(16) SphereLightConstantBuffer
+	// padding is std140 cbuffer trailing alignment, not a real field.
+	static constexpr std::array<std::pair<size_t, size_t>, 4> SkipByteRanges() noexcept
 	{
-		Vec4 pos;
-		Vec4 luminance;
-	};
+		std::array<std::pair<size_t, size_t>, 4> r{};
+		r[0] = { offsetof(PointLightConstantBuffer, padding), sizeof(padding) };
+		return r;
+	}
+};
+static_assert(sizeof(PointLightConstantBuffer) == 48,
+	"PointLightConstantBuffer size changed after CRTP base; std140 layout broken.");
+static_assert(alignof(PointLightConstantBuffer) == 16,
+	"PointLightConstantBuffer alignment changed after CRTP base; std140 layout broken.");
+static_assert(std::is_standard_layout_v<PointLightConstantBuffer>,
+	"PointLightConstantBuffer must be standard-layout so offsetof and "
+	"raw byte upload are well-defined.");
+
+// w component of luminance is sphereRadius.
+struct alignas(16) SphereLightConstantBuffer : GPUUploadable<SphereLightConstantBuffer>
+{
+	Vec4 pos;
+	Vec4 luminance;
+};
+static_assert(sizeof(SphereLightConstantBuffer) == 32,
+	"SphereLightConstantBuffer size changed after CRTP base; std140 layout broken.");
+static_assert(alignof(SphereLightConstantBuffer) == 16,
+	"SphereLightConstantBuffer alignment changed after CRTP base; std140 layout broken.");
+static_assert(std::is_standard_layout_v<SphereLightConstantBuffer>,
+	"SphereLightConstantBuffer must be standard-layout so offsetof and "
+	"raw byte upload are well-defined.");
 
 	struct alignas(16) TransformConstantBuffer
 	{
