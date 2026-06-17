@@ -117,33 +117,47 @@ static_assert(std::is_standard_layout_v<SphereLightConstantBuffer>,
 	"SphereLightConstantBuffer must be standard-layout so offsetof and "
 	"raw byte upload are well-defined.");
 
-	struct alignas(16) TransformConstantBuffer
-	{
-		Mat4 m;
-		Mat4 normalMat;
-	};
+struct alignas(16) TransformConstantBuffer : GPUUploadable<TransformConstantBuffer>
+{
+	Mat4 m;
+	Mat4 normalMat;
+};
+static_assert(sizeof(TransformConstantBuffer) == 128,
+	"TransformConstantBuffer size changed after CRTP base; std140 layout broken.");
+static_assert(alignof(TransformConstantBuffer) == 16,
+	"TransformConstantBuffer alignment changed after CRTP base; std140 layout broken.");
+static_assert(std::is_standard_layout_v<TransformConstantBuffer>,
+	"TransformConstantBuffer must be standard-layout so offsetof and "
+	"raw byte upload are well-defined.");
 
 	enum class ShaderModel { Invalid, Opaque, Transparent, Emissive, Volumetric, Debug };
 
 	struct MaterialAttributes
 	{
-		float AlbedoR = 1.0f;
-		float AlbedoG = 1.0f;
-		float AlbedoB = 1.0f;
-		float Alpha = 1.0f;
-		float Metallic = 0.0f;
-		float Roughness = 1.0f;
-		float AO = 0.0f;
-		float Thickness = 1.0f;
+		float AlbedoR;
+		float AlbedoG;
+		float AlbedoB;
+		float Alpha;
+		float Metallic;
+		float Roughness;
+		float AO;
+		float Thickness;
 	};
 
 	const uint32_t MaxTextureSlotCount = 7;
-	struct alignas(16) MaterialConstantBuffer
+	struct alignas(16) MaterialConstantBuffer : GPUUploadable<MaterialConstantBuffer>
 	{
 		MaterialAttributes m_MaterialAttributes;
-		uint32_t m_TextureIndices[MaxTextureSlotCount] = { INVALID_TEXTURE_INDEX, INVALID_TEXTURE_INDEX, INVALID_TEXTURE_INDEX, INVALID_TEXTURE_INDEX, INVALID_TEXTURE_INDEX, INVALID_TEXTURE_INDEX, INVALID_TEXTURE_INDEX };
-		uint32_t m_MaterialType = 0;
+		uint32_t m_TextureIndices[MaxTextureSlotCount];
+		uint32_t m_MaterialType;
 	};
+	static_assert(sizeof(MaterialConstantBuffer) == 64,
+		"MaterialConstantBuffer size changed after CRTP base; std140 layout broken.");
+	static_assert(alignof(MaterialConstantBuffer) == 16,
+		"MaterialConstantBuffer alignment changed after CRTP base; std140 layout broken.");
+	static_assert(std::is_standard_layout_v<MaterialConstantBuffer>,
+		"MaterialConstantBuffer must be standard-layout so offsetof and "
+		"raw byte upload are well-defined.");
 
 	struct alignas(16) DispatchParamsConstantBuffer
 	{

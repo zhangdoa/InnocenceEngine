@@ -1,4 +1,4 @@
-﻿#include "DrawCallService.h"
+#include "DrawCallService.h"
 
 #include "../Common/LogService.h"
 #include "../Common/Array.h"
@@ -214,7 +214,8 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 
 		m_GPUModelDataVector.emplace_back(l_gpuModelData);
 
-		TransformConstantBuffer l_transformCB = {};
+		TransformConstantBuffer l_transformCB;
+		l_transformCB.PoisonInit();
 		if (l_world)
 		{
 			l_transformCB.m = l_world->m_WorldMatrix;
@@ -222,9 +223,10 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 		}
 		m_TransformBufferVector.emplace_back(l_transformCB);
 
-		MaterialConstantBuffer l_materialCB = {};
+		MaterialConstantBuffer l_materialCB;
+		l_materialCB.PoisonInit();
+		l_materialCB.m_MaterialType = 0;
 		auto* l_materialAsset = AssetService::GetMaterialAsset(l_material->m_Asset);
-
 		if (l_materialAsset)
 			l_materialCB.m_MaterialAttributes = l_materialAsset->m_Attributes;
 
