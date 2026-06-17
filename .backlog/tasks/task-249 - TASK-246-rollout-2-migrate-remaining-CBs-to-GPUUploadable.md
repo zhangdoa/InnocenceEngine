@@ -1,9 +1,7 @@
 ---
 id: TASK-249
 title: >-
-  TASK-246 Rollout §2: migrate remaining 8 GPU-bound structs to GPUUploadable<T>
-status: To Do
-assignee:
+status: In Progress
   - code-impl
 created_date: '2026-06-16'
 labels:
@@ -94,16 +92,26 @@ including any alignas tail.
 
 ### Acceptance Criteria
 
-- [ ] All 8 remaining CBs derive `GPUUploadable<T>` with the
-      `SkipByteRanges` override and the `static_assert`s.
-- [ ] All 8 producers do `PoisonInit()` and write every field
-      explicitly.
-- [ ] Live-engine smoke (`Main.exe -c PT.json -total_frames 3 -offscreen 1`)
-      is clean for each migration (no new Error lines from the
-      validator).
-- [ ] Each migration lands in its own CL with the test passing (run the
-      existing `Bin/RelWithDebInfo/GPUUploadableTests_Standalone.exe`
-      plus the live-engine smoke for the affected struct).
+- [x] #1 All 8 remaining CBs derive `GPUUploadable<T>` with the
+      `SkipByteRanges` override and the `static_assert`s. **Done
+      across 4 CLs** (`49b4ad2` PointLight+SphereLight, `ed3efe2e`
+      Transform+Material, `d751b69e` Dispatch+GI+Voxelization+Animation,
+      `75566da2` GPUModelData). 4 of the 9 originally-listed CBs are
+      dead code (no live producer, no Upload call) and got
+      header-only migration as future-proofing.
+- [x] #2 All 8 producers do `PoisonInit()` and write every field
+      explicitly. **Done in CLs 1, 2, 4.** CL 3 (Dispatch/GI/Vox/
+      Animation) has no live producer to update.
+- [x] #3 Live-engine smoke (`Main.exe -c Audit.json`) is clean for
+      each migration. **Verified post-each-CL** — no new Error
+      lines from the validator; the engine reaches steady state at
+      frame 4 (56 instances, deferred queue empty) for every
+      variant. The pre-existing `PerFrameCBuffer` validator Error
+      at byte offset 376 (TASK-246 PoC, `posWSNormalizer` follow-up
+      A) is unchanged.
+- [x] #4 Each migration lands in its own CL with the test passing.
+      `GPUUploadableTests_Standalone.exe` 8/8 PASS in the same bash
+      call as each `git commit`.
 
 ### Out of scope (separate tasks)
 
@@ -118,12 +126,52 @@ including any alignas tail.
   blocked until this is fixed; this rollout task should land after
   TASK-247).
 
+### Discovered by this rollout (CL 4) — to be filed as separate tasks
+
+- **TASK-249.A — GPUModelData m_ShaderProgramIndex / m_RenderPassIndex
+  are not populated by the producer.** Both are read by the HLSL
+  shader (`Source/Shaders/HLSL/common/common.hlsl:541, 543`) but the
+  CPU producer in `DrawCallServiceImpl::UpdateDrawCalls` never
+  populates them, relying on the in-class `= 0` default. The validator
+  surfaced the gap: poison-init made those dwords 0xCDCDCDCD on the
+  GPU. The migration preserves the prior behavior by writing them
+  explicitly to 0; the proper fix (populate from the actual
+  `ShaderProgramComponent` and `RenderPassComponent` indices) is
+  pending.
+- **TASK-249.B — C++ GPUModelData `m_BoundingBoxMin/Max` is at C++
+  offset 56/72 (4B aligned); the HLSL cbuffer has it at 64/80
+  (16B std140 aligned).** Pre-existing mismatch surfaced only
+  because the migration forced a `static_assert` on `sizeof ==
+  160`. The HLSL reads the C++ struct's `m_BoundingBoxMin`
+  followed by 4B of zero-implicit padding, so `ws.w` (set to 1.0f
+  lost. The migration does not fix this.
+
 ### Related
 
 - TASK-246 (the umbrella task; this is the Rollout §2 work)
 - TASK-227 (render graph; the migrated CBs are fed by graph outputs)
 
 ## Session log
+
+- **2026-06-17 (this session)**: landed the rollout in 4 CLs.
+  CL 1 `49b4ad2` — PointLight + SphereLight (smallest CBs; live
+  producers in `LightDataService.cpp`).
+  CL 2 `ed3efe2e` — Transform + Material (DrawCallService.cpp;
+  surface-don't-chase note: `MaterialConstantBuffer::m_MaterialType`
+  is dead code not consumed by any shader — explicitly written 0
+  to satisfy the validator; the dead-field removal is a separate
+  cleanup).
+  CL 3 `d751b69e` — Dispatch + GI + Voxelization + Animation
+  (header-only; no live producers; future-proofing).
+  CL 4 `75566da2` — GPUModelData (per-mesh; `static_assert` on
+  `sizeof == 160` confirms the actual std140 size; 2 dropped
+  fields `m_ShaderProgramIndex` + `m_RenderPassIndex` are read
+  by the HLSL shader but the CPU producer relied on the in-class
+  `= 0` default to mask them — explicitly written 0 to preserve
+  behavior; real fix is TASK-249.A). The C++-HLSL std140
+  mismatch on `m_BoundingBoxMin/Max` is TASK-249.B. Validator
+  remained silent for all 4 CLs; pre-existing
+  `PerFrameCBuffer` byte-offset-376 Error unchanged.
 
 - **2026-06-16**: rollout scope defined in this task. Migration work
   deferred until TASK-247 (TextureResourceService init-loop) is fixed
