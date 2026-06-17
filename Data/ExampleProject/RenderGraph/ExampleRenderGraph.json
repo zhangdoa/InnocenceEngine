@@ -68,7 +68,7 @@
             "Imported": true
         },
         {
-            "Name": "GPUModelDataBuffer",
+            "Name": "RenderInstanceBuffer",
             "Type": "Buffer",
             "Imported": true
         },
@@ -1094,7 +1094,7 @@
             },
             "Reads": [
                 "PerFrameCBuffer",
-                "GPUModelDataBuffer",
+                "RenderInstanceBuffer",
                 "MaterialCBuffer"
             ],
             "Writes": [
@@ -1111,7 +1111,7 @@
                     "Stage": "Compute"
                 },
                 {
-                    "Resource": "GPUModelDataBuffer",
+                    "Resource": "RenderInstanceBuffer",
                     "Type": "Buffer",
                     "Set": 1,
                     "Index": 0,
@@ -1164,7 +1164,7 @@
                 "PerFrameCBuffer",
                 "PerFrameCBufferPrev",
                 "TransformBuffer",
-                "GPUModelDataBuffer",
+                "RenderInstanceBuffer",
                 "MaterialCBuffer"
             ],
             "Writes": [
@@ -1211,7 +1211,7 @@
                     "Stage": "Vertex"
                 },
                 {
-                    "Resource": "GPUModelDataBuffer",
+                    "Resource": "RenderInstanceBuffer",
                     "Type": "Buffer",
                     "Set": 1,
                     "Index": 1,

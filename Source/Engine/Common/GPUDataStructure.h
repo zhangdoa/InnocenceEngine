@@ -262,7 +262,7 @@ static_assert(std::is_standard_layout_v<AnimationConstantBuffer>,
 		MeshUsage meshUsage = MeshUsage::Invalid;
 	};
 
-struct alignas(16) GPUModelData : GPUUploadable<GPUModelData>
+struct alignas(16) RenderInstance : GPUUploadable<RenderInstance>
 	{
 		uint64_t m_VertexBufferAddress = 0;
 		uint64_t m_IndexBufferAddress = 0;
@@ -273,12 +273,6 @@ struct alignas(16) GPUModelData : GPUUploadable<GPUModelData>
 		uint32_t m_IndexStride = 0;
 
 		uint32_t m_MaterialIndex = 0;
-		uint32_t m_ShaderProgramIndex = 0;
-		float m_UUID = 0.0f;
-		uint32_t m_RenderPassIndex = 0;
-
-		uint32_t m_VisibilityMask = 0;
-		uint32_t m_MeshUsage = 0;
 
 		Vec4 m_BoundingBoxMin;
 		Vec4 m_BoundingBoxMax;
@@ -294,16 +288,16 @@ struct alignas(16) GPUModelData : GPUUploadable<GPUModelData>
 		static constexpr std::array<std::pair<size_t, size_t>, 4> SkipByteRanges() noexcept
 		{
 			std::array<std::pair<size_t, size_t>, 4> r{};
-			r[0] = { offsetof(GPUModelData, padding), sizeof(padding) };
+			r[0] = { offsetof(RenderInstance, padding), sizeof(padding) };
 			return r;
 		}
 	};
-static_assert(sizeof(GPUModelData) == 160,
-	"GPUModelData size changed after CRTP base; std140 layout broken.");
-static_assert(alignof(GPUModelData) == 16,
-	"GPUModelData alignment changed after CRTP base; std140 layout broken.");
-static_assert(std::is_standard_layout_v<GPUModelData>,
-	"GPUModelData must be standard-layout so offsetof and "
+static_assert(sizeof(RenderInstance) == 144,
+	"RenderInstance size changed after CRTP base; std140 layout broken.");
+static_assert(alignof(RenderInstance) == 16,
+	"RenderInstance alignment changed after CRTP base; std140 layout broken.");
+static_assert(std::is_standard_layout_v<RenderInstance>,
+	"RenderInstance must be standard-layout so offsetof and "
 	"raw byte upload are well-defined.");
 
 	struct BillboardPassDrawCallInfo

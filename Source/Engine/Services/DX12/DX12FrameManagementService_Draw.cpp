@@ -165,7 +165,7 @@ bool DX12FrameManagementService::ExecuteIndirect(RenderPassComponent* renderPass
 
 	l_commandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 
-	auto l_modelCount = (uint32_t)g_Engine->Get<DrawCallService>()->GetGPUModelData().size();
+	auto l_modelCount = (uint32_t)g_Engine->Get<DrawCallService>()->GetRenderInstances().size();
 	uint32_t l_bufferCapacity = static_cast<uint32_t>(indirectDrawCommand->m_ElementCount);
 	UINT maxDrawCommandCount = l_modelCount < l_bufferCapacity ? l_modelCount : l_bufferCapacity;
 

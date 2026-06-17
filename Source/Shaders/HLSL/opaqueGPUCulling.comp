@@ -10,7 +10,7 @@ cbuffer PerFrameConstantBuffer : register(b0)
 
 // Input: GPU model data buffer
 [[vk::binding(0, 1)]]
-StructuredBuffer<GPUModelData> u_ModelDataBuffer : register(t0);
+StructuredBuffer<RenderInstance> u_ModelDataBuffer : register(t0);
 
 // Input: Material data
 [[vk::binding(1, 1)]]
@@ -80,13 +80,13 @@ void main(uint3 id : SV_DispatchThreadID)
     if (objectIndex >= perFrameCB.modelCount)
         return;
 
-    // Get GPU model data
-    GPUModelData modelData = u_ModelDataBuffer[objectIndex];
+    // Read the per-visible-instance record
+    RenderInstance instance = u_ModelDataBuffer[objectIndex];
 
     float4x4 viewProjectionMatrix = mul(perFrameCB.v, perFrameCB.p_original);
-    bool isVisible = IsInFrustum(modelData.m_BoundingBoxMin, modelData.m_BoundingBoxMax, viewProjectionMatrix);
+    bool isVisible = IsInFrustum(instance.m_BoundingBoxMin, instance.m_BoundingBoxMax, viewProjectionMatrix);
 
-    u_DrawCommandBuffer[objectIndex] = BuildIndirectDrawCommand(objectIndex, modelData, isVisible);
+    u_DrawCommandBuffer[objectIndex] = BuildIndirectDrawCommand(objectIndex, instance, isVisible);
 
     // Ensure UAV writes are globally visible before the wavefront retires,
     // preventing a race where the fence signals completion before writes

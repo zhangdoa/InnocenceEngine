@@ -24,11 +24,11 @@ namespace Inno
 
 		mutable std::shared_mutex m_Mutex;
 
-		Inno::Array<GPUModelData> m_GPUModelDataVector;
+		Inno::Array<RenderInstance> m_RenderInstanceVector;
 		Inno::Array<TransformConstantBuffer> m_TransformBufferVector;
 		Inno::Array<MaterialConstantBuffer> m_MaterialCBVector;
 
-		GPUBufferComponent* m_GPUModelDataBufferComp;
+		GPUBufferComponent* m_RenderInstanceBufferComp;
 		GPUBufferComponent* m_TransformBufferComp;
 		GPUBufferComponent* m_TransformPrevBufferComp;
 		GPUBufferComponent* m_MaterialGPUBufferComp;
@@ -63,7 +63,7 @@ bool DrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
 	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
-	m_GPUModelDataBufferComp = l_rsService->Add("GPUModelDataBuffer");
+	m_RenderInstanceBufferComp = l_rsService->Add("RenderInstanceBuffer");
 	m_TransformBufferComp = l_rsService->Add("TransformBuffer");
 	m_TransformPrevBufferComp = l_rsService->Add("TransformPrevBuffer");
 	m_MaterialGPUBufferComp = l_rsService->Add("MaterialCBuffer");
@@ -80,12 +80,12 @@ bool DrawCallServiceImpl::Initialize()
 
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
-		m_GPUModelDataBufferComp->m_GPUResourceType = GPUResourceType::Buffer;
-		m_GPUModelDataBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
-		m_GPUModelDataBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
-		m_GPUModelDataBufferComp->m_ElementSize = sizeof(GPUModelData);
+		m_RenderInstanceBufferComp->m_GPUResourceType = GPUResourceType::Buffer;
+		m_RenderInstanceBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
+		m_RenderInstanceBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
+		m_RenderInstanceBufferComp->m_ElementSize = sizeof(RenderInstance);
 
-		l_rsService->Initialize(m_GPUModelDataBufferComp);
+		l_rsService->Initialize(m_RenderInstanceBufferComp);
 
 		m_TransformBufferComp->m_GPUResourceType = GPUResourceType::Buffer;
 		m_TransformBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -121,7 +121,7 @@ bool DrawCallServiceImpl::Initialize()
 
 bool DrawCallServiceImpl::UpdateDrawCalls()
 {
-	m_GPUModelDataVector.clear();
+	m_RenderInstanceVector.clear();
 	m_TransformBufferVector.clear();
 	m_MaterialCBVector.clear();
 
@@ -151,31 +151,25 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 		if (l_vis && !l_vis->m_Visible)
 			continue;
 
-		GPUModelData l_gpuModelData;
-		l_gpuModelData.PoisonInit();
-		l_gpuModelData.m_VertexBufferAddress = l_resource->m_VertexBufferView.m_BufferLocation;
-		l_gpuModelData.m_IndexBufferAddress = l_resource->m_IndexBufferView.m_BufferLocation;
+		RenderInstance l_renderInstance;
+		l_renderInstance.PoisonInit();
+		l_renderInstance.m_VertexBufferAddress = l_resource->m_VertexBufferView.m_BufferLocation;
+		l_renderInstance.m_IndexBufferAddress = l_resource->m_IndexBufferView.m_BufferLocation;
 
 		if (l_resource->m_VertexBufferView.m_StrideInBytes == 0)
 		{
 			Log(Error, "Vertex stride is zero - cannot calculate vertex count");
-			l_gpuModelData.m_VertexCount = 0;
+			l_renderInstance.m_VertexCount = 0;
 		}
 		else
 		{
-			l_gpuModelData.m_VertexCount = l_resource->m_VertexBufferView.m_SizeInBytes / l_resource->m_VertexBufferView.m_StrideInBytes;
+			l_renderInstance.m_VertexCount = l_resource->m_VertexBufferView.m_SizeInBytes / l_resource->m_VertexBufferView.m_StrideInBytes;
 		}
-		l_gpuModelData.m_IndexCount = l_resource->GetIndexCount();
-		l_gpuModelData.m_VertexStride = l_resource->m_VertexBufferView.m_StrideInBytes;
-		l_gpuModelData.m_IndexStride = l_resource->m_IndexBufferView.m_StrideInBytes;
+		l_renderInstance.m_IndexCount = l_resource->GetIndexCount();
+		l_renderInstance.m_VertexStride = l_resource->m_VertexBufferView.m_StrideInBytes;
+		l_renderInstance.m_IndexStride = l_resource->m_IndexBufferView.m_StrideInBytes;
 
-		l_gpuModelData.m_MaterialIndex = l_drawCallIndex;
-		l_gpuModelData.m_ShaderProgramIndex = 0;
-		l_gpuModelData.m_RenderPassIndex = 0;
-		l_gpuModelData.m_UUID = static_cast<float>(l_Entity);
-
-		l_gpuModelData.m_VisibilityMask = static_cast<uint32_t>(VisibilityMask::MainCamera);
-		l_gpuModelData.m_MeshUsage = static_cast<uint32_t>(MeshUsage::Static);
+		l_renderInstance.m_MaterialIndex = l_drawCallIndex;
 
 		auto* l_world = l_registry->Get<WorldTransformComponent>(l_Entity);
 		const AABB& l_localAabb = l_vis ? l_vis->m_AABB : l_resource->m_AABB;
@@ -202,19 +196,19 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 			}
 			wsMin.w = 1.0f;
 			wsMax.w = 1.0f;
-			l_gpuModelData.m_BoundingBoxMin = wsMin;
-			l_gpuModelData.m_BoundingBoxMax = wsMax;
+			l_renderInstance.m_BoundingBoxMin = wsMin;
+			l_renderInstance.m_BoundingBoxMax = wsMax;
 		}
 		else
 		{
-			l_gpuModelData.m_BoundingBoxMin = Vec4(l_localAabb.m_boundMin.x, l_localAabb.m_boundMin.y, l_localAabb.m_boundMin.z, 1.0f);
-			l_gpuModelData.m_BoundingBoxMax = Vec4(l_localAabb.m_boundMax.x, l_localAabb.m_boundMax.y, l_localAabb.m_boundMax.z, 1.0f);
+			l_renderInstance.m_BoundingBoxMin = Vec4(l_localAabb.m_boundMin.x, l_localAabb.m_boundMin.y, l_localAabb.m_boundMin.z, 1.0f);
+			l_renderInstance.m_BoundingBoxMax = Vec4(l_localAabb.m_boundMax.x, l_localAabb.m_boundMax.y, l_localAabb.m_boundMax.z, 1.0f);
 		}
 
-		l_gpuModelData.m_InstanceCount = 1;
-		l_gpuModelData.m_FirstInstance = 0;
+		l_renderInstance.m_InstanceCount = 1;
+		l_renderInstance.m_FirstInstance = 0;
 
-		m_GPUModelDataVector.emplace_back(l_gpuModelData);
+		m_RenderInstanceVector.emplace_back(l_renderInstance);
 
 		TransformConstantBuffer l_transformCB;
 		l_transformCB.PoisonInit();
@@ -298,22 +292,22 @@ bool DrawCallServiceImpl::Update()
 			return capacity;
 		};
 
-		if (m_GPUModelDataVector.size() > 0)
-		{
-			auto l_n = l_clamp(m_GPUModelDataVector.size(), m_GPUModelDataBufferComp->m_ElementCount, "GPUModelDataBuffer");
-			l_rsService->Upload(m_GPUModelDataBufferComp, m_GPUModelDataVector, 0, l_n);
-		}
-		if (m_TransformBufferVector.size() > 0)
-		{
-			auto l_currentFrameTransformBuffer = GetCurrentFrameTransformBuffer();
-			auto l_n = l_clamp(m_TransformBufferVector.size(), l_currentFrameTransformBuffer->m_ElementCount, "TransformBuffer");
-			l_rsService->Upload(l_currentFrameTransformBuffer, m_TransformBufferVector, 0, l_n);
-		}
-		if (m_MaterialCBVector.size() > 0)
-		{
-			auto l_n = l_clamp(m_MaterialCBVector.size(), m_MaterialGPUBufferComp->m_ElementCount, "MaterialCBuffer");
-			l_rsService->Upload(m_MaterialGPUBufferComp, m_MaterialCBVector, 0, l_n);
-		}
+	if (m_RenderInstanceVector.size() > 0)
+	{
+		auto l_n = l_clamp(m_RenderInstanceVector.size(), m_RenderInstanceBufferComp->m_ElementCount, "RenderInstanceBuffer");
+		l_rsService->Upload(m_RenderInstanceBufferComp, m_RenderInstanceVector, 0, l_n);
+	}
+	if (m_TransformBufferVector.size() > 0)
+	{
+		auto l_currentFrameTransformBuffer = GetCurrentFrameTransformBuffer();
+		auto l_n = l_clamp(m_TransformBufferVector.size(), l_currentFrameTransformBuffer->m_ElementCount, "TransformBuffer");
+		l_rsService->Upload(l_currentFrameTransformBuffer, m_TransformBufferVector, 0, l_n);
+	}
+	if (m_MaterialCBVector.size() > 0)
+	{
+		auto l_n = l_clamp(m_MaterialCBVector.size(), m_MaterialGPUBufferComp->m_ElementCount, "MaterialCBuffer");
+		l_rsService->Upload(m_MaterialGPUBufferComp, m_MaterialCBVector, 0, l_n);
+	}
 
 		return true;
 	}
@@ -328,7 +322,7 @@ bool DrawCallServiceImpl::Terminate()
 {
 	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
-	l_rsService->Delete(m_GPUModelDataBufferComp);
+	l_rsService->Delete(m_RenderInstanceBufferComp);
 	l_rsService->Delete(m_TransformBufferComp);
 	l_rsService->Delete(m_TransformPrevBufferComp);
 	l_rsService->Delete(m_MaterialGPUBufferComp);
@@ -367,15 +361,15 @@ ObjectStatus DrawCallService::GetStatus()
 	return m_Impl->m_ObjectStatus;
 }
 
-const Inno::Array<GPUModelData>& DrawCallService::GetGPUModelData()
+const Inno::Array<RenderInstance>& DrawCallService::GetRenderInstances()
 {
 	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
-	return m_Impl->m_GPUModelDataVector;
+	return m_Impl->m_RenderInstanceVector;
 }
 
-GPUBufferComponent* DrawCallService::GetGPUModelDataBuffer()
+GPUBufferComponent* DrawCallService::GetRenderInstanceBuffer()
 {
-	return m_Impl->m_GPUModelDataBufferComp;
+	return m_Impl->m_RenderInstanceBufferComp;
 }
 
 GPUBufferComponent* DrawCallService::GetCurrentFrameTransformBuffer()

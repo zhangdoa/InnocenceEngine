@@ -24,7 +24,7 @@ namespace
 
 		if (d.m_Mode == DispatchMode::DrawModelGroups)
 		{
-			uint32_t l_count = static_cast<uint32_t>(g_Engine->Get<DrawCallService>()->GetGPUModelData().size());
+			uint32_t l_count = static_cast<uint32_t>(g_Engine->Get<DrawCallService>()->GetRenderInstances().size());
 			x = (l_count + d.m_TileSize - 1) / d.m_TileSize;
 			y = 1;
 			z = 1;

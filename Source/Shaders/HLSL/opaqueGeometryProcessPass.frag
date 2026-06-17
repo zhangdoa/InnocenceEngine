@@ -20,7 +20,7 @@ cbuffer PerFrameConstantBufferPrev : register(b2)
 }
 
 [[vk::binding(1, 1)]]
-StructuredBuffer<GPUModelData> g_ModelDataBuffer : register(t1);
+StructuredBuffer<RenderInstance> g_ModelDataBuffer : register(t1);
 
 [[vk::binding(2, 1)]]
 StructuredBuffer<Material_CB> g_Materials : register(t2);

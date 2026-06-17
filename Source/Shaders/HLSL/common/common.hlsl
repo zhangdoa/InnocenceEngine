@@ -526,31 +526,28 @@ struct Probe
 	uint padding[10];
 };
 
-// GPU model data structure (must match C++ GPUModelData)
-struct GPUModelData
+// RenderInstance: per-visible-instance record consumed by the cull pass.
+// (Renamed from GPUModelData; m_ShaderProgramIndex/m_RenderPassIndex/m_UUID/
+// m_VisibilityMask/m_MeshUsage removed — they were write-only, never read by
+// any HLSL function. Layout must match C++ RenderInstance.)
+struct RenderInstance
 {
     uint64_t m_VertexBufferAddress;
     uint64_t m_IndexBufferAddress;
-    
+
     uint m_VertexCount;
     uint m_IndexCount;
     uint m_VertexStride;
     uint m_IndexStride;
-    
+
     uint m_MaterialIndex;
-    uint m_ShaderProgramIndex;
-    float m_UUID;
-    uint m_RenderPassIndex;
-    
-    uint m_VisibilityMask;
-    uint m_MeshUsage;
-    
+
     float4 m_BoundingBoxMin;
     float4 m_BoundingBoxMax;
-    
+
     uint m_InstanceCount;
     uint m_FirstInstance;
-    
+
     float padding[16];
 };
 
@@ -591,26 +588,26 @@ struct DX12IndirectDrawCommand
 
 static const uint DXGI_FORMAT_R32_UINT = 42;
 
-// Build a DX12IndirectDrawCommand from GPUModelData.
+// Build a DX12IndirectDrawCommand from RenderInstance.
 // isVisible controls InstanceCount (0 = culled, 1 = drawn).
-DX12IndirectDrawCommand BuildIndirectDrawCommand(uint objectIndex, GPUModelData modelData, bool isVisible)
+DX12IndirectDrawCommand BuildIndirectDrawCommand(uint objectIndex, RenderInstance instance, bool isVisible)
 {
-    DX12IndirectDrawCommand cmd;
-    cmd.m_ObjectIndex = objectIndex;
-    cmd.m_Padding1 = 0;
-    cmd.m_VertexBufferLocation = modelData.m_VertexBufferAddress;
-    cmd.m_VertexBufferSizeInBytes = modelData.m_VertexCount * modelData.m_VertexStride;
-    cmd.m_VertexStride = modelData.m_VertexStride;
-    cmd.m_IndexBufferLocation = modelData.m_IndexBufferAddress;
-    cmd.m_IndexBufferSizeInBytes = modelData.m_IndexCount * modelData.m_IndexStride;
-    cmd.m_IndexFormat = DXGI_FORMAT_R32_UINT;
-    cmd.m_IndexCountPerInstance = modelData.m_IndexCount;
-    cmd.m_InstanceCount = isVisible ? 1 : 0;
-    cmd.m_StartIndexLocation = 0;
-    cmd.m_BaseVertexLocation = 0;
-    cmd.m_StartInstanceLocation = 0;
-    cmd.m_Padding2 = 0;
-    return cmd;
+	DX12IndirectDrawCommand cmd;
+	cmd.m_ObjectIndex = objectIndex;
+	cmd.m_Padding1 = 0;
+	cmd.m_VertexBufferLocation = instance.m_VertexBufferAddress;
+	cmd.m_VertexBufferSizeInBytes = instance.m_VertexCount * instance.m_VertexStride;
+	cmd.m_VertexStride = instance.m_VertexStride;
+	cmd.m_IndexBufferLocation = instance.m_IndexBufferAddress;
+	cmd.m_IndexBufferSizeInBytes = instance.m_IndexCount * instance.m_IndexStride;
+	cmd.m_IndexFormat = DXGI_FORMAT_R32_UINT;
+	cmd.m_IndexCountPerInstance = instance.m_IndexCount;
+	cmd.m_InstanceCount = isVisible ? 1 : 0;
+	cmd.m_StartIndexLocation = 0;
+	cmd.m_BaseVertexLocation = 0;
+	cmd.m_StartInstanceLocation = 0;
+	cmd.m_Padding2 = 0;
+	return cmd;
 }
 
 #endif // COMMON_HLSL

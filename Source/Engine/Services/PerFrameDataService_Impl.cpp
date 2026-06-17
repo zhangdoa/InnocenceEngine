@@ -157,7 +157,7 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 
 	// GPU culling (opaqueGPUCulling.comp) bounds its per-model loop by modelCount;
 	// leaving it 0 makes every thread early-out, emitting no draw commands -> black GBuffer.
-	l_perFrameCB.modelCount = static_cast<uint32_t>(g_Engine->Get<DrawCallService>()->GetGPUModelData().size());
+	l_perFrameCB.modelCount = static_cast<uint32_t>(g_Engine->Get<DrawCallService>()->GetRenderInstances().size());
 
 	auto& l_LightStorage = g_Engine->Get<EntityRegistry>()->Storage<LightComponent>();
 	if (l_LightStorage.All().empty())
