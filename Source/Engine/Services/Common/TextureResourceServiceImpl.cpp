@@ -150,14 +150,20 @@ bool TextureResourceService::InitializeComponents()
 			if (l_current)
 				l_texture = l_current;
 			else
-				Log(Warning, " entity ", l_task.m_Owner, " no longer has TextureComponent, using stored pointer");
+			{
+				Log(Verbose, " ", l_task.m_Owner, " no longer has TextureComponent, dropping deferred init");
+				continue;
+			}
 		}
 
 		Log(Verbose, " processing deferred init for: ", l_texture->m_InstanceName);
 		if (InitializeImpl(l_texture, l_task.m_TextureData))
 			l_texture->m_ObjectStatus = ObjectStatus::Activated;
 		else
-			m_DeferredQueue.push(std::move(l_task));
+		{
+			Log(Error, " ", l_texture->m_InstanceName, " failed to initialize; texture suspended.");
+			l_texture->m_ObjectStatus = ObjectStatus::Suspended;
+		}
 	}
 
 	return true;

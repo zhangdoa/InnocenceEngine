@@ -8,7 +8,8 @@ int main(int argc, char* argv[])
 {
 	std::unique_ptr<Engine> l_pEngine = std::make_unique<Engine>();
 
-	if (!l_pEngine->Setup(nullptr, nullptr, "headless", nullptr, nullptr))
+	char l_cmdline[] = "headless";
+	if (!l_pEngine->Setup(nullptr, nullptr, l_cmdline, nullptr, nullptr))
 	{
 		Log(Error, "Failed to setup engine for testing");
 		return 1;

@@ -2,7 +2,7 @@
 id: TASK-245
 title: >-
   TestSuite broken under C++23: build error + engine-init texture infinite-loop
-status: To Do
+status: In Progress
 assignee:
   - code-impl
 created_date: '2026-06-16'
@@ -76,15 +76,50 @@ cd Bin && RelWithDebInfo\TestSuite.exe unit                      # Issue 2 hangs
 
 ## Acceptance Criteria
 
-- [ ] #1 TestSuite compiles under C++23.
-- [ ] #2 `TestSuite.exe unit` runs to completion and prints TEST RESULTS without an
-      init loop.
-- [ ] #3 Texture-init retry is bounded (cap + dead-letter) and the dangling-component
-      reprocessing is fixed.
-- [ ] #4 Unit suite green; `Failed: 0`.
+- [x] #1 TestSuite compiles under C++23. **Done (this session)** —
+      `Source/TestSuite/TestSuite.cpp:11` now declares
+      `char l_cmdline[] = "headless";` and passes `l_cmdline` to
+      `Engine::Setup`. Minimal local fix per the task description
+      (convention-respecting — Main passes `lpCmdLine`, a mutable
+      buffer).
+- [x] #2 `TestSuite.exe unit` runs to completion and prints TEST RESULTS
+      without an init loop. **Done (this session, jointly with
+      TASK-247)** — log shows `========== UNIT TESTS COMPLETE
+      ==========` at the end of all 14 test suites (ObjectPool, Array,
+      RingBuffer, EntityRegistry, FixedSizeString, Memory, DoubleBuffer,
+      Allocator, Queue, HashMap, UnorderedSet, Deque,
+      RenderGraphSerializer, RenderGraphSerializerTiled). Exit 0.
+- [x] #3 Texture-init retry is bounded + dangling-component reprocessing
+      is fixed. **Done in TASK-247** — the fix uses the
+      suspend-on-failure pattern (TASK-242 / commit `14cd6476`
+      precedent): set `m_ObjectStatus = Suspended` + Error log + drop
+      the task (no retry). Dangling-component: drop with Verbose log,
+      no use of stale pointer. Both in
+      `Source/Engine/Services/Common/TextureResourceServiceImpl.cpp:136-170`.
+- [ ] #4 Unit suite green; `Failed: 0`. **Partially verified** — TestSuite
+      unit complete, exit 0. The 1 pre-existing fail flagged by TASK-241
+      (RenderGraph: lightPass register coverage) is unrelated to this
+      change.
 
 ## Definition of Done
 
-- [ ] #1 Code compiles
-- [ ] #2 `TestSuite.exe unit` exits cleanly with a readable TEST RESULTS summary
-- [ ] #3 Root cause of the dangling TextureComponent documented
+- [x] #1 Code compiles — `cmake --build Build --target TestSuite` exit 0.
+- [x] #2 `TestSuite.exe unit` exits cleanly with a readable TEST RESULTS
+      summary — all 14 suites complete, `========== UNIT TESTS COMPLETE
+      ==========`, exit 0.
+- [x] #3 Root cause of the dangling TextureComponent documented —
+      `EntityRegistry` replaces components under the service's feet
+      (TASK-72 pattern); the service stored a raw pointer from a prior
+      `Get<TextureComponent>(owner)` call. The fix queries the registry
+      on every task pop and drops the task if the component is gone.
+
+## Session log
+
+- **2026-06-17**: Issue 1 fixed in `Source/TestSuite/TestSuite.cpp:11` —
+  `char l_cmdline[] = "headless";` + pass `l_cmdline` to `Engine::Setup`.
+  Issue 2 fixed in TASK-247
+  (`Source/Engine/Services/Common/TextureResourceServiceImpl.cpp:136-170`)
+  — both rewrites landed this session; TestSuite unit now completes
+  all 14 suites with exit 0. The two tasks are interlocked: TASK-247's
+  fix is what makes Issue 2 verifiable (TestSuite unit runs to
+  completion only because the texture init loop is gone).
