@@ -223,6 +223,11 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 			l_transformCB.m = l_world->m_WorldMatrix;
 			l_transformCB.normalMat = l_world->m_WorldRotationMatrix;
 		}
+		else
+		{
+			l_transformCB.m = Mat4();
+			l_transformCB.normalMat = Mat4();
+		}
 		m_TransformBufferVector.emplace_back(l_transformCB);
 
 		MaterialConstantBuffer l_materialCB;

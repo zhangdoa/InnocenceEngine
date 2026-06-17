@@ -139,6 +139,8 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	l_perFrameCB.v_inv = l_perFrameCB.v.inverse();
 	l_perFrameCB.viewportSize.x = (float)l_screenResolution.x;
 	l_perFrameCB.viewportSize.y = (float)l_screenResolution.y;
+	l_perFrameCB.viewportSize.z = 0.0f;
+	l_perFrameCB.viewportSize.w = 0.0f;
 	// posWSNormalizer is consumed by GI passes; pre-PoC `= {}` left it zero,
 	// which divided by zero in GI probe lookup. Unit normalizer keeps the
 	// GPU math in range; computing the real world-space AABB is follow-up.

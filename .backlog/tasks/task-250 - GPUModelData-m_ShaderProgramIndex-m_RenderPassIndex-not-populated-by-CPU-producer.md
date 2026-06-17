@@ -13,7 +13,7 @@ labels:
   - follow-up
 dependencies:
   - TASK-249
-priority: medium
+priority: low
 ---
 
 ## Description
@@ -29,9 +29,9 @@ on two fields the CPU producer never wrote.
 
 ```cpp
 uint32_t m_MaterialIndex = 0;
-uint32_t m_ShaderProgramIndex = 0;       // <-- never written
+uint32_t m_ShaderProgramIndex = 0;       // <-- never written by producer
 float m_UUID = 0.0f;
-uint32_t m_RenderPassIndex = 0;         // <-- never written
+uint32_t m_RenderPassIndex = 0;         // <-- never written by producer
 ```
 
 `Source/Engine/Services/DrawCallService.cpp:154-213`
@@ -59,6 +59,17 @@ of those indices is on the `MeshComponent` itself in the current
 data model — they are looked up via separate `ShaderProgram`
 and `RenderPass` services by asset name.
 
+### Why the priority is low (severity re-assess 2026-06-17c)
+
+The HLSL side reads both fields, but the GPU has been consuming
+0 in both pre-CL and post-CL states (in-class default `= 0` vs
+explicit `= 0`). **No behavior change from the CLs.** The bug
+is real (silent-wrong; the GPU is treating 0 as a valid index)
+but is not a regression caused by the GPUUploadable rollout. The
+user's report of black triangles after the CLs is unlikely to be
+caused by this; the actual root cause is being investigated
+under TASK-251 (re-scoped 2026-06-17c to a TBD investigation).
+
 ### Acceptance Criteria
 
 - [ ] `DrawCallServiceImpl::UpdateDrawCalls` populates
@@ -69,9 +80,6 @@ and `RenderPass` services by asset name.
       `l_gpuModelData.m_RenderPassIndex` from the actual
       `RenderPassComponent` associated with the mesh's render
       pass (NOT a literal 0).
-- [ ] Both fields removed from the GPUUploadable's
-      `SkipByteRanges` (the offsets they live at are not
-      padding; the producer now writes them).
 - [ ] Live-engine smoke (`Main.exe -c Audit.json`) is clean for
       the migration; no new Error lines.
 - [ ] Test: write a small unit test that constructs a
@@ -89,13 +97,24 @@ and `RenderPass` services by asset name.
 - Alternatively: extend `MeshComponent` to carry a
   `ShaderProgramHandle` + `RenderPassHandle` directly (cleaner
   but a wider schema change).
+- Note: even with the fix, the HLSL reads the same offsets; the
+  HLSL `StructuredBuffer<GPUModelData>` uses basic type
+  alignment (4B aligned `float4`, no 16-byte row-alignment)
+  per Microsoft DXC Buffer Packing wiki. The C++ and HLSL
+  layouts match (verified 2026-06-17c); this task is purely
+  about populating the index values, not about layout.
 
 ### Out of scope
 
-- TASK-249.B: the C++-HLSL std140 mismatch on
-  `m_BoundingBoxMin/Max` (separate task).
+- The C++/HLSL std140-mismatch claim for `m_BoundingBoxMin/Max`
+  was FALSIFIED on 2026-06-17c. `GPUModelData` is used as
+  `StructuredBuffer<>` on the HLSL side (basic type alignment),
+  NOT as a cbuffer member (16-byte row-alignment). The C++ and
+  HLSL layouts match. See TASK-251 (re-scoped to actual black
+  triangle root-cause investigation).
 - Removing the now-unnecessary `m_MaterialType` from
-  `MaterialConstantBuffer` (also dead code; tracked separately).
+  `MaterialConstantBuffer` (also dead code; tracked separately
+  if at all).
 
 ### Related
 
@@ -104,9 +123,26 @@ and `RenderPass` services by asset name.
   one was for `posWSNormalizer`).
 - TASK-246 (GPUUploadable CRTP base; the validator is what
   caught this defect).
+- TASK-251 (re-scoped 2026-06-17c; the black-triangle root
+  cause investigation that surfaced this severity re-assess).
 
 ## Session log
 
-- **2026-06-17**: filed by TASK-249 CL 4 (`75566da2`). Migration
-  landed with explicit `= 0` writes for both fields to preserve
-  on-GPU behavior; the real fix is pending.
+- **2026-06-17 (filed):** original finding. TASK-249 CL 4
+  (`75566da2`) added `PoisonInit()` to the producer; the
+  pre-upload validator flagged the two unwritten fields. The
+  migration preserved the prior on-GPU value (0) by writing the
+  fields explicitly. The proper fix (populate from real
+  `ShaderProgramComponent` and `RenderPassComponent`) was filed
+  as this task at medium priority.
+- **2026-06-17c (severity re-assess):** priority dropped
+  medium → low. The HLSL uses `StructuredBuffer<GPUModelData>`
+  (basic type alignment, NOT cbuffer). Both `m_ShaderProgramIndex`
+  and `m_RenderPassIndex` are read by the HLSL (verified at
+  `Source/Shaders/HLSL/common/common.hlsl:541, 543`), but the
+  GPU has been consuming 0 in both pre-CL and post-CL states
+  (in-class default `= 0` vs explicit `= 0`). **No behavior
+  change from the CLs.** The bug is real (silent-wrong) but is
+  not a regression. The user's report of black triangles after
+  the CLs is unlikely to be caused by this; the actual root
+  cause is being investigated under TASK-251.
