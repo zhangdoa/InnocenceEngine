@@ -159,26 +159,40 @@ static_assert(std::is_standard_layout_v<TransformConstantBuffer>,
 		"MaterialConstantBuffer must be standard-layout so offsetof and "
 		"raw byte upload are well-defined.");
 
-	struct alignas(16) DispatchParamsConstantBuffer
-	{
-		TVec4<uint32_t> numThreadGroups;
-		TVec4<uint32_t> numThreads;
-	};
+struct alignas(16) DispatchParamsConstantBuffer : GPUUploadable<DispatchParamsConstantBuffer>
+{
+	TVec4<uint32_t> numThreadGroups;
+	TVec4<uint32_t> numThreads;
+};
+static_assert(sizeof(DispatchParamsConstantBuffer) == 32,
+	"DispatchParamsConstantBuffer size changed after CRTP base; std140 layout broken.");
+static_assert(alignof(DispatchParamsConstantBuffer) == 16,
+	"DispatchParamsConstantBuffer alignment changed after CRTP base; std140 layout broken.");
+static_assert(std::is_standard_layout_v<DispatchParamsConstantBuffer>,
+	"DispatchParamsConstantBuffer must be standard-layout so offsetof and "
+	"raw byte upload are well-defined.");
 
-	struct alignas(16) GIConstantBuffer
-	{
-		Mat4 p;
-		Mat4 r[6];
-		Mat4 t;
-		Mat4 p_inv;
-		Mat4 v_inv[6];
-		Vec4 probeCount;
-		Vec4 probeRange;
-		Vec4 workload;
-		Vec4 irradianceVolumeOffset;
-	};
+struct alignas(16) GIConstantBuffer : GPUUploadable<GIConstantBuffer>
+{
+	Mat4 p;
+	Mat4 r[6];
+	Mat4 t;
+	Mat4 p_inv;
+	Mat4 v_inv[6];
+	Vec4 probeCount;
+	Vec4 probeRange;
+	Vec4 workload;
+	Vec4 irradianceVolumeOffset;
+};
+static_assert(sizeof(GIConstantBuffer) == 1024,
+	"GIConstantBuffer size changed after CRTP base; std140 layout broken.");
+static_assert(alignof(GIConstantBuffer) == 16,
+	"GIConstantBuffer alignment changed after CRTP base; std140 layout broken.");
+static_assert(std::is_standard_layout_v<GIConstantBuffer>,
+	"GIConstantBuffer must be standard-layout so offsetof and "
+	"raw byte upload are well-defined.");
 
-	struct alignas(16) VoxelizationConstantBuffer
+struct alignas(16) VoxelizationConstantBuffer : GPUUploadable<VoxelizationConstantBuffer>
 	{
 		Vec4 volumeCenter;
 		float volumeExtend;
@@ -192,9 +206,24 @@ static_assert(std::is_standard_layout_v<TransformConstantBuffer>,
 		float coneTracingStep;
 		float coneTracingMaxDistance;
 		float padding[2];
-	};
 
-	struct alignas(16) AnimationConstantBuffer
+		// padding is std140 cbuffer trailing alignment, not a real field.
+		static constexpr std::array<std::pair<size_t, size_t>, 4> SkipByteRanges() noexcept
+		{
+			std::array<std::pair<size_t, size_t>, 4> r{};
+			r[0] = { offsetof(VoxelizationConstantBuffer, padding), sizeof(padding) };
+			return r;
+		}
+	};
+static_assert(sizeof(VoxelizationConstantBuffer) == 64,
+	"VoxelizationConstantBuffer size changed after CRTP base; std140 layout broken.");
+static_assert(alignof(VoxelizationConstantBuffer) == 16,
+	"VoxelizationConstantBuffer alignment changed after CRTP base; std140 layout broken.");
+static_assert(std::is_standard_layout_v<VoxelizationConstantBuffer>,
+	"VoxelizationConstantBuffer must be standard-layout so offsetof and "
+	"raw byte upload are well-defined.");
+
+struct alignas(16) AnimationConstantBuffer : GPUUploadable<AnimationConstantBuffer>
 	{
 		Mat4 rootOffsetMatrix;
 		float duration;
@@ -202,7 +231,22 @@ static_assert(std::is_standard_layout_v<TransformConstantBuffer>,
 		uint32_t numTicks;
 		float currentTime;
 		float padding[44];
+
+		// padding is std140 cbuffer trailing alignment, not a real field.
+		static constexpr std::array<std::pair<size_t, size_t>, 4> SkipByteRanges() noexcept
+		{
+			std::array<std::pair<size_t, size_t>, 4> r{};
+			r[0] = { offsetof(AnimationConstantBuffer, padding), sizeof(padding) };
+			return r;
+		}
 	};
+static_assert(sizeof(AnimationConstantBuffer) == 256,
+	"AnimationConstantBuffer size changed after CRTP base; std140 layout broken.");
+static_assert(alignof(AnimationConstantBuffer) == 16,
+	"AnimationConstantBuffer alignment changed after CRTP base; std140 layout broken.");
+static_assert(std::is_standard_layout_v<AnimationConstantBuffer>,
+	"AnimationConstantBuffer must be standard-layout so offsetof and "
+	"raw byte upload are well-defined.");
 
 	struct alignas(16) CollisionPrimitives
 	{
