@@ -39,6 +39,13 @@ namespace Inno
 
 		ObjectStatus GetStatus();
 
+		// Frame-lifecycle authority requests a clean shutdown (frame budget
+		// reached, window closed, fatal GPU error). The main loop and the
+		// recurrent rendering task observe it and unwind into Terminate() —
+		// the one mode-independent stop, replacing per-service std::exit.
+		void RequestShutdown();
+		bool IsShutdownRequested() const;
+
 
 		const FixedSizeString<128>& GetApplicationName();
 		IWindowService* getWindowService();

@@ -41,7 +41,6 @@ namespace Inno
 
         bool m_saveScreenCapture = false;
 
-        uint32_t m_autoCaptureFrameCount = 0;
         bool m_autoCaptureWritten = false;
 
         GPUResourceComponent* m_Canvas = nullptr;

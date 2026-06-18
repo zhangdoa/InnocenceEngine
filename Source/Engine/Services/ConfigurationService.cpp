@@ -51,15 +51,12 @@ void ConfigurationService::ApplyDefaults()
     m_Headless = false;
     m_Audit = false;
     m_BakeMode = false;
-    m_AutoExit = false;
     m_EngineMode = EngineMode::Host;
     m_GraphicsService = GraphicsService::DX12;
     m_LogLevel = 1;
     m_ApplicationName = "InnocenceEngine";
     m_DataSubdir = "Data";
     m_TotalFrames = 0;
-    m_MaxFrames = 0;
-    m_ReloadAtFrame = 0;
     m_CaptureFrame = -1;
     m_DumpFramesStart = -1;
     m_DumpFramesEnd = -1;
@@ -159,7 +156,6 @@ bool ConfigurationService::IsOffscreen() const          { return m_Offscreen; }
 bool ConfigurationService::IsHeadless() const           { return m_Headless; }
 bool ConfigurationService::IsAudit() const              { return m_Audit; }
 bool ConfigurationService::IsBakeMode() const           { return m_BakeMode; }
-bool ConfigurationService::IsAutoExit() const           { return m_AutoExit; }
 EngineMode ConfigurationService::GetEngineMode() const  { return m_EngineMode; }
 GraphicsService ConfigurationService::GetGraphicsService() const { return m_GraphicsService; }
 int ConfigurationService::GetLogLevel() const           { return m_LogLevel; }
@@ -167,8 +163,6 @@ const std::string& ConfigurationService::GetApplicationName() const { return m_A
 const std::string& ConfigurationService::GetDataSubdir() const { return m_DataSubdir; }
 
 int ConfigurationService::GetTotalFrames() const        { return m_TotalFrames; }
-int ConfigurationService::GetMaxFrames() const          { return m_MaxFrames; }
-int ConfigurationService::GetReloadAtFrame() const      { return m_ReloadAtFrame; }
 int ConfigurationService::GetCaptureFrame() const       { return m_CaptureFrame; }
 int ConfigurationService::GetDumpFramesStart() const    { return m_DumpFramesStart; }
 int ConfigurationService::GetDumpFramesEnd() const      { return m_DumpFramesEnd; }
@@ -207,14 +201,11 @@ void ConfigurationService::SetHeadless(bool v)                                  
 void ConfigurationService::SetOffscreen(bool v)                                   { m_Offscreen = v; }
 void ConfigurationService::SetAudit(bool v)                                       { m_Audit = v; }
 void ConfigurationService::SetBakeMode(bool v)                                    { m_BakeMode = v; }
-void ConfigurationService::SetAutoExit(bool v)                                    { m_AutoExit = v; }
 void ConfigurationService::SetApplicationName(const std::string& s)                 { m_ApplicationName = s; }
 void ConfigurationService::SetDataSubdir(const std::string& s)                     { m_DataSubdir = s; }
 void ConfigurationService::SetLogLevel(int v)                                     { m_LogLevel = v; }
 void ConfigurationService::SetTestCase(const std::string& s)                       { m_TestCase = s; }
-void ConfigurationService::SetMaxFrames(int v)                                    { m_MaxFrames = v; }
 void ConfigurationService::SetTotalFrames(int v)                                  { m_TotalFrames = v; }
-void ConfigurationService::SetReloadAtFrame(int v)                                { m_ReloadAtFrame = v; }
 void ConfigurationService::SetCaptureFrame(int v)                                 { m_CaptureFrame = v; }
 void ConfigurationService::SetDumpFramesStart(int v)                              { m_DumpFramesStart = v; }
 void ConfigurationService::SetDumpFramesEnd(int v)                                { m_DumpFramesEnd = v; }

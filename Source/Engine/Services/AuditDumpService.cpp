@@ -77,16 +77,14 @@ bool AuditDumpService::Initialize()
 
 bool AuditDumpService::Update()
 {
-    if (!m_Enabled)
+    if (!m_Enabled || m_Dumped)
         return true;
     if (!m_SceneLoaded.load())
         return true;
-    if (m_FrameCount < m_TriggerAtFrame)
-    {
-        ++m_FrameCount;
+    // Trigger on the canonical session clock (frames since steady state) so the
+    // dumped frame is converged and reproducible across launches.
+    if (g_Engine->Get<FrameManagementService>()->GetSteadyStateRelativeFrameCount() < m_TriggerAtFrame)
         return true;
-    }
-    ++m_FrameCount;
     RunDump();
     return true;
 }
@@ -118,5 +116,6 @@ void AuditDumpService::RunDump()
     }
 
     Log(Success, "AuditDump complete.");
-    std::exit(0);
+    m_Dumped = true;
+    g_Engine->RequestShutdown();
 }

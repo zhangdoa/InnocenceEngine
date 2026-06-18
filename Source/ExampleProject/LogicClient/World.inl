@@ -172,10 +172,6 @@ namespace
 
 		bool allowUpdate = true;
 
-		uint32_t m_AutoFrameCount = 0;
-		bool m_AutoGISceneTriggered = false;
-		bool m_AutoReloadTriggered = false;
-		bool m_AutoTerminateCalled = false;
 	};
 
 	bool WorldSystem::Setup(IServiceConfig* systemConfig)
@@ -270,55 +266,11 @@ namespace
 		auto l_totalFrames = g_Engine->Get<ConfigurationService>()->GetTotalFrames();
 		if (l_totalFrames > 0)
 		{
-			m_AutoFrameCount++;
-
-			// Default auto-test transition: render the UnitTest startup
-			// scene for a few frames, then swap to GISponza for the rest of
-			// the run. Suppressed when -scene <path> picks a target scene
-			// explicitly — the three-scene capture harness drives each
-			// scene end-to-end via that override.
-		const bool l_sceneOverridden = g_Engine->Get<ConfigurationService>()->GetInitialScene()[0] != '\0';
-			if (!l_sceneOverridden && !m_AutoGISceneTriggered && m_AutoFrameCount >= 5)
-			{
-				m_AutoGISceneTriggered = true;
-				g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/GISponza.InnoScene", true);
-				Log(Success, "Auto-test: loaded GISponza scene at frame ", m_AutoFrameCount, ".");
-			}
-
-			auto l_reloadAtFrame = g_Engine->Get<ConfigurationService>()->GetReloadAtFrame();
-			if (l_reloadAtFrame > 0 && !m_AutoReloadTriggered && m_AutoFrameCount >= static_cast<uint32_t>(l_reloadAtFrame))
-			{
-				m_AutoReloadTriggered = true;
-				g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/UnitTest.InnoScene", true);
-				Log(Success, "Auto-test: reload triggered at frame ", m_AutoFrameCount, ", switching back to UnitTest scene.");
-			}
-
-			if (!m_AutoTerminateCalled && m_AutoFrameCount >= static_cast<uint32_t>(l_totalFrames))
-			{
-				m_AutoTerminateCalled = true;
-				Log(Success, "Auto-test: ", l_totalFrames, " frames rendered, terminating.");
-				g_Engine->Get<IWindowService>()->Terminate();
-			}
-
-			// Camera orbit override — TASK-124 [B], TASK-213 CL C.
-			// Each frame in [0, cameraOrbitDuration] stomps the Main Camera
-			// transform with a yaw that sweeps 0→360° over the duration, at
-			// the configured pitch and radius around the world origin. Runs
-			// after the scene-load trigger so the Main Camera is guaranteed
-			// to exist by the time we try to find it. Player's Update()
-			// further below will stomp this on windowed runs where the
-			// player is driving — accepted for v1 (orbit is intended for
-			// -offscreen capture sessions).
-			//
-			// TASK-213 CL C: yaw is now driven by FMS::GetSteadyStateRelative
-			// FrameCount(), not m_AutoFrameCount. Reason — m_AutoFrameCount
-			// advances unconditionally post-Activated, so its value at any
-			// given dump frame depends on the deferred-init drain timing
-			// (RC-6 in the task design pass). The steady-state-relative
-			// counter is gated on the same latch as m_autoCaptureFrameCount,
-			// so yaw at dump frame N is independent of the variable load-
-			// frame count → identical viewpoint at the same dump frame
-			// across binaries.
+			// Camera orbit for -offscreen turntable captures: sweep yaw 0→360°
+			// over cameraOrbitDuration at the configured pitch/radius about the
+			// origin. Driven by the steady-state-relative frame count so the
+			// viewpoint at a dump frame is independent of load-frame count
+			// (reproducible across binaries). Player::Update may stomp it windowed.
 		auto* l_configSvc = g_Engine->Get<ConfigurationService>();
 		const uint32_t l_orbitFrame =
 			g_Engine->Get<FrameManagementService>()->GetSteadyStateRelativeFrameCount();

@@ -23,8 +23,6 @@ namespace Inno
             svc.SetAudit(e["isAudit"].get<bool>());
         if (e.contains("isBakeMode") && e["isBakeMode"].is_boolean())
             svc.SetBakeMode(e["isBakeMode"].get<bool>());
-        if (e.contains("isAutoExit") && e["isAutoExit"].is_boolean())
-            svc.SetAutoExit(e["isAutoExit"].get<bool>());
         if (e.contains("applicationName") && e["applicationName"].is_string())
             svc.SetApplicationName(e["applicationName"].get<std::string>());
         if (e.contains("dataSubdir") && e["dataSubdir"].is_string())
@@ -40,12 +38,8 @@ namespace Inno
         const auto& s = j["session"];
         if (s.contains("testCase") && s["testCase"].is_string())
             svc.SetTestCase(s["testCase"].get<std::string>());
-        if (s.contains("maxFrames") && s["maxFrames"].is_number_integer())
-            svc.SetMaxFrames(s["maxFrames"].get<int>());
         if (s.contains("totalFrames") && s["totalFrames"].is_number_integer())
             svc.SetTotalFrames(s["totalFrames"].get<int>());
-        if (s.contains("reloadAtFrame") && s["reloadAtFrame"].is_number_integer())
-            svc.SetReloadAtFrame(s["reloadAtFrame"].get<int>());
         if (s.contains("captureFrame") && s["captureFrame"].is_number_integer())
             svc.SetCaptureFrame(s["captureFrame"].get<int>());
         if (s.contains("dumpFramesStart") && s["dumpFramesStart"].is_number_integer())

@@ -41,11 +41,12 @@ namespace Inno
 		// (K-window counter, latch flags) — call exactly once per frame from FMS::Update().
 		bool IsSteadyState();
 
-		// HasReachedSteadyState latches once-true-stays-true (no clear on TLAS flap-back).
-		// GetSteadyStateRelativeFrameCount returns 0 until the first-true latch then
-		// advances 1-per-frame; used as the dump-frame index and PT-RNG seed source in
-		// capture mode for cross-launch determinism regardless of load-frame counts.
-		bool HasReachedSteadyState() const { return m_SteadyStateMarkerLogged; }
+		// Single session clock anchored at m_FirstSteadyStateFrame, latched once
+		// (never reset) when steady state is first detected OR the watchdog times
+		// out. Stays false/0 until the anchor; then the relative count advances
+		// 1-per-frame. All frame-indexed lifecycle triggers + the PT-RNG seed
+		// measure from it — capture timing is load-count-independent.
+		bool HasReachedSteadyState() const { return m_FirstSteadyStateFrame != UINT32_MAX; }
 		uint32_t GetSteadyStateRelativeFrameCount() const;
 
 		void SetUploadHeapPreparationCallback(std::function<bool()>&& callback);
@@ -138,6 +139,10 @@ namespace Inno
 		bool PreResize(RenderPassComponent* renderPass);
 		bool PostResize();
 		bool PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* renderPass);
+
+		// Frame budget: request a clean shutdown once totalFrames session-frames
+		// have been rendered. The universal terminate path for every mode.
+		void EvaluateFrameBudget();
 
 		// Swap chain components (owned by this service)
 		ShaderProgramComponent* m_SwapChainShaderProgramComp = nullptr;

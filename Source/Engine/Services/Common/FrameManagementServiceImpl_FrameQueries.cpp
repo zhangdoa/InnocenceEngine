@@ -76,7 +76,8 @@ bool FrameManagementService::IsSteadyState()
 	if (l_steadyState && !m_SteadyStateMarkerLogged)
 	{
 		m_SteadyStateMarkerLogged = true;
-		m_FirstSteadyStateFrame = m_FrameCountSinceLaunch.load();
+		if (m_FirstSteadyStateFrame == UINT32_MAX)
+			m_FirstSteadyStateFrame = m_FrameCountSinceLaunch.load();
 		Log(Verbose, "Auto-test: steady state reached at frame=", m_FrameCountSinceLaunch.load(),
 			" deferredQueueEmpty=", l_deferredQueueEmpty,
 			" tlasStableFrames=", m_TLASStableFrameCount,
@@ -89,6 +90,11 @@ bool FrameManagementService::IsSteadyState()
 		&& m_FrameCountSinceLaunch.load() >= SteadyStateTimeoutFrames)
 	{
 		m_SteadyStateTimeoutLogged = true;
+		// Watchdog fallback: anchor the session clock here so frame-indexed
+		// triggers and the totalFrames budget still fire (degraded determinism,
+		// already warned) instead of hanging forever waiting for true steady.
+		if (m_FirstSteadyStateFrame == UINT32_MAX)
+			m_FirstSteadyStateFrame = m_FrameCountSinceLaunch.load();
 		Log(Warning, "Auto-test: steady state NOT reached within ", SteadyStateTimeoutFrames,
 			" frames — capture determinism cannot be guaranteed."
 			" deferredQueueEmpty=", l_deferredQueueEmpty,
@@ -106,6 +112,18 @@ uint32_t FrameManagementService::GetSteadyStateRelativeFrameCount() const
 		return 0u;
 	const uint32_t l_now = m_FrameCountSinceLaunch.load();
 	return l_now >= m_FirstSteadyStateFrame ? (l_now - m_FirstSteadyStateFrame) : 0u;
+}
+
+void FrameManagementService::EvaluateFrameBudget()
+{
+	const int l_totalFrames = g_Engine->Get<ConfigurationService>()->GetTotalFrames();
+	if (l_totalFrames <= 0)
+		return;
+
+	// Render session-frames [0..totalFrames] inclusive — a trigger registered at
+	// frame==totalFrames still fires this turn — then request a clean shutdown.
+	if (GetSteadyStateRelativeFrameCount() > static_cast<uint32_t>(l_totalFrames))
+		g_Engine->RequestShutdown();
 }
 
 void FrameManagementService::SetUploadHeapPreparationCallback(std::function<bool()>&& callback)

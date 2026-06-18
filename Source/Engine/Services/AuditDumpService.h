@@ -24,7 +24,7 @@ namespace Inno
 
         bool m_Enabled = false;
         std::atomic<bool> m_SceneLoaded{false};
-        uint32_t m_FrameCount = 0;
+        bool m_Dumped = false;
         uint32_t m_TriggerAtFrame = 0;
         std::vector<AuditPassEntry> m_Passes;
 

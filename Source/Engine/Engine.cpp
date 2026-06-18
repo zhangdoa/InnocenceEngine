@@ -66,6 +66,12 @@ Engine::~Engine()
 
 bool Engine::ExecuteDefaultTask()
 {
+	if (m_pImpl->m_ShutdownRequested.load())
+	{
+		m_pImpl->m_ObjectStatus = ObjectStatus::Suspended;
+		return false;
+	}
+
 	Get<Timer>()->Tick();
 
 	m_pImpl->m_WindowSystem->Update();
@@ -84,6 +90,16 @@ bool Engine::ExecuteDefaultTask()
 ObjectStatus Engine::GetStatus()
 {
 	return m_pImpl->m_ObjectStatus;
+}
+
+void Engine::RequestShutdown()
+{
+	m_pImpl->m_ShutdownRequested.store(true);
+}
+
+bool Engine::IsShutdownRequested() const
+{
+	return m_pImpl->m_ShutdownRequested.load();
 }
 
 

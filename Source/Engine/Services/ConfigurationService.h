@@ -46,7 +46,6 @@ namespace Inno
         bool IsHeadless() const;
         bool IsAudit() const;
         bool IsBakeMode() const;
-        bool IsAutoExit() const;
         EngineMode GetEngineMode() const;
         GraphicsService GetGraphicsService() const;
         int GetLogLevel() const;
@@ -54,8 +53,6 @@ namespace Inno
         const std::string& GetDataSubdir() const;
 
         int GetTotalFrames() const;
-        int GetMaxFrames() const;
-        int GetReloadAtFrame() const;
         int GetCaptureFrame() const;
         int GetDumpFramesStart() const;
         int GetDumpFramesEnd() const;
@@ -98,14 +95,11 @@ namespace Inno
         void SetOffscreen(bool v);
         void SetAudit(bool v);
         void SetBakeMode(bool v);
-        void SetAutoExit(bool v);
         void SetApplicationName(const std::string& s);
         void SetDataSubdir(const std::string& s);
         void SetLogLevel(int v);
         void SetTestCase(const std::string& s);
-        void SetMaxFrames(int v);
         void SetTotalFrames(int v);
-        void SetReloadAtFrame(int v);
         void SetCaptureFrame(int v);
         void SetDumpFramesStart(int v);
         void SetDumpFramesEnd(int v);
@@ -140,7 +134,6 @@ namespace Inno
         bool m_Headless = false;
         bool m_Audit = false;
         bool m_BakeMode = false;
-        bool m_AutoExit = false;
         EngineMode m_EngineMode = EngineMode::Host;
         GraphicsService m_GraphicsService = GraphicsService::DX12;
         int m_LogLevel = 1;
@@ -148,8 +141,6 @@ namespace Inno
         std::string m_DataSubdir = "Data";
 
         int m_TotalFrames = 0;
-        int m_MaxFrames = 0;
-        int m_ReloadAtFrame = 0;
         int m_CaptureFrame = -1;
         int m_DumpFramesStart = -1;
         int m_DumpFramesEnd = -1;

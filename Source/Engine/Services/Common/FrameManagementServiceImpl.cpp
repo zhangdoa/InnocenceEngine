@@ -122,6 +122,11 @@ bool FrameManagementService::InitializeSwapChainRenderPassComponent()
 
 bool FrameManagementService::Update()
 {
+	// A requested shutdown (budget reached, window closed, device lost) stops
+	// new GPU work so the main loop can tear down without a racing frame.
+	if (g_Engine->IsShutdownRequested())
+		return false;
+
 	auto l_currentFrame = m_CurrentFrame;
 
 	if (m_PreFrameCallback)
@@ -139,11 +144,13 @@ bool FrameManagementService::Update()
 			m_HardwareService->DumpGPUDiagnostics();
 			Log(Warning, " GPU device removed after frame wait; frame=", m_FrameCountSinceLaunch, " swapIndex=", l_currentFrame, " — skipping GPU work from this point forward.");
 		}
-		// Run CPU-side callbacks even on GPU error so the logic client can still
-		// count frames and trigger auto-termination.
+		// Device removed: drain CPU-side callbacks once, then request a clean
+		// shutdown — a lost device can't recover, so honour the terminate
+		// contract immediately instead of spinning a dead render loop.
 		g_Engine->Get<SceneService>()->ClearLoadingFlag();
 		m_UploadHeapPreparationCallback();
 		m_FrameCountSinceLaunch++;
+		g_Engine->RequestShutdown();
 		return false;
 	}
 
@@ -213,6 +220,9 @@ bool FrameManagementService::Update()
 	// Drive the steady-state window every frame; the boolean is consumed by
 	// IsSteadyState() callers and the first-true log marker fires from inside.
 	(void)IsSteadyState();
+
+	// Frame-lifecycle authority: terminate once the totalFrames budget is spent.
+	EvaluateFrameBudget();
 
 	return true;
 }

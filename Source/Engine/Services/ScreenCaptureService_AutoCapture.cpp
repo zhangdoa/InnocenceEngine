@@ -123,7 +123,7 @@ void ScreenCaptureService::RunOneShotIfReady(uint32_t triggerAtFrame)
         return;
     if (m_autoCaptureWritten)
         return;
-    if (m_autoCaptureFrameCount < triggerAtFrame)
+    if (g_Engine->Get<FrameManagementService>()->GetSteadyStateRelativeFrameCount() < triggerAtFrame)
         return;
     AlignTrackerForMidFrameReadback();
     TryWriteAutoCapture();
@@ -131,15 +131,14 @@ void ScreenCaptureService::RunOneShotIfReady(uint32_t triggerAtFrame)
 
 void ScreenCaptureService::HandleAutoCaptureTriggers()
 {
-    if (g_Engine->Get<FrameManagementService>()->HasReachedSteadyState())
-        ++m_autoCaptureFrameCount;
+    // Single canonical session clock — no private per-service frame counter.
+    const uint32_t l_sessionFrame =
+        g_Engine->Get<FrameManagementService>()->GetSteadyStateRelativeFrameCount();
 
-    const uint32_t l_triggerAtFrame = ResolveTriggerFrame();
+    if (IsInsideDumpWindow(l_sessionFrame))
+        RunDumpFrame(l_sessionFrame);
 
-    if (IsInsideDumpWindow(m_autoCaptureFrameCount))
-        RunDumpFrame(m_autoCaptureFrameCount);
-
-    RunOneShotIfReady(l_triggerAtFrame);
+    RunOneShotIfReady(ResolveTriggerFrame());
 }
 
 void ScreenCaptureService::AlignTrackerForMidFrameReadback()

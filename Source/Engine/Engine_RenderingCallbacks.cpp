@@ -72,25 +72,29 @@ void Engine::WireRenderingCallbacks()
 	const int l_captureFrame = g_Engine->Get<ConfigurationService>()->GetCaptureFrame();
 	if (l_captureFrame >= 0)
 	{
-		Get<FrameManagementService>()->SetPreFrameCallback([this, l_captureFrame](uint32_t frameCount)
+		// captureFrame is a session-relative index (frames since steady state),
+		// so the capture lands on a converged frame regardless of load time.
+		Get<FrameManagementService>()->SetPreFrameCallback([this, l_captureFrame](uint32_t)
 			{
-				if (frameCount == static_cast<uint32_t>(l_captureFrame))
+				auto* l_fm = Get<FrameManagementService>();
+				if (l_fm->HasReachedSteadyState()
+					&& l_fm->GetSteadyStateRelativeFrameCount() == static_cast<uint32_t>(l_captureFrame))
 					Get<GraphicsHardwareService>()->BeginCapture();
 			});
 
-		Get<FrameManagementService>()->SetPostFrameCallback([this, l_captureFrame](uint32_t frameCount)
+		Get<FrameManagementService>()->SetPostFrameCallback([this, l_captureFrame](uint32_t)
 			{
-				if (frameCount != static_cast<uint32_t>(l_captureFrame))
+				auto* l_fm = Get<FrameManagementService>();
+				if (!l_fm->HasReachedSteadyState()
+					|| l_fm->GetSteadyStateRelativeFrameCount() != static_cast<uint32_t>(l_captureFrame))
 					return;
 
 				// Drain all queues so the capture boundary encloses a complete
 				// frame; EndFrameCapture would otherwise see mid-flight state.
-				auto* l_fm = Get<FrameManagementService>();
 				auto* l_hw = Get<GraphicsHardwareService>();
 				l_hw->WaitOnCPU(l_hw->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
 				l_hw->WaitOnCPU(l_hw->GetSemaphoreValue(GPUEngineType::Compute),  GPUEngineType::Compute);
 				l_hw->WaitOnCPU(l_hw->GetSemaphoreValue(GPUEngineType::Copy),     GPUEngineType::Copy);
-				(void)l_fm;
 				l_hw->EndCapture();
 			});
 	}

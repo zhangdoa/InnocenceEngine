@@ -13,7 +13,7 @@ param(
 Import-Module (Join-Path $PSScriptRoot 'Lib\Test-Engine.psm1') -Force
 
 $run = Invoke-EngineMainRun -BinDir $BinDir `
-    -ArgList '-c Data/Engine/Configuration/Presets/PT.json' `
+    -ArgList '-c Engine/Configuration/Presets/PT.json' `
     -NoNewWindow
 
 if (-not $run.LogFile) {

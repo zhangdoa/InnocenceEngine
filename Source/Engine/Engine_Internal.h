@@ -23,6 +23,7 @@ namespace Inno
 
 		std::atomic<bool> m_isRendering = false;
 		std::atomic<bool> m_allowRender = false;
+		std::atomic<bool> m_ShutdownRequested = false;
 
 		std::function<void()> f_SceneLoadingStartedCallback;
 		std::function<void()> f_SceneLoadingFinishedCallback;

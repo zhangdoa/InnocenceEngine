@@ -56,7 +56,7 @@ Write-Host ""
 
 $logFile = Join-Path $binDir "..\Build\interactive_test.log"
 $process = Start-Process -FilePath $exe `
-    -ArgumentList "-c Data/Engine/Configuration/Presets/Interactive.json" `
+    -ArgumentList "-c Engine/Configuration/Presets/Interactive.json" `
     -WorkingDirectory $binDir `
     -PassThru
 
