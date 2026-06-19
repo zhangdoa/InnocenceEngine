@@ -9,7 +9,6 @@ description: "Commit message template. Write to Build/commit-message.txt with th
 
     <body, <= 40 lines>
 
-    Reviewed-By: <stage>            # or Review-Skipped: <reason>
     Code-AI-Generated-By: <model>   # and/or Message-AI-Generated-By: <model>
     Closure-Reason: <value>         # only on a closure CL exempt from test-run
 

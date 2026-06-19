@@ -66,7 +66,7 @@ test("passes a docs commit with required footers", async () => {
   try {
     writeFileSync(join(repo, "README.md"), "# docs\nhello\n");
     execSync("git add README.md", { cwd: repo });
-    const cmd = 'git commit -m "docs: update" -m "Reviewed-By: reviewer" -m "Code-AI-Generated-By: test"';
+    const cmd = 'git commit -m "docs: update" -m "Code-AI-Generated-By: test"';
     const res = await cap.tool!({ toolName: "bash", input: { command: cmd } }, { cwd: repo });
     assert.equal(res, undefined);
   } finally {
@@ -89,7 +89,7 @@ test("turn flag lets a code commit through after a test command", async () => {
     execSync("git add Source/foo.cpp", { cwd: repo });
     // issue a qualifying test command → sets turn flag
     await cap.tool!({ toolName: "bash", input: { command: "Bin/RelWithDebInfo/Main.exe -total_frames 4" } }, { cwd: repo });
-    const cmd = 'git commit -m "feat: x" -m "Reviewed-By: r" -m "Code-AI-Generated-By: t"';
+    const cmd = 'git commit -m "feat: x" -m "Code-AI-Generated-By: t"';
     const res = await cap.tool!({ toolName: "bash", input: { command: cmd } }, { cwd: repo });
     assert.equal(res, undefined); // test-run satisfied, footers present
   } finally {

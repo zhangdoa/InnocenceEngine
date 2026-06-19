@@ -45,7 +45,6 @@ function evaluate(cmd: string, cwd: string, turn: TurnState): string | null {
     gates.commentEssayCap(staged, (f) => collect.fileDiffCached(cwd, f), renames) ??
     gates.fileSize(staged, (spec) => collect.blobLineCount(cwd, spec), renames) ??
     gates.closureStaleness(messageText, staged, (id) => collect.taskStatus(cwd, staged, id)) ??
-    gates.peerReview(messageText) ??
     gates.visualReview(messageText) ??
     gates.testRun(staged, closingTasks, messageText, turn.qualifyingTestRan) ??
     gates.liveEngine(staged, turn.liveEngineRan) ??

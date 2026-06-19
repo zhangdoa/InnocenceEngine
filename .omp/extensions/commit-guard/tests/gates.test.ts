@@ -3,18 +3,11 @@ import assert from "node:assert/strict";
 import * as g from "../gates.ts";
 
 const ATTR = "Code-AI-Generated-By: claude";
-const REV = "Reviewed-By: reviewer";
 
 test("attribution: requires AI-generated footer", () => {
   assert.equal(g.attribution(`subject\n\n${ATTR}`), null);
   assert.equal(g.attribution("Message-AI-Generated-By: x"), null);
   assert.ok(g.attribution("subject\n\nReviewed-By: x"));
-});
-
-test("peerReview: Reviewed-By or Review-Skipped", () => {
-  assert.equal(g.peerReview("s\n\nReviewed-By: r"), null);
-  assert.equal(g.peerReview("s\n\nReview-Skipped: backlog-only"), null);
-  assert.ok(g.peerReview("s\n\nnope"));
 });
 
 test("visualReview: only when body cites Build/captures/", () => {

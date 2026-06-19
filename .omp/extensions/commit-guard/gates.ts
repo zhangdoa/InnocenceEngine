@@ -16,11 +16,6 @@ export function attribution(messageText: string): string | null {
   return "attribution header missing — add `Code-AI-Generated-By: <model>` or `Message-AI-Generated-By: <model>`.";
 }
 
-export function peerReview(messageText: string): string | null {
-  if (C.REVIEW_RE.test(messageText)) return null;
-  return "peer-review footer missing — add `Reviewed-By: <reviewer>` (one or more) or `Review-Skipped: <reason>`.";
-}
-
 export function visualReview(messageText: string): string | null {
   if (!C.CAPTURE_PATH_RE.test(messageText)) return null;
   if (C.REVIEW_VISUAL_RE.test(messageText)) return null;

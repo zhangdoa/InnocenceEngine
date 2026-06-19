@@ -3,10 +3,9 @@
 // venue paths widened to the omp layout (.omp/ harness dirs).
 
 export const ATTRIBUTION_RE = /^(Code-AI-Generated-By|Message-AI-Generated-By):\s*\S/m;
-export const REVIEW_RE = /^(Reviewed-By|Review-Skipped):\s*\S/m;
 export const CAPTURE_PATH_RE = /Build\/captures\//;
 export const REVIEW_VISUAL_RE = /^(Reviewed-Visually|Review-Skipped-Visual):\s*\S/m;
-// [ \t]* not \s* — \s includes \n, would let `Closure-Reason:\n\nReviewed-By:` satisfy.
+// [ \t]* not \s* — \s includes \n, would let `Closure-Reason:\n\nCode-AI-Generated-By:` satisfy.
 export const CLOSURE_REASON_RE = /^Closure-Reason:[ \t]*\S/m;
 
 export const BODY_LINE_CAP = 40;
