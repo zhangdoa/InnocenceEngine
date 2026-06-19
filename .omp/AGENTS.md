@@ -14,7 +14,3 @@ Single-user project (zhangdoa). No team, CI, or onboarding — closure notes and
 ## Continuity
 
 Tasks and per-task history: `.backlog/tasks/` (Backlog.md). Durable decisions and invariants: basic-memory project `InnocenceEngine` (address explicitly; not the default).
-
-## Pending cleanup (not enforced)
-
-`.omp/agents/task-mgmt.md` and the impl agents were built for an abandoned auto-dispatch / session-start-briefing workflow. Prune when convenient.
