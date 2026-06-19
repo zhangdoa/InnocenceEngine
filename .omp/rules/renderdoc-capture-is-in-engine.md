@@ -1,7 +1,7 @@
 ---
 name: renderdoc-capture-is-in-engine
 description: "RenderDoc capture is built into the engine via ConfigurationService::captureFrame (in-application RENDERDOC_GetAPI); set it in a preset and run — never drive capture through the system renderdoccmd/qrenderdoc install"
-condition: "renderdoccmd|qrenderdoc|Program Files[\\\\/]+RenderDoc|RenderDoc[\\\\/]+pymodules|renderdoc.{0,16}capture"
+condition: "renderdoccmd\\s+capture|qrenderdoc.{0,20}capture|renderdoc.{0,16}capture"
 scope: ["tool:bash"]
 ---
 
