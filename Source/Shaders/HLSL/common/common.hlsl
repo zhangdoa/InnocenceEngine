@@ -526,11 +526,8 @@ struct Probe
 	uint padding[10];
 };
 
-// RenderInstance: per-visible-instance record consumed by the cull pass.
-// (Renamed from GPUModelData; m_ShaderProgramIndex/m_RenderPassIndex/m_UUID/
-// m_VisibilityMask/m_MeshUsage removed — they were write-only, never read by
-// any HLSL function. Layout must match C++ RenderInstance.)
-struct RenderInstance
+// Per-unique-mesh record. Must match C++ MeshGeometry (scalar-packed; C++ static_assert enforces the stride).
+struct MeshGeometry
 {
     uint64_t m_VertexBufferAddress;
     uint64_t m_IndexBufferAddress;
@@ -539,14 +536,16 @@ struct RenderInstance
     uint m_IndexCount;
     uint m_VertexStride;
     uint m_IndexStride;
+};
 
+// Per-visible-instance record. Must match C++ RenderInstance (scalar-packed; size = SRV stride).
+struct RenderInstance
+{
     uint m_MaterialIndex;
+    uint m_meshID;
 
     float4 m_BoundingBoxMin;
     float4 m_BoundingBoxMax;
-
-    uint m_InstanceCount;
-    uint m_FirstInstance;
 
     float padding[16];
 };
@@ -588,20 +587,21 @@ struct DX12IndirectDrawCommand
 
 static const uint DXGI_FORMAT_R32_UINT = 42;
 
-// Build a DX12IndirectDrawCommand from RenderInstance.
-// isVisible controls InstanceCount (0 = culled, 1 = drawn).
-DX12IndirectDrawCommand BuildIndirectDrawCommand(uint objectIndex, RenderInstance instance, bool isVisible)
+// Build the indirect draw from a MeshGeometry record. isVisible controls
+// InstanceCount (0 = culled). objectIndex rides the command's root-constant slot
+// so the geometry pass can index g_Transforms / g_Materials per instance.
+DX12IndirectDrawCommand BuildIndirectDrawCommand(uint objectIndex, MeshGeometry mesh, bool isVisible)
 {
 	DX12IndirectDrawCommand cmd;
 	cmd.m_ObjectIndex = objectIndex;
 	cmd.m_Padding1 = 0;
-	cmd.m_VertexBufferLocation = instance.m_VertexBufferAddress;
-	cmd.m_VertexBufferSizeInBytes = instance.m_VertexCount * instance.m_VertexStride;
-	cmd.m_VertexStride = instance.m_VertexStride;
-	cmd.m_IndexBufferLocation = instance.m_IndexBufferAddress;
-	cmd.m_IndexBufferSizeInBytes = instance.m_IndexCount * instance.m_IndexStride;
+	cmd.m_VertexBufferLocation = mesh.m_VertexBufferAddress;
+	cmd.m_VertexBufferSizeInBytes = mesh.m_VertexCount * mesh.m_VertexStride;
+	cmd.m_VertexStride = mesh.m_VertexStride;
+	cmd.m_IndexBufferLocation = mesh.m_IndexBufferAddress;
+	cmd.m_IndexBufferSizeInBytes = mesh.m_IndexCount * mesh.m_IndexStride;
 	cmd.m_IndexFormat = DXGI_FORMAT_R32_UINT;
-	cmd.m_IndexCountPerInstance = instance.m_IndexCount;
+	cmd.m_IndexCountPerInstance = mesh.m_IndexCount;
 	cmd.m_InstanceCount = isVisible ? 1 : 0;
 	cmd.m_StartIndexLocation = 0;
 	cmd.m_BaseVertexLocation = 0;

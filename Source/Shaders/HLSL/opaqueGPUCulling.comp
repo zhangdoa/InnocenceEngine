@@ -16,6 +16,10 @@ StructuredBuffer<RenderInstance> u_ModelDataBuffer : register(t0);
 [[vk::binding(1, 1)]]
 StructuredBuffer<Material_CB> u_MaterialBuffer : register(t1);
 
+// Input: per-mesh geometry table (indexed by RenderInstance.m_meshID).
+[[vk::binding(2, 1)]]
+StructuredBuffer<MeshGeometry> u_MeshGeometryBuffer : register(t2);
+
 // Output: Array of DirectX 12 indirect draw commands
 [[vk::binding(0, 2)]]
 RWStructuredBuffer<DX12IndirectDrawCommand> u_DrawCommandBuffer : register(u0);
@@ -80,13 +84,15 @@ void main(uint3 id : SV_DispatchThreadID)
     if (objectIndex >= perFrameCB.modelCount)
         return;
 
-    // Read the per-visible-instance record
     RenderInstance instance = u_ModelDataBuffer[objectIndex];
+
+    // Geometry for this instance comes from the table via its meshID.
+    MeshGeometry mesh = u_MeshGeometryBuffer[instance.m_meshID];
 
     float4x4 viewProjectionMatrix = mul(perFrameCB.v, perFrameCB.p_original);
     bool isVisible = IsInFrustum(instance.m_BoundingBoxMin, instance.m_BoundingBoxMax, viewProjectionMatrix);
 
-    u_DrawCommandBuffer[objectIndex] = BuildIndirectDrawCommand(objectIndex, instance, isVisible);
+    u_DrawCommandBuffer[objectIndex] = BuildIndirectDrawCommand(objectIndex, mesh, isVisible);
 
     // Ensure UAV writes are globally visible before the wavefront retires,
     // preventing a race where the fence signals completion before writes

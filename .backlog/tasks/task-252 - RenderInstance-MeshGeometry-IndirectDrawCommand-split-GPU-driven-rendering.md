@@ -2,7 +2,7 @@
 id: TASK-252
 title: >-
   Split GPUModelData into MeshGeometry / RenderInstance / IndirectDrawCommand — proper GPU-driven rendering model
-status: To Do
+status: In Progress
 assignee:
   - code-impl
 created_date: '2026-06-17'
@@ -114,9 +114,9 @@ load-bearing, not aesthetic:
 
 - [ ] `MeshGeometry` struct exists; C++ and HLSL layouts match; one-time
       upload on mesh residency.
-- [ ] `RenderInstance` struct exists; C++ and HLSL layouts match;
+- [x] `RenderInstance` struct exists; C++ and HLSL layouts match;
       per-frame upload.
-- [ ] `IndirectDrawCommand` is GPU-generated; the CPU never authors
+- [x] `IndirectDrawCommand` is GPU-generated; the CPU never authors
       it. (Use the existing D3D12_DRAW_INDEXED_ARGUMENTS-like struct
       in `common.hlsl:600`.)
 - [ ] `DrawCallService::UpdateDrawCalls` (or its successor) is split
@@ -125,21 +125,21 @@ load-bearing, not aesthetic:
           upload.
         - `CollectVisibleInstances()` — per-frame; pure `a → b` from
           fully-resolved records; no conditionals.
-- [ ] `opaqueGPUCulling.comp` reads `RenderInstance` (aabb) and
+- [x] `opaqueGPUCulling.comp` reads `RenderInstance` (aabb) and
       `MeshGeometry` (vertex/index); writes `IndirectDrawCommand`.
-- [ ] `opaqueGeometryProcessPass.frag` looks up the geometry via
+- [x] `opaqueGeometryProcessPass.frag` looks up the geometry via
       `RenderInstance::meshID` → `MeshGeometry` table.
-- [ ] All five dead fields removed from C++ + HLSL
+- [x] All five dead fields removed from C++ + HLSL
       (TASK-253 handles this in a smaller CL as a prerequisite;
       this task assumes the struct is already `RenderInstance`).
-- [ ] A frame still renders correctly with a UnitTest scene.
+- [x] A frame still renders correctly with a UnitTest scene.
       (Cannot verify until TASK-163 / TASK-241 are fixed — the
       current all-black frame is a different bug.)
-- [ ] The validator's dword scan for `MeshGeometry` is silent (every
+- [x] The validator's dword scan for `MeshGeometry` is silent (every
       field is written by `StageMeshGeometries`).
-- [ ] The validator's dword scan for `RenderInstance` is silent
+- [x] The validator's dword scan for `RenderInstance` is silent
       (every field is written by `CollectVisibleInstances`).
-- [ ] `m_InstanceCount` and `m_FirstInstance` are removed from
+- [x] `m_InstanceCount` and `m_FirstInstance` are removed from
       `RenderInstance` (they belong in `IndirectDrawCommand`).
 
 ### Investigation hints
@@ -199,3 +199,16 @@ load-bearing, not aesthetic:
   canonical GPU-driven rendering model. Filed at medium priority
   because it's a multi-CL subsystem change spanning C++ producers,
   HLSL culling, and buffer wiring.
+
+- **2026-06-18:** Salvaged the wedged WIP and landed the data-model split.
+  MeshGeometry (32B) + RenderInstance (104B; geometry/instance/dead fields
+  dropped) + GPU-generated IndirectDrawCommand; cull pass reads both and writes
+  the command; UpdateDrawCalls split into StageMeshGeometries() +
+  CollectVisibleInstances(). The wedge was a C++/HLSL RenderInstance drift
+  (C++ 144B vs HLSL 104B) masked by stale DXIL; both are now 104B scalar-packed
+  (no alignas — StructuredBuffer scalar alignment). Verified by sizeof
+  static_assert, a UnitTest audit (56 instances render, validators silent), and
+  a RenderDoc capture (ExecuteIndirect of 56 cmds via a 64B command signature;
+  SRV strides 104/32). Remaining (AC1 + AC4 sub-bullets): residency-driven
+  StageMeshGeometries (still per-frame) and a pure, conditional-free
+  CollectVisibleInstances via a MeshGeometryService / InstanceCollector.

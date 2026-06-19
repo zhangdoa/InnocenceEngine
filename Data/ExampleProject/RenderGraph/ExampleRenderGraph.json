@@ -78,6 +78,11 @@
             "Imported": true
         },
         {
+            "Name": "MeshGeometryBuffer",
+            "Type": "Buffer",
+            "Imported": true
+        },
+        {
             "Name": "OpaqueCullingPass/IndirectDrawCommandBuffer",
             "Type": "Buffer",
             "ElementCount": 1024,
@@ -1095,7 +1100,8 @@
             "Reads": [
                 "PerFrameCBuffer",
                 "RenderInstanceBuffer",
-                "MaterialCBuffer"
+                "MaterialCBuffer",
+                "MeshGeometryBuffer"
             ],
             "Writes": [
                 "OpaqueCullingPass/IndirectDrawCommandBuffer"
@@ -1124,6 +1130,15 @@
                     "Type": "Buffer",
                     "Set": 1,
                     "Index": 1,
+                    "BindingAccess": "ReadOnly",
+                    "ResourceAccess": "ReadWrite",
+                    "Stage": "Compute"
+                },
+                {
+                    "Resource": "MeshGeometryBuffer",
+                    "Type": "Buffer",
+                    "Set": 1,
+                    "Index": 2,
                     "BindingAccess": "ReadOnly",
                     "ResourceAccess": "ReadWrite",
                     "Stage": "Compute"

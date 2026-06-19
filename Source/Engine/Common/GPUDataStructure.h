@@ -262,43 +262,43 @@ static_assert(std::is_standard_layout_v<AnimationConstantBuffer>,
 		MeshUsage meshUsage = MeshUsage::Invalid;
 	};
 
-struct alignas(16) RenderInstance : GPUUploadable<RenderInstance>
+// Per-unique-mesh geometry record, indexed by RenderInstance::m_meshID.
+struct alignas(16) MeshGeometry : GPUUploadable<MeshGeometry>
+{
+	uint64_t m_VertexBufferAddress = 0;
+	uint64_t m_IndexBufferAddress = 0;
+	uint32_t m_VertexCount = 0;
+	uint32_t m_IndexCount = 0;
+	uint32_t m_VertexStride = 0;
+	uint32_t m_IndexStride = 0;
+};
+static_assert(sizeof(MeshGeometry) == 32, "MeshGeometry size != HLSL StructuredBuffer stride (32B).");
+static_assert(alignof(MeshGeometry) == 16, "MeshGeometry alignment changed.");
+static_assert(std::is_standard_layout_v<MeshGeometry>, "MeshGeometry must be standard-layout for raw upload.");
+
+// Per-visible-instance draw candidate. NO alignas(16): a StructuredBuffer is
+// scalar-packed, so C++ sizeof must equal the HLSL struct size (104B = SRV
+// stride); a 16B round-up would desync every element. Geometry is in MeshGeometry.
+struct RenderInstance : GPUUploadable<RenderInstance>
+{
+	uint32_t m_MaterialIndex = 0;
+	uint32_t m_meshID = 0;
+
+	Vec4 m_BoundingBoxMin;
+	Vec4 m_BoundingBoxMax;
+
+	float padding[16];
+
+	static constexpr std::array<std::pair<size_t, size_t>, 4> SkipByteRanges() noexcept
 	{
-		uint64_t m_VertexBufferAddress = 0;
-		uint64_t m_IndexBufferAddress = 0;
-
-		uint32_t m_VertexCount = 0;
-		uint32_t m_IndexCount = 0;
-		uint32_t m_VertexStride = 0;
-		uint32_t m_IndexStride = 0;
-
-		uint32_t m_MaterialIndex = 0;
-
-		Vec4 m_BoundingBoxMin;
-		Vec4 m_BoundingBoxMax;
-
-		uint32_t m_InstanceCount = 1;
-		uint32_t m_FirstInstance = 0;
-
-		float padding[16];
-
-		// Explicit padding[16] is std140 cbuffer trailing alignment,
-		// not a real field. The producer cannot write it; the HLSL
-		// shader reads it as zero.
-		static constexpr std::array<std::pair<size_t, size_t>, 4> SkipByteRanges() noexcept
-		{
-			std::array<std::pair<size_t, size_t>, 4> r{};
-			r[0] = { offsetof(RenderInstance, padding), sizeof(padding) };
-			return r;
-		}
-	};
-static_assert(sizeof(RenderInstance) == 144,
-	"RenderInstance size changed after CRTP base; std140 layout broken.");
-static_assert(alignof(RenderInstance) == 16,
-	"RenderInstance alignment changed after CRTP base; std140 layout broken.");
-static_assert(std::is_standard_layout_v<RenderInstance>,
-	"RenderInstance must be standard-layout so offsetof and "
-	"raw byte upload are well-defined.");
+		std::array<std::pair<size_t, size_t>, 4> r{};
+		r[0] = { offsetof(RenderInstance, padding), sizeof(padding) };
+		return r;
+	}
+};
+static_assert(sizeof(RenderInstance) == 104, "RenderInstance size != HLSL StructuredBuffer stride (104B, scalar-packed).");
+static_assert(alignof(RenderInstance) == 4, "RenderInstance uses scalar StructuredBuffer alignment; no alignas(16).");
+static_assert(std::is_standard_layout_v<RenderInstance>, "RenderInstance must be standard-layout for raw upload.");
 
 	struct BillboardPassDrawCallInfo
 	{
