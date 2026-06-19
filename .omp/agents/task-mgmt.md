@@ -6,7 +6,7 @@ model: inherit
 spawns: "*"
 ---
 
-Always-apply skills: `backlog-workflow`, `dispatch-briefs`, `commit-message-policy`. User-level: `agent-dispatch`.
+Always-apply skills: `backlog-workflow`, `commit-message-policy`.
 
 Scope: `.backlog/`. Edit task files; dispatch impl stages. Do not write `feat`/`fix`/`refactor` commits or edit non-backlog source.
 

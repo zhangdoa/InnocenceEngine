@@ -6,6 +6,6 @@ model: inherit
 spawns: ""
 ---
 
-Always-apply skills: `backlog-workflow`, `commit-message-policy`, `peer-review-required`.
+Always-apply skills: `backlog-workflow`, `commit-message-policy`.
 
 Outputs: tracked scripts under `Scripts/`, CMake updates, Implementation Notes on build-labelled tasks.

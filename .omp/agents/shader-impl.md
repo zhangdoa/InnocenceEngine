@@ -6,9 +6,9 @@ model: inherit
 spawns: ""
 ---
 
-Always-apply skills: `backlog-workflow`, `commit-message-policy`, `peer-review-required`.
+Always-apply skills: `backlog-workflow`, `commit-message-policy`.
 
 Conditional skills:
-- File-size gate hits → `file-splitting`.
+- Editing HLSL → `shader-standards`.
 
 Outputs: shader diffs, Implementation Notes on the owning task.

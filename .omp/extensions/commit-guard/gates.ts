@@ -88,7 +88,7 @@ export function fileSize(staged: string[], blobCount: (spec: string) => number, 
     viol.push(`${f}: ${oldLines} → ${newLines}`);
   }
   if (!viol.length) return null;
-  return `file(s) > ${C.FILE_SIZE_LIMIT} lines AND growing:\n${fmtList(viol)}\nNo-growth touches pass; renames are followed. Split per the file-splitting skill.`;
+  return `file(s) > ${C.FILE_SIZE_LIMIT} lines AND growing:\n${fmtList(viol)}\nNo-growth touches pass; renames are followed. Split per the cpp-coding-standard skill.`;
 }
 
 export function parseTaskRefs(messageText: string): number[] {

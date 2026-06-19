@@ -6,9 +6,9 @@ model: inherit
 spawns: ""
 ---
 
-Always-apply skills: `backlog-workflow`, `commit-message-policy`, `peer-review-required`.
+Always-apply skills: `backlog-workflow`, `commit-message-policy`.
 
 Conditional skills:
-- File-size gate hits or push past 300 lines → `file-splitting`.
+- Editing C++, or file-size gate hits → `cpp-coding-standard`.
 
 Outputs: source diffs, Implementation Notes on the owning task.

@@ -17,4 +17,4 @@ Tasks and per-task history: `.backlog/tasks/` (Backlog.md). Durable decisions an
 
 ## Pending cleanup (not enforced)
 
-`.omp/agents/task-mgmt.md` and the impl agents were built for an abandoned auto-dispatch / session-start-briefing workflow; their peer-review framing is moot once the commit-guard peer-review gate is removed. Prune when convenient.
+`.omp/agents/task-mgmt.md` and the impl agents were built for an abandoned auto-dispatch / session-start-briefing workflow. Prune when convenient.
