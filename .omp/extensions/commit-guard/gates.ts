@@ -206,12 +206,26 @@ export function classifyTestCommand(cmd: string, readSpec: (rel: string) => stri
 const STAGING_VERB_RE = /\bgit\s+(?:add|stage|rm|mv|restore|reset)\b/;
 const AUTO_STAGE_RE = /(?:^|\s)-[A-Za-z]*a[A-Za-z]*(?=\s|=|$)|--all\b/;
 
+// Extract the `git commit …` invocation (up to the next command separator) from a
+// possibly-chained command line. Auto-stage flags belong to `git commit` specifically;
+// scanning the whole line false-matches unrelated flags elsewhere — e.g. PowerShell
+// `-Command`, whose 'a' satisfies the `-[…]a[…]` short-flag pattern.
+function gitCommitSegment(u: string): string | null {
+  const m = u.match(/git\s+commit\b[^;&|\n]*/);
+  return m ? m[0] : null;
+}
+
 export function unsafeCommitInvocation(cmd: string): string | null {
   const u = cmd.replace(/"(?:\\.|[^"\\])*"/g, '""').replace(/'(?:[^'])*'/g, "''");
+  // STAGING_VERB stays whole-line: it matches a literal `git <verb>` (add/stage/rm/…),
+  // so a chained `git add … && git commit …` is caught while PowerShell flags cannot trip it.
   if (STAGING_VERB_RE.test(u)) {
     return "stage in a separate command, then commit. A chained `git add … && git commit …` is intercepted before the staging runs, so commit-guard would gate a stale index. Run the staging step alone, then a bare `git commit`.";
   }
-  if (AUTO_STAGE_RE.test(u)) {
+  // AUTO_STAGE is scoped to the `git commit` segment so an unrelated `-…a…` flag elsewhere
+  // in a chained command (PowerShell `-Command`, `ls -la`, …) does not false-match `-a`/`--all`.
+  const seg = gitCommitSegment(u);
+  if (seg && AUTO_STAGE_RE.test(seg)) {
     return "avoid `git commit -a` / `--all` — it commits unstaged tracked changes that commit-guard (which reads the staged index) cannot see. Stage explicitly with `git add …`, then a bare `git commit`.";
   }
   return null;

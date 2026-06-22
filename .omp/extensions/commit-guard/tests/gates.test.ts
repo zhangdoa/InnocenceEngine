@@ -138,4 +138,11 @@ test("unsafeCommitInvocation: rejects chained staging + auto-stage, allows bare 
   assert.equal(g.unsafeCommitInvocation("git commit --amend -m x"), null);
   assert.equal(g.unsafeCommitInvocation('git commit -m "remember to git add later"'), null);
   assert.equal(g.unsafeCommitInvocation("cd src && git commit -m x"), null);
+  // chained test command before a bare commit: an unrelated `-…a…` flag must not
+  // false-match `git commit -a` (PowerShell `-Command`/`-PassThru`, `ls -la`, …).
+  assert.equal(g.unsafeCommitInvocation('powershell -Command "x" ; git commit -F m'), null);
+  assert.equal(g.unsafeCommitInvocation("Main.exe -PassThru -RedirectStandardOutput o.txt ; git commit -F m"), null);
+  assert.equal(g.unsafeCommitInvocation("ls -la && git commit -m x"), null);
+  // a real auto-stage on git commit is still caught when chained after another command
+  assert.ok(g.unsafeCommitInvocation("echo run && git commit -a -m x"));
 });
