@@ -16,6 +16,7 @@ namespace Inno::AssetServiceNS
 	Inno::Array<uint32_t> m_MeshGenerations;
 	Inno::HashMap<std::string, MeshAssetHandle> m_MeshLUT;
 	std::shared_mutex s_MeshMutex;
+	std::atomic<uint64_t> s_MeshResidencyEpoch{ 0 };
 
 	Inno::Deque<MaterialAsset> m_MaterialAssets;
 	Inno::Array<uint32_t> m_MaterialFreeSlots;
@@ -109,6 +110,12 @@ void AssetService::ReleaseAssetsByLifespan(ObjectLifespan lifespan)
 			}
 		}
 	}
+
+	// Releasing meshes shrinks the resident set; signal DrawCallService to re-stage
+	// the MeshGeometry table. Bump once per call rather than per mesh — the epoch is
+	// a change detector, not a count.
+	if (l_meshReleased > 0)
+		s_MeshResidencyEpoch.fetch_add(1, std::memory_order_relaxed);
 
 	{
 		std::unique_lock<std::shared_mutex> l_lock(s_MaterialMutex);

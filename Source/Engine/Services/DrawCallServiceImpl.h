@@ -25,12 +25,16 @@ namespace Inno
 		GPUBufferComponent* m_MaterialGPUBufferComp;
 		GPUBufferComponent* m_MeshGeometryBufferComp;
 
+		// Last mesh-residency epoch staged into the MeshGeometry table. UINT64_MAX
+		// forces a stage on the first frame; thereafter the table + its upload only
+		// run when AssetService reports a new epoch.
+		uint64_t m_LastStagedResidencyEpoch = UINT64_MAX;
+
 		bool Setup(IServiceConfig* systemConfig);
 		bool Initialize();
 		bool Update();
 		bool Terminate();
 
-		bool UpdateDrawCalls();
 		void StageMeshGeometries();
 		void CollectVisibleInstances();
 

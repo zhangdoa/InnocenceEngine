@@ -133,7 +133,13 @@ bool MeshResourceService::InitializeComponents()
 			// Re-fetch pointers: std::vector backing may have been reallocated.
 			auto* l_freshResource = AssetService::GetMeshAsset(l_assetHandle);
 			if (l_freshResource)
+			{
 				l_freshResource->m_Residency = AssetResidency::Resident;
+				// A new resident mesh grows the resident set; signal DrawCallService
+				// to re-stage the MeshGeometry table (otherwise the table would be
+				// rebuilt every frame just to catch rare residency changes).
+				AssetService::BumpMeshResidencyEpoch();
+			}
 
 			MeshComponent* l_activateTarget = l_task.m_Component;
 			if (l_task.m_Owner != INVALID_ENTITY)

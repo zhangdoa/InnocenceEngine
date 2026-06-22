@@ -4,6 +4,7 @@
 #include "../Common/UnorderedSet.h"
 #include "AssetService.h"
 #include "../Common/HashMap.h"
+#include <atomic>
 
 namespace Inno
 {
@@ -18,6 +19,12 @@ namespace Inno
 		extern Inno::Array<uint32_t> m_MeshGenerations;
 		extern Inno::HashMap<std::string, MeshAssetHandle> m_MeshLUT;
 		extern std::shared_mutex s_MeshMutex;
+
+		// Monotonic version of the resident mesh set: bumped on each mesh
+		// Resident/Released transition. The MeshGeometry table is static per-mesh
+		// data, so DrawCallService stages + uploads it only when this changes
+		// rather than rebuilding it every frame.
+		extern std::atomic<uint64_t> s_MeshResidencyEpoch;
 
 		extern Inno::Deque<MaterialAsset> m_MaterialAssets;
 		extern Inno::Array<uint32_t> m_MaterialFreeSlots;

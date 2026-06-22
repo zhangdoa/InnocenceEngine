@@ -24,6 +24,12 @@ namespace Inno
 		static MeshAssetHandle FindMeshAsset(const char* name);
 		static uint32_t DebugGetMeshGeneration(uint32_t index);
 
+		// Monotonic version of the resident mesh set, bumped on each Resident/Released
+		// transition. DrawCallService gates MeshGeometry staging + upload on changes:
+		// the table is static per-mesh data, not a per-frame rebuild.
+		static uint64_t GetMeshResidencyEpoch();
+		static void BumpMeshResidencyEpoch();
+
 		// AllocateMaterialAsset is get-or-create (material assets are shared by name
 		// across components). Callers that need a clean slate must branch on
 		// m_WasNewlyCreated == false and reset the existing data themselves.

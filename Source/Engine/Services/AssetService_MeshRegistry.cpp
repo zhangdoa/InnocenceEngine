@@ -68,6 +68,16 @@ uint32_t AssetService::DebugGetMeshGeneration(uint32_t index)
 	return m_MeshGenerations[index];
 }
 
+uint64_t AssetService::GetMeshResidencyEpoch()
+{
+	return s_MeshResidencyEpoch.load(std::memory_order_relaxed);
+}
+
+void AssetService::BumpMeshResidencyEpoch()
+{
+	s_MeshResidencyEpoch.fetch_add(1, std::memory_order_relaxed);
+}
+
 MeshAssetHandle AssetService::FindMeshAsset(const char* name)
 {
 	std::shared_lock<std::shared_mutex> l_lock(s_MeshMutex);

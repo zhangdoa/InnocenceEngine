@@ -2,7 +2,7 @@
 id: TASK-252
 title: >-
   Split GPUModelData into MeshGeometry / RenderInstance / IndirectDrawCommand — proper GPU-driven rendering model
-status: In Progress
+status: Done
 assignee:
   - code-impl
 created_date: '2026-06-17'
@@ -112,14 +112,14 @@ load-bearing, not aesthetic:
 
 ### Acceptance Criteria
 
-- [ ] `MeshGeometry` struct exists; C++ and HLSL layouts match; one-time
+- [x] `MeshGeometry` struct exists; C++ and HLSL layouts match; one-time
       upload on mesh residency.
 - [x] `RenderInstance` struct exists; C++ and HLSL layouts match;
       per-frame upload.
 - [x] `IndirectDrawCommand` is GPU-generated; the CPU never authors
       it. (Use the existing D3D12_DRAW_INDEXED_ARGUMENTS-like struct
       in `common.hlsl:600`.)
-- [ ] `DrawCallService::UpdateDrawCalls` (or its successor) is split
+- [x] `DrawCallService::UpdateDrawCalls` (or its successor) is split
       into:
         - `StageMeshGeometries()` — runs on residency changes; one-time
           upload.
@@ -212,3 +212,36 @@ load-bearing, not aesthetic:
   SRV strides 104/32). Remaining (AC1 + AC4 sub-bullets): residency-driven
   StageMeshGeometries (still per-frame) and a pure, conditional-free
   CollectVisibleInstances via a MeshGeometryService / InstanceCollector.
+
+- **2026-06-22:** Closed the remaining AC1 + AC4 sub-bullets. AssetService owns a
+  monotonic `s_MeshResidencyEpoch` bumped on each mesh Resident (MeshResourceService)
+  / Released (ReleaseAssetsByLifespan) transition; DrawCallService rebuilds the
+  MeshGeometry table (`StageMeshGeometries()` — locks the asset mutex + scans every
+  mesh asset, the real per-frame cost) only when the epoch differs from its
+  last-staged high-water mark (`m_LastStagedResidencyEpoch`, init UINT64_MAX so
+  frame 0 stages). `UpdateDrawCalls()` removed; `Update()` orchestrates
+  (stage-if-dirty → collect → uploads). `CollectVisibleInstances()` is now an
+  imperative shell (resolve mesh/material/transform/meshID + cull-or-substitute)
+  feeding three conditional-free pure producers — `ToRenderInstance` /
+  `ToTransformConstantBuffer` / `ToMaterialConstantBuffer` — over a fully-resolved
+  `ResolvedRenderRecord`. Two degenerate-case fixes fell out: a missing WorldTransform
+  now substitutes identity (was a zero matrix that collapsed geometry); a missing
+  material asset now zeroes attributes (was left poisoned, a latent validator trip).
+  IMPORTANT: the MeshGeometry *upload* stays per-frame (to the current ring slot),
+  NOT one-time. The buffer is multi-buffered (one mapped copy per swap-chain image,
+  3 here); `Upload` only writes `m_MappedMemories[currentFrame]`, so a literal
+  one-time upload populates one of three slots and the GPU reads empty geometry on
+  2 of every 3 frames — this shipped briefly as SEVERE FLICKER (user-reported) and
+  was fixed by reverting the upload to per-frame while keeping the staging gated.
+  AC1's "one-time upload" is therefore read as "one-time table *rebuild* per
+  residency"; the per-frame upload is a trivial ~480B memcpy, same discipline as
+  RenderInstance/Transform/Material. Writing all slots at once is unsafe (other
+  slots' frames may still be in GPU flight — the ring's whole purpose). Verified on
+  the fixed build via the Audit preset (UnitTest, offscreen): instanceCount=56,
+  validators silent (0 unwritten), 0 D3D12 errors, all 13 passes dumped (GBuffer
+  non-black, values byte-identical to baseline), clean terminate; a temporary
+  counter earlier proved StageMeshGeometries runs once per residency (epoch=15 →
+  15 unique meshes shared across 56 instances) vs 35× under the old per-frame scan.
+  No separate MeshGeometryService/InstanceCollector class needed — the epoch gate +
+  shell/core split inside DrawCallService satisfies every AC. (The intermittent
+  engine hang seen during verification is the pre-existing TASK-241, out of scope.)

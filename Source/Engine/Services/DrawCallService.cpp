@@ -106,7 +106,18 @@ bool DrawCallServiceImpl::Update()
 	{
 		std::lock_guard<std::shared_mutex> l_lock(m_Mutex);
 
-		UpdateDrawCalls();
+		// Rebuild the MeshGeometry table only on a resident-set change (staging locks
+		// the asset mutex + scans every mesh asset — the real per-frame cost). The
+		// upload below stays per-frame: the buffer is multi-buffered (one mapped copy
+		// per swap-chain image) and Upload writes only the current slot, so a one-time
+		// upload leaves 2 of 3 frames reading empty geometry (severe flicker).
+		const uint64_t l_residencyEpoch = AssetService::GetMeshResidencyEpoch();
+		if (l_residencyEpoch != m_LastStagedResidencyEpoch)
+		{
+			StageMeshGeometries();
+			m_LastStagedResidencyEpoch = l_residencyEpoch;
+		}
+		CollectVisibleInstances();
 
 		auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 

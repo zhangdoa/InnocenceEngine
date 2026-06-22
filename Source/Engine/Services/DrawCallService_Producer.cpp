@@ -68,13 +68,73 @@ namespace
 		}
 		return UINT32_MAX;
 	}
-}
 
-bool DrawCallServiceImpl::UpdateDrawCalls()
-{
-	StageMeshGeometries();
-	CollectVisibleInstances();
-	return true;
+	// A fully-resolved render candidate: every field is decided by the imperative
+	// shell (cull-or-substitute already applied), so the producers below are pure
+	// a -> b transforms with no conditionals — the functional core.
+	struct ResolvedRenderRecord
+	{
+		uint32_t m_InstanceIndex;
+		uint32_t m_MeshID;
+		Mat4 m_WorldMatrix;
+		Mat4 m_NormalMatrix;
+		AABB m_LocalAABB;
+		MaterialAttributes m_MaterialAttributes;
+		uint32_t m_TextureIndices[MaxTextureSlotCount];
+	};
+
+	RenderInstance ToRenderInstance(const ResolvedRenderRecord& record)
+	{
+		RenderInstance l_out;
+		l_out.PoisonInit();
+		l_out.m_MaterialIndex = record.m_InstanceIndex;
+		l_out.m_meshID = record.m_MeshID;
+
+		const AABB& l_aabb = record.m_LocalAABB;
+		const Vec4 l_corners[8] = {
+			Vec4(l_aabb.m_boundMin.x, l_aabb.m_boundMin.y, l_aabb.m_boundMin.z, 1.0f),
+			Vec4(l_aabb.m_boundMax.x, l_aabb.m_boundMin.y, l_aabb.m_boundMin.z, 1.0f),
+			Vec4(l_aabb.m_boundMin.x, l_aabb.m_boundMax.y, l_aabb.m_boundMin.z, 1.0f),
+			Vec4(l_aabb.m_boundMax.x, l_aabb.m_boundMax.y, l_aabb.m_boundMin.z, 1.0f),
+			Vec4(l_aabb.m_boundMin.x, l_aabb.m_boundMin.y, l_aabb.m_boundMax.z, 1.0f),
+			Vec4(l_aabb.m_boundMax.x, l_aabb.m_boundMin.y, l_aabb.m_boundMax.z, 1.0f),
+			Vec4(l_aabb.m_boundMin.x, l_aabb.m_boundMax.y, l_aabb.m_boundMax.z, 1.0f),
+			Vec4(l_aabb.m_boundMax.x, l_aabb.m_boundMax.y, l_aabb.m_boundMax.z, 1.0f),
+		};
+		Vec4 l_wsMin = Math::maxVec4<float>;
+		Vec4 l_wsMax = Math::minVec4<float>;
+		for (int i = 0; i < 8; i++)
+		{
+			Vec4 l_ws = record.m_WorldMatrix * l_corners[i];
+			l_wsMin = Math::elementWiseMin(l_wsMin, l_ws);
+			l_wsMax = Math::elementWiseMax(l_wsMax, l_ws);
+		}
+		l_wsMin.w = 1.0f;
+		l_wsMax.w = 1.0f;
+		l_out.m_BoundingBoxMin = l_wsMin;
+		l_out.m_BoundingBoxMax = l_wsMax;
+		return l_out;
+	}
+
+	TransformConstantBuffer ToTransformConstantBuffer(const ResolvedRenderRecord& record)
+	{
+		TransformConstantBuffer l_out;
+		l_out.PoisonInit();
+		l_out.m = record.m_WorldMatrix;
+		l_out.normalMat = record.m_NormalMatrix;
+		return l_out;
+	}
+
+	MaterialConstantBuffer ToMaterialConstantBuffer(const ResolvedRenderRecord& record)
+	{
+		MaterialConstantBuffer l_out;
+		l_out.PoisonInit();
+		l_out.m_MaterialType = 0;
+		l_out.m_MaterialAttributes = record.m_MaterialAttributes;
+		for (size_t j = 0; j < MaxTextureSlotCount; j++)
+			l_out.m_TextureIndices[j] = record.m_TextureIndices[j];
+		return l_out;
+	}
 }
 
 void DrawCallServiceImpl::StageMeshGeometries()
@@ -94,12 +154,15 @@ void DrawCallServiceImpl::CollectVisibleInstances()
 	auto& l_MeshStorage = l_registry->Storage<MeshComponent>();
 	const auto& l_Meshes = l_MeshStorage.All();
 	const auto& l_Owners = l_MeshStorage.AllOwners();
-	uint32_t l_drawCallIndex = 0;
+	uint32_t l_instanceIndex = 0;
 	for (size_t i = 0; i < l_Meshes.size(); i++)
 	{
 		EntityID l_Entity = l_Owners[i];
 		const MeshComponent& l_mesh = l_Meshes[i];
 
+		// Imperative shell: resolve the domain (mesh asset, material, transform,
+		// meshID) and decide cull-or-substitute. Below the resolve block the record
+		// is fully decided and fed to the pure producers — no conditionals there.
 		if (l_mesh.m_ObjectStatus != ObjectStatus::Activated)
 			continue;
 
@@ -119,78 +182,24 @@ void DrawCallServiceImpl::CollectVisibleInstances()
 		if (l_meshID == UINT32_MAX)
 			continue;
 
-		// Per-visible-instance record. Geometry (vertex/index buffers,
-		// counts, strides) lives in the MeshGeometry table, looked up by
-		// m_meshID; the cull pass writes the indirect draw command, so this
-		// record carries only material, meshID, and the world-space AABB.
 		auto* l_world = l_registry->Get<WorldTransformComponent>(l_Entity);
-		const AABB& l_localAabb = l_vis ? l_vis->m_AABB : l_resource->m_AABB;
 		auto* l_materialAsset = AssetService::GetMaterialAsset(l_material->m_Asset);
 
-		RenderInstance l_renderInstance;
-		l_renderInstance.PoisonInit();
-
-		l_renderInstance.m_MaterialIndex = l_drawCallIndex;
-		l_renderInstance.m_meshID = l_meshID;
-
-		if (l_world)
-		{
-			const auto& M = l_world->m_WorldMatrix;
-			Vec4 l_corners[8] = {
-				Vec4(l_localAabb.m_boundMin.x, l_localAabb.m_boundMin.y, l_localAabb.m_boundMin.z, 1.0f),
-				Vec4(l_localAabb.m_boundMax.x, l_localAabb.m_boundMin.y, l_localAabb.m_boundMin.z, 1.0f),
-				Vec4(l_localAabb.m_boundMin.x, l_localAabb.m_boundMax.y, l_localAabb.m_boundMin.z, 1.0f),
-				Vec4(l_localAabb.m_boundMax.x, l_localAabb.m_boundMax.y, l_localAabb.m_boundMin.z, 1.0f),
-				Vec4(l_localAabb.m_boundMin.x, l_localAabb.m_boundMin.y, l_localAabb.m_boundMax.z, 1.0f),
-				Vec4(l_localAabb.m_boundMax.x, l_localAabb.m_boundMin.y, l_localAabb.m_boundMax.z, 1.0f),
-				Vec4(l_localAabb.m_boundMin.x, l_localAabb.m_boundMax.y, l_localAabb.m_boundMax.z, 1.0f),
-				Vec4(l_localAabb.m_boundMax.x, l_localAabb.m_boundMax.y, l_localAabb.m_boundMax.z, 1.0f),
-			};
-			Vec4 wsMin = Math::maxVec4<float>;
-			Vec4 wsMax = Math::minVec4<float>;
-			for (int i = 0; i < 8; i++)
-			{
-				Vec4 ws = M * l_corners[i];
-				wsMin = Math::elementWiseMin(wsMin, ws);
-				wsMax = Math::elementWiseMax(wsMax, ws);
-			}
-			wsMin.w = 1.0f;
-			wsMax.w = 1.0f;
-			l_renderInstance.m_BoundingBoxMin = wsMin;
-			l_renderInstance.m_BoundingBoxMax = wsMax;
-		}
-		else
-		{
-			l_renderInstance.m_BoundingBoxMin = Vec4(l_localAabb.m_boundMin.x, l_localAabb.m_boundMin.y, l_localAabb.m_boundMin.z, 1.0f);
-			l_renderInstance.m_BoundingBoxMax = Vec4(l_localAabb.m_boundMax.x, l_localAabb.m_boundMax.y, l_localAabb.m_boundMax.z, 1.0f);
-		}
-
-		m_RenderInstanceVector.emplace_back(l_renderInstance);
-
-		TransformConstantBuffer l_transformCB;
-		l_transformCB.PoisonInit();
-		if (l_world)
-		{
-			l_transformCB.m = l_world->m_WorldMatrix;
-			l_transformCB.normalMat = l_world->m_WorldRotationMatrix;
-		}
-		else
-		{
-			l_transformCB.m = Mat4();
-			l_transformCB.normalMat = Mat4();
-		}
-		m_TransformBufferVector.emplace_back(l_transformCB);
-
-		MaterialConstantBuffer l_materialCB;
-		l_materialCB.PoisonInit();
-		l_materialCB.m_MaterialType = 0;
-		if (l_materialAsset)
-			l_materialCB.m_MaterialAttributes = l_materialAsset->m_Attributes;
+		ResolvedRenderRecord l_record;
+		l_record.m_InstanceIndex = l_instanceIndex;
+		l_record.m_MeshID = l_meshID;
+		// Substitute identity for a missing transform: it keeps the producer
+		// conditional-free and renders the instance at the origin rather than the
+		// degenerate zero matrix the old no-transform branch left behind.
+		l_record.m_WorldMatrix = l_world ? l_world->m_WorldMatrix : Math::generateIdentityMatrix<float>();
+		l_record.m_NormalMatrix = l_world ? l_world->m_WorldRotationMatrix : Math::generateIdentityMatrix<float>();
+		l_record.m_LocalAABB = l_vis ? l_vis->m_AABB : l_resource->m_AABB;
+		// Default to zeroed attributes when the material asset is missing so the
+		// validator's dword scan stays silent (leaving them poisoned was a latent bug).
+		l_record.m_MaterialAttributes = l_materialAsset ? l_materialAsset->m_Attributes : MaterialAttributes{};
 
 		for (size_t j = 0; j < MaxTextureSlotCount; j++)
-		{
-			l_materialCB.m_TextureIndices[j] = INVALID_TEXTURE_INDEX;
-		}
+			l_record.m_TextureIndices[j] = INVALID_TEXTURE_INDEX;
 
 		if (l_materialAsset)
 		{
@@ -214,14 +223,16 @@ void DrawCallServiceImpl::CollectVisibleInstances()
 				if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated)
 					continue;
 
-				auto textureIndex = l_textureService->GetIndex(l_texture, Accessibility::ReadOnly);
-				l_materialCB.m_TextureIndices[j] = textureIndex.value_or(INVALID_TEXTURE_INDEX);
+				auto l_textureIndex = l_textureService->GetIndex(l_texture, Accessibility::ReadOnly);
+				l_record.m_TextureIndices[j] = l_textureIndex.value_or(INVALID_TEXTURE_INDEX);
 			}
 		}
 
-		m_MaterialCBVector.emplace_back(l_materialCB);
+		// Functional core: pure a -> b from the fully-resolved record, no conditionals.
+		m_RenderInstanceVector.emplace_back(ToRenderInstance(l_record));
+		m_TransformBufferVector.emplace_back(ToTransformConstantBuffer(l_record));
+		m_MaterialCBVector.emplace_back(ToMaterialConstantBuffer(l_record));
 
-		l_drawCallIndex++;
+		l_instanceIndex++;
 	}
-
 }
