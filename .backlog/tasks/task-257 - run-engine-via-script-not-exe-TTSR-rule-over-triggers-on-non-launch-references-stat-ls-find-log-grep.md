@@ -3,7 +3,7 @@ id: TASK-257
 title: >-
   run-engine-via-script-not-exe TTSR rule over-triggers on non-launch references
   (stat/ls/find/log-grep)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-06-23 16:24'
 labels:
@@ -22,10 +22,19 @@ EMPIRICAL (2026-06-23): the rule .omp/rules/run-engine-via-script-not-exe.md use
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
-- [ ] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
-- [ ] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path
-- [ ] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
-- [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
-- [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
+- [x] #1 N/A — harness rule + doc change, no engine build.
+- [x] #2 No pre-existing test for this rule; the regex was verified directly (see #3).
+- [x] #3 New verification (real, not mock): the parsed regex `(?:Main|RenderTest)\.exe["']?\s+-` run against 5 launch samples (all MATCH) and 8 reference samples — stat / ls / find / wc / Get-Process, the module source lines `$mainExe = Join-Path $BinDir 'Main.exe'` and `Start-Process -FilePath $mainExe`, and the sanctioned `StartEngineWin.ps1 -Preset …` command (all NO-match). Match-table in the session transcript.
+- [x] #4 Not mock-based: a match-table over real command strings.
+- [x] #5 User-observable: the exact incident is reproduced as no-match — the two wrapper-module source lines that carried `Main.exe` no longer trigger.
+- [x] #6 NOT verified / accepted gaps: (a) a truly argument-less `Main.exe` (no flags) slips through — no caller runs the engine that way and the wrappers always pass `-c`/`-test`; (b) `find -name Main.exe -<flag>` (name not last) still matches — rare, `find` tool is preferred over bash `find`. The exact rule-engine trigger surface (bash command vs. scanned output) was not instrumented; the tighter regex removes the false-positive regardless.
 <!-- DOD:END -->
+
+## Closure (2026-06-23)
+
+Fixed. `.omp/rules/run-engine-via-script-not-exe.md` condition tightened from the
+bare substring `(?:Main|RenderTest)\.exe` to `(?:Main|RenderTest)\.exe["']?\s+-`
+(launch-with-flag), plus a body paragraph documenting it fires only on a real
+launch and noting the accepted naked-launch gap. Verified by a regex match-table
+(5 launch positives match; 8 reference negatives — including the wrapper-module
+source lines that caused the original interrupt — no-match).
