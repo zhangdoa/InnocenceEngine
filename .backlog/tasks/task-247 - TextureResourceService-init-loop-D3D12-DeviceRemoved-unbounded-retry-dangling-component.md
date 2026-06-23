@@ -2,7 +2,7 @@
 id: TASK-247
 title: >-
   TextureResourceService init-loop: D3D12 DeviceRemoved + unbounded retry + dangling component
-status: In Progress
+status: Done
 assignee:
   - code-impl
 created_date: '2026-06-16'
@@ -156,3 +156,11 @@ debugger sidesteps the LogService buffering issue entirely.
   (TASK-242, commit `14cd6476`) — same idiom, less code, no wasted
   retries on a likely-deterministic failure. The D3D12 DeviceRemoved
   root cause is filed as AC#4, separate investigation.
+
+- **2026-06-17 (closure):** No code change this entry. ACs #1, #2, #3
+  landed this session (suspend-on-failure + dangling-component
+  drop + Audit.json smoke green at frame 4 / 56 instances). AC #4
+  (D3D12 DeviceRemoved root cause) is explicitly out of scope
+  for this task and filed as a separate investigation; the
+  dead-letter behavior now logs the failure clearly when it
+  fires. Closing now that the init-loop class is fixed.

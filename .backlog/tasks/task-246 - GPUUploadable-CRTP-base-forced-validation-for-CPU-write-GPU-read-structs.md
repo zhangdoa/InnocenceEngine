@@ -3,7 +3,7 @@ id: TASK-246
 title: >-
 
   GPUUploadable CRTP base: forced pre-upload validation for CPU-write/GPU-read structs
-status: In Progress
+status: Done
 assignee:
   - code-impl
 created_date: '2026-06-16'
@@ -171,3 +171,23 @@ memcpy-to-GPU or `= {}` init. Size was the only real risk; it is a non-issue.
      fixed in its own task.
 - [x] #3 Negative test demonstrated (TestFirstUnwrittenDroppedField
      asserts the exact byte offset of the first still-poison dword)
+
+
+## Session log
+
+- **2026-06-17 (closure):** The umbrella task's three load-bearing
+  ACs (#1 base + EBO invariance, #2 validator chokepoint, #3
+  standalone unit test) are all green. The Rollout §2 (AC #4)
+  landed in TASK-249 (`49b4ad2` PointLight+SphereLight,
+  `ed3efe2e` Transform+Material, `d751b69e`
+  Dispatch+GI+Voxelization+Animation, `75566da2` GPUModelData).
+  Follow-up C (the `Upload<T>` `if constexpr` opt-in → mandatory
+  `static_assert` flip) is the last mechanical piece; it depends
+  on every migration being live-engine-smoked green, which is now
+  satisfied (TASK-247 unblocked the live-smoke path, TASK-253
+  landed the GPUModelData→RenderInstance rename as a follow-on
+  from the same cluster). The flip itself is a tiny CL — file
+  as a follow-up task (or inline in the next migration cluster's
+  closure CL). Closing this umbrella now; the carry-forward is
+  "flip the `if constexpr` to a `static_assert` and re-run the
+  full cluster's smoke".

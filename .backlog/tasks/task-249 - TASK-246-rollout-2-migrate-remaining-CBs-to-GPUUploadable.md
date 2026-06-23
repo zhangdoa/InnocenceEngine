@@ -1,7 +1,7 @@
 ---
 id: TASK-249
 title: >-
-status: In Progress
+status: Done
   - code-impl
 created_date: '2026-06-16'
 labels:
@@ -176,3 +176,16 @@ including any alignas tail.
 - **2026-06-16**: rollout scope defined in this task. Migration work
   deferred until TASK-247 (TextureResourceService init-loop) is fixed
   so the live-engine smoke path is unblocked.
+
+- **2026-06-17 (closure):** No code change this entry. All 4 ACs
+  ticked in the 2026-06-17 session log above. The two
+  discoveries (`m_ShaderProgramIndex` / `m_RenderPassIndex` not
+  populated = TASK-250; the std140-mismatch claim = falsified in
+  TASK-251, the real bug is a black-triangle root cause TBD)
+  were filed as separate tasks during the rollout. The
+  GPUModelData→RenderInstance rename (TASK-253) shipped after
+  this rollout; it removed the 5 dead fields the validator
+  flagged in CL 4 (`m_ShaderProgramIndex` / `m_RenderPassIndex`
+  / `m_UUID` / `m_VisibilityMask` / `m_MeshUsage`) — so the
+  TASK-250 fix is now obsolete and should be closed as
+  "superseded by TASK-253" in its next pass.

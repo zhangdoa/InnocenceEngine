@@ -2,7 +2,7 @@
 id: TASK-250
 title: >-
   GPUModelData m_ShaderProgramIndex / m_RenderPassIndex: not populated by CPU producer
-status: To Do
+status: Done
 assignee:
   - code-impl
 created_date: '2026-06-17'
@@ -146,3 +146,16 @@ under TASK-251 (re-scoped 2026-06-17c to a TBD investigation).
   not a regression. The user's report of black triangles after
   the CLs is unlikely to be caused by this; the actual root
   cause is being investigated under TASK-251.
+- **2026-06-23 (closure — obsolete):** Both target fields no longer
+  exist. TASK-253 (commit `c7cc9a72`) removed `m_ShaderProgramIndex`
+  and `m_RenderPassIndex` from the struct as dead code (write-only,
+  no HLSL reader — confirmed by grep: zero matches in `Source/` for
+  either symbol; the current `RenderInstance` in
+  `GPUDataStructure.h:282-301` holds only `m_MaterialIndex`,
+  `m_meshID`, `m_BoundingBoxMin/Max`, `padding`). The proper fix this
+  task proposed (populate the indices from real
+  `ShaderProgramComponent` / `RenderPassComponent`) is moot — there is
+  nothing to populate. Closed as obsolete; superseded by TASK-253 /
+  TASK-252. AC #4's "every-field-written contract" unit-test idea is
+  now satisfied by the `PoisonInit` validator over the live
+  `RenderInstance` (per TASK-252 closure: validators silent).

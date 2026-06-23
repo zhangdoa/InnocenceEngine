@@ -1,8 +1,7 @@
 ---
 id: TASK-245
 title: >-
-  TestSuite broken under C++23: build error + engine-init texture infinite-loop
-status: In Progress
+status: Done
 assignee:
   - code-impl
 created_date: '2026-06-16'
@@ -123,3 +122,11 @@ cd Bin && RelWithDebInfo\TestSuite.exe unit                      # Issue 2 hangs
   all 14 suites with exit 0. The two tasks are interlocked: TASK-247's
   fix is what makes Issue 2 verifiable (TestSuite unit runs to
   completion only because the texture init loop is gone).
+
+- **2026-06-17 (closure):** No code change this entry. ACs #1, #2, #3
+  landed in 2026-06-17 (TestSuite C++23 compile fix + texture
+  init-loop fix via TASK-247). AC #4 stays unchecked: the 1
+  pre-existing fail (lightPass register coverage) is owned by
+  TASK-241's follow-up and is NOT in this task's scope. Flipping
+  to Done now that the unit suite runs to completion; the
+  pre-existing fail is a separate item.
