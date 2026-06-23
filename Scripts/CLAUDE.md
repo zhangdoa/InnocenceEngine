@@ -17,18 +17,31 @@ Escape flags: `-SkipShaderCompile`, `-SkipClangdIndexRefresh`. `Scripts/PurgeSta
 
 **Double-quoted strings in `.ps1` must be pure ASCII.** Non-ASCII byte inside a double-quoted string mangles the string-terminator and cascades parser errors. OK in `# comments`, `'single-quoted strings'`, here-docs.
 
-## Engine logging is stdout, not the `*.Log`
+## Engine verification: offscreen runs have NO usable text sink
 
-`LogService` mirrors every line to a timestamped `[…].Log` in the engine CWD, but those
-files are empty in offscreen / headless / redirected runs (64/64 in `Bin/` observed 0 bytes).
-**stdout is the only reliable sink** — capture it with `Start-Process -RedirectStandardOutput`.
-`Test-EngineRunOutcome` greps the `.Log`, so in these modes it reads an empty file; assert
-against captured stdout instead.
+`LogService` mirrors every line to a timestamped `[…].Log` in the engine CWD, but that file
+is empty in offscreen / headless / redirected runs (LogService flushes it only on a graceful
+*interactive* dtor). `Main.exe` is a `/SUBSYSTEM:WINDOWS` (WinMain) binary, so it also writes
+nothing to a redirected or inherited **stdout**. A fully healthy audit run can leave BOTH the
+`.Log` and captured stdout at 0 bytes (observed 2026-06-23 — earlier "stdout is the reliable
+sink" guidance was wrong).
+
+**Reliable signals for an offscreen run: the process EXIT CODE and the PRODUCED ARTIFACTS** —
+not text. Gate on:
+- **exit code 0** (graceful auto-terminate). `StartEngineWin.ps1` does `-Wait` + `exit
+  $proc.ExitCode`; `Invoke-EngineBounded` returns `.ExitCode` / `.TimedOut`.
+- **expected artifacts at non-degenerate size** — `Test-EngineArtifacts` (point it at the
+  GBuffer / LightPass / FinalBlend HDRs that can't be black; NOT LUTs/masks like BRDFLUTMS
+  ~22KB or SSRC ProbeMask ~2KB, which are legitimately small).
+
+`Test-EngineRunOutcome` greps the `.Log`; on an empty log it returns `LogEmpty=$true` and its
+load/terminate predicates are INCONCLUSIVE (not a FAIL) — advisory only. Windowed runs DO
+populate the `.Log` (readable while the process is alive); there the predicates are meaningful.
 
 Use `Invoke-EngineBounded` (`Lib/Test-Engine.psm1`) for programmatic verification: it kills
-stragglers + settles (a run killed mid-frame can hang the next launch — TASK-241), bounds the
-hang via `WaitForExit` + `Kill` (never orphaning the child, which a bash `timeout` would), and
-captures stdout.
+stragglers + settles (a run killed mid-frame can hang the next launch — TASK-241) and bounds
+the hang via `WaitForExit` + `Kill` (never orphaning the child, which a bash `timeout` would).
+Its stdout/stderr captures are a best-effort crash hint only.
 
 ## Script inventory
 

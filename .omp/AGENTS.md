@@ -10,7 +10,7 @@ Single-user project (zhangdoa). No team, CI, or onboarding — closure notes and
 | Run engine | `Scripts/StartEngineWin.ps1 -Preset <name>` — never launch Main.exe / RenderTest.exe by path |
 | Engine path-tracing test | `Scripts/TestPT.ps1` |
 | Editor tests | `cd Source/Editor-Next && npx playwright test tests/<spec>.spec.js` (needs a live engine) |
-| Verify a run | Assert on captured **stdout**, not the `*.Log` (empty offscreen). Bounded launch that survives the TASK-241 hang: `Invoke-EngineBounded` in `Scripts/Lib/Test-Engine.psm1`. |
+| Verify a run | Offscreen: gate on **exit code + produced artifacts** (`Test-EngineArtifacts`) — both stdout and the `*.Log` are empty (WinMain binary). Bounded launch that survives the TASK-241 hang: `Invoke-EngineBounded` in `Scripts/Lib/Test-Engine.psm1`. |
 
 ## Continuity
 

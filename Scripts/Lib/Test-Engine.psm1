@@ -28,9 +28,19 @@
 #
 # Invoke-EngineBounded is the programmatic-verification launcher: it kills
 # stragglers + settles before launch, bounds the intermittent TASK-241
-# init/shutdown hang via WaitForExit + Kill (never orphaning the child), and
-# captures stdout - LogService mirrors to a timestamped *.Log but those are
-# empty in offscreen/redirected runs, so stdout is the reliable sink.
+# init/shutdown hang via WaitForExit + Kill (never orphaning the child).
+#
+# RELIABLE SIGNALS for an offscreen run (observed 2026-06-23): the process
+# EXIT CODE and the PRODUCED ARTIFACTS - NOT the text logs. Main.exe is a
+# /SUBSYSTEM:WINDOWS (WinMain) binary: it writes nothing to a redirected or
+# inherited stdout, AND its timestamped *.Log is empty in offscreen mode
+# (LogService flushes the file only on a graceful interactive dtor). A full
+# healthy audit run can leave BOTH stdout and *.Log at 0 bytes. So:
+#   - PASS gate = (not TimedOut) + expected artifacts present at non-degenerate
+#     size (Test-EngineArtifacts), confirmed by exit code 0 when available.
+#   - The log-grep predicates (Test-EngineRunOutcome) are meaningful only when
+#     the log is non-empty (windowed runs); on an empty log they are
+#     INCONCLUSIVE (LogEmpty=$true), not a FAIL.
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -91,6 +101,12 @@ function Test-EngineRunOutcome {
 
     Write-Host "Log: $($LogFile.Name)"
 
+    $logEmpty = ((Get-Item -LiteralPath $LogFile.FullName).Length -eq 0)
+    if ($logEmpty) {
+        Write-Host "WARN - log is empty (offscreen run; LogService does not flush *.Log here)."
+        Write-Host "       Load/terminate predicates are INCONCLUSIVE; gate on exit code + artifacts."
+    }
+
     # Coerce all Select-String results to arrays so the .Count / .Length /
     # foreach calls below stay valid under Set-StrictMode -Version Latest
     # (a no-match Select-String returns $null, not an empty collection).
@@ -115,17 +131,23 @@ function Test-EngineRunOutcome {
         $d3dErrors | ForEach-Object { Write-Host "  $_" }
         $pass = $false
     }
-    if ($sceneLoaded.Count -eq 0) {
-        Write-Host "FAIL$tag - $SceneTag was not loaded."
-        $pass = $false
-    }
-    if ($autoTerminated.Count -eq 0) {
-        Write-Host "FAIL$tag - engine did not auto-terminate (crashed or hung?)."
-        $pass = $false
+    # Scene-load / auto-terminate are only assertable from a populated log.
+    # On an empty offscreen log they are inconclusive, never a hard FAIL -
+    # the caller must gate on exit code + Test-EngineArtifacts instead.
+    if (-not $logEmpty) {
+        if ($sceneLoaded.Count -eq 0) {
+            Write-Host "FAIL$tag - $SceneTag was not loaded."
+            $pass = $false
+        }
+        if ($autoTerminated.Count -eq 0) {
+            Write-Host "FAIL$tag - engine did not auto-terminate (crashed or hung?)."
+            $pass = $false
+        }
     }
 
     [PSCustomObject]@{
         Pass           = $pass
+        LogEmpty       = $logEmpty
         D3DErrors      = $d3dErrors
         SceneLoaded    = $sceneLoaded
         AutoTerminated = $autoTerminated
@@ -139,7 +161,9 @@ function Invoke-EngineBounded {
     #   2. WaitForExit(timeout) then Kill the child directly - NEVER orphan it. A bash
     #      `timeout` wrapping this script kills PowerShell but leaves Main.exe running
     #      and GPU-locked, which then hangs every subsequent run.
-    #   3. Capture stdout - the *.Log mirror is empty in offscreen/redirected runs.
+    #   3. Capture stdout/stderr to files - but note BOTH these and the *.Log
+    #      are typically empty offscreen (see file header); verify via exit
+    #      code + artifacts, with the captures only a best-effort crash hint.
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)] [string]$BinDir,
@@ -169,18 +193,75 @@ function Invoke-EngineBounded {
         Write-Host "TIMEOUT after ${TimeoutSec}s - killing (likely TASK-241 init/shutdown hang)."
         $proc.Kill()
         Start-Sleep -Seconds 1
+        $exitCode = $null
     } else {
-        Write-Host "Exit code: $($proc.ExitCode)"
+        # WaitForExit(timeout) can return before ExitCode is populated; the
+        # no-arg call reaps fully. Guard the read - a fast-exiting child whose
+        # handle was already closed throws on .ExitCode.
+        try { $proc.WaitForExit() } catch {}
+        try { $exitCode = $proc.ExitCode } catch { $exitCode = $null }
+        Write-Host "Exit code: $exitCode"
     }
 
     [PSCustomObject]@{
         Process  = $proc
         TimedOut = (-not $exited)
-        ExitCode = if ($exited) { $proc.ExitCode } else { $null }
+        ExitCode = $exitCode
         Stdout   = $stdout
         Stderr   = $stderr
         BinRoot  = $binRoot
     }
 }
 
-Export-ModuleMember -Function Invoke-EngineMainRun, Invoke-EngineBounded, Test-EngineRunOutcome
+function Test-EngineArtifacts {
+    # Exit-code-/log-independent verification for offscreen runs: assert the
+    # run PRODUCED the expected artifacts at a non-degenerate size. This is the
+    # reliable signal when stdout and *.Log are both empty (see file header).
+    #
+    #   -Path     SPECIFIC scene-render artifacts, each must resolve to >=1 file
+    #             - the GBuffer / LightPass / FinalBlend passes that CANNOT be
+    #             black on a healthy render (e.g. audit_00a_OpaquePass_RT_0,
+    #             audit_08_LightPass_Luminance, audit_13_FinalBlend). Do NOT
+    #             glob all audit_*.hdr: LUTs and masks (BRDFLUTMS ~22KB,
+    #             SSRC ProbeMask ~2KB) are LEGITIMATELY small/uniform and would
+    #             false-fail the size floor (verified 2026-06-23).
+    #   -MinBytes per-file floor. A collapsed / all-black / uniform 720p render
+    #             RLE-compresses far below this; real scene-render HDRs were
+    #             280-666 KB this session, so the 50KB default separates cleanly.
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string[]]$Path,
+        [int]$MinBytes = 51200,
+        [string]$Label = ''
+    )
+    $tag = if ($Label) { " [$Label]" } else { '' }
+    $missing  = @()
+    $tooSmall = @()
+    $okCount  = 0
+    foreach ($p in $Path) {
+        $hits = @(Get-ChildItem -Path $p -File -ErrorAction SilentlyContinue)
+        if ($hits.Count -eq 0) { $missing += $p; continue }
+        foreach ($f in $hits) {
+            if ($f.Length -lt $MinBytes) {
+                $tooSmall += ("{0} ({1} B)" -f $f.Name, $f.Length)
+            } else {
+                $okCount++
+            }
+        }
+    }
+    $pass = ($missing.Count -eq 0) -and ($tooSmall.Count -eq 0)
+    Write-Host ("artifacts${tag}: ok={0} missing={1} degenerate={2} (floor {3} B)" -f `
+        $okCount, $missing.Count, $tooSmall.Count, $MinBytes)
+    if ($missing.Count)  { Write-Host "  MISSING:    $($missing -join ', ')" }
+    if ($tooSmall.Count) { Write-Host "  DEGENERATE: $($tooSmall -join ', ')" }
+    if (-not $pass) { Write-Host "FAIL$tag - expected artifacts not produced / degenerate." }
+
+    [PSCustomObject]@{
+        Pass       = $pass
+        OkCount    = $okCount
+        Missing    = $missing
+        Degenerate = $tooSmall
+    }
+}
+
+Export-ModuleMember -Function Invoke-EngineMainRun, Invoke-EngineBounded, Test-EngineRunOutcome, Test-EngineArtifacts
