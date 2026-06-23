@@ -112,3 +112,11 @@ framework may or may not expose explicitly.
 - **2026-06-16**: discovered while landing `d990770e`. Workaround
   applied: chained `Main.exe -total_frames 1` in the same bash call
   as the `git commit`. Real fix deferred to this task.
+- **2026-06-23**: reconfirmed while closing TASK-241. Ran three
+  recognized engine tests (Audit / SerializeTest / GIScene via
+  `StartEngineWin.ps1`, all exit 0) across separate bash calls, then
+  committed a docs-only closure in a later call. The gate would not
+  have credited those runs (separate calls), so I used the
+  `Closure-Reason:` exemption instead of chaining a throwaway run.
+  Second distinct workaround for the same root cause — bumps the case
+  for the per-user-turn (not per-bash-call) reset fix.

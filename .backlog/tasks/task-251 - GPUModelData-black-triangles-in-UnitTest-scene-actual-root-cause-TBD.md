@@ -2,7 +2,7 @@
 id: TASK-251
 title: >-
   Black triangles in UnitTest scene (many camera angles, not all) — actual root cause TBD
-status: To Do
+status: Done
 assignee:
   - code-impl
 created_date: '2026-06-17'
@@ -221,3 +221,12 @@ shader).
   (likely fixed by the TASK-252 identity-transform fix). If present,
   the next diagnostic is a multi-angle capture (extend a preset with
   a per-frame camera orbit) + RenderDoc on a failing frame.
+- **2026-06-23 (closure — fixed):** User tested interactively on the
+  current build and confirmed the black triangles are gone at all
+  camera angles ("tested and all good"). Root cause attributed to
+  TASK-252's degenerate-transform fix: a missing WorldTransform used
+  to fall through to a zero matrix that collapsed geometry into
+  garbage triangles; it now substitutes identity. The original
+  std140-mismatch framing (TASK-251 v1) was correctly falsified; the
+  real cause was the producer-side null-transform fallback, surfaced
+  and fixed during the GPU-driven data-model split. Closed.
