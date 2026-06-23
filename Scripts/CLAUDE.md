@@ -17,6 +17,19 @@ Escape flags: `-SkipShaderCompile`, `-SkipClangdIndexRefresh`. `Scripts/PurgeSta
 
 **Double-quoted strings in `.ps1` must be pure ASCII.** Non-ASCII byte inside a double-quoted string mangles the string-terminator and cascades parser errors. OK in `# comments`, `'single-quoted strings'`, here-docs.
 
+## Engine logging is stdout, not the `*.Log`
+
+`LogService` mirrors every line to a timestamped `[…].Log` in the engine CWD, but those
+files are empty in offscreen / headless / redirected runs (64/64 in `Bin/` observed 0 bytes).
+**stdout is the only reliable sink** — capture it with `Start-Process -RedirectStandardOutput`.
+`Test-EngineRunOutcome` greps the `.Log`, so in these modes it reads an empty file; assert
+against captured stdout instead.
+
+Use `Invoke-EngineBounded` (`Lib/Test-Engine.psm1`) for programmatic verification: it kills
+stragglers + settles (a run killed mid-frame can hang the next launch — TASK-241), bounds the
+hang via `WaitForExit` + `Kill` (never orphaning the child, which a bash `timeout` would), and
+captures stdout.
+
 ## Script inventory
 
 | Script | Role |
@@ -24,7 +37,7 @@ Escape flags: `-SkipShaderCompile`, `-SkipClangdIndexRefresh`. `Scripts/PurgeSta
 | `BuildWin.ps1` | Build Main + RenderTest. HLSL pre-step + clangd post-step. |
 | `HLSL2DXIL.ps1` | HLSL → DXIL compile. Use `-NoPause` for non-interactive. |
 | `Lib/Compile-HLSL.psm1` | Shared shader-compile module. Single source of truth. |
-| `Lib/Test-Engine.psm1` | Shared engine-driver (Main.exe launch + log discovery + post-run checks). |
+| `Lib/Test-Engine.psm1` | Shared engine-driver. `Invoke-EngineMainRun` (unbounded), `Invoke-EngineBounded` (kills+settles+bounds+captures stdout), `Test-EngineRunOutcome` (post-run checks; greps the empty `.Log` — prefer stdout). |
 | `regression-rebuild.ps1` | CMake regen + build + clangd purge. |
 | `sweep-orphan-engines.ps1` | Kill stray Main/RenderTest/InteractiveTest processes. |
 | `pick-frame-count.ps1 <budget_ms> <frame_ms>` | Emit `-total_frames N` for a budget. |

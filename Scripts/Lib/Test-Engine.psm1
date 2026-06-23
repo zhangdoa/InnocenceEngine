@@ -25,6 +25,12 @@
 #   - Auto-terminate marker wording is locked to "Auto-test: ... terminating"
 #     in Engine.cpp; scene-loaded marker is "<Scene> has been loaded" in
 #     World.inl. If either changes, update both sides.
+#
+# Invoke-EngineBounded is the programmatic-verification launcher: it kills
+# stragglers + settles before launch, bounds the intermittent TASK-241
+# init/shutdown hang via WaitForExit + Kill (never orphaning the child), and
+# captures stdout - LogService mirrors to a timestamped *.Log but those are
+# empty in offscreen/redirected runs, so stdout is the reliable sink.
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -126,4 +132,55 @@ function Test-EngineRunOutcome {
     }
 }
 
-Export-ModuleMember -Function Invoke-EngineMainRun, Test-EngineRunOutcome
+function Invoke-EngineBounded {
+    # Bounded launch for programmatic verification. Three lessons baked in:
+    #   1. Kill stragglers + settle first - a run killed mid-frame leaves the virtual
+    #      GPU / swap-chain in a state that hangs the next launch (TASK-241).
+    #   2. WaitForExit(timeout) then Kill the child directly - NEVER orphan it. A bash
+    #      `timeout` wrapping this script kills PowerShell but leaves Main.exe running
+    #      and GPU-locked, which then hangs every subsequent run.
+    #   3. Capture stdout - the *.Log mirror is empty in offscreen/redirected runs.
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string]$BinDir,
+        [Parameter(Mandatory)] [string]$ArgList,
+        [int]$TimeoutSec = 120,
+        [int]$SettleSec  = 4
+    )
+
+    Get-Process -Name Main, RenderTest -ErrorAction SilentlyContinue | ForEach-Object { $_.Kill() }
+    if ($SettleSec -gt 0) { Start-Sleep -Seconds $SettleSec }
+
+    $mainExe = Join-Path $BinDir 'Main.exe'
+    if (-not (Test-Path $mainExe)) { throw "Main.exe not found at $mainExe" }
+
+    $binRoot = Split-Path $BinDir -Parent
+    Set-Location $binRoot
+    $stdout = Join-Path $binRoot 'engine_stdout.txt'
+    $stderr = Join-Path $binRoot 'engine_stderr.txt'
+
+    Write-Host "Running (bounded ${TimeoutSec}s): $mainExe $ArgList"
+    $proc = Start-Process -FilePath $mainExe -ArgumentList $ArgList `
+        -WorkingDirectory $binRoot -PassThru -NoNewWindow `
+        -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+
+    $exited = $proc.WaitForExit($TimeoutSec * 1000)
+    if (-not $exited) {
+        Write-Host "TIMEOUT after ${TimeoutSec}s - killing (likely TASK-241 init/shutdown hang)."
+        $proc.Kill()
+        Start-Sleep -Seconds 1
+    } else {
+        Write-Host "Exit code: $($proc.ExitCode)"
+    }
+
+    [PSCustomObject]@{
+        Process  = $proc
+        TimedOut = (-not $exited)
+        ExitCode = if ($exited) { $proc.ExitCode } else { $null }
+        Stdout   = $stdout
+        Stderr   = $stderr
+        BinRoot  = $binRoot
+    }
+}
+
+Export-ModuleMember -Function Invoke-EngineMainRun, Invoke-EngineBounded, Test-EngineRunOutcome
