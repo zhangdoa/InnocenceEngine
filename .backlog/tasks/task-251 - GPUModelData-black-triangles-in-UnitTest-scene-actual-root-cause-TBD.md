@@ -199,3 +199,25 @@ shader).
   report of black triangles remains unverified. Task re-scoped
   to "find the actual root cause" instead of "fix the std140
   mismatch".
+- **2026-06-23 (findings; still open):** On a fresh `BuildWin.ps1`
+  build of the current thread (post TASK-252/253 data-model split),
+  the headless **Audit preset** (UnitTest scene, fixed camera, 35
+  frames) renders cleanly: all 17 render-graph pass HDRs dump
+  non-black (`Bin/audit_*.hdr`, sizes 280–666 KB; a collapsed/black
+  frame would RLE-compress to a few KB), exit 0, no D3D12 errors,
+  validators silent. The **OpaquePass GBuffer (BaseColor/Normal/ORM/
+  Emissive)** is non-black — so geometry is NOT collapsed at the audit
+  camera angle. TASK-252's degenerate-transform fix (missing
+  WorldTransform now substitutes identity instead of a zero matrix
+  that collapsed geometry) is a plausible contributor and is now in
+  the build.
+  WHAT THIS DOES NOT SETTLE: the user's symptom was **interactive and
+  camera-angle-dependent** ("many angles produce black triangles, not
+  some others"). The offscreen Audit uses ONE fixed camera, so it
+  cannot exercise the angle dependence. There is no camera-orbit
+  headless capture preset to reproduce it. **Needs interactive
+  confirmation on the current build**: does the symptom still
+  reproduce at the default + other camera angles? If gone, close
+  (likely fixed by the TASK-252 identity-transform fix). If present,
+  the next diagnostic is a multi-angle capture (extend a preset with
+  a per-frame camera orbit) + RenderDoc on a failing frame.

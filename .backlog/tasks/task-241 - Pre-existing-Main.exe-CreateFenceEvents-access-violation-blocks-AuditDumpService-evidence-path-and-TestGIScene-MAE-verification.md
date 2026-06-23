@@ -3,7 +3,7 @@ id: TASK-241
 title: >-
   Pre-existing Main.exe `CreateFenceEvents:106` access violation — blocks
   AuditDumpService evidence path and TestGIScene MAE verification
-status: In Progress
+status: Done
 assignee:
   - code-impl
 created_date: '2026-06-15'
@@ -100,8 +100,16 @@ MSYS_NO_PATHCONV=1 "Bin/RelWithDebInfo/RenderTest.exe" -test draw_instanced
 <!-- AC:BEGIN -->
 - [x] #1 Root cause confirmed
 - [x] #2 CreateFenceEvents no longer crashes on null `l_semaphore` — guard added (Source/Engine/Services/DX12/DX12RenderPassResourceService.cpp:111-116) and `AddSemaphore` now surfaces its failure with an Error log (lines 46-49). Verified via `Main.exe -c Audit.json` log: the `0x18` access violation is gone; instead the log shows 150+ "Run out of object pool!" / "m_Semaphores[0..2] is nullptr" Error lines for `[Object Name: SwapChain]`, and then a downstream WRL crash at `IID_PPV_ARGS_Helper` (wrl/client.h:916) reading 0x4E0 — which is a SECOND, independent bug surfaced by removing the first crash. **Audit HDRs do NOT land yet.** Filed as TASK-242 (follow-up).
-- [ ] #3 `Main.exe -c Data/Engine/Configuration/Presets/SerializeTest.json` completes (1 frame, no render) — not re-run after the fix. Should now succeed at the same rate as the audit run (i.e., pass the fence-events init but may still hit TASK-242's pool-exhaustion symptoms on multi-pass presets).
-- [ ] #4 `Main.exe -c Data/Engine/Configuration/Presets/GIScene.json` completes 60 frames; the autotest MAE bar is re-verifiable — depends on TASK-242.
+- [x] #3 `SerializeTest.json` completes (1 frame + serialize round-trip):
+      exit 0, graceful, no orphan (2026-06-23, fresh build, via
+      `StartEngineWin.ps1 -Preset Engine/Configuration/Presets/SerializeTest.json`).
+- [x] #4 `GIScene.json` completes 60 frames: exit 0, graceful, no orphan
+      (2026-06-23, same launcher). TASK-242 (the dependency) is Done.
+      MAE number not computed this session — local ImageMagick is broken
+      (`magick -version` exits 5), so `TestGIScene.ps1`'s MAE compare
+      can't run; the MAE *path* is unblocked (the run completes and the
+      captures the harness needs are produced). Numeric MAE re-check
+      deferred to a working magick.
 - [x] #5 Build green (DX12RenderPassResourceService.cpp + RenderPassResourceServiceImpl.cpp + RenderingConfigurationService.cpp rebuilt clean; Main.exe + RenderTest.exe both produced). TestSuite re-run with the patched code: **115/116 pass, 1 fail**. The 1 fail is `RenderGraph: lightPass.comp registers covered by live LightPass JSON bindings` — a pre-existing test failure citing the `lightPass.comp` shader's t69/t70/t71 register usage that has no matching JSON binding (the `df40414a` LightPass swap fallout). It is **not** caused by these changes. The previous AC wording claimed 116/114 + 2-fail-pre-existing; the current count is **115/116 with 1 pre-existing fail** (the 1 fail = lightPass binding mismatch).
 <!-- AC:END -->
 ## Follow-up (TASK-242 — In Progress)
@@ -130,10 +138,22 @@ scene-load path). **Not in scope for TASK-242** — needs a separate task to dia
 - (No new audit HDRs in `Bin/RelWithDebInfo/`; still 2026-06-01 baseline.)
 
 <!-- DOD:BEGIN -->
-- [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
-- [ ] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
-- [ ] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this is the only path
-- [ ] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
-- [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
-- [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
+- [x] #1 Code compiles — `BuildWin.ps1` green; `Main.exe` + `RenderTest.exe` both produced (2026-06-23).
+- [x] #2 Pre-existing integration runs re-run green on the fresh build (2026-06-23, all via `StartEngineWin.ps1`): Audit.json (35 frames, all 17 pass HDRs dumped to `Bin/audit_*.hdr`, exit 0); SerializeTest.json (exit 0); GIScene.json (60 frames, exit 0). No D3D12 crash, no orphan.
+- [x] #3 N/A — the pre-existing Audit / SerializeTest / GIScene presets cover the path end-to-end; no new test needed.
+- [x] #4 Not mock-based: validation is real engine integration runs.
+- [x] #5 User-observable outcome: the Audit dump produced all 17 render-graph pass HDRs (`Bin/audit_*.hdr`, 2026-06-23 18:04); sampled sizes 280–666 KB = non-black geometry + lighting (a black/uniform HDR RLE-compresses to a few KB). Consistent with the 2026-06-22 byte-verified baseline (TASK-252 closure). `magick`-based pixel stats were unavailable (broken locally).
+- [x] #6 NOT verified: (a) numeric GIScene MAE — local `magick` broken; (b) the intermittent init/shutdown hang did NOT manifest in 3 graceful runs this session but is NOT proven gone — it is a separate failure mode from the now-fixed CreateFenceEvents AV, filed as **TASK-255**; (c) the `TObjectPool<TextureComponent>` scene-load AV noted in the TASK-242 follow-up — not re-observed this session.
 <!-- DOD:END -->
+
+## Closure (2026-06-23)
+
+All 5 ACs met. The titular blocker is fully resolved: the
+`CreateFenceEvents:106` access violation is fixed (AC#2), the
+AuditDumpService evidence path is unblocked (Audit run dumps all 17
+pass HDRs), and the TestGIScene path runs 60 frames to graceful exit.
+TASK-242 (the pool-exhaustion dependency for AC#4) is Done. Verified
+on a fresh `BuildWin.ps1` build via three sanctioned `StartEngineWin.ps1`
+runs (Audit / SerializeTest / GIScene), all exit 0, no orphan.
+The residual intermittent init/shutdown hang (a different failure mode,
+mitigated by `Invoke-EngineBounded`) carries forward as **TASK-255**.
